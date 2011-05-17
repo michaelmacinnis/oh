@@ -1,0 +1,60 @@
+#!/usr/local/bin/oh
+
+define prime-numbers: channel
+
+define counter: method number {
+    define your-welcome: channel
+
+    while true {
+        write number your-welcome
+
+        your-welcome::read
+
+        set number: add number 1
+    }
+}
+
+define filter: method base {
+    define your-welcome: channel
+
+    while true {
+	    define l: read
+
+        if (mod (car l) base) {
+            write (car l) your-welcome
+
+            your-welcome::read
+        }
+
+        (cadr l)::write '()
+    }
+}
+
+spawn {
+    counter 2 | block {
+        define in $stdin
+
+        while true {
+            define l: in::read
+
+            write: car l
+
+            define out: channel
+            spawn {
+                filter (car l)
+            } <in >out
+
+            (cadr l)::write '()
+
+            set in out
+        }
+    }
+} > prime-numbers
+
+define count: integer 250
+echo "The first" count "prime numbers"
+
+while count {
+    write @(read)
+    set count: sub count 1
+} <prime-numbers

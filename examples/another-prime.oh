@@ -1,0 +1,29 @@
+#!/usr/local/bin/oh
+
+# This script doesn't do much on its own. It is imported by import-prime.oh.
+
+public next-prime: channel
+
+define count: integer 1000
+define number: integer 2
+define list-of-primes '(1)
+
+spawn: while count {
+    define previous list-of-primes
+    define prime: boolean true
+
+    while (and (cdr previous) prime) {
+        set prime: mod number (cadr previous)
+
+        set previous: cdr previous
+    }
+
+    if prime {
+        set count: sub count 1
+        set-cdr previous: cons number '()
+
+        echo number
+    }
+
+    set number: add number 1
+} > next-prime

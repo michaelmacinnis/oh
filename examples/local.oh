@@ -1,0 +1,10 @@
+#!/usr/local/bin/oh
+
+define blah: method {
+    define foo "I'm a local variable!"
+}
+
+blah
+
+# Echos 'foo' as foo is no longer defined.
+echo foo

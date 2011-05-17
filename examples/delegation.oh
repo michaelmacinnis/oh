@@ -1,0 +1,26 @@
+#!/usr/local/bin/oh
+
+# Trait. All objects 'inherit' this method. 
+public me: method: echo $self::name
+
+define x: object {
+    define name "x"
+}
+
+define y: object {
+    define name "y"
+    public me-too x::me    # Explicit delegation.
+}
+
+define z: object {
+    define name "z"
+    public you: method: x::me    # Redirection.
+}
+
+x::me
+
+y::me
+y::me-too
+
+z::me
+z::you

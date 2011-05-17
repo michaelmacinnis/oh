@@ -1,0 +1,161 @@
+#!/usr/local/bin/oh
+
+# The following examples adapted from "Chapter 3: Using the Shell" in The
+# Unix Programming Environment.  As demonstrated below, oh is very similar
+# to other Unix shells for everyday use.
+
+# The simplest command is the single word:
+who
+
+# A command ends with a newline.  A semicolon can be used to sequence commands
+# entered on the same line.
+date;
+date; who
+
+# Unlike other Unix shells, oh treats ';' as a sequence operator not a
+# command terminator.  Oh also defines '';' as having a higher precedence
+# than '|'.  If we would like to send the output of 'date; who' through a
+# pipe, we can simply type:
+date; who | wc
+
+# Oh uses parentheses to group expressions; 'block' is used to group
+# commands.  If we only wanted the output from 'who' to be piped to 'wc' but
+# we still wanted the commands 'date' and 'who' executed as a unit (possibly
+# because we want to redirect the output of both commands) we could type:
+block {
+	date
+	who | wc
+}
+
+# Data flowing through a pipe can be tapped and placed in a file:
+date; who | tee blah | wc
+cat blah
+wc <blah
+rm blah
+
+# To execute a long running command 'in the background' we can use the '&'
+# operator.  The '&' operator along with the sleep command provides an easy
+# way to run a command in the future:
+sleep 2; echo "Tea is ready" &
+sleep 4
+
+# We can also run a pipeline in the background:
+who | wc &
+
+# Oh uses standard shell glob characters:
+ls
+echo *
+echo .*
+
+# To stop oh from interpreting glob characters, we can enclose
+# them in double quotes:
+echo "***"
+
+# Unlike other shells, oh does not use the single quote character to
+# delimit strings.  Instead it uses the single quote character to stop an
+# expression from being evaluated.  This is due to the incorporation of Lisp-
+# like features - specifically t-expressions.  Oh uses the same
+# representation for data and programs and so, like Lisp, needs a way of
+# specifying that an expression should be treated as data and not evaluated.
+
+# String concatenation is not implicit in oh.  To concatenate strings the
+# concatenation operator '+' must be used:
+echo: add "Hello," "World!"
+
+# The output of a program can be captured in a list using the backquote
+# operator.  This list can then be expanded using the splice operator:
+echo "Type a few words.  One on each line.  Then hit Ctrl-D:"; echo @`(cat)
+
+# Newlines are interpreted as word separators and the resulting list is
+# spliced into the list of arguments being passed.  This combination of
+# backquote and splice requires two extra characters over the typical Unix
+# shell's backquotes.  The advantage to this notation, in addition to being
+# more regular, is that it can be nested easily.  The rc shell uses the same
+# notation for backquotes but does not separate capturing output as a list
+# and expanding that list into individual arguments.
+
+# A new object can be created "ex nihilo" with the 'object' command.
+# Private members are defined using the command 'define' and public members
+# are defined using the command 'public'.
+define point: method r s: object {
+    define x: integer r
+    define y: integer s
+
+    public get-x: method {
+        return $self::x
+    }
+
+    public get-y: method {
+        return $self::y
+   	}
+
+    public move: method a b {
+        set $self::x: add $self::x a
+        set $self::y: add $self::y b
+    }
+
+	public show: method {
+        echo $self::x $self::y
+    }
+}
+
+define p: point 0 0
+
+# In the above example, we create a generator method, 'point', which acts
+# very much like a constructor in class-based languages, but we could also
+# use the 'clone' method to create a clone of an existing object or the
+# 'child' method to create a descendent object.  The methods 'get-x', 'get-y'
+# and 'move' could also be moved up and out to the same level as the
+# definition for 'point'.  All objects created by the generator method,
+# 'point', maintain an implicit parent link to their enclosing scope and,
+# in doing so, would automatically delegate calls to these methods to their
+# parent object.  If, for example, we wanted other objects like circles
+# or squares, we could use methods defined in the enclosing scope to
+# implement shared behaviour.
+#
+# Dynamic communication patterns are enabled by the fact that public slots
+# can be updated or added to any object, at runtime.  This combined with
+# objects that can be defined and used immediately, rather than in a two
+# step template-instance, process makes this style of object-oriented
+# programming more suited to the Unix shell's interactive and exploratory
+# nature.
+#
+# An object's members can be accessed using oh's cons operator - '::'.
+# Because of the oh shell's syntax constraints there are a limited number
+# of characters available for additional operators and more familiar
+# operators for member access, like '.' or '->',  cause ambiguity when
+# parsing.  Using the cons operator for this purpose allows the oh shell
+# to evaluate a configuration of cons cells that would otherwise be unused
+# and reported as an error.  Since objects in oh can be thought of as
+# first-class name spaces, the use of '::' as a both a cons and name space
+# operator also mirrors these uses in other languages.
+#
+# Only public members are accessible 'outside' an object.  For example, to
+# move the point defined above we must call the 'move' method.
+p::move 3 4
+
+# New public members may be added to any object:
+p::public show: method {
+    echo: add "(" $self::x "," $self::y ")\n"
+}
+
+# Public methods may access private members.  This means it is possible to
+# add public methods that exposes private members.  Oh follows Python's
+# "we're all adults here" motto.
+p::show
+
+# Oh modules are objects.  Oh provides the 'source' command, which
+# inserts the contents of a file as if they were typed directly.  The Oh
+# command 'import' is (roughly) equivalent to:
+#
+#     object {
+#         source file-name
+#     }
+# 
+# and can be used as follows:
+#
+#     define module: import file
+#
+# Public, top-level definitions in 'file' can now be accessed using 'module'
+# and the '::' operator.  See the Oh script import-prime.oh
+./examples/import-prime.oh

@@ -1,0 +1,28 @@
+#!/usr/local/bin/oh
+
+define a "lexical"
+dynamic caller "top-level"
+
+define foo: method {
+    echo a caller
+}
+
+foo
+
+define bar: method {
+    define a "local"
+    dynamic caller "bar"
+
+    foo
+}
+
+bar
+
+define baz: method {
+    dynamic a "nice try"
+    dynamic caller "baz"
+
+    foo
+}
+
+baz

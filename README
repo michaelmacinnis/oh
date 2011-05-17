@@ -1,0 +1,26 @@
+Oh is a Unix shell written in Go.  Like the rc shell, oh is similar in spirit
+but different in detail from other Unix shells.
+
+The following commands behave as expected:
+
+date
+cat /usr/share/dict/words
+who >user.names
+who >>user.names
+wc <file
+echo [a-f]*.c
+who | wc
+who; date
+cc *.c &
+mkdir junk && cd junk
+cd ..
+rm -r junk || echo "rm failed!"
+
+Oh adds support for concurrent, object-based and higher-order programming. See
+using.oh and the sample scripts in the examples directory for more details.
+
+To compile and run oh you will need go-tecla:
+
+   github.com/michaelmacinnis/go-tecla
+
+Oh is released under an MIT-style license.

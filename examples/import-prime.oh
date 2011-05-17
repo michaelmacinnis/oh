@@ -1,0 +1,9 @@
+#!/usr/local/bin/oh
+
+define prime: import "./examples/another-prime.oh"
+
+define count: integer 100
+while count {
+	  write @(prime::next-prime::read)
+	  set count: sub count 1
+}
