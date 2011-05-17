@@ -50,8 +50,8 @@ in the form of pipes, as first-class values. Channels can be created with the
 
     define c: channel
 
-Oh incorporates many features, including first-class functions from the
-Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for data and code.
+Oh incorporates many features, including first-class functions, from the
+Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
 When data is sent across a channel it is converted to text so that it can be
 sent to (or even through) external Unix programs.
 
