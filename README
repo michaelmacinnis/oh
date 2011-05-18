@@ -64,3 +64,5 @@ and install (./configure; make install) the C library libtecla:
     http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz
 
 Oh is released under an MIT-style license.
+
+Thanks to André Cormier for suggesting the name.
