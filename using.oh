@@ -18,10 +18,10 @@ date; who
 # pipe, we can simply type:
 date; who | wc
 
-# Oh uses parentheses to group expressions; 'block' is used to group
-# commands.  If we only wanted the output from 'who' to be piped to 'wc' but
-# we still wanted the commands 'date' and 'who' executed as a unit (possibly
-# because we want to redirect the output of both commands) we could type:
+# In oh, 'block' is used to group commands.  If we only wanted the output
+# from 'who' to be piped to 'wc' but we still wanted the commands 'date' and
+# 'who' executed as a unit (possibly because we want to redirect the output
+# of both commands) we could type:
 block {
 	date
 	who | wc
@@ -58,8 +58,7 @@ echo "***"
 # representation for data and programs and so, like Lisp, needs a way of
 # specifying that an expression should be treated as data and not evaluated.
 
-# String concatenation is not implicit in oh.  To concatenate strings the
-# concatenation operator '+' must be used:
+# String concatenation is possible but not implicit in oh:
 echo: add "Hello," "World!"
 
 # The output of a program can be captured in a list using the backquote
