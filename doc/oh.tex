@@ -1,17 +1,21 @@
 \documentclass[12pt]{book}
 \usepackage{listings, setspace, url}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1ex}
+
 \begin{document}
 
-\title{\LARGE \bf Using oh}
+\title{\Huge \bf Using oh}
 \author{}
 \date{}
 
 \maketitle
 
 \chapter{Introduction}
-Oh is a freely available shell released under an MIT-style license that
-retains the look and feel of current Unix shells while adding support for
-higher-order, object-based and concurrent programming.
+Oh is a re-imagining of the Unix shell. It retains the look and feel of
+current Unix shells while adding support for higher-order, object-based and
+concurrent programming.
 
 Oh was inspired by previous attempts to combine Lisp and the Unix shell
 \cite{ALispShell, scsh}. Unlike previous attempts, however, oh is not
@@ -31,6 +35,7 @@ representation of code and data. This allows data to be marshalled and
 unmarshalled easily; shared between processes; and piped from, to or even
 through external programs.
 
+Oh is open source software released under an MIT-style license.
 \bibliographystyle{abbrv}
 \bibliography{oh}
 
