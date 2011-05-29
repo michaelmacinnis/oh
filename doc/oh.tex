@@ -1,0 +1,37 @@
+\documentclass[12pt]{book}
+\usepackage{listings, setspace, url}
+\begin{document}
+
+\title{\LARGE \bf Using oh}
+\author{}
+\date{}
+
+\maketitle
+
+\chapter{Introduction}
+Oh is a freely available shell released under an MIT-style license that
+retains the look and feel of current Unix shells while adding support for
+higher-order, object-based and concurrent programming.
+
+Oh was inspired by previous attempts to combine Lisp and the Unix shell
+\cite{ALispShell, scsh}. Unlike previous attempts, however, oh is not
+implemented by embedding a Unix shell in Lisp. Instead oh was designed
+from scratch so that it could not only incorporate features from Lisp but
+also modify and correct those characteristics that do not interact well
+with the constraints imposed on oh as a command language.
+
+Oh introduces a novel form of environment and exposes these environments
+as first-class values. In doing so, oh is able to unify the treatment of
+what is normally a number of limited and specialized mechanisms in addition
+to supporting a powerful and flexible form of object-oriented programming.
+
+Oh also exposes channels, which are implicit in other shells, as first-class
+values. Along with this, oh introduces a unified format for the
+representation of code and data. This allows data to be marshalled and
+unmarshalled easily; shared between processes; and piped from, to or even
+through external programs.
+
+\bibliographystyle{abbrv}
+\bibliography{oh}
+
+\end{document}
