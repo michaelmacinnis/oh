@@ -222,10 +222,6 @@ func Cdddr(c Cell) Cell {
     return c.(*Pair).cdr.(*Pair).cdr.(*Pair).cdr
 }
 
-func Cadddr(c Cell) Cell {
-    return c.(*Pair).cdr.(*Pair).cdr.(*Pair).cdr.(*Pair).car
-}
-
 func IsAtom(c Cell) bool {
     switch c.(type) {
     case Atom:

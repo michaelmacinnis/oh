@@ -1,5 +1,4 @@
 - Here documents
-- c[ad]{3,4}r
 - Character operations: to-(upper|lower), is-(upper|lower|alpha...)
 - String operations: append, string->list, list->string, substring
 - Number operations: even, odd, [remainder (?),] max, min, abs, floor, ceiling,

@@ -432,6 +432,126 @@ func init() {
 
         return false
     })
+    s.PrivateMethod("caaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Car(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Car(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Car(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Car(cell.Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdr(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdr(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdr(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdr(cell.Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Caar(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Caar(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caadar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Caar(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Caar(cell.Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cadr(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cadr(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caddar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cadr(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cadr(cell.Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdar(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdar(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdadar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdar(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cdar(cell.Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddaar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cddr(cell.Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddadr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cddr(cell.Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdddar", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cddr(cell.Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddddr", func(p *cell.Process, args cell.Cell) bool {
+        cell.SetCar(p.Scratch, cell.Cddr(cell.Cddar(args)))
+
+        return false
+    })
     s.PrivateMethod("cons", func(p *cell.Process, args cell.Cell) bool {
         cell.SetCar(p.Scratch, cell.Cons(cell.Car(args), cell.Cadr(args)))
 
