@@ -157,4 +157,4 @@ p::show
 #
 # Public, top-level definitions in 'file' can now be accessed using 'module'
 # and the '::' operator.  See the Oh script import-prime.oh
-./examples/import-prime.oh
+./import-prime.oh

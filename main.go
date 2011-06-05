@@ -5,21 +5,19 @@ package main
 import (
     "os"
     "github.com/michaelmacinnis/go-tecla"
-    "./cell"
-    "./engine"
 )
 
 func main() {
-    engine.Start()
+    Start()
 
     if len(os.Args) > 1 {
         f, err := os.OpenFile(os.Args[1], os.O_RDONLY, 0666)
         if err == nil {
-            cell.ParseFile(f, engine.Evaluate)
+            ParseFile(f, Evaluate)
         }
     } else {
-        cell.Parse(tecla.New("> "), engine.Evaluate)
+        Parse(tecla.New("> "), Evaluate)
     }
 
-    os.Exit(engine.Status())
+    os.Exit(ExitStatus())
 }

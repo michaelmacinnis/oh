@@ -12,7 +12,7 @@
 %left CONS
 
 %{
-package cell
+package main
 
 import (
     "bufio"

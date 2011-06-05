@@ -1,6 +1,6 @@
 /* Released under an MIT-style license. See LICENSE. */
 
-package cell
+package main
 
 import (
     "bufio"

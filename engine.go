@@ -1,6 +1,6 @@
-/* Released under an MIT-style license. See LICENSE. */
+/* released under an MIT-style license. See LICENSE. */
 
-package engine
+package main
 
 import (
     "bufio"
@@ -11,13 +11,12 @@ import (
     "path/filepath"
     "strings"
     "strconv"
-    "./cell"
 )
 
 const (
     psNone = 0
 
-    psChangeScope = cell.SaveMax + iota
+    psChangeScope = SaveMax + iota
     psCreateModule
 
     psDoEvalArguments
@@ -97,47 +96,47 @@ const (
     psMax
 )
 
-var main *cell.Process
+var proc0 *Process
 
-func channel(p *cell.Process, r, w *os.File) cell.Interface {
-    c, ch := cell.NewScope(p.Lexical), cell.NewChannel(r, w)
+func channel(p *Process, r, w *os.File) Interface {
+    c, ch := NewScope(p.Lexical), NewChannel(r, w)
 
-    var read cell.Function = func (p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, ch.Read())                                   
+    var read Function = func (p *Process, args Cell) bool {
+        SetCar(p.Scratch, ch.Read())                                   
         return false
     }
 
-    var readline cell.Function = func (p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, ch.ReadLine())
+    var readline Function = func (p *Process, args Cell) bool {
+        SetCar(p.Scratch, ch.ReadLine())
         return false
     }
 
-    var write cell.Function = func (p *cell.Process, args cell.Cell) bool {
+    var write Function = func (p *Process, args Cell) bool {
         ch.Write(args)
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     }
 
-    c.Public(cell.NewSymbol("guts"), ch)
-    c.Public(cell.NewSymbol("read"), method(read, cell.Null, c))
-    c.Public(cell.NewSymbol("readline"), method(readline, cell.Null, c))
-    c.Public(cell.NewSymbol("write"), method(write, cell.Null, c))
+    c.Public(NewSymbol("guts"), ch)
+    c.Public(NewSymbol("read"), method(read, Null, c))
+    c.Public(NewSymbol("readline"), method(readline, Null, c))
+    c.Public(NewSymbol("write"), method(write, Null, c))
 
-    return cell.NewObject(c)
+    return NewObject(c)
 }
 
-func debug(p *cell.Process, s string) {
+func debug(p *Process, s string) {
     fmt.Printf("%s: p.Code = %v, p.Scratch = %v\n", s, p.Code, p.Scratch)
 }
 
-func expand(args cell.Cell) cell.Cell {
-    list := cell.Null
+func expand(args Cell) Cell {
+    list := Null
 
-    for args != cell.Null {
-        c := cell.Car(args)
+    for args != Null {
+        c := Car(args)
 
-        s := cell.Raw(c)
-        if _, ok := c.(*cell.Symbol); ok {
+        s := Raw(c)
+        if _, ok := c.(*Symbol); ok {
             if s[:1] == "~" {
                 s = filepath.Join(os.Getenv("HOME"), s[1:])
             }
@@ -150,25 +149,25 @@ func expand(args cell.Cell) cell.Cell {
 
                 for _, e := range m {
                     if e[0] != '.' || s[0] == '.' {
-                        list = cell.AppendTo(list, cell.NewSymbol(e))
+                        list = AppendTo(list, NewSymbol(e))
                     }
                 }
             } else {
-                list = cell.AppendTo(list, cell.NewSymbol(s))
+                list = AppendTo(list, NewSymbol(s))
             }
         } else {
-            list = cell.AppendTo(list, cell.NewSymbol(s))
+            list = AppendTo(list, NewSymbol(s))
         }
-        args = cell.Cdr(args)
+        args = Cdr(args)
     }   
 
     return list
 }
 
-func external(p *cell.Process, args cell.Cell) bool {
-    name, err := exec.LookPath(cell.Raw(cell.Car(p.Scratch)))
+func external(p *Process, args Cell) bool {
+    name, err := exec.LookPath(Raw(Car(p.Scratch)))
 
-    cell.SetCar(p.Scratch, cell.False)
+    SetCar(p.Scratch, False)
 
     if err != nil {
         panic(err)
@@ -176,29 +175,29 @@ func external(p *cell.Process, args cell.Cell) bool {
 
     argv := []string{name}
 
-    for args = expand(args); args != cell.Null; args = cell.Cdr(args) {
-        argv = append(argv, cell.Car(args).String())
+    for args = expand(args); args != Null; args = Cdr(args) {
+        argv = append(argv, Car(args).String())
     }
 
-    c := cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol("$cwd"))
+    c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$cwd"))
     dir := c.GetValue().String()
 
     fd := []*os.File{os.Stdin, os.Stdout, os.Stderr}
 
-    c = cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol("$stdin"))
-    c = cell.Resolve(
-        c.GetValue().(cell.Interface).Expose(), nil, cell.NewSymbol("guts"))
-    fd[0] = c.GetValue().(*cell.Channel).ReadEnd()
+    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin"))
+    c = Resolve(
+        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
+    fd[0] = c.GetValue().(*Channel).ReadEnd()
 
-    c = cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol("$stdout"))
-    c = cell.Resolve(
-        c.GetValue().(cell.Interface).Expose(), nil, cell.NewSymbol("guts"))
-    fd[1] = c.GetValue().(*cell.Channel).WriteEnd()
+    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout"))
+    c = Resolve(
+        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
+    fd[1] = c.GetValue().(*Channel).WriteEnd()
 
-    c = cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol("$stderr"))
-    c = cell.Resolve(
-        c.GetValue().(cell.Interface).Expose(), nil, cell.NewSymbol("guts"))
-    fd[2] = c.GetValue().(*cell.Channel).WriteEnd()
+    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr"))
+    c = Resolve(
+        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
+    fd[2] = c.GetValue().(*Channel).WriteEnd()
 
     proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd})
     if err != nil {
@@ -214,28 +213,28 @@ func external(p *cell.Process, args cell.Cell) bool {
         status = int64(msg.ExitStatus())
     }
 
-    cell.SetCar(p.Scratch, cell.NewStatus(status))
+    SetCar(p.Scratch, NewStatus(status))
 
     return false
 }
 
-func function(body, param cell.Cell, scope *cell.Scope) *cell.Method {
-    return cell.NewMethod(cell.NewClosure(body, param, scope), nil)
+func function(body, param Cell, scope *Scope) *Method {
+    return NewMethod(NewClosure(body, param, scope), nil)
 }
 
 func init() {
-    main = cell.NewProcess(psNone, nil, nil)
+    proc0 = NewProcess(psNone, nil, nil)
 
-    main.Scratch = cell.Cons(cell.NewStatus(0), main.Scratch)
+    proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
 
-    e, s := main.Dynamic, main.Lexical.Expose()
+    e, s := proc0.Dynamic, proc0.Lexical.Expose()
 
-    e.Add(cell.NewSymbol("$stdin"), channel(main, os.Stdin, nil))
-    e.Add(cell.NewSymbol("$stdout"), channel(main, nil, os.Stdout))
-    e.Add(cell.NewSymbol("$stderr"), channel(main, nil, os.Stderr))
+    e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
+    e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
+    e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
 
     if wd, err := os.Getwd(); err == nil {
-        e.Add(cell.NewSymbol("$cwd"), cell.NewSymbol(wd))
+        e.Add(NewSymbol("$cwd"), NewSymbol(wd))
     }
 
     s.PrivateState("block", psBlock)
@@ -272,56 +271,56 @@ func init() {
     s.PrivateState("spawn", psSpawn)
     s.PrivateState("splice", psSplice)
 
-    s.PrivateFunction("cd", func(p *cell.Process, args cell.Cell) bool {
-        err, status := os.Chdir(cell.Raw(cell.Car(args))), 0
+    s.PrivateFunction("cd", func(p *Process, args Cell) bool {
+        err, status := os.Chdir(Raw(Car(args))), 0
         if err != nil {
             status = int(err.(*os.PathError).Error.(os.Errno))
         }
-        cell.SetCar(p.Scratch, cell.NewStatus(int64(status)))
+        SetCar(p.Scratch, NewStatus(int64(status)))
 
         if wd, err := os.Getwd(); err == nil {
-            p.Dynamic.Add(cell.NewSymbol("$cwd"), cell.NewSymbol(wd))
+            p.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
         }
 
         return false
     })
-    s.PrivateFunction("debug", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateFunction("debug", func(p *Process, args Cell) bool {
         debug(p, "debug")
 
         return false
     })
-    s.PrivateFunction("exit", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateFunction("exit", func(p *Process, args Cell) bool {
         var status int64 = 0
 
-        a, ok := cell.Car(args).(cell.Atom)
+        a, ok := Car(args).(Atom)
         if ok {
             status = a.Status()
         }
 
-        p.Scratch = cell.List(cell.NewStatus(status))
-        p.Stack = cell.Null
+        p.Scratch = List(NewStatus(status))
+        p.Stack = Null
 
         return true
     })
 
-    s.PublicMethod("child", func(p *cell.Process, args cell.Cell) bool {
-        o := cell.Car(p.Scratch).(*cell.Method).Self.Expose()
+    s.PublicMethod("child", func(p *Process, args Cell) bool {
+        o := Car(p.Scratch).(*Method).Self.Expose()
 
-        cell.SetCar(p.Scratch, cell.NewObject(cell.NewScope(o)))
-
-        return false
-    })
-    s.PublicMethod("clone", func(p *cell.Process, args cell.Cell) bool {
-        o := cell.Car(p.Scratch).(*cell.Method).Self.Expose()
-
-        cell.SetCar(p.Scratch, cell.NewObject(o.Copy()))
+        SetCar(p.Scratch, NewObject(NewScope(o)))
 
         return false
     })
+    s.PublicMethod("clone", func(p *Process, args Cell) bool {
+        o := Car(p.Scratch).(*Method).Self.Expose()
 
-    s.PrivateMethod("open", func(p *cell.Process, args cell.Cell) bool {
-        name := cell.Raw(cell.Car(args))
-        mode := cell.Raw(cell.Cadr(args))
+        SetCar(p.Scratch, NewObject(o.Copy()))
+
+        return false
+    })
+
+    s.PrivateMethod("open", func(p *Process, args Cell) bool {
+        name := Raw(Car(args))
+        mode := Raw(Cadr(args))
 
         flags := os.O_CREATE
 
@@ -342,438 +341,438 @@ func init() {
             panic(err)
         }
 
-        cell.SetCar(p.Scratch, channel(p, f, f))
+        SetCar(p.Scratch, channel(p, f, f))
 
         return false
     })
 
-    s.PrivateMethod("sprintf", func(p *cell.Process, args cell.Cell) bool {
-        f := cell.Raw(cell.Car(args))
+    s.PrivateMethod("sprintf", func(p *Process, args Cell) bool {
+        f := Raw(Car(args))
         
         argv := []interface{}{}
-        for l := cell.Cdr(args); l != cell.Null; l = cell.Cdr(l) {
-            switch t := cell.Car(l).(type) {
-            case *cell.Boolean:
+        for l := Cdr(args); l != Null; l = Cdr(l) {
+            switch t := Car(l).(type) {
+            case *Boolean:
                 argv = append(argv, *t)
-            case *cell.Integer:
+            case *Integer:
                 argv = append(argv, *t)
-            case *cell.Status:
+            case *Status:
                 argv = append(argv, *t)
-            case *cell.Float:
+            case *Float:
                 argv = append(argv, *t)
             default:
-                argv = append(argv, cell.Raw(t))
+                argv = append(argv, Raw(t))
             }
         }
         
         s := fmt.Sprintf(f, argv...)
-        cell.SetCar(p.Scratch, cell.NewString(s))
+        SetCar(p.Scratch, NewString(s))
 
         return false
     })
 
-    s.PrivateMethod("apply", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Car(args))
+    s.PrivateMethod("apply", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(args))
         next(p)
         
-        p.Scratch = cell.Cons(nil, p.Scratch)
-        for args = cell.Cdr(args); args != cell.Null; args = cell.Cdr(args) {
-            p.Scratch = cell.Cons(cell.Car(args), p.Scratch)
+        p.Scratch = Cons(nil, p.Scratch)
+        for args = Cdr(args); args != Null; args = Cdr(args) {
+            p.Scratch = Cons(Car(args), p.Scratch)
         }
         
         return true
     })
-    s.PrivateMethod("append", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateMethod("append", func(p *Process, args Cell) bool {
         /*
          * NOTE: Our append works differently than Scheme's append.
          *       To mimic Scheme's behavior used append l1 @l2 ... @ln
          */
 
         /* TODO: We should just copy this list: ... */
-        l := cell.Car(args)
+        l := Car(args)
 
         /* TODO: ... and then set it's cdr to cdr(args). */
-        argv := make([]cell.Cell, 0)
-        for args = cell.Cdr(args); args != cell.Null; args = cell.Cdr(args) {
-            argv = append(argv, cell.Car(args))
+        argv := make([]Cell, 0)
+        for args = Cdr(args); args != Null; args = Cdr(args) {
+            argv = append(argv, Car(args))
         }
         
-        cell.SetCar(p.Scratch, cell.Append(l, argv...))
+        SetCar(p.Scratch, Append(l, argv...))
         
         return false
     })
-    s.PrivateMethod("car", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caar(args))
+    s.PrivateMethod("car", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(args))
 
         return false
     })
-    s.PrivateMethod("cdr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdar(args))
+    s.PrivateMethod("cdr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(args))
 
         return false
     })
-    s.PrivateMethod("caar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caaar(args))
+    s.PrivateMethod("caar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caaar(args))
 
         return false
     })
-    s.PrivateMethod("cadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cadar(args))
+    s.PrivateMethod("cadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadar(args))
 
         return false
     })
-    s.PrivateMethod("cdar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdaar(args))
+    s.PrivateMethod("cdar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdaar(args))
 
         return false
     })
-    s.PrivateMethod("cddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cddar(args))
+    s.PrivateMethod("cddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddar(args))
 
         return false
     })
-    s.PrivateMethod("caaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Car(cell.Caaar(args)))
+    s.PrivateMethod("caaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("caadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Car(cell.Cadar(args)))
+    s.PrivateMethod("caadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("cadar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Car(cell.Cdaar(args)))
+    s.PrivateMethod("cadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("caddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Car(cell.Cddar(args)))
+    s.PrivateMethod("caddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("cdaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdr(cell.Caaar(args)))
+    s.PrivateMethod("cdaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("cdadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdr(cell.Cadar(args)))
+    s.PrivateMethod("cdadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("cddar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdr(cell.Cdaar(args)))
+    s.PrivateMethod("cddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("cdddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdr(cell.Cddar(args)))
+    s.PrivateMethod("cdddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("caaaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caar(cell.Caaar(args)))
+    s.PrivateMethod("caaaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("caaadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caar(cell.Cadar(args)))
+    s.PrivateMethod("caaadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("caadar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caar(cell.Cdaar(args)))
+    s.PrivateMethod("caadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("caaddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Caar(cell.Cddar(args)))
+    s.PrivateMethod("caaddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("cadaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cadr(cell.Caaar(args)))
+    s.PrivateMethod("cadaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("cadadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cadr(cell.Cadar(args)))
+    s.PrivateMethod("cadadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("caddar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cadr(cell.Cdaar(args)))
+    s.PrivateMethod("caddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("cadddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cadr(cell.Cddar(args)))
+    s.PrivateMethod("cadddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("cdaaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdar(cell.Caaar(args)))
+    s.PrivateMethod("cdaaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("cdaadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdar(cell.Cadar(args)))
+    s.PrivateMethod("cdaadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("cdadar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdar(cell.Cdaar(args)))
+    s.PrivateMethod("cdadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("cdaddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cdar(cell.Cddar(args)))
+    s.PrivateMethod("cdaddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("cddaar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cddr(cell.Caaar(args)))
+    s.PrivateMethod("cddaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Caaar(args)))
 
         return false
     })
-    s.PrivateMethod("cddadr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cddr(cell.Cadar(args)))
+    s.PrivateMethod("cddadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cadar(args)))
 
         return false
     })
-    s.PrivateMethod("cdddar", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cddr(cell.Cdaar(args)))
+    s.PrivateMethod("cdddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cdaar(args)))
 
         return false
     })
-    s.PrivateMethod("cddddr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cddr(cell.Cddar(args)))
+    s.PrivateMethod("cddddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cddar(args)))
 
         return false
     })
-    s.PrivateMethod("cons", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Cons(cell.Car(args), cell.Cadr(args)))
+    s.PrivateMethod("cons", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cons(Car(args), Cadr(args)))
 
         return false
     })
-    s.PrivateMethod("eval", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateMethod("eval", func(p *Process, args Cell) bool {
         p.ReplaceState(psEvalCommand)
 
-        p.Code = cell.Car(args)
-        p.Scratch = cell.Cdr(p.Scratch)
+        p.Code = Car(args)
+        p.Scratch = Cdr(p.Scratch)
 
         return true
     })
-    s.PrivateMethod("length", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateMethod("length", func(p *Process, args Cell) bool {
         var l int64 = 0
 
-        switch c := cell.Car(args); c.(type) {
-        case *cell.String, *cell.Symbol:
-            l = int64(len(cell.Raw(c)))
+        switch c := Car(args); c.(type) {
+        case *String, *Symbol:
+            l = int64(len(Raw(c)))
         default:
-            l = cell.Length(c)
+            l = Length(c)
         }
 
-        cell.SetCar(p.Scratch, cell.NewInteger(l))
+        SetCar(p.Scratch, NewInteger(l))
 
         return false
     })
-    s.PrivateMethod("list", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, args);
+    s.PrivateMethod("list", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, args);
 
         return false
     })
-    s.PrivateMethod("reverse", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.Reverse(cell.Car(args)))
+    s.PrivateMethod("reverse", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Reverse(Car(args)))
 
         return false
     })
-    s.PrivateMethod("set-car", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(cell.Car(args), cell.Cadr(args))
-        cell.SetCar(p.Scratch, cell.Cadr(args))
+    s.PrivateMethod("set-car", func(p *Process, args Cell) bool {
+        SetCar(Car(args), Cadr(args))
+        SetCar(p.Scratch, Cadr(args))
 
         return false
     })
-    s.PrivateMethod("set-cdr", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCdr(cell.Car(args), cell.Cadr(args))
-        cell.SetCar(p.Scratch, cell.Cadr(args))
+    s.PrivateMethod("set-cdr", func(p *Process, args Cell) bool {
+        SetCdr(Car(args), Cadr(args))
+        SetCar(p.Scratch, Cadr(args))
 
         return false
     })
 
     /* Predicates. */
-    s.PrivateMethod("is-atom", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.NewBoolean(cell.IsAtom(cell.Car(args))))
+    s.PrivateMethod("is-atom", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsAtom(Car(args))))
 
         return false
     })
     s.PrivateMethod("is-boolean",
-        func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Boolean)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+        func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Boolean)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
     s.PrivateMethod("is-channel",
-        func(p *cell.Process, args cell.Cell) bool {
-        o, ok := cell.Car(args).(cell.Interface)
+        func(p *Process, args Cell) bool {
+        o, ok := Car(args).(Interface)
         if ok {
             ok = false
-            c := cell.Resolve(o.Expose(), nil, cell.NewSymbol("guts"))
+            c := Resolve(o.Expose(), nil, NewSymbol("guts"))
             if c != nil {
-                _, ok = c.GetValue().(*cell.Channel)
+                _, ok = c.GetValue().(*Channel)
             }
         } 
 
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-cons", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.NewBoolean(cell.IsCons(cell.Car(args))))
+    s.PrivateMethod("is-cons", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsCons(Car(args))))
 
         return false
     })
-    s.PrivateMethod("is-float", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Float)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-float", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Float)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
     s.PrivateMethod("is-integer",
-        func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Integer)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+        func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Integer)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-list", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.NewBoolean(cell.IsList(cell.Car(args))))
+    s.PrivateMethod("is-list", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsList(Car(args))))
 
         return false
     })
-    s.PrivateMethod("is-method", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Method)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-method", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Method)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-null", func(p *cell.Process, args cell.Cell) bool {
-        ok := cell.Car(args) == cell.Null
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-null", func(p *Process, args Cell) bool {
+        ok := Car(args) == Null
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-number", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(cell.Number)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-number", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(Number)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-object", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(cell.Interface)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-object", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(Interface)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-status", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Status)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-status", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Status)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-string", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.String)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-string", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*String)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-symbol", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Symbol)
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+    s.PrivateMethod("is-symbol", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Symbol)
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("is-text", func(p *cell.Process, args cell.Cell) bool {
-        _, ok := cell.Car(args).(*cell.Symbol)
+    s.PrivateMethod("is-text", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Symbol)
         if !ok {
-            _, ok = cell.Car(args).(*cell.String)
+            _, ok = Car(args).(*String)
         }
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
 
     /* Generators. */
-    s.PrivateMethod("boolean", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.NewBoolean(cell.Car(args).Bool()))
+    s.PrivateMethod("boolean", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(Car(args).Bool()))
 
         return false
     })
-    s.PrivateMethod("channel", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, channel(p, nil, nil))
+    s.PrivateMethod("channel", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, channel(p, nil, nil))
 
         return false
     })
-    s.PrivateMethod("float", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch,
-            cell.NewFloat(cell.Car(args).(cell.Atom).Float()))
+    s.PrivateMethod("float", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewFloat(Car(args).(Atom).Float()))
 
         return false
     })
-    s.PrivateMethod("integer", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch,
-            cell.NewInteger(cell.Car(args).(cell.Atom).Int()))
+    s.PrivateMethod("integer", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewInteger(Car(args).(Atom).Int()))
 
         return false
     })
-    s.PrivateMethod("status", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch,
-            cell.NewStatus(cell.Car(args).(cell.Atom).Status()))
+    s.PrivateMethod("status", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewStatus(Car(args).(Atom).Status()))
 
         return false
     })
-    s.PrivateMethod("string", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch,
-            cell.NewString(cell.Car(args).String()))
+    s.PrivateMethod("string", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewString(Car(args).String()))
 
         return false
     })
-    s.PrivateMethod("symbol", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch,
-            cell.NewSymbol(cell.Raw(cell.Car(args))))
+    s.PrivateMethod("symbol", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewSymbol(Raw(Car(args))))
 
         return false
     })
 
     /* Relational. */
-    s.PrivateMethod("match", func(p *cell.Process, args cell.Cell) bool {
-        pattern := cell.Raw(cell.Car(args))
-        text := cell.Raw(cell.Cadr(args))
+    s.PrivateMethod("match", func(p *Process, args Cell) bool {
+        pattern := Raw(Car(args))
+        text := Raw(Cadr(args))
 
         ok, err := path.Match(pattern, text)
         if err != nil {
             panic(err)
         }
 
-        cell.SetCar(p.Scratch, cell.NewBoolean(ok))
+        SetCar(p.Scratch, NewBoolean(ok))
 
         return false
     })
-    s.PrivateMethod("not", func(p *cell.Process, args cell.Cell) bool {
-        cell.SetCar(p.Scratch, cell.NewBoolean(!cell.Car(args).Bool()))
+    s.PrivateMethod("not", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
 
         return false
     })
-    s.PrivateMethod("eq", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args)
+    s.PrivateMethod("eq", func(p *Process, args Cell) bool {
+        prev := Car(args)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
 
             if !prev.Equal(curr) {
                 return false
@@ -782,17 +781,17 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("ge", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("ge", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args).(cell.Atom)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
 
             if prev.Less(curr) {
                 return false
@@ -801,17 +800,17 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("gt", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("gt", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args).(cell.Atom)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
 
             if !prev.Greater(curr) {
                 return false
@@ -820,17 +819,17 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("is", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args)
+    s.PrivateMethod("is", func(p *Process, args Cell) bool {
+        prev := Car(args)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
 
             if prev != curr {
                 return false
@@ -839,17 +838,17 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("le", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("le", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args).(cell.Atom)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
 
             if prev.Greater(curr) {
                 return false
@@ -858,17 +857,17 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("lt", func(p *cell.Process, args cell.Cell) bool {
-        prev := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("lt", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args).(cell.Atom)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
 
             if !prev.Less(curr) {
                 return false
@@ -877,22 +876,22 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
-    s.PrivateMethod("ne", func(p *cell.Process, args cell.Cell) bool {
+    s.PrivateMethod("ne", func(p *Process, args Cell) bool {
         /*
          * This should really check to make sure no arguments are equal.
          * Currently it only checks whether adjacent pairs are not equal.
          */
 
-        prev := cell.Car(args)
+        prev := Car(args)
 
-        cell.SetCar(p.Scratch, cell.False)
+        SetCar(p.Scratch, False)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            curr := cell.Car(args)
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
 
             if prev.Equal(curr) {
                 return false
@@ -901,96 +900,96 @@ func init() {
             prev = curr
         }
 
-        cell.SetCar(p.Scratch, cell.True)
+        SetCar(p.Scratch, True)
         return false
     })
 
     /* Arithmetic. */
-    s.PrivateMethod("add", func(p *cell.Process, args cell.Cell) bool {
-        acc := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("add", func(p *Process, args Cell) bool {
+        acc := Car(args).(Atom)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            acc = acc.Add(cell.Car(args))
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Add(Car(args))
 
         }
 
-        cell.SetCar(p.Scratch, acc)
+        SetCar(p.Scratch, acc)
         return false
     })
-    s.PrivateMethod("sub", func(p *cell.Process, args cell.Cell) bool {
-        acc := cell.Car(args).(cell.Number)
+    s.PrivateMethod("sub", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            acc = acc.Subtract(cell.Car(args))
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Subtract(Car(args))
         }
 
-        cell.SetCar(p.Scratch, acc)
+        SetCar(p.Scratch, acc)
         return false
     })
-    s.PrivateMethod("div", func(p *cell.Process, args cell.Cell) bool {
-        acc := cell.Car(args).(cell.Number)
+    s.PrivateMethod("div", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            acc = acc.Divide(cell.Car(args))
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Divide(Car(args))
         }
 
-        cell.SetCar(p.Scratch, acc)
+        SetCar(p.Scratch, acc)
         return false
     })
-    s.PrivateMethod("mod", func(p *cell.Process, args cell.Cell) bool {
-        acc := cell.Car(args).(cell.Number)
+    s.PrivateMethod("mod", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            acc = acc.Modulo(cell.Car(args))
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Modulo(Car(args))
         }
 
-        cell.SetCar(p.Scratch, acc)
+        SetCar(p.Scratch, acc)
         return false
     })
-    s.PrivateMethod("mul", func(p *cell.Process, args cell.Cell) bool {
-        acc := cell.Car(args).(cell.Atom)
+    s.PrivateMethod("mul", func(p *Process, args Cell) bool {
+        acc := Car(args).(Atom)
 
-        for cell.Cdr(args) != cell.Null {
-            args = cell.Cdr(args)
-            acc = acc.Multiply(cell.Car(args))
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Multiply(Car(args))
         }
 
-        cell.SetCar(p.Scratch, acc)
+        SetCar(p.Scratch, acc)
         return false
     })
 
-    e.Add(cell.NewSymbol("$$"), cell.NewInteger(int64(os.Getpid())))
+    e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 
     /* Command-line arguments */
-    args := cell.Null
+    args := Null
     if len(os.Args) > 1 {
-        e.Add(cell.NewSymbol("$0"), cell.NewSymbol(os.Args[1]))
+        e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
         for i, v := range os.Args[2:] {
-            e.Add(cell.NewSymbol("$" + strconv.Itoa(i + 1)), cell.NewSymbol(v))
+            e.Add(NewSymbol("$" + strconv.Itoa(i + 1)), NewSymbol(v))
         }
 
         for i := len(os.Args) - 1; i > 1; i-- {
-            args = cell.Cons(cell.NewSymbol(os.Args[i]), args)
+            args = Cons(NewSymbol(os.Args[i]), args)
         }
     } else {
-        e.Add(cell.NewSymbol("$0"), cell.NewSymbol(os.Args[0]))
+        e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
     }
-    e.Add(cell.NewSymbol("$args"), args)
+    e.Add(NewSymbol("$args"), args)
 
     /* Environment variables. */
     for _, s := range os.Environ() {
         kv := strings.Split(s, "=", 2)
-        e.Add(cell.NewSymbol("$" + kv[0]), cell.NewSymbol(kv[1]))
+        e.Add(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
     }
 }
 
-func method(body, param cell.Cell, scope *cell.Scope) *cell.Method {
-    return cell.NewMethod(cell.NewClosure(body, param, scope), scope)
+func method(body, param Cell, scope *Scope) *Method {
+    return NewMethod(NewClosure(body, param, scope), scope)
 }
 
 func module(f string) (string, os.Error) {
@@ -1006,14 +1005,14 @@ func module(f string) (string, os.Error) {
     return m, nil
 }
 
-func next(p *cell.Process) bool {
-    body := cell.Car(p.Scratch).(*cell.Method).Func.Body
+func next(p *Process) bool {
+    body := Car(p.Scratch).(*Method).Func.Body
     
     switch t := body.(type) {
-    case cell.Function:
+    case Function:
         p.ReplaceState(psExecBuiltin)
         
-    case *cell.Integer:
+    case *Integer:
         p.ReplaceState(t.Int())
         return true
         
@@ -1024,8 +1023,8 @@ func next(p *cell.Process) bool {
     return false
 }
 
-func run(p *cell.Process) {
-    defer func(saved cell.Process) {
+func run(p *Process) {
+    defer func(saved Process) {
         r := recover()
         if r == nil {
             return
@@ -1035,19 +1034,19 @@ func run(p *cell.Process) {
 
         *p = saved
 
-        p.Code = cell.Null
-        p.Scratch = cell.Cons(cell.False, p.Scratch)
-        p.Stack = cell.Cdr(p.Stack)
+        p.Code = Null
+        p.Scratch = Cons(False, p.Scratch)
+        p.Stack = Cdr(p.Stack)
     }(*p)
 
-    for p.Stack != cell.Null {
+    for p.Stack != Null {
         switch state := p.GetState(); state {
         case psNone:
             return
 
         case psDoEvalCommand:
-            switch cell.Car(p.Scratch).(type) {
-            case *cell.String, *cell.Symbol:
+            switch Car(p.Scratch).(type) {
+            case *String, *Symbol:
                 p.ReplaceState(psExecExternal)
 
             default:
@@ -1060,88 +1059,88 @@ func run(p *cell.Process) {
 
             fallthrough
         case psEvalArguments:
-            p.Scratch = cell.Cons(nil, p.Scratch)
+            p.Scratch = Cons(nil, p.Scratch)
 
             p.ReplaceState(psDoEvalArguments)
 
             fallthrough
         case psDoEvalArguments:
-            if p.Code == cell.Null {
+            if p.Code == Null {
                 break
             }
 
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+            p.SaveState(SaveCode, Cdr(p.Code))
 
-            p.Code = cell.Car(p.Code)
+            p.Code = Car(p.Code)
 
             p.NewState(psEvalElement)
 
             fallthrough
         case psEvalElement:
-            if p.Code != cell.Null && cell.IsCons(p.Code) {
-                if cell.IsAtom(cell.Cdr(p.Code)) {
+            if p.Code != Null && IsCons(p.Code) {
+                if IsAtom(Cdr(p.Code)) {
                     p.ReplaceState(psEvalAccess)
                 } else {
                     p.ReplaceState(psEvalCommand)
                     continue
                 }
-            } else if sym, ok := p.Code.(*cell.Symbol); ok {
-                if c := cell.Resolve(p.Lexical, p.Dynamic, sym); c != nil {
-                    p.Scratch = cell.Cons(c.GetValue(), p.Scratch)
+            } else if sym, ok := p.Code.(*Symbol); ok {
+                if c := Resolve(p.Lexical, p.Dynamic, sym); c != nil {
+                    p.Scratch = Cons(c.GetValue(), p.Scratch)
                 } else {
-                    p.Scratch = cell.Cons(sym, p.Scratch)
+                    p.Scratch = Cons(sym, p.Scratch)
                 }
                 break
             } else {
-                p.Scratch = cell.Cons(p.Code, p.Scratch)
+                p.Scratch = Cons(p.Code, p.Scratch)
                 break
             }
 
             fallthrough
         case psEvalAccess:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
             p.NewState(psExecAccess)
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+            p.SaveState(SaveCode, Cdr(p.Code))
 
-            p.Code = cell.Car(p.Code)
+            p.Code = Car(p.Code)
 
             p.NewState(psEvalElement)
             continue
 
         case psBlock:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Lexical = cell.NewScope(p.Lexical)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Lexical = NewScope(p.Lexical)
 
             p.NewState(psEvalBlock)
 
             fallthrough
         case psEvalBlock:
-            if !cell.IsCons(p.Code) || !cell.IsCons(cell.Car(p.Code)) {
+            if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
                 break
             }
 
-            if cell.Cdr(p.Code) == cell.Null ||
-                !cell.IsCons(cell.Cadr(p.Code)) {
+            if Cdr(p.Code) == Null ||
+                !IsCons(Cadr(p.Code)) {
                 p.ReplaceState(psEvalCommand)
             } else {
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
                 p.NewState(psEvalCommand)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
             fallthrough
         case psEvalCommand:
             p.ReplaceState(psDoEvalCommand)
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+            p.SaveState(SaveCode, Cdr(p.Code))
 
-            p.Code = cell.Car(p.Code)
+            p.Code = Car(p.Code)
 
             p.NewState(psEvalElement)
             continue
@@ -1151,25 +1150,25 @@ func run(p *cell.Process) {
             args := p.Arguments()
 
             /* Second argument to for is a method. First argument is a list. */
-            p.Code = cell.Car(args)
-            cell.SetCar(p.Scratch, cell.Cadr(args))
-            p.Scratch = cell.Cons(cell.Null, p.Scratch)
+            p.Code = Car(args)
+            SetCar(p.Scratch, Cadr(args))
+            p.Scratch = Cons(Null, p.Scratch)
 
             fallthrough
         case psExecFor:
-            r := cell.Car(p.Scratch)
-            p.Scratch = cell.Cdr(p.Scratch)
+            r := Car(p.Scratch)
+            p.Scratch = Cdr(p.Scratch)
 
-            if p.Code == cell.Null {
-                cell.SetCar(p.Scratch, r)
+            if p.Code == Null {
+                SetCar(p.Scratch, r)
                 break
             }
 
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+            p.SaveState(SaveCode, Cdr(p.Code))
 
-            p.Scratch = cell.Cons(cell.Car(p.Scratch), p.Scratch)
-            p.Scratch = cell.Cons(nil, p.Scratch)
-            p.Scratch = cell.Cons(cell.Car(p.Code), p.Scratch)
+            p.Scratch = Cons(Car(p.Scratch), p.Scratch)
+            p.Scratch = Cons(nil, p.Scratch)
+            p.Scratch = Cons(Car(p.Code), p.Scratch)
 
             p.NewState(psExecApplication)
 
@@ -1177,26 +1176,26 @@ func run(p *cell.Process) {
         case psExecApplication:
             args := p.Arguments()
 
-            m := cell.Car(p.Scratch).(*cell.Method)
+            m := Car(p.Scratch).(*Method)
             if m.Self == nil {
                 args = expand(args)
             }
 
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
             p.Code = m.Func.Body
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Lexical = cell.NewScope(m.Func.Lexical)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Lexical = NewScope(m.Func.Lexical)
 
             param := m.Func.Param
-            for args != cell.Null && param != cell.Null {
-                p.Lexical.Public(cell.Car(param), cell.Car(args))
-                args, param = cell.Cdr(args), cell.Cdr(param)
+            for args != Null && param != Null {
+                p.Lexical.Public(Car(param), Car(args))
+                args, param = Cdr(args), Cdr(param)
             }
-            p.Lexical.Public(cell.NewSymbol("$args"), args)
-            p.Lexical.Public(cell.NewSymbol("$self"), m.Self)
-            p.Lexical.Public(cell.NewSymbol("return"),
+            p.Lexical.Public(NewSymbol("$args"), args)
+            p.Lexical.Public(NewSymbol("$self"), m.Self)
+            p.Lexical.Public(NewSymbol("return"),
                 p.Continuation(psReturn))
 
             p.NewState(psEvalBlock)
@@ -1205,9 +1204,9 @@ func run(p *cell.Process) {
         case psSet:
             p.ReplaceState(psExecSet)
             p.NewState(psEvalArguments)
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+            p.SaveState(SaveCode, Cdr(p.Code))
 
-            p.Code = cell.Car(p.Code)
+            p.Code = Car(p.Code)
 
             p.NewState(psEvalReference)
 
@@ -1215,14 +1214,14 @@ func run(p *cell.Process) {
         case psEvalReference:
             p.RemoveState()
 
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Scratch = Cdr(p.Scratch)
 
-            if p.Code != cell.Null && cell.IsCons(p.Code) {
-                p.SaveState(cell.SaveLexical)
+            if p.Code != Null && IsCons(p.Code) {
+                p.SaveState(SaveLexical)
                 p.NewState(psExecReference)
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
 
-                p.Code = cell.Car(p.Code)
+                p.Code = Car(p.Code)
                 
                 p.NewState(psChangeScope)
                 p.NewState(psEvalElement)
@@ -1233,20 +1232,20 @@ func run(p *cell.Process) {
 
             fallthrough
         case psExecReference:
-            k := p.Code.(*cell.Symbol)
-            v := cell.Resolve(p.Lexical, p.Dynamic, k)
+            k := p.Code.(*Symbol)
+            v := Resolve(p.Lexical, p.Dynamic, k)
             if v == nil {
                 panic("'" + k.String() + "' is not defined")
             }
 
-            p.Scratch = cell.Cons(v, p.Scratch)
+            p.Scratch = Cons(v, p.Scratch)
 
         case psDefine, psPublic:
             p.RemoveState()
 
-            l := cell.Car(p.Scratch).(*cell.Method).Self
+            l := Car(p.Scratch).(*Method).Self
             if p.Lexical != l {
-                p.SaveState(cell.SaveLexical)
+                p.SaveState(SaveLexical)
                 p.Lexical = l
             }
 
@@ -1256,24 +1255,24 @@ func run(p *cell.Process) {
                 p.NewState(psExecPublic)
             }
 
-            k := cell.Car(p.Code)
+            k := Car(p.Code)
 
-            p.Code = cell.Cadr(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Cadr(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
-            p.SaveState(cell.SaveCode | cell.SaveLexical, k)
+            p.SaveState(SaveCode | SaveLexical, k)
             p.NewState(psEvalElement)
             continue
 
         case psExecDefine, psExecPublic:
             if state == psDefine {
-                p.Lexical.Private(p.Code, cell.Car(p.Scratch))
+                p.Lexical.Private(p.Code, Car(p.Scratch))
             } else {
-                p.Lexical.Public(p.Code, cell.Car(p.Scratch))
+                p.Lexical.Public(p.Code, Car(p.Scratch))
             }
 
         case psDynamic, psSetenv:
-            k := cell.Car(p.Code)
+            k := Car(p.Code)
 
             if state == psSetenv {
                 if !strings.HasPrefix(k.String(), "$") {
@@ -1285,19 +1284,19 @@ func run(p *cell.Process) {
                 p.ReplaceState(psExecDynamic)
             }
 
-            p.Code = cell.Cadr(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Cadr(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
-            p.SaveState(cell.SaveCode | cell.SaveDynamic, k)
+            p.SaveState(SaveCode | SaveDynamic, k)
             p.NewState(psEvalElement)
             continue
 
         case psExecDynamic, psExecSetenv:
             k := p.Code
-            v := cell.Car(p.Scratch)
+            v := Car(p.Scratch)
 
             if state == psExecSetenv {
-                s := cell.Raw(v)
+                s := Raw(v)
                 os.Setenv(strings.TrimLeft(k.String(), "$"), s)
             }
 
@@ -1305,154 +1304,154 @@ func run(p *cell.Process) {
 
         case psWhile:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
             p.NewState(psEvalWhileTest)
 
             fallthrough
         case psEvalWhileTest:
             p.ReplaceState(psEvalWhileBody)
-            p.SaveState(cell.SaveCode, p.Code)
+            p.SaveState(SaveCode, p.Code)
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
             p.NewState(psEvalElement)
             continue
 
         case psEvalWhileBody:
-            if !cell.Car(p.Scratch).Bool() {
+            if !Car(p.Scratch).Bool() {
                 break
             }
 
             p.ReplaceState(psEvalWhileTest)
-            p.SaveState(cell.SaveCode, p.Code)
+            p.SaveState(SaveCode, p.Code)
 
-            p.Code = cell.Cdr(p.Code)
+            p.Code = Cdr(p.Code)
 
             p.NewState(psEvalBlock)
             continue
 
         case psAnd:
-            cell.SetCar(p.Scratch, cell.True)
+            SetCar(p.Scratch, True)
             p.ReplaceState(psEvalAnd)
 
             fallthrough
         case psEvalAnd:
-            prev := cell.Car(p.Scratch).Bool()
-            cell.SetCar(p.Scratch, cell.NewBoolean(prev))
+            prev := Car(p.Scratch).Bool()
+            SetCar(p.Scratch, NewBoolean(prev))
 
-            if p.Code == cell.Null || !prev {
+            if p.Code == Null || !prev {
                 break
             }
 
-            if cell.Cdr(p.Code) == cell.Null {
+            if Cdr(p.Code) == Null {
                 p.ReplaceState(psEvalElement)
             } else {
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
                 p.NewState(psEvalElement)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
             continue
 
         case psAndf:
-            p.Scratch = cell.Cons(cell.True, p.Scratch)
+            p.Scratch = Cons(True, p.Scratch)
             p.ReplaceState(psEvalAndf)
 
             fallthrough
         case psEvalAndf:
-            if !cell.IsCons(p.Code) || !cell.IsCons(cell.Car(p.Code)) {
+            if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
                 break
             }
 
-            if !cell.Car(p.Scratch).Bool() {
+            if !Car(p.Scratch).Bool() {
                 break
             }
 
-            if cell.Cdr(p.Code) == cell.Null ||
-                !cell.IsCons(cell.Cadr(p.Code)) {
+            if Cdr(p.Code) == Null ||
+                !IsCons(Cadr(p.Code)) {
                 p.ReplaceState(psEvalCommand)
             } else {
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
                 p.NewState(psEvalCommand)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
             continue
 
         case psOr:
-            cell.SetCar(p.Scratch, cell.False)
+            SetCar(p.Scratch, False)
             p.ReplaceState(psEvalOr)
 
             fallthrough
         case psEvalOr:
-            prev := cell.Car(p.Scratch).Bool()
-            cell.SetCar(p.Scratch, cell.NewBoolean(prev))
+            prev := Car(p.Scratch).Bool()
+            SetCar(p.Scratch, NewBoolean(prev))
 
-            if p.Code == cell.Null || prev {
+            if p.Code == Null || prev {
                 break
             }
 
-            if cell.Cdr(p.Code) == cell.Null {
+            if Cdr(p.Code) == Null {
                 p.ReplaceState(psEvalElement)
             } else {
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
                 p.NewState(psEvalElement)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
             continue
 
         case psOrf:
-            p.Scratch = cell.Cons(cell.False, p.Scratch)
+            p.Scratch = Cons(False, p.Scratch)
             p.ReplaceState(psEvalOrf)
 
             fallthrough
         case psEvalOrf:
-            if !cell.IsCons(p.Code) || !cell.IsCons(cell.Car(p.Code)) {
+            if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
                 break
             }
 
-            if cell.Car(p.Scratch).Bool() {
+            if Car(p.Scratch).Bool() {
                 break
             }
 
-            if cell.Cdr(p.Code) == cell.Null ||
-                !cell.IsCons(cell.Cadr(p.Code)) {
+            if Cdr(p.Code) == Null ||
+                !IsCons(Cadr(p.Code)) {
                 p.ReplaceState(psEvalCommand)
             } else {
-                p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
+                p.SaveState(SaveCode, Cdr(p.Code))
                 p.NewState(psEvalCommand)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
             continue
 
         case psChangeScope:
-            p.Lexical = cell.Car(p.Scratch).(cell.Interface)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Lexical = Car(p.Scratch).(Interface)
+            p.Scratch = Cdr(p.Scratch)
 
         case psExecAccess:
             p.Dynamic = nil
-            p.Lexical = cell.Car(p.Scratch).(cell.Interface)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Lexical = Car(p.Scratch).(Interface)
+            p.Scratch = Cdr(p.Scratch)
             p.ReplaceState(psEvalElement)
             continue
 
         case psExecBuiltin:
             args := p.Arguments()
 
-            m := cell.Car(p.Scratch).(*cell.Method)
+            m := Car(p.Scratch).(*Method)
             if m.Self == nil {
                 args = expand(args)
             }
 
-            if m.Func.Body.(cell.Function)(p, args) {
+            if m.Func.Body.(Function)(p, args) {
                 continue
             }
 
@@ -1464,18 +1463,18 @@ func run(p *cell.Process) {
             }
 
         case psExecIf:
-            if !cell.Car(p.Scratch).Bool() {
-                p.Code = cell.Cdr(p.Code)
+            if !Car(p.Scratch).Bool() {
+                p.Code = Cdr(p.Code)
 
-                for cell.Car(p.Code) != cell.Null &&
-                    !cell.IsAtom(cell.Car(p.Code)) {
-                    p.Code = cell.Cdr(p.Code)
+                for Car(p.Code) != Null &&
+                    !IsAtom(Car(p.Code)) {
+                    p.Code = Cdr(p.Code)
                 }
 
-                p.Code = cell.Cdr(p.Code)
+                p.Code = Cdr(p.Code)
             }
 
-            if p.Code == cell.Null {
+            if p.Code == Null {
                 break
             }
 
@@ -1483,49 +1482,49 @@ func run(p *cell.Process) {
             continue
 
         case psExecImport:
-            n := cell.Raw(cell.Car(p.Scratch))
+            n := Raw(Car(p.Scratch))
 
             k, err := module(n)
             if err != nil {
-                cell.SetCar(p.Scratch, cell.False)
+                SetCar(p.Scratch, False)
                 break
             }
 
-            v := cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol(k))
+            v := Resolve(p.Lexical, p.Dynamic, NewSymbol(k))
             if v != nil {
-                cell.SetCar(p.Scratch, v.GetValue())
+                SetCar(p.Scratch, v.GetValue())
                 break
             }
 
             p.ReplaceState(psCreateModule)
-            p.SaveState(cell.SaveCode, cell.NewSymbol(n))
+            p.SaveState(SaveCode, NewSymbol(n))
             p.NewState(psExecSource)
 
             fallthrough
         case psExecSource:
             f, err := os.OpenFile(
-                cell.Raw(cell.Car(p.Scratch)),
+                Raw(Car(p.Scratch)),
                 os.O_RDONLY, 0666)
             if err != nil {
                 panic(err)
             }
 
-            p.Code = cell.Null
-            cell.ParseFile(f, func (c cell.Cell) {
-                p.Code = cell.AppendTo(p.Code, c)
+            p.Code = Null
+            ParseFile(f, func (c Cell) {
+                p.Code = AppendTo(p.Code, c)
             })
 
             if state == psExecImport {
                 p.RemoveState()
-                p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+                p.SaveState(SaveDynamic | SaveLexical)
 
-                p.Dynamic = cell.NewEnv(p.Dynamic)
-                p.Lexical = cell.NewScope(p.Lexical)
+                p.Dynamic = NewEnv(p.Dynamic)
+                p.Lexical = NewScope(p.Lexical)
 
                 p.NewState(psExecObject)
                 p.NewState(psEvalBlock)
             } else {
-                if p.Code == cell.Null {
+                if p.Code == Null {
                     break
                 }
 
@@ -1540,64 +1539,64 @@ func run(p *cell.Process) {
             for s.Prev() != nil {
                 s = s.Prev()
             }
-            p.Lexical.Private(cell.NewSymbol(k), cell.Car(p.Scratch))
+            p.Lexical.Private(NewSymbol(k), Car(p.Scratch))
 
         case psExecObject:
-            cell.SetCar(p.Scratch, cell.NewObject(p.Lexical))
+            SetCar(p.Scratch, NewObject(p.Lexical))
 
         case psExecSet:
             args := p.Arguments()
 
-            r := cell.Car(p.Scratch).(*cell.Reference)
+            r := Car(p.Scratch).(*Reference)
 
-            r.SetValue(cell.Car(args))
-            cell.SetCar(p.Scratch, r.GetValue())
+            r.SetValue(Car(args))
+            SetCar(p.Scratch, r.GetValue())
 
         case psExecSplice:
-            l := cell.Car(p.Scratch)
-            p.Scratch = cell.Cdr(p.Scratch)
+            l := Car(p.Scratch)
+            p.Scratch = Cdr(p.Scratch)
 
-            if !cell.IsCons(l) {
+            if !IsCons(l) {
                 break
             }
 
-            for l != cell.Null {
-                p.Scratch = cell.Cons(cell.Car(l), p.Scratch)
-                l = cell.Cdr(l)
+            for l != Null {
+                p.Scratch = Cons(Car(l), p.Scratch)
+                l = Cdr(l)
             }
 
             /* Command states */
         case psBackground:
-            child := cell.NewProcess(psNone, p.Dynamic, p.Lexical)
+            child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
             child.NewState(psEvalCommand)
 
-            child.Code = cell.Car(p.Code)
-            cell.SetCar(p.Scratch, cell.True)
+            child.Code = Car(p.Code)
+            SetCar(p.Scratch, True)
 
             go run(child)
 
         case psBacktick:
             c := channel(p, nil, nil)
 
-            child := cell.NewProcess(psNone, p.Dynamic, p.Lexical)
+            child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
             child.NewState(psPipeChild)
 
-            s := cell.NewSymbol("$stdout")
-            child.SaveState(cell.SaveCode, s)
+            s := NewSymbol("$stdout")
+            child.SaveState(SaveCode, s)
 
-            child.Code = cell.Car(p.Code)
+            child.Code = Car(p.Code)
             child.Dynamic.Add(s, c)
 
             child.NewState(psEvalCommand)
 
             go run(child)
 
-            g := cell.Resolve(c, nil, cell.NewSymbol("guts"))
-            b := bufio.NewReader(g.GetValue().(*cell.Channel).ReadEnd())
+            g := Resolve(c, nil, NewSymbol("guts"))
+            b := bufio.NewReader(g.GetValue().(*Channel).ReadEnd())
 
-            l := cell.Null
+            l := Null
 
             done := false
             line, err := b.ReadString('\n')
@@ -1609,34 +1608,34 @@ func run(p *cell.Process) {
                 line = strings.Trim(line, " \t\n")
 
                 if len(line) > 0 {
-                    l = cell.AppendTo(l, cell.NewString(line))
+                    l = AppendTo(l, NewString(line))
                 }
 
                 line, err = b.ReadString('\n')
             }
 
-            cell.SetCar(p.Scratch, l)
+            SetCar(p.Scratch, l)
 
         case psBuiltin, psMethod:
-            param := cell.Null
-            for !cell.IsCons(cell.Car(p.Code)) {
-                param = cell.Cons(cell.Car(p.Code), param)
-                p.Code = cell.Cdr(p.Code)
+            param := Null
+            for !IsCons(Car(p.Code)) {
+                param = Cons(Car(p.Code), param)
+                p.Code = Cdr(p.Code)
             }
 
             if state == psBuiltin {
-                cell.SetCar(
+                SetCar(
                     p.Scratch,
-                    function(p.Code, cell.Reverse(param), p.Lexical.Expose()))
+                    function(p.Code, Reverse(param), p.Lexical.Expose()))
             } else {
-                cell.SetCar(
+                SetCar(
                     p.Scratch,
-                    method(p.Code, cell.Reverse(param), p.Lexical.Expose()))
+                    method(p.Code, Reverse(param), p.Lexical.Expose()))
             }
 
         case psFor:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
             p.NewState(psEvalFor)
             p.NewState(psEvalArguments)
@@ -1644,15 +1643,15 @@ func run(p *cell.Process) {
 
         case psIf:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Lexical = cell.NewScope(p.Lexical)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Lexical = NewScope(p.Lexical)
 
             p.NewState(psExecIf)
-            p.SaveState(cell.SaveCode, cell.Cdr(p.Code))
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.SaveState(SaveCode, Cdr(p.Code))
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
             p.NewState(psEvalElement)
             continue
@@ -1664,40 +1663,40 @@ func run(p *cell.Process) {
                 p.ReplaceState(psExecSource)
             }
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
             p.NewState(psEvalElement)
             continue
 
         case psObject:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic | cell.SaveLexical)
+            p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Lexical = cell.NewScope(p.Lexical)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Lexical = NewScope(p.Lexical)
 
             p.NewState(psExecObject)
             p.NewState(psEvalBlock)
             continue
 
         case psQuote:
-            cell.SetCar(p.Scratch, cell.Car(p.Code))
+            SetCar(p.Scratch, Car(p.Code))
 
         case psReturn:
-            p.Code = cell.Car(p.Code)
+            p.Code = Car(p.Code)
 
-            m := cell.Car(p.Scratch).(*cell.Method)
-            p.Scratch = cell.Car(m.Func.Param)
-            p.Stack = cell.Cadr(m.Func.Param)
+            m := Car(p.Scratch).(*Method)
+            p.Scratch = Car(m.Func.Param)
+            p.Stack = Cadr(m.Func.Param)
 
             p.NewState(psEvalElement)
             continue
 
         case psSpawn:
-            child := cell.NewProcess(psNone, p.Dynamic, p.Lexical)
+            child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
-            child.Scratch = cell.Cons(cell.Null, child.Scratch)
+            child.Scratch = Cons(Null, child.Scratch)
             child.NewState(psEvalBlock)
 
             child.Code = p.Code
@@ -1707,84 +1706,84 @@ func run(p *cell.Process) {
         case psSplice:
             p.ReplaceState(psExecSplice)
 
-            p.Code = cell.Car(p.Code)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Scratch = Cdr(p.Scratch)
 
             p.NewState(psEvalElement)
             continue
 
         case psPipeStderr, psPipeStdout:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic)
+            p.SaveState(SaveDynamic)
 
             c := channel(p, nil, nil)
 
-            child := cell.NewProcess(psNone, p.Dynamic, p.Lexical)
+            child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
             child.NewState(psPipeChild)
 
-            var s *cell.Symbol
+            var s *Symbol
             if state == psPipeStderr {
-                s = cell.NewSymbol("$stderr")
+                s = NewSymbol("$stderr")
             } else {
-                s = cell.NewSymbol("$stdout")
+                s = NewSymbol("$stdout")
             }
-            child.SaveState(cell.SaveCode, s)
+            child.SaveState(SaveCode, s)
 
-            child.Code = cell.Car(p.Code)
+            child.Code = Car(p.Code)
             child.Dynamic.Add(s, c)
 
             child.NewState(psEvalCommand)
 
             go run(child)
 
-            p.Code = cell.Cadr(p.Code)
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Cadr(p.Code)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Scratch = Cdr(p.Scratch)
 
-            p.Dynamic.Add(cell.NewSymbol("$stdin"), c)
+            p.Dynamic.Add(NewSymbol("$stdin"), c)
 
             p.NewState(psPipeParent)
             p.NewState(psEvalCommand)
             continue
             
         case psPipeChild:
-            c := cell.Resolve(p.Lexical, p.Dynamic, p.Code.(*cell.Symbol))
-            c = cell.Resolve(
-                c.GetValue().(cell.Interface).Expose(), nil,
-                cell.NewSymbol("guts"))
-            c.GetValue().(*cell.Channel).WriteEnd().Close()
+            c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol))
+            c = Resolve(
+                c.GetValue().(Interface).Expose(), nil,
+                NewSymbol("guts"))
+            c.GetValue().(*Channel).WriteEnd().Close()
             
         case psPipeParent:
-            c := cell.Resolve(p.Lexical, p.Dynamic, cell.NewSymbol("$stdin"))
-            c = cell.Resolve(
-                c.GetValue().(cell.Interface).Expose(), nil,
-                cell.NewSymbol("guts"))
-            c.GetValue().(*cell.Channel).Close()
+            c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin"))
+            c = Resolve(
+                c.GetValue().(Interface).Expose(), nil,
+                NewSymbol("guts"))
+            c.GetValue().(*Channel).Close()
 
         case psAppendStderr, psAppendStdout, psRedirectStderr,
             psRedirectStdin, psRedirectStdout:
             p.RemoveState()
-            p.SaveState(cell.SaveDynamic)
+            p.SaveState(SaveDynamic)
 
-            initial := cell.NewInteger(state)
+            initial := NewInteger(state)
 
             p.NewState(psRedirectCleanup)
             p.NewState(psEvalCommand)
-            p.SaveState(cell.SaveCode, cell.Cadr(p.Code))
+            p.SaveState(SaveCode, Cadr(p.Code))
             p.NewState(psRedirectSetup)
-            p.SaveState(cell.SaveCode, initial)
+            p.SaveState(SaveCode, initial)
 
-            p.Code = cell.Car(p.Code)
-            p.Dynamic = cell.NewEnv(p.Dynamic)
-            p.Scratch = cell.Cdr(p.Scratch)
+            p.Code = Car(p.Code)
+            p.Dynamic = NewEnv(p.Dynamic)
+            p.Scratch = Cdr(p.Scratch)
 
             p.NewState(psEvalElement)
             continue
 
         case psRedirectSetup:
             flags, name := 0, ""
-            initial := p.Code.(cell.Atom).Int()
+            initial := p.Code.(Atom).Int()
             
             switch initial {
             case psAppendStderr:
@@ -1809,9 +1808,9 @@ func run(p *cell.Process) {
                 name = "$stdout"
             }
 
-            c, ok := cell.Car(p.Scratch).(cell.Interface)
+            c, ok := Car(p.Scratch).(Interface)
             if !ok {
-                n := cell.Raw(cell.Car(p.Scratch))
+                n := Raw(Car(p.Scratch))
                 
                 f, err := os.OpenFile(n, flags, 0666)
                 if err != nil {
@@ -1823,29 +1822,29 @@ func run(p *cell.Process) {
                 } else {
                     c = channel(p, nil, f)
                 }
-                cell.SetCar(p.Scratch, c)
+                SetCar(p.Scratch, c)
 
-                r := cell.Resolve(c, nil, cell.NewSymbol("guts"))
-                ch := r.GetValue().(*cell.Channel)
+                r := Resolve(c, nil, NewSymbol("guts"))
+                ch := r.GetValue().(*Channel)
 
                 ch.Implicit = true
             }
 
-            p.Dynamic.Add(cell.NewSymbol(name), c)
+            p.Dynamic.Add(NewSymbol(name), c)
 
         case psRedirectCleanup:
-            c := cell.Cadr(p.Scratch).(cell.Interface)
-            r := cell.Resolve(c, nil, cell.NewSymbol("guts"))
-            ch := r.GetValue().(*cell.Channel)
+            c := Cadr(p.Scratch).(Interface)
+            r := Resolve(c, nil, NewSymbol("guts"))
+            ch := r.GetValue().(*Channel)
 
             if ch.Implicit {
                 ch.Close()
             }
 
-            cell.SetCdr(p.Scratch, cell.Cddr(p.Scratch))
+            SetCdr(p.Scratch, Cddr(p.Scratch))
 
         default:
-            if state >= cell.SaveMax {
+            if state >= SaveMax {
                 panic(fmt.Sprintf("command not found: %s", p.Code))
             } else {
                 p.RestoreState()
@@ -1856,22 +1855,22 @@ func run(p *cell.Process) {
     }
 }
 
-func Evaluate(c cell.Cell) {
-    main.NewState(psEvalCommand)
-    main.Code = c
+func Evaluate(c Cell) {
+    proc0.NewState(psEvalCommand)
+    proc0.Code = c
     
-    run(main)
+    run(proc0)
 
-    if main.Stack == cell.Null {
-        os.Exit(Status())
+    if proc0.Stack == Null {
+        os.Exit(ExitStatus())
     }
 
-    main.Scratch = cell.Cdr(main.Scratch)
+    proc0.Scratch = Cdr(proc0.Scratch)
 }
 
 func Start() {
 
-    cell.Parse(bufio.NewReader(strings.NewReader(`
+    Parse(bufio.NewReader(strings.NewReader(`
 define echo: builtin: $stdout::write @$args
 define expand: builtin: return $args
 define printf: method: echo: sprintf (car $args) @(cdr $args)
@@ -1891,17 +1890,17 @@ define list-ref: method k x: car: list-tail k x
     /* Read and execute rc script if it exists. */
     rc := filepath.Join(os.Getenv("HOME"), ".ohrc")
     if _, err := os.Stat(rc); err == nil {
-        main.NewState(psEvalCommand)
-        main.Code = cell.List(cell.NewSymbol("source"), cell.NewSymbol(rc))
+        proc0.NewState(psEvalCommand)
+        proc0.Code = List(NewSymbol("source"), NewSymbol(rc))
         
-        run(main)
+        run(proc0)
         
-        main.Scratch = cell.Cdr(main.Scratch)
+        proc0.Scratch = Cdr(proc0.Scratch)
     }
 }
 
-func Status() int {
-    s, ok := cell.Car(main.Scratch).(*cell.Status)
+func ExitStatus() int {
+    s, ok := Car(proc0.Scratch).(*Status)
     if !ok {
         return 0
     }

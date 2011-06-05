@@ -1,25 +1,18 @@
 include ${GOROOT}/src/Make.inc
 
 TARGET=oh
+SOURCE=cell.go engine.go parser.go main.go
 
 all: ${TARGET}
 
-${TARGET}: parser.${O} main.${O} engine.${O} cell.${O}
+${TARGET}: ${SOURCE}
+	${GC} -o main.${O} ${SOURCE}
 	${LD} -o ${TARGET} main.${O}
-
-engine.${O}: cell.${O}
-main.${O}: parser.${O} engine.${O}
-
-cell.${O} parser.${O}: cell.go parser.go
-	${GC} cell.go parser.go
-
-%.${O}: %.go
-	${GC} $<
 
 parser.go: parser.y
 	${GOBIN}/goyacc -o parser.go parser.y
 
 clean:
-	rm -rf parser.go y.output *.${O} ${TARGET}
+	rm -rf y.output main.${O} ${TARGET}
 
 .PHONY: all clean
