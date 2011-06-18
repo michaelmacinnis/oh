@@ -182,22 +182,12 @@ func external(p *Process, args Cell) bool {
     c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$cwd"))
     dir := c.GetValue().String()
 
-    fd := []*os.File{os.Stdin, os.Stdout, os.Stderr}
+    var fd[]*os.File //{os.Stdin, os.Stdout, os.Stderr}
 
-    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin"))
-    c = Resolve(
-        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
-    fd[0] = c.GetValue().(*Channel).ReadEnd()
-
-    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout"))
-    c = Resolve(
-        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
-    fd[1] = c.GetValue().(*Channel).WriteEnd()
-
-    c = Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr"))
-    c = Resolve(
-        c.GetValue().(Interface).Expose(), nil, NewSymbol("guts"))
-    fd[2] = c.GetValue().(*Channel).WriteEnd()
+    fd = append(fd,
+		rpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()),
+		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()),
+		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()))
 
     proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd})
     if err != nil {
@@ -237,7 +227,9 @@ func init() {
         e.Add(NewSymbol("$cwd"), NewSymbol(wd))
     }
 
+    s.PrivateState("and", psAnd)
     s.PrivateState("block", psBlock)
+    s.PrivateState("backtick", psBacktick)
     s.PrivateState("define", psDefine)
     s.PrivateState("dynamic", psDynamic)
     s.PrivateState("for", psFor)
@@ -247,7 +239,12 @@ func init() {
     s.PrivateState("source", psSource)
     s.PrivateState("method", psMethod)
     s.PrivateState("object", psObject)
+    s.PrivateState("or", psOr)
+    s.PrivateState("quote", psQuote)
+    s.PrivateState("set", psSet)
     s.PrivateState("setenv", psSetenv)
+    s.PrivateState("spawn", psSpawn)
+    s.PrivateState("splice", psSplice)
     s.PrivateState("while", psWhile)
 
     s.PublicState("public", psPublic)
@@ -263,14 +260,7 @@ func init() {
     s.PrivateState("andf", psAndf)
     s.PrivateState("orf", psOrf)
 
-    s.PrivateState("backtick", psBacktick)
-    s.PrivateState("and", psAnd)
-    s.PrivateState("or", psOr)
-    s.PrivateState("quote", psQuote)
-    s.PrivateState("set", psSet)
-    s.PrivateState("spawn", psSpawn)
-    s.PrivateState("splice", psSplice)
-
+    /* Builtins. */
     s.PrivateFunction("cd", func(p *Process, args Cell) bool {
         err, status := os.Chdir(Raw(Car(args))), 0
         if err != nil {
@@ -314,59 +304,6 @@ func init() {
         o := Car(p.Scratch).(*Method).Self.Expose()
 
         SetCar(p.Scratch, NewObject(o.Copy()))
-
-        return false
-    })
-
-    s.PrivateMethod("open", func(p *Process, args Cell) bool {
-        name := Raw(Car(args))
-        mode := Raw(Cadr(args))
-
-        flags := os.O_CREATE
-
-        if strings.IndexAny(mode, "r") != -1 {
-            flags |= os.O_WRONLY
-        } else if strings.IndexAny(mode, "aw") != -1 {
-            flags |= os.O_RDONLY
-        } else {
-            flags |= os.O_RDWR
-        }
-
-        if strings.IndexAny(mode, "a") != -1 {
-            flags |= os.O_APPEND
-        }
-
-        f, err := os.OpenFile(name, flags, 0666)
-        if err != nil {
-            panic(err)
-        }
-
-        SetCar(p.Scratch, channel(p, f, f))
-
-        return false
-    })
-
-    s.PrivateMethod("sprintf", func(p *Process, args Cell) bool {
-        f := Raw(Car(args))
-        
-        argv := []interface{}{}
-        for l := Cdr(args); l != Null; l = Cdr(l) {
-            switch t := Car(l).(type) {
-            case *Boolean:
-                argv = append(argv, *t)
-            case *Integer:
-                argv = append(argv, *t)
-            case *Status:
-                argv = append(argv, *t)
-            case *Float:
-                argv = append(argv, *t)
-            default:
-                argv = append(argv, Raw(t))
-            }
-        }
-        
-        s := fmt.Sprintf(f, argv...)
-        SetCar(p.Scratch, NewString(s))
 
         return false
     })
@@ -583,6 +520,33 @@ func init() {
 
         return false
     })
+    s.PrivateMethod("open", func(p *Process, args Cell) bool {
+        name := Raw(Car(args))
+        mode := Raw(Cadr(args))
+
+        flags := os.O_CREATE
+
+        if strings.IndexAny(mode, "r") != -1 {
+            flags |= os.O_WRONLY
+        } else if strings.IndexAny(mode, "aw") != -1 {
+            flags |= os.O_RDONLY
+        } else {
+            flags |= os.O_RDWR
+        }
+
+        if strings.IndexAny(mode, "a") != -1 {
+            flags |= os.O_APPEND
+        }
+
+        f, err := os.OpenFile(name, flags, 0666)
+        if err != nil {
+            panic(err)
+        }
+
+        SetCar(p.Scratch, channel(p, f, f))
+
+        return false
+    })
     s.PrivateMethod("reverse", func(p *Process, args Cell) bool {
         SetCar(p.Scratch, Reverse(Car(args)))
 
@@ -597,6 +561,30 @@ func init() {
     s.PrivateMethod("set-cdr", func(p *Process, args Cell) bool {
         SetCdr(Car(args), Cadr(args))
         SetCar(p.Scratch, Cadr(args))
+
+        return false
+    })
+    s.PrivateMethod("sprintf", func(p *Process, args Cell) bool {
+        f := Raw(Car(args))
+        
+        argv := []interface{}{}
+        for l := Cdr(args); l != Null; l = Cdr(l) {
+            switch t := Car(l).(type) {
+            case *Boolean:
+                argv = append(argv, *t)
+            case *Integer:
+                argv = append(argv, *t)
+            case *Status:
+                argv = append(argv, *t)
+            case *Float:
+                argv = append(argv, *t)
+            default:
+                argv = append(argv, Raw(t))
+            }
+        }
+        
+        s := fmt.Sprintf(f, argv...)
+        SetCar(p.Scratch, NewString(s))
 
         return false
     })
@@ -747,24 +735,6 @@ func init() {
     })
 
     /* Relational. */
-    s.PrivateMethod("match", func(p *Process, args Cell) bool {
-        pattern := Raw(Car(args))
-        text := Raw(Cadr(args))
-
-        ok, err := path.Match(pattern, text)
-        if err != nil {
-            panic(err)
-        }
-
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("not", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
-
-        return false
-    })
     s.PrivateMethod("eq", func(p *Process, args Cell) bool {
         prev := Car(args)
 
@@ -879,6 +849,19 @@ func init() {
         SetCar(p.Scratch, True)
         return false
     })
+    s.PrivateMethod("match", func(p *Process, args Cell) bool {
+        pattern := Raw(Car(args))
+        text := Raw(Cadr(args))
+
+        ok, err := path.Match(pattern, text)
+        if err != nil {
+            panic(err)
+        }
+
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
     s.PrivateMethod("ne", func(p *Process, args Cell) bool {
         /*
          * This should really check to make sure no arguments are equal.
@@ -901,6 +884,11 @@ func init() {
         }
 
         SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("not", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
+
         return false
     })
 
@@ -1021,6 +1009,11 @@ func next(p *Process) bool {
     }
 
     return false
+}
+
+func rpipe(c Cell) *os.File {
+    r := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
+    return r.GetValue().(*Channel).ReadEnd()
 }
 
 func run(p *Process) {
@@ -1593,8 +1586,10 @@ func run(p *Process) {
 
             go run(child)
 
-            g := Resolve(c, nil, NewSymbol("guts"))
-            b := bufio.NewReader(g.GetValue().(*Channel).ReadEnd())
+			b := bufio.NewReader(rpipe(c))
+
+//            g := Resolve(c, nil, NewSymbol("guts"))
+//            b := bufio.NewReader(g.GetValue().(*Channel).ReadEnd())
 
             l := Null
 
@@ -1748,18 +1743,20 @@ func run(p *Process) {
             continue
             
         case psPipeChild:
-            c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol))
-            c = Resolve(
-                c.GetValue().(Interface).Expose(), nil,
-                NewSymbol("guts"))
-            c.GetValue().(*Channel).WriteEnd().Close()
+            c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol)).GetValue()
+//            c = Resolve(
+//                c.GetValue().(Interface).Expose(), nil,
+//                NewSymbol("guts"))
+//            c.GetValue().(*Channel).WriteEnd().Close()
+			wpipe(c).Close()
             
         case psPipeParent:
-            c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin"))
-            c = Resolve(
-                c.GetValue().(Interface).Expose(), nil,
-                NewSymbol("guts"))
-            c.GetValue().(*Channel).Close()
+            c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()
+//            c = Resolve(
+//                c.GetValue().(Interface).Expose(), nil,
+//                NewSymbol("guts"))
+//            c.GetValue().(*Channel).Close()
+			rpipe(c).Close()
 
         case psAppendStderr, psAppendStdout, psRedirectStderr,
             psRedirectStdin, psRedirectStdout:
@@ -1855,6 +1852,11 @@ func run(p *Process) {
     }
 }
 
+func wpipe(c Cell) *os.File {
+    w := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
+    return w.GetValue().(*Channel).WriteEnd()
+}
+
 func Evaluate(c Cell) {
     proc0.NewState(psEvalCommand)
     proc0.Code = c
@@ -1866,6 +1868,14 @@ func Evaluate(c Cell) {
     }
 
     proc0.Scratch = Cdr(proc0.Scratch)
+}
+
+func ExitStatus() int {
+    s, ok := Car(proc0.Scratch).(*Status)
+    if !ok {
+        return 0
+    }
+    return int(s.Int())
 }
 
 func Start() {
@@ -1897,12 +1907,4 @@ define list-ref: method k x: car: list-tail k x
         
         proc0.Scratch = Cdr(proc0.Scratch)
     }
-}
-
-func ExitStatus() int {
-    s, ok := Car(proc0.Scratch).(*Status)
-    if !ok {
-        return 0
-    }
-    return int(s.Int())
 }
