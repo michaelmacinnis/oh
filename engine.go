@@ -212,770 +212,6 @@ func function(body, param Cell, scope *Scope) *Method {
     return NewMethod(NewClosure(body, param, scope), nil)
 }
 
-func init() {
-    proc0 = NewProcess(psNone, nil, nil)
-
-    proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
-
-    e, s := proc0.Dynamic, proc0.Lexical.Expose()
-
-    e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
-    e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
-    e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
-
-    if wd, err := os.Getwd(); err == nil {
-        e.Add(NewSymbol("$cwd"), NewSymbol(wd))
-    }
-
-    s.PrivateState("and", psAnd)
-    s.PrivateState("block", psBlock)
-    s.PrivateState("backtick", psBacktick)
-    s.PrivateState("define", psDefine)
-    s.PrivateState("dynamic", psDynamic)
-    s.PrivateState("for", psFor)
-    s.PrivateState("builtin", psBuiltin)
-    s.PrivateState("if", psIf)
-    s.PrivateState("import", psImport)
-    s.PrivateState("source", psSource)
-    s.PrivateState("method", psMethod)
-    s.PrivateState("object", psObject)
-    s.PrivateState("or", psOr)
-    s.PrivateState("quote", psQuote)
-    s.PrivateState("set", psSet)
-    s.PrivateState("setenv", psSetenv)
-    s.PrivateState("spawn", psSpawn)
-    s.PrivateState("splice", psSplice)
-    s.PrivateState("while", psWhile)
-
-    s.PublicState("public", psPublic)
-
-    s.PrivateState("background", psBackground)
-    s.PrivateState("pipe-stdout", psPipeStdout)
-    s.PrivateState("pipe-stderr", psPipeStderr)
-    s.PrivateState("redirect-stdin", psRedirectStdin)
-    s.PrivateState("redirect-stdout", psRedirectStdout)
-    s.PrivateState("redirect-stderr", psRedirectStderr)
-    s.PrivateState("append-stdout", psAppendStdout)
-    s.PrivateState("append-stderr", psAppendStderr)
-    s.PrivateState("andf", psAndf)
-    s.PrivateState("orf", psOrf)
-
-    /* Builtins. */
-    s.PrivateFunction("cd", func(p *Process, args Cell) bool {
-        err, status := os.Chdir(Raw(Car(args))), 0
-        if err != nil {
-            status = int(err.(*os.PathError).Error.(os.Errno))
-        }
-        SetCar(p.Scratch, NewStatus(int64(status)))
-
-        if wd, err := os.Getwd(); err == nil {
-            p.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
-        }
-
-        return false
-    })
-    s.PrivateFunction("debug", func(p *Process, args Cell) bool {
-        debug(p, "debug")
-
-        return false
-    })
-    s.PrivateFunction("exit", func(p *Process, args Cell) bool {
-        var status int64 = 0
-
-        a, ok := Car(args).(Atom)
-        if ok {
-            status = a.Status()
-        }
-
-        p.Scratch = List(NewStatus(status))
-        p.Stack = Null
-
-        return true
-    })
-
-    s.PublicMethod("child", func(p *Process, args Cell) bool {
-        o := Car(p.Scratch).(*Method).Self.Expose()
-
-        SetCar(p.Scratch, NewObject(NewScope(o)))
-
-        return false
-    })
-    s.PublicMethod("clone", func(p *Process, args Cell) bool {
-        o := Car(p.Scratch).(*Method).Self.Expose()
-
-        SetCar(p.Scratch, NewObject(o.Copy()))
-
-        return false
-    })
-
-    s.PrivateMethod("apply", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Car(args))
-        next(p)
-        
-        p.Scratch = Cons(nil, p.Scratch)
-        for args = Cdr(args); args != Null; args = Cdr(args) {
-            p.Scratch = Cons(Car(args), p.Scratch)
-        }
-        
-        return true
-    })
-    s.PrivateMethod("append", func(p *Process, args Cell) bool {
-        /*
-         * NOTE: Our append works differently than Scheme's append.
-         *       To mimic Scheme's behavior used append l1 @l2 ... @ln
-         */
-
-        /* TODO: We should just copy this list: ... */
-        l := Car(args)
-
-        /* TODO: ... and then set it's cdr to cdr(args). */
-        argv := make([]Cell, 0)
-        for args = Cdr(args); args != Null; args = Cdr(args) {
-            argv = append(argv, Car(args))
-        }
-        
-        SetCar(p.Scratch, Append(l, argv...))
-        
-        return false
-    })
-    s.PrivateMethod("car", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caar(args))
-
-        return false
-    })
-    s.PrivateMethod("cdr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdar(args))
-
-        return false
-    })
-    s.PrivateMethod("caar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caaar(args))
-
-        return false
-    })
-    s.PrivateMethod("cadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cadar(args))
-
-        return false
-    })
-    s.PrivateMethod("cdar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdaar(args))
-
-        return false
-    })
-    s.PrivateMethod("cddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cddar(args))
-
-        return false
-    })
-    s.PrivateMethod("caaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Car(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Car(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cadar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Car(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Car(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdr(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdr(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cddar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdr(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdr(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caaaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caar(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caaadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caar(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caadar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caar(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caaddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Caar(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cadaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cadr(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cadadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cadr(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("caddar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cadr(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cadddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cadr(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdaaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdar(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdaadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdar(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdadar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdar(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdaddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cdar(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cddaar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cddr(Caaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cddadr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cddr(Cadar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cdddar", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cddr(Cdaar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cddddr", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cddr(Cddar(args)))
-
-        return false
-    })
-    s.PrivateMethod("cons", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Cons(Car(args), Cadr(args)))
-
-        return false
-    })
-    s.PrivateMethod("eval", func(p *Process, args Cell) bool {
-        p.ReplaceState(psEvalCommand)
-
-        p.Code = Car(args)
-        p.Scratch = Cdr(p.Scratch)
-
-        return true
-    })
-    s.PrivateMethod("length", func(p *Process, args Cell) bool {
-        var l int64 = 0
-
-        switch c := Car(args); c.(type) {
-        case *String, *Symbol:
-            l = int64(len(Raw(c)))
-        default:
-            l = Length(c)
-        }
-
-        SetCar(p.Scratch, NewInteger(l))
-
-        return false
-    })
-    s.PrivateMethod("list", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, args);
-
-        return false
-    })
-    s.PrivateMethod("open", func(p *Process, args Cell) bool {
-        name := Raw(Car(args))
-        mode := Raw(Cadr(args))
-
-        flags := os.O_CREATE
-
-        if strings.IndexAny(mode, "r") != -1 {
-            flags |= os.O_WRONLY
-        } else if strings.IndexAny(mode, "aw") != -1 {
-            flags |= os.O_RDONLY
-        } else {
-            flags |= os.O_RDWR
-        }
-
-        if strings.IndexAny(mode, "a") != -1 {
-            flags |= os.O_APPEND
-        }
-
-        f, err := os.OpenFile(name, flags, 0666)
-        if err != nil {
-            panic(err)
-        }
-
-        SetCar(p.Scratch, channel(p, f, f))
-
-        return false
-    })
-    s.PrivateMethod("reverse", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, Reverse(Car(args)))
-
-        return false
-    })
-    s.PrivateMethod("set-car", func(p *Process, args Cell) bool {
-        SetCar(Car(args), Cadr(args))
-        SetCar(p.Scratch, Cadr(args))
-
-        return false
-    })
-    s.PrivateMethod("set-cdr", func(p *Process, args Cell) bool {
-        SetCdr(Car(args), Cadr(args))
-        SetCar(p.Scratch, Cadr(args))
-
-        return false
-    })
-    s.PrivateMethod("sprintf", func(p *Process, args Cell) bool {
-        f := Raw(Car(args))
-        
-        argv := []interface{}{}
-        for l := Cdr(args); l != Null; l = Cdr(l) {
-            switch t := Car(l).(type) {
-            case *Boolean:
-                argv = append(argv, *t)
-            case *Integer:
-                argv = append(argv, *t)
-            case *Status:
-                argv = append(argv, *t)
-            case *Float:
-                argv = append(argv, *t)
-            default:
-                argv = append(argv, Raw(t))
-            }
-        }
-        
-        s := fmt.Sprintf(f, argv...)
-        SetCar(p.Scratch, NewString(s))
-
-        return false
-    })
-
-    /* Predicates. */
-    s.PrivateMethod("is-atom", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(IsAtom(Car(args))))
-
-        return false
-    })
-    s.PrivateMethod("is-boolean",
-        func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Boolean)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-channel",
-        func(p *Process, args Cell) bool {
-        o, ok := Car(args).(Interface)
-        if ok {
-            ok = false
-            c := Resolve(o.Expose(), nil, NewSymbol("guts"))
-            if c != nil {
-                _, ok = c.GetValue().(*Channel)
-            }
-        } 
-
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-cons", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(IsCons(Car(args))))
-
-        return false
-    })
-    s.PrivateMethod("is-float", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Float)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-integer",
-        func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Integer)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-list", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(IsList(Car(args))))
-
-        return false
-    })
-    s.PrivateMethod("is-method", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Method)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-null", func(p *Process, args Cell) bool {
-        ok := Car(args) == Null
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-number", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(Number)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-object", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(Interface)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-status", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Status)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-string", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*String)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-symbol", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Symbol)
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("is-text", func(p *Process, args Cell) bool {
-        _, ok := Car(args).(*Symbol)
-        if !ok {
-            _, ok = Car(args).(*String)
-        }
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-
-    /* Generators. */
-    s.PrivateMethod("boolean", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(Car(args).Bool()))
-
-        return false
-    })
-    s.PrivateMethod("channel", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, channel(p, nil, nil))
-
-        return false
-    })
-    s.PrivateMethod("float", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch,
-            NewFloat(Car(args).(Atom).Float()))
-
-        return false
-    })
-    s.PrivateMethod("integer", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch,
-            NewInteger(Car(args).(Atom).Int()))
-
-        return false
-    })
-    s.PrivateMethod("status", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch,
-            NewStatus(Car(args).(Atom).Status()))
-
-        return false
-    })
-    s.PrivateMethod("string", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch,
-            NewString(Car(args).String()))
-
-        return false
-    })
-    s.PrivateMethod("symbol", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch,
-            NewSymbol(Raw(Car(args))))
-
-        return false
-    })
-
-    /* Relational. */
-    s.PrivateMethod("eq", func(p *Process, args Cell) bool {
-        prev := Car(args)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args)
-
-            if !prev.Equal(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("ge", func(p *Process, args Cell) bool {
-        prev := Car(args).(Atom)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args).(Atom)
-
-            if prev.Less(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("gt", func(p *Process, args Cell) bool {
-        prev := Car(args).(Atom)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args).(Atom)
-
-            if !prev.Greater(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("is", func(p *Process, args Cell) bool {
-        prev := Car(args)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args)
-
-            if prev != curr {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("le", func(p *Process, args Cell) bool {
-        prev := Car(args).(Atom)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args).(Atom)
-
-            if prev.Greater(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("lt", func(p *Process, args Cell) bool {
-        prev := Car(args).(Atom)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args).(Atom)
-
-            if !prev.Less(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("match", func(p *Process, args Cell) bool {
-        pattern := Raw(Car(args))
-        text := Raw(Cadr(args))
-
-        ok, err := path.Match(pattern, text)
-        if err != nil {
-            panic(err)
-        }
-
-        SetCar(p.Scratch, NewBoolean(ok))
-
-        return false
-    })
-    s.PrivateMethod("ne", func(p *Process, args Cell) bool {
-        /*
-         * This should really check to make sure no arguments are equal.
-         * Currently it only checks whether adjacent pairs are not equal.
-         */
-
-        prev := Car(args)
-
-        SetCar(p.Scratch, False)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            curr := Car(args)
-
-            if prev.Equal(curr) {
-                return false
-            }
-
-            prev = curr
-        }
-
-        SetCar(p.Scratch, True)
-        return false
-    })
-    s.PrivateMethod("not", func(p *Process, args Cell) bool {
-        SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
-
-        return false
-    })
-
-    /* Arithmetic. */
-    s.PrivateMethod("add", func(p *Process, args Cell) bool {
-        acc := Car(args).(Atom)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            acc = acc.Add(Car(args))
-
-        }
-
-        SetCar(p.Scratch, acc)
-        return false
-    })
-    s.PrivateMethod("sub", func(p *Process, args Cell) bool {
-        acc := Car(args).(Number)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            acc = acc.Subtract(Car(args))
-        }
-
-        SetCar(p.Scratch, acc)
-        return false
-    })
-    s.PrivateMethod("div", func(p *Process, args Cell) bool {
-        acc := Car(args).(Number)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            acc = acc.Divide(Car(args))
-        }
-
-        SetCar(p.Scratch, acc)
-        return false
-    })
-    s.PrivateMethod("mod", func(p *Process, args Cell) bool {
-        acc := Car(args).(Number)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            acc = acc.Modulo(Car(args))
-        }
-
-        SetCar(p.Scratch, acc)
-        return false
-    })
-    s.PrivateMethod("mul", func(p *Process, args Cell) bool {
-        acc := Car(args).(Atom)
-
-        for Cdr(args) != Null {
-            args = Cdr(args)
-            acc = acc.Multiply(Car(args))
-        }
-
-        SetCar(p.Scratch, acc)
-        return false
-    })
-
-    e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
-
-    /* Command-line arguments */
-    args := Null
-    if len(os.Args) > 1 {
-        e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
-
-        for i, v := range os.Args[2:] {
-            e.Add(NewSymbol("$" + strconv.Itoa(i + 1)), NewSymbol(v))
-        }
-
-        for i := len(os.Args) - 1; i > 1; i-- {
-            args = Cons(NewSymbol(os.Args[i]), args)
-        }
-    } else {
-        e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
-    }
-    e.Add(NewSymbol("$args"), args)
-
-    /* Environment variables. */
-    for _, s := range os.Environ() {
-        kv := strings.Split(s, "=", 2)
-        e.Add(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
-    }
-}
-
 func method(body, param Cell, scope *Scope) *Method {
     return NewMethod(NewClosure(body, param, scope), scope)
 }
@@ -1879,6 +1115,767 @@ func ExitStatus() int {
 }
 
 func Start() {
+    proc0 = NewProcess(psNone, nil, nil)
+
+    proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
+
+    e, s := proc0.Dynamic, proc0.Lexical.Expose()
+
+    e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
+    e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
+    e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
+
+    if wd, err := os.Getwd(); err == nil {
+        e.Add(NewSymbol("$cwd"), NewSymbol(wd))
+    }
+
+    s.PrivateState("and", psAnd)
+    s.PrivateState("block", psBlock)
+    s.PrivateState("backtick", psBacktick)
+    s.PrivateState("define", psDefine)
+    s.PrivateState("dynamic", psDynamic)
+    s.PrivateState("for", psFor)
+    s.PrivateState("builtin", psBuiltin)
+    s.PrivateState("if", psIf)
+    s.PrivateState("import", psImport)
+    s.PrivateState("source", psSource)
+    s.PrivateState("method", psMethod)
+    s.PrivateState("object", psObject)
+    s.PrivateState("or", psOr)
+    s.PrivateState("quote", psQuote)
+    s.PrivateState("set", psSet)
+    s.PrivateState("setenv", psSetenv)
+    s.PrivateState("spawn", psSpawn)
+    s.PrivateState("splice", psSplice)
+    s.PrivateState("while", psWhile)
+
+    s.PublicState("public", psPublic)
+
+    s.PrivateState("background", psBackground)
+    s.PrivateState("pipe-stdout", psPipeStdout)
+    s.PrivateState("pipe-stderr", psPipeStderr)
+    s.PrivateState("redirect-stdin", psRedirectStdin)
+    s.PrivateState("redirect-stdout", psRedirectStdout)
+    s.PrivateState("redirect-stderr", psRedirectStderr)
+    s.PrivateState("append-stdout", psAppendStdout)
+    s.PrivateState("append-stderr", psAppendStderr)
+    s.PrivateState("andf", psAndf)
+    s.PrivateState("orf", psOrf)
+
+    /* Builtins. */
+    s.PrivateFunction("cd", func(p *Process, args Cell) bool {
+        err, status := os.Chdir(Raw(Car(args))), 0
+        if err != nil {
+            status = int(err.(*os.PathError).Error.(os.Errno))
+        }
+        SetCar(p.Scratch, NewStatus(int64(status)))
+
+        if wd, err := os.Getwd(); err == nil {
+            p.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
+        }
+
+        return false
+    })
+    s.PrivateFunction("debug", func(p *Process, args Cell) bool {
+        debug(p, "debug")
+
+        return false
+    })
+    s.PrivateFunction("exit", func(p *Process, args Cell) bool {
+        var status int64 = 0
+
+        a, ok := Car(args).(Atom)
+        if ok {
+            status = a.Status()
+        }
+
+        p.Scratch = List(NewStatus(status))
+        p.Stack = Null
+
+        return true
+    })
+
+    s.PublicMethod("child", func(p *Process, args Cell) bool {
+        o := Car(p.Scratch).(*Method).Self.Expose()
+
+        SetCar(p.Scratch, NewObject(NewScope(o)))
+
+        return false
+    })
+    s.PublicMethod("clone", func(p *Process, args Cell) bool {
+        o := Car(p.Scratch).(*Method).Self.Expose()
+
+        SetCar(p.Scratch, NewObject(o.Copy()))
+
+        return false
+    })
+
+    s.PrivateMethod("apply", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(args))
+        next(p)
+        
+        p.Scratch = Cons(nil, p.Scratch)
+        for args = Cdr(args); args != Null; args = Cdr(args) {
+            p.Scratch = Cons(Car(args), p.Scratch)
+        }
+        
+        return true
+    })
+    s.PrivateMethod("append", func(p *Process, args Cell) bool {
+        /*
+         * NOTE: Our append works differently than Scheme's append.
+         *       To mimic Scheme's behavior used append l1 @l2 ... @ln
+         */
+
+        /* TODO: We should just copy this list: ... */
+        l := Car(args)
+
+        /* TODO: ... and then set it's cdr to cdr(args). */
+        argv := make([]Cell, 0)
+        for args = Cdr(args); args != Null; args = Cdr(args) {
+            argv = append(argv, Car(args))
+        }
+        
+        SetCar(p.Scratch, Append(l, argv...))
+        
+        return false
+    })
+    s.PrivateMethod("car", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(args))
+
+        return false
+    })
+    s.PrivateMethod("cdr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(args))
+
+        return false
+    })
+    s.PrivateMethod("caar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caaar(args))
+
+        return false
+    })
+    s.PrivateMethod("cadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadar(args))
+
+        return false
+    })
+    s.PrivateMethod("cdar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdaar(args))
+
+        return false
+    })
+    s.PrivateMethod("cddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddar(args))
+
+        return false
+    })
+    s.PrivateMethod("caaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Car(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdr(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caaddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Caar(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("caddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cadddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cadr(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdadar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdaddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cdar(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddaar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Caaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddadr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cadar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cdddar", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cdaar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cddddr", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cddr(Cddar(args)))
+
+        return false
+    })
+    s.PrivateMethod("cons", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Cons(Car(args), Cadr(args)))
+
+        return false
+    })
+    s.PrivateMethod("eval", func(p *Process, args Cell) bool {
+        p.ReplaceState(psEvalCommand)
+
+        p.Code = Car(args)
+        p.Scratch = Cdr(p.Scratch)
+
+        return true
+    })
+    s.PrivateMethod("length", func(p *Process, args Cell) bool {
+        var l int64 = 0
+
+        switch c := Car(args); c.(type) {
+        case *String, *Symbol:
+            l = int64(len(Raw(c)))
+        default:
+            l = Length(c)
+        }
+
+        SetCar(p.Scratch, NewInteger(l))
+
+        return false
+    })
+    s.PrivateMethod("list", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, args);
+
+        return false
+    })
+    s.PrivateMethod("open", func(p *Process, args Cell) bool {
+        name := Raw(Car(args))
+        mode := Raw(Cadr(args))
+
+        flags := os.O_CREATE
+
+        if strings.IndexAny(mode, "r") != -1 {
+            flags |= os.O_WRONLY
+        } else if strings.IndexAny(mode, "aw") != -1 {
+            flags |= os.O_RDONLY
+        } else {
+            flags |= os.O_RDWR
+        }
+
+        if strings.IndexAny(mode, "a") != -1 {
+            flags |= os.O_APPEND
+        }
+
+        f, err := os.OpenFile(name, flags, 0666)
+        if err != nil {
+            panic(err)
+        }
+
+        SetCar(p.Scratch, channel(p, f, f))
+
+        return false
+    })
+    s.PrivateMethod("reverse", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, Reverse(Car(args)))
+
+        return false
+    })
+    s.PrivateMethod("set-car", func(p *Process, args Cell) bool {
+        SetCar(Car(args), Cadr(args))
+        SetCar(p.Scratch, Cadr(args))
+
+        return false
+    })
+    s.PrivateMethod("set-cdr", func(p *Process, args Cell) bool {
+        SetCdr(Car(args), Cadr(args))
+        SetCar(p.Scratch, Cadr(args))
+
+        return false
+    })
+    s.PrivateMethod("sprintf", func(p *Process, args Cell) bool {
+        f := Raw(Car(args))
+        
+        argv := []interface{}{}
+        for l := Cdr(args); l != Null; l = Cdr(l) {
+            switch t := Car(l).(type) {
+            case *Boolean:
+                argv = append(argv, *t)
+            case *Integer:
+                argv = append(argv, *t)
+            case *Status:
+                argv = append(argv, *t)
+            case *Float:
+                argv = append(argv, *t)
+            default:
+                argv = append(argv, Raw(t))
+            }
+        }
+        
+        s := fmt.Sprintf(f, argv...)
+        SetCar(p.Scratch, NewString(s))
+
+        return false
+    })
+
+    /* Predicates. */
+    s.PrivateMethod("is-atom", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsAtom(Car(args))))
+
+        return false
+    })
+    s.PrivateMethod("is-boolean",
+        func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Boolean)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-channel",
+        func(p *Process, args Cell) bool {
+        o, ok := Car(args).(Interface)
+        if ok {
+            ok = false
+            c := Resolve(o.Expose(), nil, NewSymbol("guts"))
+            if c != nil {
+                _, ok = c.GetValue().(*Channel)
+            }
+        } 
+
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-cons", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsCons(Car(args))))
+
+        return false
+    })
+    s.PrivateMethod("is-float", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Float)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-integer",
+        func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Integer)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-list", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(IsList(Car(args))))
+
+        return false
+    })
+    s.PrivateMethod("is-method", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Method)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-null", func(p *Process, args Cell) bool {
+        ok := Car(args) == Null
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-number", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(Number)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-object", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(Interface)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-status", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Status)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-string", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*String)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-symbol", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Symbol)
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("is-text", func(p *Process, args Cell) bool {
+        _, ok := Car(args).(*Symbol)
+        if !ok {
+            _, ok = Car(args).(*String)
+        }
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+
+    /* Generators. */
+    s.PrivateMethod("boolean", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(Car(args).Bool()))
+
+        return false
+    })
+    s.PrivateMethod("channel", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, channel(p, nil, nil))
+
+        return false
+    })
+    s.PrivateMethod("float", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewFloat(Car(args).(Atom).Float()))
+
+        return false
+    })
+    s.PrivateMethod("integer", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewInteger(Car(args).(Atom).Int()))
+
+        return false
+    })
+    s.PrivateMethod("status", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewStatus(Car(args).(Atom).Status()))
+
+        return false
+    })
+    s.PrivateMethod("string", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewString(Car(args).String()))
+
+        return false
+    })
+    s.PrivateMethod("symbol", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch,
+            NewSymbol(Raw(Car(args))))
+
+        return false
+    })
+
+    /* Relational. */
+    s.PrivateMethod("eq", func(p *Process, args Cell) bool {
+        prev := Car(args)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
+
+            if !prev.Equal(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("ge", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
+
+            if prev.Less(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("gt", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
+
+            if !prev.Greater(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("is", func(p *Process, args Cell) bool {
+        prev := Car(args)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
+
+            if prev != curr {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("le", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
+
+            if prev.Greater(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("lt", func(p *Process, args Cell) bool {
+        prev := Car(args).(Atom)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args).(Atom)
+
+            if !prev.Less(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("match", func(p *Process, args Cell) bool {
+        pattern := Raw(Car(args))
+        text := Raw(Cadr(args))
+
+        ok, err := path.Match(pattern, text)
+        if err != nil {
+            panic(err)
+        }
+
+        SetCar(p.Scratch, NewBoolean(ok))
+
+        return false
+    })
+    s.PrivateMethod("ne", func(p *Process, args Cell) bool {
+        /*
+         * This should really check to make sure no arguments are equal.
+         * Currently it only checks whether adjacent pairs are not equal.
+         */
+
+        prev := Car(args)
+
+        SetCar(p.Scratch, False)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            curr := Car(args)
+
+            if prev.Equal(curr) {
+                return false
+            }
+
+            prev = curr
+        }
+
+        SetCar(p.Scratch, True)
+        return false
+    })
+    s.PrivateMethod("not", func(p *Process, args Cell) bool {
+        SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
+
+        return false
+    })
+
+    /* Arithmetic. */
+    s.PrivateMethod("add", func(p *Process, args Cell) bool {
+        acc := Car(args).(Atom)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Add(Car(args))
+
+        }
+
+        SetCar(p.Scratch, acc)
+        return false
+    })
+    s.PrivateMethod("sub", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Subtract(Car(args))
+        }
+
+        SetCar(p.Scratch, acc)
+        return false
+    })
+    s.PrivateMethod("div", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Divide(Car(args))
+        }
+
+        SetCar(p.Scratch, acc)
+        return false
+    })
+    s.PrivateMethod("mod", func(p *Process, args Cell) bool {
+        acc := Car(args).(Number)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Modulo(Car(args))
+        }
+
+        SetCar(p.Scratch, acc)
+        return false
+    })
+    s.PrivateMethod("mul", func(p *Process, args Cell) bool {
+        acc := Car(args).(Atom)
+
+        for Cdr(args) != Null {
+            args = Cdr(args)
+            acc = acc.Multiply(Car(args))
+        }
+
+        SetCar(p.Scratch, acc)
+        return false
+    })
+
+    e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+
+    /* Command-line arguments */
+    args := Null
+    if len(os.Args) > 1 {
+        e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
+
+        for i, v := range os.Args[2:] {
+            e.Add(NewSymbol("$" + strconv.Itoa(i + 1)), NewSymbol(v))
+        }
+
+        for i := len(os.Args) - 1; i > 1; i-- {
+            args = Cons(NewSymbol(os.Args[i]), args)
+        }
+    } else {
+        e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+    }
+    e.Add(NewSymbol("$args"), args)
+
+    /* Environment variables. */
+    for _, s := range os.Environ() {
+        kv := strings.Split(s, "=", 2)
+        e.Add(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
+    }
 
     Parse(bufio.NewReader(strings.NewReader(`
 define echo: builtin: $stdout::write @$args
