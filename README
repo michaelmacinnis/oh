@@ -55,13 +55,14 @@ Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
 When data is sent across a channel it is converted to text so that it can be
 sent to (or even through) external Unix programs.
 
-To compile and run oh you will need to goinstall go-tecla:
-
-    goinstall github.com/michaelmacinnis/go-tecla
-
-and install (./configure; make install) the C library libtecla:
+To compile and run oh you will need to install (./configure; make install)
+the C library libtecla:
 
     http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz
+
+and then goinstall oh:
+
+    goinstall github.com/michaelmacinnis/oh
 
 Oh is released under an MIT-style license.
 
