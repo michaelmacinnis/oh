@@ -1422,6 +1422,26 @@ func Start() {
 
         return false
     })
+    s.PrivateMethod("list-to-string", func(p *Process, args Cell) bool {
+		s := ""
+		for l := Reverse(Car(args)); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+        SetCar(p.Scratch, NewString(s))
+
+        return false
+    })
+    s.PrivateMethod("list-to-symbol", func(p *Process, args Cell) bool {
+		s := ""
+		for l := Reverse(Car(args)); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+        SetCar(p.Scratch, NewSymbol(s))
+
+        return false
+    })
     s.PrivateMethod("open", func(p *Process, args Cell) bool {
         name := Raw(Car(args))
         mode := Raw(Cadr(args))
@@ -1487,6 +1507,16 @@ func Start() {
         
         s := fmt.Sprintf(f, argv...)
         SetCar(p.Scratch, NewString(s))
+
+        return false
+    })
+    s.PrivateMethod("text-to-list", func(p *Process, args Cell) bool {
+		l := Null
+		for _, char := range Raw(Car(args)) {
+			l = Cons(NewInteger(int64(char)), l)
+		}
+
+        SetCar(p.Scratch, l)
 
         return false
     })
