@@ -189,7 +189,7 @@ func external(p *Process, args Cell) bool {
 		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()),
 		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()))
 
-    proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd})
+    proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd, nil})
     if err != nil {
         panic(err)
     }
@@ -1903,7 +1903,7 @@ func Start() {
 
     /* Environment variables. */
     for _, s := range os.Environ() {
-        kv := strings.Split(s, "=", 2)
+        kv := strings.SplitN(s, "=", 2)
         e.Add(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
     }
 
