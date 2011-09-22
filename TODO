@@ -1,4 +1,3 @@
-- Here documents
 - Character operations: to-(upper|lower), is-(upper|lower|alpha...)
 - String operations: append, substring
 - Number operations: even, odd, [remainder (?),] max, min, abs, floor, ceiling,

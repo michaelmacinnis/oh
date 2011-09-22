@@ -1424,7 +1424,7 @@ func Start() {
     })
     s.PrivateMethod("list-to-string", func(p *Process, args Cell) bool {
 		s := ""
-		for l := Reverse(Car(args)); l != Null; l = Cdr(l) {
+		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
@@ -1434,7 +1434,7 @@ func Start() {
     })
     s.PrivateMethod("list-to-symbol", func(p *Process, args Cell) bool {
 		s := ""
-		for l := Reverse(Car(args)); l != Null; l = Cdr(l) {
+		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
@@ -1516,7 +1516,7 @@ func Start() {
 			l = Cons(NewInteger(int64(char)), l)
 		}
 
-        SetCar(p.Scratch, l)
+        SetCar(p.Scratch, Reverse(l))
 
         return false
     })
