@@ -11,6 +11,7 @@ import (
     "path/filepath"
     "strings"
     "strconv"
+	"unicode"
 )
 
 const (
@@ -1517,6 +1518,42 @@ func Start() {
 		}
 
         SetCar(p.Scratch, Reverse(l))
+
+        return false
+    })
+    s.PrivateMethod("to-lower", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewInteger(int64(unicode.ToLower(int(t.Int()))))
+        case *String:
+            r = NewString(strings.ToLower(Raw(t)))
+        case *Symbol:
+            r = NewSymbol(strings.ToLower(Raw(t)))
+        default:
+            r = NewInteger(0)
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("to-upper", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewInteger(int64(unicode.ToUpper(int(t.Int()))))
+        case *String:
+            r = NewString(strings.ToUpper(Raw(t)))
+        case *Symbol:
+            r = NewSymbol(strings.ToUpper(Raw(t)))
+        default:
+            r = NewInteger(0)
+        }
+        
+        SetCar(p.Scratch, r)
 
         return false
     })
