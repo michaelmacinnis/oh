@@ -1679,6 +1679,30 @@ func Start() {
 
         return false
     })
+    s.PrivateMethod("substring", func(p *Process, args Cell) bool {
+		var r Cell
+
+        s := []int(Raw(Car(args)))
+
+		start := int(Cadr(args).(Atom).Int())
+		end := len(s)
+
+		if (Cddr(args) != Null) {
+			end = int(Caddr(args).(Atom).Int())
+		}
+
+        switch t := Car(args).(type) {
+        case *String:
+            r = NewString(string(s[start:end]))
+        case *Symbol:
+            r = NewSymbol(string(s[start:end]))
+        default:
+            r = Null
+        }
+		SetCar(p.Scratch, r)
+
+        return false
+    })
     s.PrivateMethod("text-to-list", func(p *Process, args Cell) bool {
 		l := Null
 		for _, char := range Raw(Car(args)) {
