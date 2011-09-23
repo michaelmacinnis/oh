@@ -1,4 +1,3 @@
-- Character operations: is-(upper|lower|alpha...)
 - String operations: append, substring
 - Number operations: even, odd, [remainder (?),] max, min, abs, floor, ceiling,
   gcd, lcm, truncate, round, expt, sqrt [, exp, log, sin, cos, tan, asin, acos,

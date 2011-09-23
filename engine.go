@@ -1418,6 +1418,174 @@ func Start() {
 
         return false
     })
+    s.PrivateMethod("is-control", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsControl(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-digit", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsDigit(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-graphic", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsGraphic(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-letter", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsLetter(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-lower", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsLower(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-mark", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsMark(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-print", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsPrint(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-punct", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsPunct(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-space", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsSpace(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-symbol", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsSymbol(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-title", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsTitle(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("is-upper", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewBoolean(unicode.IsUpper(int(t.Int())))
+        default:
+            r = Null
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
     s.PrivateMethod("list", func(p *Process, args Cell) bool {
         SetCar(p.Scratch, args);
 
@@ -1531,6 +1699,24 @@ func Start() {
             r = NewString(strings.ToLower(Raw(t)))
         case *Symbol:
             r = NewSymbol(strings.ToLower(Raw(t)))
+        default:
+            r = NewInteger(0)
+        }
+        
+        SetCar(p.Scratch, r)
+
+        return false
+    })
+    s.PrivateMethod("to-title", func(p *Process, args Cell) bool {
+		var r Cell
+
+        switch t := Car(args).(type) {
+        case *Integer:
+            r = NewInteger(int64(unicode.ToTitle(int(t.Int()))))
+        case *String:
+            r = NewString(strings.ToTitle(Raw(t)))
+        case *Symbol:
+            r = NewSymbol(strings.ToTitle(Raw(t)))
         default:
             r = NewInteger(0)
         }
