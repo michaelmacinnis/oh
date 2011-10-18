@@ -335,7 +335,8 @@ func run(p *Process) {
             } else if sym, ok := p.Code.(*Symbol); ok {
                 c := Resolve(p.Lexical, p.Dynamic, sym)
                 if c == nil ||
-                    p.GetState() == psEvalElementBC && !IsAtom(c.GetValue()) {
+                    p.GetState() == psEvalElementBC &&
+					!IsSimple(c.GetValue()) {
                     p.Scratch = Cons(sym, p.Scratch)
                 } else {
                     p.Scratch = Cons(c.GetValue(), p.Scratch)
