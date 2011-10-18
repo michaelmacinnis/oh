@@ -11,7 +11,7 @@ import (
     "path/filepath"
     "strings"
     "strconv"
-	"unicode"
+    "unicode"
 )
 
 const (
@@ -21,15 +21,18 @@ const (
     psCreateModule
 
     psDoEvalArguments
+    psDoEvalArgumentsBC
     psDoEvalCommand
 
     psEvalAccess
     psEvalAnd
     psEvalAndf
     psEvalArguments
+    psEvalArgumentsBC
     psEvalBlock
     psEvalCommand
     psEvalElement
+    psEvalElementBC
     psEvalFor
     psEvalOr
     psEvalOrf
@@ -186,9 +189,9 @@ func external(p *Process, args Cell) bool {
     var fd[]*os.File //{os.Stdin, os.Stdout, os.Stderr}
 
     fd = append(fd,
-		rpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()),
-		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()),
-		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()))
+        rpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()),
+        wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()),
+        wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()))
 
     proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd, nil})
     if err != nil {
@@ -285,28 +288,43 @@ func run(p *Process) {
                 }
             }
 
-            p.NewState(psEvalArguments)
+            if p.GetState() == psExecExternal ||
+                p.GetState() == psExecApplication &&
+                Car(p.Scratch).(*Method).Self == nil {
+                p.NewState(psEvalArgumentsBC)
+            } else {
+                p.NewState(psEvalArguments)
+            }
 
             fallthrough
-        case psEvalArguments:
+        case psEvalArguments, psEvalArgumentsBC:
             p.Scratch = Cons(nil, p.Scratch)
 
-            p.ReplaceState(psDoEvalArguments)
+            if (p.GetState() == psEvalArgumentsBC) {
+                p.ReplaceState(psDoEvalArgumentsBC)
+            } else {
+                p.ReplaceState(psDoEvalArguments)
+            }
 
             fallthrough
-        case psDoEvalArguments:
+        case psDoEvalArguments, psDoEvalArgumentsBC:
             if p.Code == Null {
                 break
             }
 
-            p.SaveState(SaveCode, Cdr(p.Code))
+            state = p.GetState()
 
+            p.SaveState(SaveCode, Cdr(p.Code))
             p.Code = Car(p.Code)
 
-            p.NewState(psEvalElement)
+            if (state == psDoEvalArgumentsBC) {
+                p.NewState(psEvalElementBC)
+            } else {
+                p.NewState(psEvalElement)
+            }
 
             fallthrough
-        case psEvalElement:
+        case psEvalElement, psEvalElementBC:
             if p.Code != Null && IsCons(p.Code) {
                 if IsAtom(Cdr(p.Code)) {
                     p.ReplaceState(psEvalAccess)
@@ -315,10 +333,12 @@ func run(p *Process) {
                     continue
                 }
             } else if sym, ok := p.Code.(*Symbol); ok {
-                if c := Resolve(p.Lexical, p.Dynamic, sym); c != nil {
-                    p.Scratch = Cons(c.GetValue(), p.Scratch)
-                } else {
+                c := Resolve(p.Lexical, p.Dynamic, sym)
+                if c == nil ||
+                    p.GetState() == psEvalElementBC && !IsAtom(c.GetValue()) {
                     p.Scratch = Cons(sym, p.Scratch)
+                } else {
+                    p.Scratch = Cons(c.GetValue(), p.Scratch)
                 }
                 break
             } else {
@@ -823,7 +843,7 @@ func run(p *Process) {
 
             go run(child)
 
-			b := bufio.NewReader(rpipe(c))
+            b := bufio.NewReader(rpipe(c))
 
 //            g := Resolve(c, nil, NewSymbol("guts"))
 //            b := bufio.NewReader(g.GetValue().(*Channel).ReadEnd())
@@ -985,7 +1005,7 @@ func run(p *Process) {
 //                c.GetValue().(Interface).Expose(), nil,
 //                NewSymbol("guts"))
 //            c.GetValue().(*Channel).WriteEnd().Close()
-			wpipe(c).Close()
+            wpipe(c).Close()
             
         case psPipeParent:
             c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()
@@ -993,7 +1013,7 @@ func run(p *Process) {
 //                c.GetValue().(Interface).Expose(), nil,
 //                NewSymbol("guts"))
 //            c.GetValue().(*Channel).Close()
-			rpipe(c).Close()
+            rpipe(c).Close()
 
         case psAppendStderr, psAppendStdout, psRedirectStderr,
             psRedirectStdin, psRedirectStdout:
@@ -1419,7 +1439,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-control", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1433,7 +1453,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-digit", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1447,7 +1467,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-graphic", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1461,7 +1481,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-letter", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1475,7 +1495,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-lower", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1489,7 +1509,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-mark", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1503,7 +1523,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-print", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1517,7 +1537,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-punct", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1531,7 +1551,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-space", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1545,7 +1565,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-symbol", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1559,7 +1579,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-title", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1573,7 +1593,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("is-upper", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1592,20 +1612,20 @@ func Start() {
         return false
     })
     s.PrivateMethod("list-to-string", func(p *Process, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
+        s := ""
+        for l := Car(args); l != Null; l = Cdr(l) {
+            s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+        }
 
         SetCar(p.Scratch, NewString(s))
 
         return false
     })
     s.PrivateMethod("list-to-symbol", func(p *Process, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
+        s := ""
+        for l := Car(args); l != Null; l = Cdr(l) {
+            s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+        }
 
         SetCar(p.Scratch, NewSymbol(s))
 
@@ -1680,16 +1700,16 @@ func Start() {
         return false
     })
     s.PrivateMethod("substring", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         s := []int(Raw(Car(args)))
 
-		start := int(Cadr(args).(Atom).Int())
-		end := len(s)
+        start := int(Cadr(args).(Atom).Int())
+        end := len(s)
 
-		if (Cddr(args) != Null) {
-			end = int(Caddr(args).(Atom).Int())
-		}
+        if (Cddr(args) != Null) {
+            end = int(Caddr(args).(Atom).Int())
+        }
 
         switch t := Car(args).(type) {
         case *String:
@@ -1699,22 +1719,22 @@ func Start() {
         default:
             r = Null
         }
-		SetCar(p.Scratch, r)
+        SetCar(p.Scratch, r)
 
         return false
     })
     s.PrivateMethod("text-to-list", func(p *Process, args Cell) bool {
-		l := Null
-		for _, char := range Raw(Car(args)) {
-			l = Cons(NewInteger(int64(char)), l)
-		}
+        l := Null
+        for _, char := range Raw(Car(args)) {
+            l = Cons(NewInteger(int64(char)), l)
+        }
 
         SetCar(p.Scratch, Reverse(l))
 
         return false
     })
     s.PrivateMethod("to-lower", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1732,7 +1752,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("to-title", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
@@ -1750,7 +1770,7 @@ func Start() {
         return false
     })
     s.PrivateMethod("to-upper", func(p *Process, args Cell) bool {
-		var r Cell
+        var r Cell
 
         switch t := Car(args).(type) {
         case *Integer:
