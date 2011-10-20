@@ -275,9 +275,39 @@ func run(p *Process) {
     for p.Stack != Null {
         switch state := p.GetState(); state {
         case psNone:
+            /* Template:
+             * Pre:
+             *   Code    :
+             *   Scratch :
+             *   Dynamic :
+             *   Lexical :
+             * 
+             * Post:
+             *   Stack   :
+             *   Code    :
+             *   Scratch :
+             *   Dynamic :
+             *   Lexical :           
+             */
             return
 
         case psDoEvalCommand:
+            /*
+             * Pre:
+             *   Code    : Unevaluated argument 1
+             *             ...
+             *             Unevaluated argument N
+             *   Scratch : Evaluated head
+             * 
+             * Post:
+             *   Stack   : psEvalArguments(BC)
+             *             psExecExternal | psExecBuiltin | psExecApplication |
+             *               [Integer State]
+             *   Code    : Unevaluated argument 1
+             *             ...
+             *             Unevaluated argument N
+             *   Scratch : Evaluated head
+             */
             switch Car(p.Scratch).(type) {
             case *String, *Symbol:
                 p.ReplaceState(psExecExternal)
@@ -298,6 +328,21 @@ func run(p *Process) {
 
             fallthrough
         case psEvalArguments, psEvalArgumentsBC:
+            /*
+             * Pre:
+             *   Code    : Unevaluated argument 1
+             *             ...
+             *             Unevaluated argument N
+             *   Scratch : Evaluated head
+             * 
+             * Post:
+             *   Stack   : psDoEvalArguments(BC)
+             *   Code    : Unevaluated argument 1
+             *             ...
+             *             Unevaluated argument N
+             *   Scratch : nil
+             *             Evaluated head
+             */
             p.Scratch = Cons(nil, p.Scratch)
 
             if (p.GetState() == psEvalArgumentsBC) {
@@ -308,6 +353,28 @@ func run(p *Process) {
 
             fallthrough
         case psDoEvalArguments, psDoEvalArgumentsBC:
+            /*
+             * Pre:
+             *   Code    : Unevaluated argument i
+             *             ...
+             *             Unevaluated argument N
+             *   Scratch : Evaluated argument i - 1
+             *             ...
+             *             Evaluated argument 1
+             *             nil
+             *             Evaluated head
+             * 
+             * Post:
+             *   Stack   : psEvalElement(BC)
+             *             Restore: Code <- Cdr(Code)
+             *             psDoEvalArguments(BC)
+             *   Code    : Unevaluated argument i
+             *   Scratch : Evaluated argument i - 1
+             *             ...
+             *             Evaluated argument 1
+             *             nil
+             *             Evaluated head
+             */
             if p.Code == Null {
                 break
             }
@@ -336,7 +403,7 @@ func run(p *Process) {
                 c := Resolve(p.Lexical, p.Dynamic, sym)
                 if c == nil ||
                     p.GetState() == psEvalElementBC &&
-					!IsSimple(c.GetValue()) {
+                    !IsSimple(c.GetValue()) {
                     p.Scratch = Cons(sym, p.Scratch)
                 } else {
                     p.Scratch = Cons(c.GetValue(), p.Scratch)

@@ -84,23 +84,38 @@ func init() {
     str = make(map[string] *String)
     sym = make(map[string] *Symbol)
 
-    /* Make sure the following symbols are cached. */
-    sym["is-boolean"] = NewSymbol("is-boolean")
-    sym["is-integer"] = NewSymbol("is-integer")
-    sym["is-method"] = NewSymbol("is-method")
-    sym["is-number"] = NewSymbol("is-number")
-    sym["is-object"] = NewSymbol("is-object")
-    sym["is-status"] = NewSymbol("is-status")
-    sym["is-string"] = NewSymbol("is-string")
-    sym["is-symbol"] = NewSymbol("is-symbol")
-    sym["append-stdout"] = NewSymbol("append-stdout")
-    sym["append-stderr"] = NewSymbol("append-stderr")
-    sym["background"] = NewSymbol("background")
-    sym["pipe-stdout"] = NewSymbol("pipe-stdout")
-    sym["pipe-stderr"] = NewSymbol("pipe-stderr")
-    sym["redirect-stdin"] = NewSymbol("redirect-stdin")
-    sym["redirect-stdout"] = NewSymbol("redirect-stdout")
-    sym["redirect-stderr"] = NewSymbol("redirect-stderr")
+    for _, v := range [...]string{
+        "is-boolean",
+        "is-channel",
+        "is-integer",
+        "is-method",
+        "is-number",
+        "is-object",
+        "is-status",
+        "is-string",
+        "is-symbol",
+
+        "append-stdout",
+        "append-stderr",
+        "background",
+        "pipe-stdout",
+        "pipe-stderr",
+        "redirect-stdin",
+        "redirect-stdout",
+        "redirect-stderr",
+
+        "is-control",
+        "is-graphic",
+        "is-letter",
+        "list-to-string",
+        "list-to-symbol",
+        "substring",
+        "text-to-list",
+
+        "list-tail",
+    } {
+        sym[v] = NewSymbol(v)
+    }
 }
 
 func Append(list Cell, elements ...Cell) Cell {
