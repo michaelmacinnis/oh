@@ -431,8 +431,7 @@ func run(p *Process) {
             p.RemoveState()
             p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = NewEnv(p.Dynamic)
-            p.Lexical = NewScope(p.Lexical)
+            p.NewScope(p.Dynamic, p.Lexical)
 
             p.NewState(psEvalBlock)
 
@@ -503,8 +502,7 @@ func run(p *Process) {
             p.SaveState(SaveDynamic | SaveLexical)
 
             p.Code = m.Func.Body
-            p.Dynamic = NewEnv(p.Dynamic)
-            p.Lexical = NewScope(m.Func.Lexical)
+            p.NewScope(p.Dynamic, m.Func.Lexical)
 
             param := m.Func.Param
             for args != Null && param != Null {
@@ -512,9 +510,11 @@ func run(p *Process) {
                 args, param = Cdr(args), Cdr(param)
             }
             p.Lexical.Public(NewSymbol("$args"), args)
+            p.Lexical.Public(NewSymbol("$dynamic"), p.Dynamic)
+            p.Lexical.Public(NewSymbol("$lexical"), p.Lexical)
             p.Lexical.Public(NewSymbol("$self"), m.Self)
             p.Lexical.Public(NewSymbol("return"),
-                p.Continuation(psReturn))
+				p.Continuation(psReturn))
 
             p.NewState(psEvalBlock)
             continue
@@ -596,7 +596,6 @@ func run(p *Process) {
                 if !strings.HasPrefix(k.String(), "$") {
                     break
                 }
-
                 p.ReplaceState(psExecSetenv)
             } else {
                 p.ReplaceState(psExecDynamic)
@@ -618,7 +617,7 @@ func run(p *Process) {
                 os.Setenv(strings.TrimLeft(k.String(), "$"), s)
             }
 
-            p.Dynamic.Add(k, v)
+            p.Dynamic.Private(k, v)
 
         case psWhile:
             p.RemoveState()
@@ -836,8 +835,7 @@ func run(p *Process) {
                 p.RemoveState()
                 p.SaveState(SaveDynamic | SaveLexical)
 
-                p.Dynamic = NewEnv(p.Dynamic)
-                p.Lexical = NewScope(p.Lexical)
+                p.NewScope(p.Dynamic, p.Lexical)
 
                 p.NewState(psExecObject)
                 p.NewState(psEvalBlock)
@@ -905,7 +903,7 @@ func run(p *Process) {
             child.SaveState(SaveCode, s)
 
             child.Code = Car(p.Code)
-            child.Dynamic.Add(s, c)
+            child.Dynamic.Private(s, c)
 
             child.NewState(psEvalCommand)
 
@@ -965,8 +963,7 @@ func run(p *Process) {
             p.RemoveState()
             p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = NewEnv(p.Dynamic)
-            p.Lexical = NewScope(p.Lexical)
+            p.NewScope(p.Dynamic, p.Lexical)
 
             p.NewState(psExecIf)
             p.SaveState(SaveCode, Cdr(p.Code))
@@ -993,8 +990,7 @@ func run(p *Process) {
             p.RemoveState()
             p.SaveState(SaveDynamic | SaveLexical)
 
-            p.Dynamic = NewEnv(p.Dynamic)
-            p.Lexical = NewScope(p.Lexical)
+            p.NewScope(p.Dynamic, p.Lexical)
 
             p.NewState(psExecObject)
             p.NewState(psEvalBlock)
@@ -1051,17 +1047,18 @@ func run(p *Process) {
             child.SaveState(SaveCode, s)
 
             child.Code = Car(p.Code)
-            child.Dynamic.Add(s, c)
+            child.Dynamic.Private(s, c)
 
             child.NewState(psEvalCommand)
 
             go run(child)
 
             p.Code = Cadr(p.Code)
-            p.Dynamic = NewEnv(p.Dynamic)
             p.Scratch = Cdr(p.Scratch)
 
-            p.Dynamic.Add(NewSymbol("$stdin"), c)
+			p.NewScope(p.Dynamic, p.Lexical)
+
+            p.Dynamic.Private(NewSymbol("$stdin"), c)
 
             p.NewState(psPipeParent)
             p.NewState(psEvalCommand)
@@ -1097,8 +1094,9 @@ func run(p *Process) {
             p.SaveState(SaveCode, initial)
 
             p.Code = Car(p.Code)
-            p.Dynamic = NewEnv(p.Dynamic)
             p.Scratch = Cdr(p.Scratch)
+
+			p.NewScope(p.Dynamic, p.Lexical)
 
             p.NewState(psEvalElement)
             continue
@@ -1152,7 +1150,7 @@ func run(p *Process) {
                 ch.Implicit = true
             }
 
-            p.Dynamic.Add(NewSymbol(name), c)
+            p.Dynamic.Private(NewSymbol(name), c)
 
         case psRedirectCleanup:
             c := Cadr(p.Scratch).(Interface)
@@ -1210,12 +1208,12 @@ func Start() {
 
     e, s := proc0.Dynamic, proc0.Lexical.Expose()
 
-    e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
-    e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
-    e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
+    e.Private(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
+    e.Private(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
+    e.Private(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
 
     if wd, err := os.Getwd(); err == nil {
-        e.Add(NewSymbol("$cwd"), NewSymbol(wd))
+        e.Private(NewSymbol("$cwd"), NewSymbol(wd))
     }
 
     s.PrivateState("and", psAnd)
@@ -1260,7 +1258,7 @@ func Start() {
         SetCar(p.Scratch, NewStatus(int64(status)))
 
         if wd, err := os.Getwd(); err == nil {
-            p.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
+            p.Dynamic.Private(NewSymbol("$cwd"), NewSymbol(wd))
         }
 
         return false
@@ -2217,29 +2215,32 @@ func Start() {
         return false
     })
 
-    e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	s.Public(NewSymbol("$dynamic"), e)
+    s.Public(NewSymbol("$lexical"), s)
+
+    e.Private(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 
     /* Command-line arguments */
     args := Null
     if len(os.Args) > 1 {
-        e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
+        e.Private(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
         for i, v := range os.Args[2:] {
-            e.Add(NewSymbol("$" + strconv.Itoa(i + 1)), NewSymbol(v))
+            e.Private(NewSymbol("$" + strconv.Itoa(i + 1)), NewSymbol(v))
         }
 
         for i := len(os.Args) - 1; i > 1; i-- {
             args = Cons(NewSymbol(os.Args[i]), args)
         }
     } else {
-        e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+        e.Private(NewSymbol("$0"), NewSymbol(os.Args[0]))
     }
-    e.Add(NewSymbol("$args"), args)
+    e.Private(NewSymbol("$args"), args)
 
     /* Environment variables. */
     for _, s := range os.Environ() {
         kv := strings.SplitN(s, "=", 2)
-        e.Add(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
+        e.Private(NewSymbol("$" + kv[0]), NewSymbol(kv[1]))
     }
 
     Parse(bufio.NewReader(strings.NewReader(`

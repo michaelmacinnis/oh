@@ -355,7 +355,7 @@ func Raw(c Cell) string {
     return c.String()
 }
 
-func Resolve(s Interface, e *Env, k *Symbol) (v *Reference) {
+func Resolve(s, e Interface, k *Symbol) (v *Reference) {
     v = nil
 
     if v = s.Access(k); v == nil {
@@ -1249,19 +1249,17 @@ func (self *Object) Private(key Cell, value Cell) {
 
 type Process struct {
     Code Cell
-    Dynamic *Env
-    Lexical Interface
-        Scratch, Stack Cell
+    Dynamic *Scope
+	Lexical Interface
+    Scratch, Stack Cell
 }
 
-func NewProcess(state int64, env *Env, scope Interface) *Process {
-    return &Process{
-        Null,
-        NewEnv(env),
-        NewScope(scope),
-        Null,
-        List(NewInteger(state)),
-    }
+func NewProcess(state int64, dynamic, lexical Interface) *Process {
+    p := &Process{Null, nil, nil, Null, List(NewInteger(state))}
+
+	p.NewScope(dynamic, lexical)
+
+	return p
 }
 
 func (self *Process) Bool() bool {
@@ -1309,6 +1307,11 @@ func (self *Process) GetState() int64 {
     return Car(self.Stack).(Atom).Int()
 }
 
+func (self *Process) NewScope(dynamic, lexical Interface) {
+	self.Dynamic = NewScope(dynamic)
+	self.Lexical = NewScope(lexical)
+}
+
 func (self *Process) NewState(state int64) {
     self.Stack = Cons(NewInteger(state), self.Stack)
 }
@@ -1340,7 +1343,7 @@ func (self *Process) RestoreState() {
 
     if f & SaveDynamic > 0 {
         self.Stack = Cdr(self.Stack)
-        self.Dynamic = Car(self.Stack).(*Env)
+        self.Dynamic = Car(self.Stack).(*Scope)
     }
 
     if f & SaveCode > 0 {
@@ -1375,7 +1378,10 @@ func (self *Process) SaveState(f int64, c... Cell) bool {
 }
 
 
-/* Scope cell definition. A scope cell is an object public + private faces. */
+/*
+ * Scope cell definition.
+ * (A scope cell is an object's public + private face).
+ */
 
 type Scope struct {
     env *Env
