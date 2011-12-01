@@ -36,10 +36,10 @@ type Interface interface {
 
     Access(key Cell) *Reference
     Copy() Interface
-        Expose() *Scope
+    Define(key, value Cell)
+    Expose() *Scope
     Faces() *Env
     Prev() Interface
-        Private(key, value Cell)
     Public(key, value Cell)
 }
 
@@ -364,9 +364,9 @@ func Resolve(s, e Interface, k *Symbol) (v *Reference) {
         }
 
         v = e.Access(k)
-    } else if m, ok := v.GetValue().(*Method); ok &&
+    } else if m, ok := v.GetValue().(*Applicative); ok &&
         m.Self != nil && m.Self != s.Expose(){
-        v = NewReference(NewMethod(m.Func, s.Expose()))
+        v = NewReference(NewApplicative(m.Func, s.Expose()))
     }
 
     return v
@@ -957,6 +957,31 @@ func (self *Pair) Equal(c Cell) bool {
 }
 
 
+/* Applicative cell definition. */
+
+type Applicative struct {
+    Func *Closure
+    Self *Scope
+}
+
+func NewApplicative(Func *Closure, Self *Scope) *Applicative {
+    return &Applicative{Func, Self}
+}
+
+func (self *Applicative) Bool() bool {
+    return true
+}
+
+func (self *Applicative) String() string {
+    return fmt.Sprintf("%%method %p%%", self)
+}
+
+func (self *Applicative) Equal(c Cell) bool {
+    m := c.(*Applicative)
+    return m.Func == self.Func && m.Self == self.Self
+}
+
+
 /* Channel cell definition. */
 
 type Channel struct {
@@ -1168,31 +1193,6 @@ func (self Function) Equal(c Cell) bool {
 }
 
 
-/* Method cell definition. */
-
-type Method struct {
-    Func *Closure
-    Self *Scope
-}
-
-func NewMethod(Func *Closure, Self *Scope) *Method {
-    return &Method{Func, Self}
-}
-
-func (self *Method) Bool() bool {
-    return true
-}
-
-func (self *Method) String() string {
-    return fmt.Sprintf("%%method %p%%", self)
-}
-
-func (self *Method) Equal(c Cell) bool {
-    m := c.(*Method)
-    return m.Func == self.Func && m.Self == self.Self
-}
-
-
 /* Object cell definition. (An object cell is an object's public face). */
 
 type Object struct {
@@ -1240,8 +1240,33 @@ func (self *Object) Prev() Interface {
     return self.prev
 }
 
-func (self *Object) Private(key Cell, value Cell) {
+func (self *Object) Define(key Cell, value Cell) {
     panic("Private members cannot be added to an object.")
+}
+
+
+/* Operative cell definition. */
+
+type Operative struct {
+    Func *Closure
+    Self *Scope
+}
+
+func NewOperative(Func *Closure, Self *Scope) *Operative {
+    return &Operative{Func, Self}
+}
+
+func (self *Operative) Bool() bool {
+    return true
+}
+
+func (self *Operative) String() string {
+    return fmt.Sprintf("%%syntax %p%%", self)
+}
+
+func (self *Operative) Equal(c Cell) bool {
+    m := c.(*Operative)
+    return m.Func == self.Func && m.Self == self.Self
 }
 
 
@@ -1292,8 +1317,8 @@ func (self *Process) Arguments() Cell {
     return l
 }
 
-func (self *Process) Continuation(state int64) *Method {
-    return NewMethod(NewClosure(
+func (self *Process) Continuation(state int64) *Applicative {
+    return NewApplicative(NewClosure(
         NewInteger(state),
         List(Cdr(self.Scratch), self.Stack),
         nil),
@@ -1308,8 +1333,8 @@ func (self *Process) GetState() int64 {
 }
 
 func (self *Process) NewScope(dynamic, lexical Interface) {
-	self.Dynamic = NewScope(dynamic)
-	self.Lexical = NewScope(lexical)
+	self.Dynamic = NewDynamicScope(dynamic)
+	self.Lexical = NewLexicalScope(lexical)
 }
 
 func (self *Process) NewState(state int64) {
@@ -1388,7 +1413,11 @@ type Scope struct {
     prev Interface
     }
 
-func NewScope(prev Interface) *Scope {
+func NewDynamicScope(prev Interface) *Scope {
+    return &Scope{NewEnv(nil), prev}
+}
+
+func NewLexicalScope(prev Interface) *Scope {
     return &Scope{NewEnv(NewEnv(nil)), prev}
 }
 
@@ -1433,7 +1462,7 @@ func (self *Scope) Prev() Interface {
     return self.prev
 }
 
-func (self *Scope) Private(key Cell, value Cell) {
+func (self *Scope) Define(key Cell, value Cell) {
     self.env.Add(key, value)
 }
 
@@ -1441,26 +1470,26 @@ func (self *Scope) Public(key Cell, value Cell) {
     self.env.prev.Add(key, value)
 }
 
-func (self *Scope) PrivateFunction(k string, f Function) {
-    self.Private(NewSymbol(k), NewMethod(NewClosure(f, Null, self), nil))
+func (self *Scope) DefineFunction(k string, f Function) {
+    self.Define(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), nil))
 }
 
-func (self *Scope) PrivateMethod(k string, f Function) {
-    self.Private(NewSymbol(k), NewMethod(NewClosure(f, Null, self), self))
+func (self *Scope) DefineMethod(k string, f Function) {
+    self.Define(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
-    self.Public(NewSymbol(k), NewMethod(NewClosure(f, Null, self), self))
+    self.Public(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), self))
 }
 
-func (self *Scope) PrivateState(k string, v int64) {
-    self.Private(NewSymbol(k),
-        NewMethod(NewClosure(NewInteger(v), Null, self), self))
+func (self *Scope) DefineState(k string, v int64) {
+    self.Define(NewSymbol(k),
+        NewApplicative(NewClosure(NewInteger(v), Null, self), self))
 }
 
 func (self *Scope) PublicState(k string, v int64) {
     self.Public(NewSymbol(k),
-        NewMethod(NewClosure(NewInteger(v), Null, self), self))
+        NewApplicative(NewClosure(NewInteger(v), Null, self), self))
 }
 
 
