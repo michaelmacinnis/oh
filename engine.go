@@ -1483,10 +1483,21 @@ func Start() {
         return false
     })
     s.DefineMethod("eval", func(p *Process, args Cell) bool {
-        p.ReplaceState(psEvalCommand)
+		if Cdr(args) != Null {
+            p.RemoveState()
+            p.SaveState(SaveDynamic | SaveLexical)
 
-        p.Code = Car(args)
-        p.Scratch = Cdr(p.Scratch)
+            p.NewState(psEvalCommand)
+
+			p.Lexical = Car(args).(Interface)
+			p.Code = Cadr(args)
+		} else {
+			p.ReplaceState(psEvalCommand)
+			
+			p.Code = Car(args)
+		}
+
+		p.Scratch = Cdr(p.Scratch)
 
         return true
     })
