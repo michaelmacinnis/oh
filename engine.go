@@ -33,7 +33,6 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBC
-	psEvalFor
 	psEvalOr
 	psEvalOrf
 	psEvalReference
@@ -46,7 +45,6 @@ const (
 	psExecDefine
 	psExecDynamic
 	psExecExternal
-	psExecFor
 	psExecIf
 	psExecImport
 	psExecSource
@@ -63,7 +61,6 @@ const (
 	psBuiltin
 	psDefine
 	psDynamic
-	psFor
 	psIf
 	psImport
 	psMethod
@@ -336,7 +333,10 @@ func run(p *Process) {
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
-			if p.Code != Null && IsCons(p.Code) {
+			if p.Code == Null {
+				p.Scratch = Cons(p.Code, p.Scratch)
+                break
+			} else if IsCons(p.Code) {
 				if IsAtom(Cdr(p.Code)) {
 					p.ReplaceState(psEvalAccess)
 				} else {
@@ -406,34 +406,6 @@ func run(p *Process) {
 			p.NewState(psEvalElement)
 			continue
 
-		case psEvalFor:
-			p.ReplaceState(psExecFor)
-			args := p.Arguments()
-
-			/* Second argument to for is a method. First argument is a list. */
-			p.Code = Car(args)
-			SetCar(p.Scratch, Cadr(args))
-			p.Scratch = Cons(Null, p.Scratch)
-
-			fallthrough
-		case psExecFor:
-			r := Car(p.Scratch)
-			p.Scratch = Cdr(p.Scratch)
-
-			if p.Code == Null {
-				SetCar(p.Scratch, r)
-				break
-			}
-
-			p.SaveState(SaveCode, Cdr(p.Code))
-
-			p.Scratch = Cons(Car(p.Scratch), p.Scratch)
-			p.Scratch = Cons(nil, p.Scratch)
-			p.Scratch = Cons(Car(p.Code), p.Scratch)
-
-			p.NewState(psExecApplicative)
-
-			fallthrough
 		case psExecApplicative:
 			args := p.Arguments()
 
@@ -921,14 +893,6 @@ func run(p *Process) {
 					syntax(p.Code, Reverse(param), p.Lexical.Expose()))
 			}
 
-		case psFor:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
-
-			p.NewState(psEvalFor)
-			p.NewState(psEvalArguments)
-			continue
-
 		case psIf:
 			p.RemoveState()
 			p.SaveState(SaveDynamic | SaveLexical)
@@ -1186,7 +1150,6 @@ func Start() {
 	s.DefineState("backtick", psBacktick)
 	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
-	s.DefineState("for", psFor)
 	s.DefineState("builtin", psBuiltin)
 	s.DefineState("if", psIf)
 	s.DefineState("import", psImport)
@@ -2223,10 +2186,17 @@ func Start() {
 	Parse(bufio.NewReader(strings.NewReader(`
 define echo: builtin: $stdout::write @$args
 define expand: builtin: return $args
-define printf: method: echo: sprintf (car $args) @(cdr $args)
-define read: builtin: $stdin::read
-define readline: builtin: $stdin::readline
-define write: method: $stdout::write @$args
+define for: method l m {
+    define r: cons () ()
+    define c r
+    while (not: is-null l) {
+        set-cdr c: cons (m: car l) ()
+        set c: cdr c
+        set l: cdr l
+    }
+    return: cdr r
+}
+define list-ref: method k x: car: list-tail k x
 define list-tail: method k x {
     if k {
         list-tail (sub k 1): cdr x
@@ -2234,7 +2204,10 @@ define list-tail: method k x {
         return x
     }
 }
-define list-ref: method k x: car: list-tail k x
+define printf: method: echo: sprintf (car $args) @(cdr $args)
+define read: builtin: $stdin::read
+define readline: builtin: $stdin::readline
+define write: method: $stdout::write @$args
 `)), Evaluate)
 
 	/* Read and execute rc script if it exists. */
