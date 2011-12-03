@@ -25,7 +25,6 @@ const (
 	psDoEvalCommand
 
 	psEvalAccess
-	psEvalAnd
 	psEvalAndf
 	psEvalArguments
 	psEvalArgumentsBC
@@ -33,7 +32,6 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBC
-	psEvalOr
 	psEvalOrf
 	psEvalReference
 	psEvalWhileBody
@@ -77,11 +75,9 @@ const (
 	psWhile
 
 	/* Operators. */
-	psAnd
 	psAndf
 	psBackground
 	psBacktick
-	psOr
 	psOrf
 
 	psAppendStdout
@@ -590,30 +586,6 @@ func run(p *Process) {
 			p.NewState(psEvalBlock)
 			continue
 
-		case psAnd:
-			SetCar(p.Scratch, True)
-			p.ReplaceState(psEvalAnd)
-
-			fallthrough
-		case psEvalAnd:
-			prev := Car(p.Scratch).Bool()
-			SetCar(p.Scratch, NewBoolean(prev))
-
-			if p.Code == Null || !prev {
-				break
-			}
-
-			if Cdr(p.Code) == Null {
-				p.ReplaceState(psEvalElement)
-			} else {
-				p.SaveState(SaveCode, Cdr(p.Code))
-				p.NewState(psEvalElement)
-			}
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
 		case psAndf:
 			p.Scratch = Cons(True, p.Scratch)
 			p.ReplaceState(psEvalAndf)
@@ -634,30 +606,6 @@ func run(p *Process) {
 			} else {
 				p.SaveState(SaveCode, Cdr(p.Code))
 				p.NewState(psEvalCommand)
-			}
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
-		case psOr:
-			SetCar(p.Scratch, False)
-			p.ReplaceState(psEvalOr)
-
-			fallthrough
-		case psEvalOr:
-			prev := Car(p.Scratch).Bool()
-			SetCar(p.Scratch, NewBoolean(prev))
-
-			if p.Code == Null || prev {
-				break
-			}
-
-			if Cdr(p.Code) == Null {
-				p.ReplaceState(psEvalElement)
-			} else {
-				p.SaveState(SaveCode, Cdr(p.Code))
-				p.NewState(psEvalElement)
 			}
 
 			p.Code = Car(p.Code)
@@ -1145,7 +1093,6 @@ func Start() {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("and", psAnd)
 	s.DefineState("block", psBlock)
 	s.DefineState("backtick", psBacktick)
 	s.DefineState("define", psDefine)
@@ -1156,7 +1103,6 @@ func Start() {
 	s.DefineState("source", psSource)
 	s.DefineState("method", psMethod)
 	s.DefineState("object", psObject)
-	s.DefineState("or", psOr)
 	s.DefineState("quote", psQuote)
 	s.DefineState("set", psSet)
 	s.DefineState("setenv", psSetenv)
@@ -2184,6 +2130,14 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
+define and: syntax e {
+    define l $args
+    while (not: is-null: car l) {
+        if (not: eval e: car l): return false
+        set l: cdr l
+    }
+    return true
+}
 define echo: builtin: $stdout::write @$args
 define expand: builtin: return $args
 define for: method l m {
@@ -2203,6 +2157,14 @@ define list-tail: method k x {
     } else {
         return x
     }
+}
+define or: syntax e {
+    define l $args
+    while (not: is-null: car l) {
+        if (eval e: car l): return true
+        set l: cdr l
+    }
+    return false
 }
 define printf: method: echo: sprintf (car $args) @(cdr $args)
 define read: builtin: $stdin::read
