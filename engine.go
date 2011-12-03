@@ -25,14 +25,12 @@ const (
 	psDoEvalCommand
 
 	psEvalAccess
-	psEvalAndf
 	psEvalArguments
 	psEvalArgumentsBC
 	psEvalBlock
 	psEvalCommand
 	psEvalElement
 	psEvalElementBC
-	psEvalOrf
 	psEvalReference
 	psEvalWhileBody
 	psEvalWhileTest
@@ -75,10 +73,8 @@ const (
 	psWhile
 
 	/* Operators. */
-	psAndf
 	psBackground
 	psBacktick
-	psOrf
 
 	psAppendStdout
 	psAppendStderr
@@ -586,58 +582,6 @@ func run(p *Process) {
 			p.NewState(psEvalBlock)
 			continue
 
-		case psAndf:
-			p.Scratch = Cons(True, p.Scratch)
-			p.ReplaceState(psEvalAndf)
-
-			fallthrough
-		case psEvalAndf:
-			if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
-				break
-			}
-
-			if !Car(p.Scratch).Bool() {
-				break
-			}
-
-			if Cdr(p.Code) == Null ||
-				!IsCons(Cadr(p.Code)) {
-				p.ReplaceState(psEvalCommand)
-			} else {
-				p.SaveState(SaveCode, Cdr(p.Code))
-				p.NewState(psEvalCommand)
-			}
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
-		case psOrf:
-			p.Scratch = Cons(False, p.Scratch)
-			p.ReplaceState(psEvalOrf)
-
-			fallthrough
-		case psEvalOrf:
-			if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
-				break
-			}
-
-			if Car(p.Scratch).Bool() {
-				break
-			}
-
-			if Cdr(p.Code) == Null ||
-				!IsCons(Cadr(p.Code)) {
-				p.ReplaceState(psEvalCommand)
-			} else {
-				p.SaveState(SaveCode, Cdr(p.Code))
-				p.NewState(psEvalCommand)
-			}
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
 		case psChangeScope:
 			p.Lexical = Car(p.Scratch).(Interface)
 			p.Scratch = Cdr(p.Scratch)
@@ -1121,8 +1065,6 @@ func Start() {
 	s.DefineState("redirect-stderr", psRedirectStderr)
 	s.DefineState("append-stdout", psAppendStdout)
 	s.DefineState("append-stderr", psAppendStderr)
-	s.DefineState("andf", psAndf)
-	s.DefineState("orf", psOrf)
 
 	/* Builtins. */
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {
@@ -2138,6 +2080,7 @@ define and: syntax e {
     }
     return true
 }
+define andf and
 define echo: builtin: $stdout::write @$args
 define expand: builtin: return $args
 define for: method l m {
@@ -2166,6 +2109,7 @@ define or: syntax e {
     }
     return false
 }
+define orf or
 define printf: method: echo: sprintf (car $args) @(cdr $args)
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
