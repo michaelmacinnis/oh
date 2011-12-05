@@ -86,12 +86,12 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
         "!>>": "append-stderr",
         "!|": "pipe-stderr",
         "&": "background",
-        "&&": "andf",
+        "&&": "and",
         "<": "redirect-stdin",
         ">": "redirect-stdout",
         ">>": "append-stdout",
         "|": "pipe-stdout",
-        "||": "orf",
+        "||": "or",
     }
 
     defer func() {

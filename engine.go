@@ -1002,6 +1002,9 @@ func wpipe(c Cell) *os.File {
 }
 
 func Evaluate(c Cell) {
+	SetCdr(proc0.Code, Cons(c, Null))
+	proc0.SaveState(SaveCode, Cdr(proc0.Code))
+
 	proc0.NewState(psEvalCommand)
 	proc0.Code = c
 
@@ -1025,6 +1028,7 @@ func ExitStatus() int {
 func Start() {
 	proc0 = NewProcess(psNone, nil, nil)
 
+	proc0.Code = Cons(Cons(NewString("exit"), Null), Null)
 	proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
@@ -2074,13 +2078,14 @@ func Start() {
 	Parse(bufio.NewReader(strings.NewReader(`
 define and: syntax e {
     define l $args
+    define r false
     while (not: is-null: car l) {
-        if (not: eval e: car l): return false
+        set r: eval e: car l
+        if (not r): return r
         set l: cdr l
     }
-    return true
+    return r
 }
-define andf and
 define echo: builtin: $stdout::write @$args
 define expand: builtin: return $args
 define for: method l m {
@@ -2103,13 +2108,14 @@ define list-tail: method k x {
 }
 define or: syntax e {
     define l $args
+    define r false
     while (not: is-null: car l) {
-        if (eval e: car l): return true
+	set r: eval e: car l
+        if r: return r
         set l: cdr l
     }
-    return false
+    return r
 }
-define orf or
 define printf: method: echo: sprintf (car $args) @(cdr $args)
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
