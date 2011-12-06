@@ -32,6 +32,7 @@ const (
 	psEvalElement
 	psEvalElementBC
 	psEvalReference
+	psEvalTopBlock
 	psEvalWhileBody
 	psEvalWhileTest
 
@@ -92,6 +93,7 @@ const (
 )
 
 var proc0 *Process
+var block0 Cell
 
 func channel(p *Process, r, w *os.File) Interface {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w)
@@ -361,6 +363,18 @@ func run(p *Process) {
 			p.Code = Car(p.Code)
 
 			p.NewState(psEvalElement)
+			continue
+
+		case psEvalTopBlock:
+			if p.Code == block0 {
+				return
+			}
+
+			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(psEvalCommand)
+
+			p.Code = Car(p.Code)
+			p.Scratch = Cdr(p.Scratch)
 			continue
 
 		case psBlock:
@@ -1002,9 +1016,11 @@ func wpipe(c Cell) *os.File {
 }
 
 func Evaluate(c Cell) {
-	SetCdr(proc0.Code, Cons(c, Null))
-	proc0.SaveState(SaveCode, Cdr(proc0.Code))
+	SetCar(block0, c)
+	SetCdr(block0, Cons(nil, Null))
+	block0 = Cdr(block0)
 
+	proc0.SaveState(SaveCode, block0)
 	proc0.NewState(psEvalCommand)
 	proc0.Code = c
 
@@ -1026,9 +1042,11 @@ func ExitStatus() int {
 }
 
 func Start() {
-	proc0 = NewProcess(psNone, nil, nil)
+	block0 = Cons(nil, Null)
 
-	proc0.Code = Cons(Cons(NewString("exit"), Null), Null)
+	proc0 = NewProcess(psEvalTopBlock, nil, nil)
+
+	proc0.Code = block0
 	proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
