@@ -35,7 +35,6 @@ const (
 	psEvalWhileBody
 	psEvalWhileTest
 
-	psExecAccess
 	psExecApplicative
 	psExecBuiltin
 	psExecDefine
@@ -273,8 +272,6 @@ func run(p *Process) {
 	}(*p)
 
 	for p.Stack != Null {
-		//fmt.Printf("%v\n", p.Scratch);
-
 		switch state := p.GetState(); state {
 		case psNone:
 			return
@@ -357,7 +354,8 @@ func run(p *Process) {
 			p.RemoveState()
 			p.SaveState(SaveDynamic | SaveLexical)
 
-			p.NewState(psExecAccess)
+			p.NewState(psEvalElement)
+			p.NewState(psChangeScope)
 			p.SaveState(SaveCode, Cdr(p.Code))
 
 			p.Code = Car(p.Code)
@@ -391,8 +389,7 @@ func run(p *Process) {
 				break
 			}
 
-			if Cdr(p.Code) == Null ||
-				!IsCons(Cadr(p.Code)) {
+			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
 				p.ReplaceState(psEvalCommand)
 			} else {
 				p.SaveState(SaveCode, Cdr(p.Code))
@@ -592,13 +589,6 @@ func run(p *Process) {
 			p.Dynamic = nil
 			p.Lexical = Car(p.Scratch).(Interface)
 			p.Scratch = Cdr(p.Scratch)
-
-		case psExecAccess:
-			p.Dynamic = nil
-			p.Lexical = Car(p.Scratch).(Interface)
-			p.Scratch = Cdr(p.Scratch)
-			p.ReplaceState(psEvalElement)
-			continue
 
 		case psExecBuiltin:
 			args := p.Arguments()
