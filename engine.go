@@ -31,7 +31,6 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBC
-	psEvalReference
 	psEvalTopBlock
 	psEvalWhileBody
 	psEvalWhileTest
@@ -48,7 +47,6 @@ const (
 	psExecObject
 	psExecOperative
 	psExecPublic
-	psExecReference
 	psExecSet
 	psExecSetenv
 	psExecSplice
@@ -275,6 +273,8 @@ func run(p *Process) {
 	}(*p)
 
 	for p.Stack != Null {
+	        //fmt.Printf("%v\n", p.Scratch);
+
 		switch state := p.GetState(); state {
 		case psNone:
 			return
@@ -467,43 +467,35 @@ func run(p *Process) {
 			continue
 
 		case psSet:
-			p.ReplaceState(psExecSet)
-			p.NewState(psEvalArguments)
-			p.SaveState(SaveCode, Cdr(p.Code))
-
-			p.Code = Car(p.Code)
-
-			p.NewState(psEvalReference)
-
-			fallthrough
-		case psEvalReference:
 			p.RemoveState()
-
 			p.Scratch = Cdr(p.Scratch)
 
-			if p.Code != Null && IsCons(p.Code) {
-				p.SaveState(SaveLexical)
-				p.NewState(psExecReference)
-				p.SaveState(SaveCode, Cdr(p.Code))
-
-				p.Code = Car(p.Code)
-
+			s := Car(p.Code)
+			if (!IsCons(s)) {
+				p.NewState(psExecSet)
+				p.SaveState(SaveCode, s)
+			} else {
+				p.SaveState(SaveDynamic|SaveLexical)
+				p.NewState(psExecSet)
+				p.SaveState(SaveCode, Cdr(s))
 				p.NewState(psChangeScope)
 				p.NewState(psEvalElement)
-				continue
+				p.SaveState(SaveCode, Car(s))
 			}
 
-			p.NewState(psExecReference)
+			p.NewState(psEvalElement)
 
-			fallthrough
-		case psExecReference:
+			p.Code = Cadr(p.Code)
+			continue
+
+		case psExecSet:
 			k := p.Code.(*Symbol)
-			v := Resolve(p.Lexical, p.Dynamic, k)
-			if v == nil {
+			r := Resolve(p.Lexical, p.Dynamic, k)
+			if r == nil {
 				panic("'" + k.String() + "' is not defined")
 			}
 
-			p.Scratch = Cons(v, p.Scratch)
+			r.SetValue(Car(p.Scratch))
 
 		case psDefine, psPublic:
 			p.RemoveState()
@@ -597,6 +589,7 @@ func run(p *Process) {
 			continue
 
 		case psChangeScope:
+			p.Dynamic = nil
 			p.Lexical = Car(p.Scratch).(Interface)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -706,14 +699,6 @@ func run(p *Process) {
 
 		case psExecObject:
 			SetCar(p.Scratch, NewObject(p.Lexical))
-
-		case psExecSet:
-			args := p.Arguments()
-
-			r := Car(p.Scratch).(*Reference)
-
-			r.SetValue(Car(args))
-			SetCar(p.Scratch, r.GetValue())
 
 		case psExecSplice:
 			l := Car(p.Scratch)
