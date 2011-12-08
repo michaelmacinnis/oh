@@ -273,7 +273,7 @@ func run(p *Process) {
 	}(*p)
 
 	for p.Stack != Null {
-	        //fmt.Printf("%v\n", p.Scratch);
+		//fmt.Printf("%v\n", p.Scratch);
 
 		switch state := p.GetState(); state {
 		case psNone:
@@ -329,7 +329,7 @@ func run(p *Process) {
 		case psEvalElement, psEvalElementBC:
 			if p.Code == Null {
 				p.Scratch = Cons(p.Code, p.Scratch)
-                break
+				break
 			} else if IsCons(p.Code) {
 				if IsAtom(Cdr(p.Code)) {
 					p.ReplaceState(psEvalAccess)
@@ -471,11 +471,11 @@ func run(p *Process) {
 			p.Scratch = Cdr(p.Scratch)
 
 			s := Car(p.Code)
-			if (!IsCons(s)) {
+			if !IsCons(s) {
 				p.NewState(psExecSet)
 				p.SaveState(SaveCode, s)
 			} else {
-				p.SaveState(SaveDynamic|SaveLexical)
+				p.SaveState(SaveDynamic | SaveLexical)
 				p.NewState(psExecSet)
 				p.SaveState(SaveCode, Cdr(s))
 				p.NewState(psChangeScope)
