@@ -969,6 +969,8 @@ func run(p *Process) {
 
 			SetCdr(p.Scratch, Cddr(p.Scratch))
 
+		case -1: // Without this case we crash. Yes it's weird.
+
 		default:
 			if state >= SaveMax {
 				panic(fmt.Sprintf("command not found: %s", p.Code))
