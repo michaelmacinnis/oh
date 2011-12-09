@@ -1176,8 +1176,8 @@ func (self Function) String() string {
 }
 
 func (self Function) Equal(c Cell) bool {
-	// TODO: fix
-	//return c.(Function) == self
+	// Functions can only be compared to nil. 
+	// return c.(Function) == self
 	return false
 }
 

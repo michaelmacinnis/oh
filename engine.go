@@ -191,13 +191,7 @@ func external(p *Process, args Cell) bool {
 	var status int64 = 0
 
 	msg, err := proc.Wait(0)
-	if err != nil {
-		// TODO: fix
-		//status = int64(err.(*os.SyscallError).Errno)
-		status = 1
-	} else {
-		status = int64(msg.ExitStatus())
-	}
+	status = int64(msg.WaitStatus.ExitStatus())
 
 	SetCar(p.Scratch, NewStatus(status))
 
@@ -1068,10 +1062,9 @@ func Start() {
 
 	/* Builtins. */
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {
-		err, status := os.Chdir(Raw(Car(args))), 0
+		err := os.Chdir(Raw(Car(args)))
+		status := 0
 		if err != nil {
-			// TODO: fix
-			//status = int(err.(*os.PathError).Err.(os.Errno))
 			status = 1
 		}
 		SetCar(p.Scratch, NewStatus(int64(status)))
