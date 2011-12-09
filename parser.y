@@ -19,7 +19,7 @@ import (
     "fmt"
     "os"
     "strconv"
-    "utf8"
+    "unicode/utf8"
     "unsafe"
 )
 
@@ -169,7 +169,7 @@ expression: expression CONS expression {
 
 expression: "%" SYMBOL SYMBOL "%" {
     kind := $2.s
-    value, _ := strconv.Btoui64($3.s, 0)
+    value, _ := strconv.ParseUint($3.s, 0, 64)
 
     addr := uintptr(value)
 
@@ -212,7 +212,7 @@ word: SYMBOL { $$.c = NewSymbol($1.s) };
 %%
 
 type ReadStringer interface {
-    ReadString(delim byte) (line string, err os.Error)
+    ReadString(delim byte) (line string, err error)
 }
 
 type scanner struct {

@@ -4,13 +4,13 @@ package main
 
 import (
 	"bufio"
-	"exec"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -192,7 +192,9 @@ func external(p *Process, args Cell) bool {
 
 	msg, err := proc.Wait(0)
 	if err != nil {
-		status = int64(err.(*os.SyscallError).Errno)
+		// TODO: fix
+		//status = int64(err.(*os.SyscallError).Errno)
+		status = 1
 	} else {
 		status = int64(msg.ExitStatus())
 	}
@@ -210,21 +212,22 @@ func method(body, param Cell, scope *Scope) *Applicative {
 	return NewApplicative(NewClosure(body, param, scope), scope)
 }
 
-func module(f string) (string, os.Error) {
+func module(f string) (string, error) {
 	i, err := os.Stat(f)
 	if err != nil {
 		return "", err
 	}
 
-	m := "$" + f + "-" + strconv.Uitoa64(i.Dev) + "-" +
-		strconv.Uitoa64(i.Ino) + "-" + strconv.Itoa64(i.Blocks) + "-" +
-		strconv.Itoa64(i.Mtime_ns)
+	m := "$" + f + "-" + i.Name() + "-" +
+		strconv.FormatInt(i.Size(), 10) + "-" +
+		strconv.Itoa(i.ModTime().Second()) + "-" +
+		strconv.Itoa(i.ModTime().Nanosecond())
 
 	return m, nil
 }
 
 func next(p *Process) bool {
-	switch m := Car(p.Scratch).(type) {
+	switch Car(p.Scratch).(type) {
 	case *Applicative:
 
 		body := Car(p.Scratch).(*Applicative).Func.Body
@@ -969,8 +972,6 @@ func run(p *Process) {
 
 			SetCdr(p.Scratch, Cddr(p.Scratch))
 
-		case -1: // Without this case we crash. Yes it's weird.
-
 		default:
 			if state >= SaveMax {
 				panic(fmt.Sprintf("command not found: %s", p.Code))
@@ -1069,7 +1070,9 @@ func Start() {
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {
 		err, status := os.Chdir(Raw(Car(args))), 0
 		if err != nil {
-			status = int(err.(*os.PathError).Error.(os.Errno))
+			// TODO: fix
+			//status = int(err.(*os.PathError).Err.(os.Errno))
+			status = 1
 		}
 		SetCar(p.Scratch, NewStatus(int64(status)))
 
@@ -1604,7 +1607,7 @@ func Start() {
 			end = int(Caddr(args).(Atom).Int())
 		}
 
-		switch t := Car(args).(type) {
+		switch Car(args).(type) {
 		case *String:
 			r = NewString(string(s[start:end]))
 		case *Symbol:

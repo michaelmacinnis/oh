@@ -507,7 +507,7 @@ func (self *Integer) Status() int64 {
 }
 
 func (self *Integer) String() string {
-	return strconv.Itoa64(int64(*self))
+	return strconv.FormatInt(int64(*self), 10)
 }
 
 func (self *Integer) Equal(c Cell) bool {
@@ -581,7 +581,7 @@ func (self *Status) Status() int64 {
 }
 
 func (self *Status) String() string {
-	return strconv.Itoa64(int64(*self))
+	return strconv.FormatInt(int64(*self), 10)
 }
 
 func (self *Status) Equal(c Cell) bool {
@@ -642,7 +642,7 @@ func (self *Float) Status() int64 {
 }
 
 func (self *Float) String() string {
-	return strconv.Ftoa64(float64(*self), 'g', -1)
+	return strconv.FormatFloat(float64(*self), 'g', -1, 64)
 }
 
 func (self *Float) Equal(c Cell) bool {
@@ -707,24 +707,24 @@ func (self *Symbol) Bool() bool {
 }
 
 func (self *Symbol) Float() (f float64) {
-	var err os.Error
-	if f, err = strconv.Atof64(string(*self)); err != nil {
+	var err error
+	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
 		panic(err)
 	}
 	return f
 }
 
 func (self *Symbol) Int() (i int64) {
-	var err os.Error
-	if i, err = strconv.Btoi64(string(*self), 0); err != nil {
+	var err error
+	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
 }
 
 func (self *Symbol) Status() (i int64) {
-	var err os.Error
-	if i, err = strconv.Btoi64(string(*self), 0); err != nil {
+	var err error
+	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
@@ -747,12 +747,12 @@ func (self *Symbol) Less(c Cell) bool {
 }
 
 func (self *Symbol) isFloat() bool {
-	_, err := strconv.Atof64(string(*self))
+	_, err := strconv.ParseFloat(string(*self), 64)
 	return err == nil
 }
 
 func (self *Symbol) isInt() bool {
-	_, err := strconv.Btoi64(string(*self), 0)
+	_, err := strconv.ParseInt(string(*self), 0, 64)
 	return err == nil
 }
 
@@ -839,16 +839,16 @@ func (self *String) Bool() bool {
 }
 
 func (self *String) Float() (f float64) {
-	var err os.Error
-	if f, err = strconv.Atof64(string(*self)); err != nil {
+	var err error
+	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
 		panic(err)
 	}
 	return f
 }
 
 func (self *String) Int() (i int64) {
-	var err os.Error
-	if i, err = strconv.Btoi64(string(*self), 0); err != nil {
+	var err error
+	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
@@ -859,8 +859,8 @@ func (self *String) Raw() string {
 }
 
 func (self *String) Status() (i int64) {
-	var err os.Error
-	if i, err = strconv.Btoi64(string(*self), 0); err != nil {
+	var err error
+	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
@@ -988,7 +988,7 @@ func NewChannel(r *os.File, w *os.File) *Channel {
 	ch := &Channel{nil, nil, nil, r, w, false}
 
 	if r == nil && w == nil {
-		var err os.Error
+		var err error
 
 		if ch.r, ch.w, err = os.Pipe(); err != nil {
 			ch.r, ch.w = nil, nil
@@ -1176,7 +1176,9 @@ func (self Function) String() string {
 }
 
 func (self Function) Equal(c Cell) bool {
-	return c.(Function) == self
+	// TODO: fix
+	//return c.(Function) == self
+	return false
 }
 
 /* Object cell definition. (An object cell is an object's public face). */

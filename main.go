@@ -4,8 +4,13 @@ package main
 
 import (
 	"os"
-	"github.com/michaelmacinnis/go-tecla"
+	"runtime"
+	"github.com/michaelmacinnis/tecla"
 )
+
+func init() {
+	runtime.LockOSThread()
+}
 
 func main() {
 	Start()

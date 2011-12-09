@@ -7,7 +7,7 @@ import (
     "fmt"
     "os"
     "strconv"
-    "utf8"
+    "unicode/utf8"
     "unsafe"
 )
 
@@ -16,18 +16,19 @@ type yySymType struct {
     c Cell
     s string
 }
-const	DEDENT	= 57346
-const	END	= 57347
-const	INDENT	= 57348
-const	STRING	= 57349
-const	SYMBOL	= 57350
-const	BACKGROUND	= 57351
-const	ORF	= 57352
-const	ANDF	= 57353
-const	PIPE	= 57354
-const	REDIRECT	= 57355
-const	CONS	= 57356
-var	yyToknames	 =[]string {
+const DEDENT = 57346
+const END = 57347
+const INDENT = 57348
+const STRING = 57349
+const SYMBOL = 57350
+const BACKGROUND = 57351
+const ORF = 57352
+const ANDF = 57353
+const PIPE = 57354
+const REDIRECT = 57355
+const CONS = 57356
+
+var yyToknames = []string{
 	"DEDENT",
 	"END",
 	"INDENT",
@@ -43,17 +44,17 @@ var	yyToknames	 =[]string {
 	" `",
 	"CONS",
 }
-var	yyStatenames	 =[]string {
-}
-																																																		const	yyEofCode	= 1
-const	yyErrCode	= 2
-const	yyMaxDepth	= 200
+var yyStatenames = []string{}
+
+const yyEofCode = 1
+const yyErrCode = 2
+const yyMaxDepth = 200
 
 //line parser.y:212
 
 
 type ReadStringer interface {
-    ReadString(delim byte) (line string, err os.Error)
+    ReadString(delim byte) (line string, err error)
 }
 
 type scanner struct {
@@ -293,8 +294,8 @@ func Parse(r ReadStringer, p func(Cell)) {
 }
 
 //line yacctab:1
-var	yyExca = []int {
--1, 0,
+var yyExca = []int{
+	-1, 0,
 	7, 15,
 	8, 15,
 	14, 15,
@@ -304,10 +305,10 @@ var	yyExca = []int {
 	23, 15,
 	24, 15,
 	-2, 0,
--1, 1,
+	-1, 1,
 	1, -1,
 	-2, 0,
--1, 7,
+	-1, 7,
 	9, 13,
 	10, 13,
 	11, 13,
@@ -316,7 +317,7 @@ var	yyExca = []int {
 	18, 13,
 	25, 13,
 	-2, 16,
--1, 10,
+	-1, 10,
 	1, 1,
 	7, 15,
 	8, 15,
@@ -327,107 +328,111 @@ var	yyExca = []int {
 	23, 15,
 	24, 15,
 	-2, 0,
--1, 51,
+	-1, 51,
 	18, 31,
 	-2, 15,
--1, 63,
+	-1, 63,
 	18, 31,
 	-2, 15,
 }
-const	yyNprod	= 45
-const	yyPrivate	= 57344
-var	yyTokenNames []string
-var	yyStates []string
-const	yyLast	= 102
-var	yyAct	= []int {
 
-   5,  59,  17,   8,   9,   9,   7,  19,  64,   9,
-  46,  61,  16,  29,  30,  31,  11,  12,  13,  14,
-  15,  34,   4,  32,  35,  45,  37,  63,  41,  42,
-  43,  51,  54,  10,  40,  13,  14,  15,  48,   9,
-  15,  49,  11,  12,  13,  14,  15,   3,  52,  14,
-  15,  55,  60,  57,  56,  53,  44,  25,  28,  62,
-  26,  27,  58,  50,  60,  65,  36,  20,  21,  22,
-  18,  26,  27,  38,  39,  47,  23,  24,  20,  21,
-  22,  33,   6,  16,  26,  27,   2,  23,  24,   1,
-   0,  20,  21,  22,   0,   0,   0,   0,   0,   0,
-  23,  24,
-};
-var	yyPact	= []int {
+const yyNprod = 45
+const yyPrivate = 57344
 
-  20,-1000,  15,-1000,-1000,  33,-1000,  -7,  77,-1000,
-  20,-1000, -10, -10, -10,  77,-1000, -10,  53,  17,
-  77,  77,  77,  48, -15,-1000,-1000,-1000,-1000,  24,
-  37,  27,  17,-1000,-1000,  64,-1000,  17,  77,  13,
-  77,  17,  17,  17,  47,   7,-1000, -10,-1000,-1000,
-  77, -10,-1000, -12,-1000,-1000,  64,-1000,   9,-1000,
-  33,-1000,-1000, -14,-1000,-1000,
-};
-var	yyPgo	= []int {
+var yyTokenNames []string
+var yyStates []string
 
-   0,  89,  86,  47,   0,   7,  82,   6,   3,   2,
-  81,  75,  70,  66,  63,  62,   1,  57,
-};
-var	yyR1	= []int {
+const yyLast = 102
 
-   0,   1,   2,   2,   3,   3,   3,   4,   4,   4,
-   4,   4,   4,   6,   6,   8,   8,   7,   7,  10,
-  10,  11,  11,   9,   9,  13,  13,  13,  14,  15,
-  15,  16,  16,  12,  12,   5,   5,   5,   5,   5,
-   5,   5,   5,  17,  17,
-};
-var	yyR2	= []int {
+var yyAct = []int{
 
-   0,   2,   1,   3,   1,   0,   1,   2,   3,   3,
-   3,   3,   1,   1,   3,   0,   1,   1,   2,   1,
-   3,   1,   3,   1,   2,   2,   3,   2,   4,   1,
-   3,   0,   1,   1,   2,   2,   2,   2,   3,   4,
-   3,   2,   1,   1,   1,
-};
-var	yyChk	= []int {
+	5, 59, 17, 8, 9, 9, 7, 19, 64, 9,
+	46, 61, 16, 29, 30, 31, 11, 12, 13, 14,
+	15, 34, 4, 32, 35, 45, 37, 63, 41, 42,
+	43, 51, 54, 10, 40, 13, 14, 15, 48, 9,
+	15, 49, 11, 12, 13, 14, 15, 3, 52, 14,
+	15, 55, 60, 57, 56, 53, 44, 25, 28, 62,
+	26, 27, 58, 50, 60, 65, 36, 20, 21, 22,
+	18, 26, 27, 38, 39, 47, 23, 24, 20, 21,
+	22, 33, 6, 16, 26, 27, 2, 23, 24, 1,
+	0, 20, 21, 22, 0, 0, 0, 0, 0, 0,
+	23, 24,
+}
+var yyPact = []int{
 
--1000,  -1,  -2,  -3,   2,  -4,  -6,  -7,  -8,  19,
-  18,   9,  10,  11,  12,  13,  19,  -9, -12,  -5,
-  14,  15,  16,  23,  24, -17,   7,   8,  -3,  -4,
-  -4,  -4,  -5, -10,  -8,  -7, -13,  -5,  20,  21,
-  17,  -5,  -5,  -5,   8,  -4,  25, -11,  -9,  -9,
- -14,  18,  -5,   8,  25,  -8,  -7,  -9, -15, -16,
-  -4,  23,  -9,  18,  22, -16,
-};
-var	yyDef	= []int {
+	20, -1000, 15, -1000, -1000, 33, -1000, -7, 77, -1000,
+	20, -1000, -10, -10, -10, 77, -1000, -10, 53, 17,
+	77, 77, 77, 48, -15, -1000, -1000, -1000, -1000, 24,
+	37, 27, 17, -1000, -1000, 64, -1000, 17, 77, 13,
+	77, 17, 17, 17, 47, 7, -1000, -10, -1000, -1000,
+	77, -10, -1000, -12, -1000, -1000, 64, -1000, 9, -1000,
+	33, -1000, -1000, -14, -1000, -1000,
+}
+var yyPgo = []int{
 
-  -2,  -2,   0,   2,   4,   6,  12,  -2,   0,  17,
-  -2,   7,  15,  15,  15,   0,  18,  15,  23,  33,
-   0,   0,   0,   0,  15,  42,  43,  44,   3,   8,
-   9,  10,  11,  14,  19,  16,  24,  34,   0,   0,
-   0,  35,  36,  37,   0,   0,  41,  15,  21,  25,
-  27,  -2,  38,   0,  40,  20,  16,  26,   0,  29,
-  32,  39,  22,  -2,  28,  30,
-};
-var	yyTok1	= []int {
+	0, 89, 86, 47, 0, 7, 82, 6, 3, 2,
+	81, 75, 70, 66, 63, 62, 1, 57,
+}
+var yyR1 = []int{
 
-   1,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-  18,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,  23,   3,  15,
-  24,  25,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,  20,  19,
-   3,   3,   3,   3,  14,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,  16,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,   3,   3,   3,   3,   3,   3,   3,
-   3,   3,   3,  21,   3,  22,
-};
-var	yyTok2	= []int {
+	0, 1, 2, 2, 3, 3, 3, 4, 4, 4,
+	4, 4, 4, 6, 6, 8, 8, 7, 7, 10,
+	10, 11, 11, 9, 9, 13, 13, 13, 14, 15,
+	15, 16, 16, 12, 12, 5, 5, 5, 5, 5,
+	5, 5, 5, 17, 17,
+}
+var yyR2 = []int{
 
-   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,
-  12,  13,  17,
-};
-var	yyTok3	= []int {
-   0,
- };
+	0, 2, 1, 3, 1, 0, 1, 2, 3, 3,
+	3, 3, 1, 1, 3, 0, 1, 1, 2, 1,
+	3, 1, 3, 1, 2, 2, 3, 2, 4, 1,
+	3, 0, 1, 1, 2, 2, 2, 2, 3, 4,
+	3, 2, 1, 1, 1,
+}
+var yyChk = []int{
+
+	-1000, -1, -2, -3, 2, -4, -6, -7, -8, 19,
+	18, 9, 10, 11, 12, 13, 19, -9, -12, -5,
+	14, 15, 16, 23, 24, -17, 7, 8, -3, -4,
+	-4, -4, -5, -10, -8, -7, -13, -5, 20, 21,
+	17, -5, -5, -5, 8, -4, 25, -11, -9, -9,
+	-14, 18, -5, 8, 25, -8, -7, -9, -15, -16,
+	-4, 23, -9, 18, 22, -16,
+}
+var yyDef = []int{
+
+	-2, -2, 0, 2, 4, 6, 12, -2, 0, 17,
+	-2, 7, 15, 15, 15, 0, 18, 15, 23, 33,
+	0, 0, 0, 0, 15, 42, 43, 44, 3, 8,
+	9, 10, 11, 14, 19, 16, 24, 34, 0, 0,
+	0, 35, 36, 37, 0, 0, 41, 15, 21, 25,
+	27, -2, 38, 0, 40, 20, 16, 26, 0, 29,
+	32, 39, 22, -2, 28, 30,
+}
+var yyTok1 = []int{
+
+	1, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	18, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 23, 3, 15,
+	24, 25, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 20, 19,
+	3, 3, 3, 3, 14, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 16, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 21, 3, 22,
+}
+var yyTok2 = []int{
+
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+	12, 13, 17,
+}
+var yyTok3 = []int{
+	0,
+}
 
 //line yaccpar:1
 
@@ -633,7 +638,7 @@ yydefault:
 
 	yynt := yyn
 	yypt := yyp
-	_ = yypt		// guard against "declared and not used"
+	_ = yypt // guard against "declared and not used"
 
 	yyp -= yyR2[yyn]
 	yyVAL = yyS[yyp+1]
@@ -654,203 +659,203 @@ yydefault:
 	// dummy call; replaced with literal code
 	switch yynt {
 
-case 5:
-//line parser.y:43
-{ yyVAL.c = Null }
-case 6:
-//line parser.y:45
-{
-    yyVAL.c = yyS[yypt-0].c
-    if (yyS[yypt-0].c != Null) {
-        yylex.(*scanner).process(yyS[yypt-0].c)
-    }
-}
-case 7:
-//line parser.y:52
-{
-    yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
-}
-case 8:
-//line parser.y:56
-{
-    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-}
-case 9:
-//line parser.y:60
-{
-    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-}
-case 10:
-//line parser.y:64
-{
-    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-}
-case 11:
-//line parser.y:68
-{
-    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
-}
-case 12:
-//line parser.y:72
-{ yyVAL.c = yyS[yypt-0].c }
-case 13:
-//line parser.y:74
-{ yyVAL.c = Null }
-case 14:
-//line parser.y:76
-{
-    if yyS[yypt-0].c == Null {
-        yyVAL.c = yyS[yypt-1].c
-    } else {
-        yyVAL.c = Cons(NewSymbol("block"), Cons(yyS[yypt-1].c, yyS[yypt-0].c))
-    }
-}
-case 19:
-//line parser.y:92
-{ yyVAL.c = Null }
-case 20:
-//line parser.y:94
-{ yyVAL.c = yyS[yypt-1].c }
-case 21:
-//line parser.y:96
-{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
-case 22:
-//line parser.y:98
-{ yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c) }
-case 23:
-//line parser.y:100
-{ yyVAL.c = yyS[yypt-0].c }
-case 24:
-//line parser.y:102
-{
-    yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
-}
-case 25:
-//line parser.y:106
-{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
-case 26:
-//line parser.y:108
-{
-    if yyS[yypt-1].c == Null {
-        yyVAL.c = Cons(yyS[yypt-0].c, Null)
-    } else {
-        yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
-    }
-}
-case 27:
-//line parser.y:116
-{
-    yyVAL.c = yyS[yypt-0].c
-}
-case 28:
-//line parser.y:120
-{ yyVAL.c = yyS[yypt-2].c }
-case 29:
-//line parser.y:122
-{
-    if yyS[yypt-0].c == Null {
-        yyVAL.c = yyS[yypt-0].c
-    } else {
-        yyVAL.c = Cons(yyS[yypt-0].c, Null)
-    }
-}
-case 30:
-//line parser.y:130
-{
-    if yyS[yypt-2].c == Null {
-        if yyS[yypt-0].c == Null {
-            yyVAL.c = yyS[yypt-0].c
-        } else {
-            yyVAL.c = Cons(yyS[yypt-0].c, Null)
-        }
-    } else {
-        if yyS[yypt-0].c == Null {
-            yyVAL.c = yyS[yypt-2].c
-        } else {
-            yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
-        }
-    }
-}
-case 31:
-//line parser.y:146
-{ yyVAL.c = Null }
-case 32:
-//line parser.y:148
-{ yyVAL.c = yyS[yypt-0].c }
-case 33:
-//line parser.y:150
-{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
-case 34:
-//line parser.y:152
-{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
-case 35:
-//line parser.y:154
-{
-    yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
-}
-case 36:
-//line parser.y:158
-{
-    yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
-}
-case 37:
-//line parser.y:162
-{
-    yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
-}
-case 38:
-//line parser.y:166
-{
-    yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
-}
-case 39:
-//line parser.y:170
-{
-    kind := yyS[yypt-2].s
-    value, _ := strconv.Btoui64(yyS[yypt-1].s, 0)
-
-    addr := uintptr(value)
-
-    switch {
-    case kind == "channel":
-        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
-    case kind == "closure":
-        yyVAL.c = (*Closure)(unsafe.Pointer(addr))
-    case kind == "env":
-        yyVAL.c = (*Env)(unsafe.Pointer(addr))
-    case kind == "function":
-        yyVAL.c = (*Function)(unsafe.Pointer(addr))
-    case kind == "method":
-        yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
-    case kind == "object":
-        yyVAL.c = (*Object)(unsafe.Pointer(addr))
-    case kind == "process":
-        yyVAL.c = (*Process)(unsafe.Pointer(addr))
-    case kind == "scope":
-        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
-    case kind == "syntax":
-        yyVAL.c = (*Operative)(unsafe.Pointer(addr))
-
-    default:
-        yyVAL.c = Null
-    }
-
-}
-case 40:
-//line parser.y:202
-{ yyVAL = yyS[yypt-1] }
-case 41:
-//line parser.y:204
-{ yyVAL.c = Null }
-case 42:
-//line parser.y:206
-{ yyVAL = yyS[yypt-0] }
-case 43:
-//line parser.y:208
-{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
-case 44:
-//line parser.y:210
-{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
+	case 5:
+		//line parser.y:43
+		{ yyVAL.c = Null }
+	case 6:
+		//line parser.y:45
+		{
+	    yyVAL.c = yyS[yypt-0].c
+	    if (yyS[yypt-0].c != Null) {
+	        yylex.(*scanner).process(yyS[yypt-0].c)
+	    }
+	}
+	case 7:
+		//line parser.y:52
+		{
+	    yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
+	}
+	case 8:
+		//line parser.y:56
+		{
+	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+	}
+	case 9:
+		//line parser.y:60
+		{
+	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+	}
+	case 10:
+		//line parser.y:64
+		{
+	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+	}
+	case 11:
+		//line parser.y:68
+		{
+	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
+	}
+	case 12:
+		//line parser.y:72
+		{ yyVAL.c = yyS[yypt-0].c }
+	case 13:
+		//line parser.y:74
+		{ yyVAL.c = Null }
+	case 14:
+		//line parser.y:76
+		{
+	    if yyS[yypt-0].c == Null {
+	        yyVAL.c = yyS[yypt-1].c
+	    } else {
+	        yyVAL.c = Cons(NewSymbol("block"), Cons(yyS[yypt-1].c, yyS[yypt-0].c))
+	    }
+	}
+	case 19:
+		//line parser.y:92
+		{ yyVAL.c = Null }
+	case 20:
+		//line parser.y:94
+		{ yyVAL.c = yyS[yypt-1].c }
+	case 21:
+		//line parser.y:96
+		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+	case 22:
+		//line parser.y:98
+		{ yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c) }
+	case 23:
+		//line parser.y:100
+		{ yyVAL.c = yyS[yypt-0].c }
+	case 24:
+		//line parser.y:102
+		{
+	    yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
+	}
+	case 25:
+		//line parser.y:106
+		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+	case 26:
+		//line parser.y:108
+		{
+	    if yyS[yypt-1].c == Null {
+	        yyVAL.c = Cons(yyS[yypt-0].c, Null)
+	    } else {
+	        yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
+	    }
+	}
+	case 27:
+		//line parser.y:116
+		{
+	    yyVAL.c = yyS[yypt-0].c
+	}
+	case 28:
+		//line parser.y:120
+		{ yyVAL.c = yyS[yypt-2].c }
+	case 29:
+		//line parser.y:122
+		{
+	    if yyS[yypt-0].c == Null {
+	        yyVAL.c = yyS[yypt-0].c
+	    } else {
+	        yyVAL.c = Cons(yyS[yypt-0].c, Null)
+	    }
+	}
+	case 30:
+		//line parser.y:130
+		{
+	    if yyS[yypt-2].c == Null {
+	        if yyS[yypt-0].c == Null {
+	            yyVAL.c = yyS[yypt-0].c
+	        } else {
+	            yyVAL.c = Cons(yyS[yypt-0].c, Null)
+	        }
+	    } else {
+	        if yyS[yypt-0].c == Null {
+	            yyVAL.c = yyS[yypt-2].c
+	        } else {
+	            yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
+	        }
+	    }
+	}
+	case 31:
+		//line parser.y:146
+		{ yyVAL.c = Null }
+	case 32:
+		//line parser.y:148
+		{ yyVAL.c = yyS[yypt-0].c }
+	case 33:
+		//line parser.y:150
+		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+	case 34:
+		//line parser.y:152
+		{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
+	case 35:
+		//line parser.y:154
+		{
+	    yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
+	}
+	case 36:
+		//line parser.y:158
+		{
+	    yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
+	}
+	case 37:
+		//line parser.y:162
+		{
+	    yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
+	}
+	case 38:
+		//line parser.y:166
+		{
+	    yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
+	}
+	case 39:
+		//line parser.y:170
+		{
+	    kind := yyS[yypt-2].s
+	    value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
+	
+	    addr := uintptr(value)
+	
+	    switch {
+	    case kind == "channel":
+	        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
+	    case kind == "closure":
+	        yyVAL.c = (*Closure)(unsafe.Pointer(addr))
+	    case kind == "env":
+	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
+	    case kind == "function":
+	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
+	    case kind == "method":
+	        yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
+	    case kind == "object":
+	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
+	    case kind == "process":
+	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
+	    case kind == "scope":
+	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
+	    case kind == "syntax":
+	        yyVAL.c = (*Operative)(unsafe.Pointer(addr))
+	
+	    default:
+	        yyVAL.c = Null
+	    }
+	
+	}
+	case 40:
+		//line parser.y:202
+		{ yyVAL = yyS[yypt-1] }
+	case 41:
+		//line parser.y:204
+		{ yyVAL.c = Null }
+	case 42:
+		//line parser.y:206
+		{ yyVAL = yyS[yypt-0] }
+	case 43:
+		//line parser.y:208
+		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
+	case 44:
+		//line parser.y:210
+		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
 	}
 	goto yystack /* stack new state and value */
 }
