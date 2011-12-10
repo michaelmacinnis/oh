@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+//	"os/signal"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -185,6 +186,11 @@ func external(p *Process, args Cell) bool {
 	if err != nil {
 		panic(err)
 	}
+
+//	go func() {
+//		<-signal.Incoming
+//		panic("Caught signal")
+//	} ();
 
 	var status int64 = 0
 
@@ -2120,3 +2126,4 @@ define write: method: $stdout::write @$args
 		proc0.Scratch = Cdr(proc0.Scratch)
 	}
 }
+

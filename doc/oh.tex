@@ -6,37 +6,263 @@
 
 \begin{document}
 
-\title{\Huge \bf Using oh}
+\lstset{language=sh, aboveskip={\bigskipamount}}
+
+\title{{\Huge \bf Using oh}\thanks{Much of this document
+shamelessly copied from Steve Bourne's ``An Introduction to the UNIX
+Shell''.~\cite{sh}}}
 \author{}
 \date{}
 
 \maketitle
 
+
 \chapter{Introduction}
-Oh is a re-imagining of the Unix shell. It retains the look and feel of
-current Unix shells while adding support for higher-order, object-based and
-concurrent programming.
 
-Oh was inspired by previous efforts to combine Lisp and the Unix shell
-\cite{ALispShell, scsh}. Unlike previous efforts, however, oh is not
-implemented by embedding a Unix shell in Lisp. Instead oh was designed
-from scratch so that it could not only incorporate features from Lisp but
-also modify and correct those characteristics that do not interact well
-with the constraints imposed on oh as a command language.
+The oh shell is a command and programming language that provides an
+interface to Unix and Unix-like operating systems.
 
-Oh introduces a novel form of environment and exposes these environments
-as first-class values. In doing so, oh is able to unify the treatment of
-what is normally a number of limited and specialized mechanisms in addition
-to supporting a powerful and flexible form of object-oriented programming.
 
-Oh also exposes channels, which are implicit in other shells, as first-class
-values. Along with this, oh introduces a unified format for the
-representation of code and data. This allows data to be marshalled and
-unmarshalled easily; shared between processes; and piped from, to or even
-through external programs.
 
-Oh is open source software released under an MIT-style license.
+\section{Simple Commands}
+
+Simple commands consist of one or more words separated by blanks.
+The first word is the name of the command to be executed; any remaining
+words are passed as arguments to the command.
+
+\begin{lstlisting}
+	ls -la
+\end{lstlisting}
+
+is a command that prints a list of files in the current directory.
+The argument -l tells ls to print status information, size and the
+creation date for each file.
+
+Multiple commands may be written on the same line separated by a
+semicolon.
+
+
+\section{Input Output Redirection}
+
+Standard input, standard output and standard error are initially
+connected to the terminal. Standard output may be sent to a file.  
+
+\begin{lstlisting}
+	ls -l >file
+\end{lstlisting}
+
+The notation >file is interpreted by the shell and is not passed as
+an argument to ls. If the file does not exist then the shell creates
+it, otherwise the original contents of the file are replaced with the
+output from ls. Output may be appended to a file.
+
+\begin{lstlisting}
+	ls -l >>file
+\end{lstlisting}
+
+Standard error may be redirected
+
+\begin{lstlisting}
+	ls -l !>file
+\end{lstlisting}
+
+or appended to a file
+
+\begin{lstlisting}
+	ls -l !>>file
+\end{lstlisting}
+
+Standard input may also be redirected
+
+\begin{lstlisting}
+	wc -l <file
+\end{lstlisting}
+
+
+\section{Pipelines and filters}
+
+The standard output of one command may be connected to the standard
+input of another command using pipe operator
+
+\begin{lstlisting}
+	ls | wc -l
+\end{lstlisting}
+
+The commands connected in this way constitute a pipeline. The
+overall effect is the same as
+
+\begin{lstlisting}
+	ls >file; wc -l <file
+\end{lstlisting}
+
+except that no file is used. Instead the two processes are connected
+by a pipe and are run in parallel.
+
+A filter is a command that reads its standard input, transforms it
+in some way, and prints the result as output. One such filter, grep,
+selects from its input those lines that contain some specified
+string. For example, 
+
+\begin{lstlisting}
+    	ls | grep old
+\end{lstlisting}
+
+A pipeline may consist of more than two commands, for example,
+
+\begin{lstlisting}
+    	ls | grep old | wc -l
+\end{lstlisting}
+
+
+\section{File name generation}
+
+The oh shell provides a mechanism for generating a list of file
+names that match a pattern. For example,
+
+\begin{lstlisting}
+    	ls -l *.c
+\end{lstlisting}
+
+generates, as arguments to ls, all file names in the current
+directory that end in .c. The character * is a pattern that will
+match any string including the null string. In general 
+patterns are specified as follows.
+
+*	Matches any string of characters including the null string. 
+?	Matches any single character. 
+[...]	Matches any one of the characters enclosed.
+	A pair of characters separated by a minus will match a
+        lexical range of characters. 
+
+For example,
+
+\begin{lstlisting}
+    	[a-z]*
+\end{lstlisting}
+
+matches all names in the current directory beginning with one of
+the letters a through z.
+
+\begin{lstlisting}
+    	/usr/home/?
+\end{lstlisting}
+
+matches all names in the directory /usr/home that consist of a
+single character. If no file name is found that matches the pattern
+then the pattern is passed, unchanged, as an argument.
+
+This mechanism is useful both to save typing and to select names
+according to some pattern. It may also be used to find files. For
+example,
+
+\begin{lstlisting}
+    	echo /usr/home/*/core
+\end{lstlisting}
+
+finds and prints the names of all core files in sub-directories of
+/usr/home. (echo is a standard UNIX command that prints its arguments,
+separated by blanks.) This last feature can be expensive, requiring
+a scan of all sub-directories of /usr/home.
+
+There is one exception to the general rules given for patterns.
+The character `.' at the start of a file name must be explicitly
+matched.
+
+\begin{lstlisting}
+    	echo *
+\end{lstlisting}
+
+will therefore echo all file names in the current directory not
+beginning with `.'.
+
+\begin{lstlisting}
+    	echo .*
+\end{lstlisting}
+
+will echo all those file names that begin with `.'. This avoids
+inadvertent matching of the names `.' and `..' which mean `the
+current directory' and `the parent directory' respectively. (Notice
+that ls suppresses information for the files `.' and `..'.)
+
+
+\section{Quoting} 
+
+Characters that have a special meaning to the shell, such as \verb%<%
+\verb%>% \verb%|% \verb%&%, are called metacharacters. Any character
+preceded by a \ is quoted and loses its special meaning, if any. The
+\verb%\% is elided so that
+
+\begin{lstlisting}
+    	echo \?
+\end{lstlisting}
+
+will echo a single \verb%?%, and
+
+\begin{lstlisting}
+    	echo \\
+\end{lstlisting}
+
+will echo a single \verb%\%. To allow long strings to be continued
+over more than one line the sequence \verb%\% \emph{newline} is
+ignored.
+
+\verb%\% is convenient for quoting single characters. When more
+than one character needs quoting the above mechanism is clumsy and
+error prone. A string of characters may be quoted by enclosing the
+string between double quotes. For example,
+
+\begin{lstlisting}
+    	echo "xx****xx"
+\end{lstlisting}
+
+will echo
+
+\begin{lstlisting}
+    	xx****xx
+\end{lstlisting}
+
+The quoted string may not contain a double quote but may contain
+newlines, which are preserved.
+
+
+\chapter{Oh programming}
+
+
+\section{Variables}
+
+In oh, variables are declared using the keyword 'define'. For example,
+
+\begin{lstlisting}
+	define x "hello"
+\end{lstlisting}
+
+Values are assumed to be strings. To create another type of value
+use a generator. For example,
+
+\begin{lstlisting}
+	define i: integer 0
+\end{lstlisting}
+
+The following types are available: boolean, float, integer, status,
+string, symbol. The 'status' type is in integer that evaluates to
+true in a boolean context if it has the value zero and false
+otherwise. The status type is useful for treating the return status
+from methods and external commands in a uniform fashion.
+
+
+\section{Control Flow}
+
+if, for, while
+
+
+\section{Methods}
+
+Methods can be created with 'method' TODO
+Builtins can be created with 'builtin' TODO - globbing, no passing
+of complex types.
+
 \bibliographystyle{abbrv}
 \bibliography{oh}
 
 \end{document}
+
