@@ -19,9 +19,8 @@ Shell''.~\cite{sh}}}
 
 \chapter{Introduction}
 
-The oh shell is a command and programming language that provides an
-interface to Unix and Unix-like operating systems.
-
+In addition to being a programming language, the oh shell provides a
+command-line interface to Unix and Unix-like systems.
 
 
 \section{Simple Commands}
@@ -51,10 +50,10 @@ connected to the terminal. Standard output may be sent to a file.
 	ls -l >file
 \end{lstlisting}
 
-The notation >file is interpreted by the shell and is not passed as
-an argument to ls. If the file does not exist then the shell creates
-it, otherwise the original contents of the file are replaced with the
-output from ls. Output may be appended to a file.
+The notation \verb%>%file is interpreted by the shell and is not
+passed as an argument to ls. If the file does not exist then the
+shell creates it, otherwise the original contents of the file are
+replaced with the output from ls. Output may be appended to a file.
 
 \begin{lstlisting}
 	ls -l >>file
@@ -128,11 +127,16 @@ directory that end in .c. The character * is a pattern that will
 match any string including the null string. In general 
 patterns are specified as follows.
 
-*	Matches any string of characters including the null string. 
-?	Matches any single character. 
-[...]	Matches any one of the characters enclosed.
-	A pair of characters separated by a minus will match a
-        lexical range of characters. 
+\begin{center}
+\begin{tabular}{|c|l|}
+\hline
+\verb%*% & Matches any string of characters including the null string. \\
+\verb%?% & Matches any single character. \\
+\verb%[...]% & Matches any one of the characters enclosed. A pair separated \\
+& by a minus will match a lexical range of characters. \\
+\hline
+\end{tabular}
+\end{center}
 
 For example,
 
@@ -151,45 +155,33 @@ matches all names in the directory /usr/home that consist of a
 single character. If no file name is found that matches the pattern
 then the pattern is passed, unchanged, as an argument.
 
-This mechanism is useful both to save typing and to select names
-according to some pattern. It may also be used to find files. For
-example,
-
-\begin{lstlisting}
-    	echo /usr/home/*/core
-\end{lstlisting}
-
-finds and prints the names of all core files in sub-directories of
-/usr/home. (echo is a standard UNIX command that prints its arguments,
-separated by blanks.) This last feature can be expensive, requiring
-a scan of all sub-directories of /usr/home.
-
 There is one exception to the general rules given for patterns.
-The character `.' at the start of a file name must be explicitly
+The character . at the start of a file name must be explicitly
 matched.
 
 \begin{lstlisting}
     	echo *
 \end{lstlisting}
 
-will therefore echo all file names in the current directory not
-beginning with `.'.
+will therefore echo all file names not beginning with a . in the
+current directory.
 
 \begin{lstlisting}
     	echo .*
 \end{lstlisting}
 
-will echo all those file names that begin with `.'. This avoids
-inadvertent matching of the names `.' and `..' which mean `the
-current directory' and `the parent directory' respectively. (Notice
-that ls suppresses information for the files `.' and `..'.)
+will echo all those file names that begin with . as the . was
+explicitly specified. This avoids inadvertent matching of the names
+. and .. which mean the current directory and the parent directory
+respectively. (Notice that ls, by default, suppresses information
+for the files . and ..).
 
 
 \section{Quoting} 
 
 Characters that have a special meaning to the shell, such as \verb%<%
 \verb%>% \verb%|% \verb%&%, are called metacharacters. Any character
-preceded by a \ is quoted and loses its special meaning, if any. The
+preceded by a \ is excaped and loses its special meaning, if any. The
 \verb%\% is elided so that
 
 \begin{lstlisting}
@@ -203,11 +195,10 @@ will echo a single \verb%?%, and
 \end{lstlisting}
 
 will echo a single \verb%\%. To allow long strings to be continued
-over more than one line the sequence \verb%\% \emph{newline} is
-ignored.
+over more than one line newlines can be excaped with a \verb%\%.
 
-\verb%\% is convenient for quoting single characters. When more
-than one character needs quoting the above mechanism is clumsy and
+\verb%\% is convenient for escaping single characters. When more
+than one character needs escaping the above mechanism is clumsy and
 error prone. A string of characters may be quoted by enclosing the
 string between double quotes. For example,
 
@@ -227,6 +218,8 @@ newlines, which are preserved.
 
 \chapter{Oh programming}
 
+In addition to providing a command-line interface to Unix and
+Unix-like systmes, oh is also a programming language.
 
 \section{Variables}
 
