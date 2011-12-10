@@ -60,7 +60,9 @@ the C library libtecla:
 
     http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz
 
-and then goinstall oh:
+On Ubuntu you may also need to install libncurses5-dev.
+
+Then goinstall oh:
 
     goinstall github.com/michaelmacinnis/oh
 
