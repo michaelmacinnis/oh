@@ -58,9 +58,7 @@ const (
 	psIf
 	psImport
 	psMethod
-	psObject
 	psPublic
-	psQuote
 	psReturn
 	psSet
 	psSetenv
@@ -798,19 +796,6 @@ func run(p *Process) {
 			p.NewState(psEvalElement)
 			continue
 
-		case psObject:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			p.NewState(psExecObject)
-			p.NewState(psEvalBlock)
-			continue
-
-		case psQuote:
-			SetCar(p.Scratch, Car(p.Code))
-
 		case psReturn:
 			p.Code = Car(p.Code)
 
@@ -1040,8 +1025,6 @@ func Start() {
 	s.DefineState("import", psImport)
 	s.DefineState("source", psSource)
 	s.DefineState("method", psMethod)
-	s.DefineState("object", psObject)
-	s.DefineState("quote", psQuote)
 	s.DefineState("set", psSet)
 	s.DefineState("setenv", psSetenv)
 	s.DefineState("spawn", psSpawn)
@@ -2067,6 +2050,7 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
+define quote: syntax: car $args
 define and: syntax e {
     define l $args
     define r false
@@ -2096,6 +2080,9 @@ define list-tail: method k x {
     } else {
         return x
     }
+}
+define object: syntax e {
+    eval e: cons 'block: append $args '((method: return: $self::clone))
 }
 define or: syntax e {
     define l $args
