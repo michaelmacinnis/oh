@@ -272,6 +272,10 @@ func run(p *Process) {
 			return
 
 		case psDoEvalCommand:
+			if Car(p.Scratch) == Null {
+				break
+			}
+
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
 				p.ReplaceState(psExecExternal)
@@ -396,6 +400,11 @@ func run(p *Process) {
 
 			fallthrough
 		case psEvalCommand:
+			if p.Code == Null {
+				p.Scratch = Cons(p.Code, p.Scratch)
+				break
+			}
+
 			p.ReplaceState(psDoEvalCommand)
 			p.SaveState(SaveCode, Cdr(p.Code))
 
