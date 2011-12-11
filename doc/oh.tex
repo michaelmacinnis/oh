@@ -319,6 +319,55 @@ empty list is an exception to this rule as it evaluates to itself.
 \end{lstlisting}
 
 
+\section{Methods}
+
+The define and method commands allow the creation of named methods.
+
+\begin{lstlisting}
+	define hello: method {
+		write "Hello, World!"
+	}
+\end{lstlisting}
+
+Once defined a method can be called in the same way as other commands.
+
+\begin{lstlisting}
+	hello
+\end{lstlisting}
+
+Methods can take arguments.
+
+\begin{lstlisting}
+	define sum3: method a b c {
+		add a b c
+	}
+	sum3 1 2 3
+\end{lstlisting}
+
+
+\section{Modules}
+
+Methods can be saved in a file and then imported. If the function hello
+was defined in the file hello.oh as shown below
+
+\begin{lstlisting}
+	public hello: method {
+		write "Hello, World!"
+	}
+\end{lstlisting}
+
+it could be imported and called.
+
+\begin{lstlisting}
+	define hello-module: import hello.oh
+	hello-module::hello
+\end{lstlisting}
+
+When importing a module everything defined using the command public
+is visible while everything defined using the command define is
+private to that module.
+
+
 %\section{Variables}
 %
 %In oh, variables are declared using the keyword 'define'. For example,
