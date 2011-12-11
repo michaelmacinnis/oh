@@ -621,8 +621,6 @@ func run(p *Process) {
 
 		case psExecIf:
 			if !Car(p.Scratch).Bool() {
-				p.Code = Cdr(p.Code)
-
 				for Car(p.Code) != Null &&
 					!IsAtom(Car(p.Code)) {
 					p.Code = Cdr(p.Code)

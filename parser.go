@@ -50,7 +50,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:212
+//line parser.y:214
 
 
 type ReadStringer interface {
@@ -329,65 +329,65 @@ var yyExca = []int{
 	24, 15,
 	-2, 0,
 	-1, 51,
-	18, 31,
+	18, 32,
 	-2, 15,
-	-1, 63,
-	18, 31,
+	-1, 64,
+	18, 32,
 	-2, 15,
 }
 
-const yyNprod = 45
+const yyNprod = 46
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 102
+const yyLast = 104
 
 var yyAct = []int{
 
-	5, 59, 17, 8, 9, 9, 7, 19, 64, 9,
-	46, 61, 16, 29, 30, 31, 11, 12, 13, 14,
-	15, 34, 4, 32, 35, 45, 37, 63, 41, 42,
-	43, 51, 54, 10, 40, 13, 14, 15, 48, 9,
-	15, 49, 11, 12, 13, 14, 15, 3, 52, 14,
-	15, 55, 60, 57, 56, 53, 44, 25, 28, 62,
-	26, 27, 58, 50, 60, 65, 36, 20, 21, 22,
-	18, 26, 27, 38, 39, 47, 23, 24, 20, 21,
-	22, 33, 6, 16, 26, 27, 2, 23, 24, 1,
-	0, 20, 21, 22, 0, 0, 0, 0, 0, 0,
-	23, 24,
+	5, 60, 17, 8, 9, 9, 7, 19, 65, 9,
+	46, 62, 58, 29, 30, 31, 11, 12, 13, 14,
+	15, 34, 4, 32, 35, 45, 37, 9, 41, 42,
+	43, 16, 54, 64, 51, 10, 40, 15, 48, 9,
+	53, 49, 11, 12, 13, 14, 15, 3, 52, 14,
+	15, 55, 61, 57, 56, 26, 27, 44, 28, 63,
+	25, 59, 20, 21, 22, 61, 66, 50, 38, 39,
+	36, 23, 24, 26, 27, 13, 14, 15, 18, 47,
+	20, 21, 22, 33, 6, 16, 26, 27, 2, 23,
+	24, 1, 0, 20, 21, 22, 0, 0, 0, 0,
+	0, 0, 23, 24,
 }
 var yyPact = []int{
 
-	20, -1000, 15, -1000, -1000, 33, -1000, -7, 77, -1000,
-	20, -1000, -10, -10, -10, 77, -1000, -10, 53, 17,
-	77, 77, 77, 48, -15, -1000, -1000, -1000, -1000, 24,
-	37, 27, 17, -1000, -1000, 64, -1000, 17, 77, 13,
-	77, 17, 17, 17, 47, 7, -1000, -10, -1000, -1000,
-	77, -10, -1000, -12, -1000, -1000, 64, -1000, 9, -1000,
-	33, -1000, -1000, -14, -1000, -1000,
+	20, -1000, 17, -1000, -1000, 33, -1000, 12, 79, -1000,
+	20, -1000, 8, 8, 8, 79, -1000, 8, 48, 19,
+	79, 79, 79, 49, -15, -1000, -1000, -1000, -1000, 64,
+	37, 24, 19, -1000, -1000, 66, -1000, 19, 79, 16,
+	79, 19, 19, 19, 32, 7, -1000, 8, -1000, -1000,
+	79, -10, -1000, -12, -1000, -1000, 66, -1000, -1000, 15,
+	-1000, 33, -1000, -1000, -14, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 89, 86, 47, 0, 7, 82, 6, 3, 2,
-	81, 75, 70, 66, 63, 62, 1, 57,
+	0, 91, 88, 47, 0, 7, 84, 6, 3, 2,
+	83, 79, 78, 70, 67, 61, 1, 60,
 }
 var yyR1 = []int{
 
 	0, 1, 2, 2, 3, 3, 3, 4, 4, 4,
 	4, 4, 4, 6, 6, 8, 8, 7, 7, 10,
-	10, 11, 11, 9, 9, 13, 13, 13, 14, 15,
-	15, 16, 16, 12, 12, 5, 5, 5, 5, 5,
-	5, 5, 5, 17, 17,
+	10, 11, 11, 9, 9, 13, 13, 13, 14, 14,
+	15, 15, 16, 16, 12, 12, 5, 5, 5, 5,
+	5, 5, 5, 5, 17, 17,
 }
 var yyR2 = []int{
 
 	0, 2, 1, 3, 1, 0, 1, 2, 3, 3,
 	3, 3, 1, 1, 3, 0, 1, 1, 2, 1,
-	3, 1, 3, 1, 2, 2, 3, 2, 4, 1,
-	3, 0, 1, 1, 2, 2, 2, 2, 3, 4,
-	3, 2, 1, 1, 1,
+	3, 1, 3, 1, 2, 2, 3, 2, 2, 4,
+	1, 3, 0, 1, 1, 2, 2, 2, 2, 3,
+	4, 3, 2, 1, 1, 1,
 }
 var yyChk = []int{
 
@@ -396,18 +396,18 @@ var yyChk = []int{
 	14, 15, 16, 23, 24, -17, 7, 8, -3, -4,
 	-4, -4, -5, -10, -8, -7, -13, -5, 20, 21,
 	17, -5, -5, -5, 8, -4, 25, -11, -9, -9,
-	-14, 18, -5, 8, 25, -8, -7, -9, -15, -16,
-	-4, 23, -9, 18, 22, -16,
+	-14, 18, -5, 8, 25, -8, -7, -9, 22, -15,
+	-16, -4, 23, -9, 18, 22, -16,
 }
 var yyDef = []int{
 
 	-2, -2, 0, 2, 4, 6, 12, -2, 0, 17,
-	-2, 7, 15, 15, 15, 0, 18, 15, 23, 33,
-	0, 0, 0, 0, 15, 42, 43, 44, 3, 8,
-	9, 10, 11, 14, 19, 16, 24, 34, 0, 0,
-	0, 35, 36, 37, 0, 0, 41, 15, 21, 25,
-	27, -2, 38, 0, 40, 20, 16, 26, 0, 29,
-	32, 39, 22, -2, 28, 30,
+	-2, 7, 15, 15, 15, 0, 18, 15, 23, 34,
+	0, 0, 0, 0, 15, 43, 44, 45, 3, 8,
+	9, 10, 11, 14, 19, 16, 24, 35, 0, 0,
+	0, 36, 37, 38, 0, 0, 42, 15, 21, 25,
+	27, -2, 39, 0, 41, 20, 16, 26, 28, 0,
+	30, 33, 40, 22, -2, 29, 31,
 }
 var yyTok1 = []int{
 
@@ -737,7 +737,7 @@ yydefault:
 		//line parser.y:108
 		{
 	    if yyS[yypt-1].c == Null {
-	        yyVAL.c = Cons(yyS[yypt-0].c, Null)
+	        yyVAL.c = yyS[yypt-0].c
 	    } else {
 	        yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
 	    }
@@ -749,9 +749,12 @@ yydefault:
 	}
 	case 28:
 		//line parser.y:120
-		{ yyVAL.c = yyS[yypt-2].c }
+		{ yyVAL.c = Null }
 	case 29:
 		//line parser.y:122
+		{ yyVAL.c = yyS[yypt-2].c }
+	case 30:
+		//line parser.y:124
 		{
 	    if yyS[yypt-0].c == Null {
 	        yyVAL.c = yyS[yypt-0].c
@@ -759,8 +762,8 @@ yydefault:
 	        yyVAL.c = Cons(yyS[yypt-0].c, Null)
 	    }
 	}
-	case 30:
-		//line parser.y:130
+	case 31:
+		//line parser.y:132
 		{
 	    if yyS[yypt-2].c == Null {
 	        if yyS[yypt-0].c == Null {
@@ -776,40 +779,40 @@ yydefault:
 	        }
 	    }
 	}
-	case 31:
-		//line parser.y:146
-		{ yyVAL.c = Null }
 	case 32:
 		//line parser.y:148
-		{ yyVAL.c = yyS[yypt-0].c }
+		{ yyVAL.c = Null }
 	case 33:
 		//line parser.y:150
-		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+		{ yyVAL.c = yyS[yypt-0].c }
 	case 34:
 		//line parser.y:152
-		{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
+		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
 	case 35:
 		//line parser.y:154
+		{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
+	case 36:
+		//line parser.y:156
 		{
 	    yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
 	}
-	case 36:
-		//line parser.y:158
+	case 37:
+		//line parser.y:160
 		{
 	    yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
 	}
-	case 37:
-		//line parser.y:162
+	case 38:
+		//line parser.y:164
 		{
 	    yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
 	}
-	case 38:
-		//line parser.y:166
+	case 39:
+		//line parser.y:168
 		{
 	    yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
 	}
-	case 39:
-		//line parser.y:170
+	case 40:
+		//line parser.y:172
 		{
 	    kind := yyS[yypt-2].s
 	    value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
@@ -841,20 +844,20 @@ yydefault:
 	    }
 	
 	}
-	case 40:
-		//line parser.y:202
-		{ yyVAL = yyS[yypt-1] }
 	case 41:
 		//line parser.y:204
-		{ yyVAL.c = Null }
+		{ yyVAL = yyS[yypt-1] }
 	case 42:
 		//line parser.y:206
-		{ yyVAL = yyS[yypt-0] }
+		{ yyVAL.c = Null }
 	case 43:
 		//line parser.y:208
-		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
+		{ yyVAL = yyS[yypt-0] }
 	case 44:
 		//line parser.y:210
+		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
+	case 45:
+		//line parser.y:212
 		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
 	}
 	goto yystack /* stack new state and value */

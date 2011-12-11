@@ -9,7 +9,7 @@
 \def\blfootnote{\xdef\@thefnmark{}\@footnotetext}
 
 \lstset{aboveskip={\bigskipamount}, basicstyle=\tt,
-        language=sh, showspaces=false, showstringspaces=false
+		language=sh, showspaces=false, showstringspaces=false
 }
 
 \title{\Huge \bf Using oh}
@@ -108,13 +108,13 @@ grep, selects from its input those lines that contain some specified
 string. 
 
 \begin{lstlisting}
-    	ls | grep old
+		ls | grep old
 \end{lstlisting}
 
 A pipeline may consist of more than two commands.
 
 \begin{lstlisting}
-    	ls | grep old | wc -l
+		ls | grep old | wc -l
 \end{lstlisting}
 
 
@@ -124,7 +124,7 @@ The oh shell provides a mechanism for generating a list of file
 names that match a pattern.
 
 \begin{lstlisting}
-    	ls -l *.c
+		ls -l *.c
 \end{lstlisting}
 
 generates, as arguments to ls, all file names in the current
@@ -146,14 +146,14 @@ patterns are specified as follows.
 For example,
 
 \begin{lstlisting}
-    	[a-z]*
+		[a-z]*
 \end{lstlisting}
 
 matches all names in the current directory beginning with one of
 the letters a through z.
 
 \begin{lstlisting}
-    	/usr/home/?
+		/usr/home/?
 \end{lstlisting}
 
 matches all names in the directory /usr/home that consist of a
@@ -164,14 +164,14 @@ The character . at the start of a file name must be explicitly
 matched.
 
 \begin{lstlisting}
-    	echo *
+		echo *
 \end{lstlisting}
 
 will therefore echo all file names not beginning with a . in the
 current directory.
 
 \begin{lstlisting}
-    	echo .*
+		echo .*
 \end{lstlisting}
 
 will echo all those file names that begin with . as the . was
@@ -188,13 +188,13 @@ preceded by a \\ is escaped and loses its special meaning, if any. The
 \verb%\% is elided so that
 
 \begin{lstlisting}
-    	echo \?
+		echo \?
 \end{lstlisting}
 
 will echo a single \verb%?%, and
 
 \begin{lstlisting}
-    	echo \\
+		echo \\
 \end{lstlisting}
 
 will echo a single \\. To allow long commands to be continued over
@@ -206,13 +206,13 @@ error prone. A string of characters may be quoted by enclosing the
 string between double quotes.
 
 \begin{lstlisting}
-    	echo "xx****xx"
+		echo "xx****xx"
 \end{lstlisting}
 
 will echo
 
 \begin{lstlisting}
-    	xx****xx
+		xx****xx
 \end{lstlisting}
 
 The quoted string may not contain an unexcaped double quote but may
@@ -363,117 +363,110 @@ it could be imported and called.
 	hello-module::hello
 \end{lstlisting}
 
-When importing a module everything defined using the command public
-is visible while everything defined using the command define is
-private to that module.
+Modules, in oh, are objects. When importing a module everything defined
+using the command public is visible while everything defined using the
+command define is private to that module.
 
 
-%\section{Variables}
-%
-%In oh, variables are declared using the keyword 'define'. For example,
-%
-%\begin{lstlisting}
-%	define x "hello"
-%\end{lstlisting}
-%
-%Values are assumed to be strings. To create another type of value
-%use a generator.
-%
-%\begin{lstlisting}
-%	define i: integer 0
-%\end{lstlisting}
-%
-%The following types are available: boolean, float, integer, status,
-%string, symbol. The 'status' type is in integer that evaluates to
-%true in a boolean context when equal to zero and false otherwise.
-%The status type is useful for treating the return status from methods
-%and Unix commands in a uniform fashion.
-%
-%
-%\section{Lists}
-%
-%Lists are a fundamental oh data type. The are modelled after Lisp's
-%list type. Like Lisp, oh uses the same syntax for code and data.
-%Many interactive commands are simple lists but more structured lists
-%are also possible. The command
-%
-%\begin{lstlisting}
-%	define i: integer 0
-%\end{lstlisting}
-%
-%could also be expressed as
-%
-%\begin{lstlisting}
-%	define i (integer 0)
-%\end{lstlisting}
-%
-%If the last element in a list is a sub-list a colon may be used in
-%place of parenstheses. If the last elements in a list are all
-%sub-lists curly braces may be used. The following
-%
-%\begin{lstlisting}
-%	define line: readline
-%	while line {
-%		write line
-%		set line: readline
-%	}
-%\end{lstlisting}
-%
-%could also be expressed as
-%
-%\begin{lstlisting}
-%	define line (readline)
-%	while line (write line) (set line: readline)
-%\end{lstlisting}
-%
-%This small bit of syntactic sugar significantly reduces the number of
-%parentheses needed when writing oh scripts.
-%
-%
-%\section{Control flow}
-%
-%Like other languages, oh has an if statement.
-%
-%\begin{lstlisting}
-%	if (cd /tmp) {
-%		# Do stuff in /tmp.
-%	}
-%\end{lstlisting}
-%
-%If statements may have an else clause.
-%
-%\begin{lstlisting}
-%	if (cd /tmp) {
-%		# Do stuff in /tmp.
-%	} else {
-%		write "Couldn't cd to /tmp."
-%	}
-%\end{lstlisting}
-%
-%If statements can be chained.
-%
-%\begin{lstlisting}
-%	if (cd /tmp) {
-%		# Do stuff in /tmp.
-%	} else: if (cd /var/tmp) {
-%		# I guess /var/tmp will have to do???
-%	} else {
-%		write "Couldn't cd to /tmp or /var/tmp."
-%	}
-%\end{lstlisting}
-%
-%Loops are also possible.
-%
-%\begin{lstlisting}
-%	define line: readline
-%	while line {
-%		write line
-%		set line: readline
-%	}
-%\end{lstlisting}
-%
-%\section{Objects and methods}
-%
+\section{Objects}
+An object can be created explicitly with the object command.
+
+\begin{lstlisting}
+	define point: method r s: object {
+		define x: integer r
+		define y: integer s
+
+		public get-x: method {
+			return $self::x
+		}
+
+		public get-y: method {
+			return $self::y
+		}
+
+		public move: method a b {
+			set $self::x: add $self::x a
+			set $self::y: add $self::y b
+		}
+	}
+
+	define p: point 0 0
+\end{lstlisting}
+
+In the above example, we create a generator method, point, which acts
+very much like a constructor in class-based languages, but we could also
+use the clone method to create a clone of an existing object or the
+child method to create a descendent object.  The methods get-x, get-y
+and move could also be moved up and out to the same level as the
+definition for 'point'. All objects created by the generator method,
+point, maintain an implicit parent link to their enclosing scope and,
+in doing so, would automatically delegate calls to these methods to their
+parent object. If, for example, we wanted other objects like circles
+or squares, we could use methods defined in the enclosing scope to
+implement shared behaviour.
+
+Dynamic communication patterns are enabled by the fact that public slots
+can be updated or added to any object, at runtime.
+
+\begin{lstlisting}
+	p::public show: method {
+		echo: add "(" $self::x "," $self::y ")\n"
+	}
+\end{lstlisting}
+
+
+\section{Control flow}
+
+Like other languages, oh has an if statement.
+
+\begin{lstlisting}
+	if (cd /tmp) {
+		# Do stuff in /tmp.
+	}
+\end{lstlisting}
+
+If statements may have an else clause.
+
+\begin{lstlisting}
+	if (cd /tmp) {
+		# Do stuff in /tmp.
+	} else {
+		write "Couldn't cd to /tmp."
+	}
+\end{lstlisting}
+
+If statements can be chained.
+
+\begin{lstlisting}
+	if (cd i/tmp) {
+		# Do stuff in /tmp.
+	} else: if (cd i/var/tmp) {
+		# Do stuff in /var/tmp
+	} else {
+		write "Couldn't cd to /tmp or /var/tmp."
+	}
+\end{lstlisting}
+
+Oh also has while loops.
+
+\begin{lstlisting}
+	define line: readline
+	while line {
+		write line
+		set line: readline
+	}
+\end{lstlisting}
+
+Oh's for statement takes a list and a method as arguments and returns the
+list of return values from each invocation of the method on every element
+in the list.
+
+\begin{lstlisting}
+	write: for '(1 2 3): method n {
+	    return: mul n 2
+	}
+\end{lstlisting}
+
 %Methods can be created with 'method'. For loops take a method parameter. TODO
 %Builtins can be created with 'builtin' TODO - globbing, no passing
 %of complex types.

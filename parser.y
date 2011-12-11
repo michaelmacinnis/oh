@@ -107,7 +107,7 @@ sub_statement: ":" statement { $$.c = Cons($2.c, Null) };
 
 sub_statement: "{" sub_block statement {
     if $2.c == Null {
-        $$.c = Cons($3.c, Null)
+        $$.c = $3.c
     } else {
         $$.c = JoinTo($2.c, $3.c)
     }
@@ -116,6 +116,8 @@ sub_statement: "{" sub_block statement {
 sub_statement: "{" sub_block {
     $$.c = $2.c
 };
+
+sub_block: "\n" "}" { $$.c = Null };
 
 sub_block: "\n" block "\n" "}" { $$.c = $2.c };
 
