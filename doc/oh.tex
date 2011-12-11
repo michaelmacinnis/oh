@@ -19,7 +19,7 @@ Shell''.~\cite{sh}}}
 
 \chapter{Introduction}
 
-In addition to being a programming language, the oh shell provides a
+In addition to being a programming language, oh also provides a
 command-line interface to Unix and Unix-like systems.
 
 
@@ -81,7 +81,7 @@ Standard input may also be redirected
 \section{Pipelines and filters}
 
 The standard output of one command may be connected to the standard
-input of another command using pipe operator
+input of another command using the pipe operator
 
 \begin{lstlisting}
 	ls | wc -l
@@ -100,13 +100,13 @@ by a pipe and are run in parallel.
 A filter is a command that reads its standard input, transforms it
 in some way, and prints the result as output. One such filter, grep,
 selects from its input those lines that contain some specified
-string. For example, 
+string. 
 
 \begin{lstlisting}
     	ls | grep old
 \end{lstlisting}
 
-A pipeline may consist of more than two commands, for example,
+A pipeline may consist of more than two commands.
 
 \begin{lstlisting}
     	ls | grep old | wc -l
@@ -116,7 +116,7 @@ A pipeline may consist of more than two commands, for example,
 \section{File name generation}
 
 The oh shell provides a mechanism for generating a list of file
-names that match a pattern. For example,
+names that match a pattern.
 
 \begin{lstlisting}
     	ls -l *.c
@@ -200,7 +200,7 @@ over more than one line newlines can be excaped with a \verb%\%.
 \verb%\% is convenient for escaping single characters. When more
 than one character needs escaping the above mechanism is clumsy and
 error prone. A string of characters may be quoted by enclosing the
-string between double quotes. For example,
+string between double quotes.
 
 \begin{lstlisting}
     	echo "xx****xx"
@@ -221,6 +221,7 @@ newlines, which are preserved.
 In addition to providing a command-line interface to Unix and
 Unix-like systmes, oh is also a programming language.
 
+
 \section{Variables}
 
 In oh, variables are declared using the keyword 'define'. For example,
@@ -230,7 +231,7 @@ In oh, variables are declared using the keyword 'define'. For example,
 \end{lstlisting}
 
 Values are assumed to be strings. To create another type of value
-use a generator. For example,
+use a generator.
 
 \begin{lstlisting}
 	define i: integer 0
@@ -238,9 +239,47 @@ use a generator. For example,
 
 The following types are available: boolean, float, integer, status,
 string, symbol. The 'status' type is in integer that evaluates to
-true in a boolean context if it has the value zero and false
-otherwise. The status type is useful for treating the return status
-from methods and external commands in a uniform fashion.
+true in a boolean context when equal to zero and false otherwise.
+The status type is useful for treating the return status from methods
+and Unix commands in a uniform fashion.
+
+
+\section{Lists}
+
+Lists are a fundamental oh data type. The are modelled after Lisp's
+list type. Like Lisp, oh uses the same syntax for code and data.
+Many interactive commands are simple lists but more structured lists
+are also possible. The command
+
+\begin{lstlisting}
+	define i: integer 0
+\end{lstlisting}
+
+could also be expressed as
+
+\begin{lstlisting}
+	define i (integer 0)
+\end{lstlisting}
+
+If the last element in a list is a sub-list a colon may be used in
+place of parenstheses. If the last elements in a list are all
+sub-lists curly braces may be used. The following
+
+\begin{lstlisting}
+	while line {
+		write line
+		set line: readline
+	}
+\end{lstlisting}
+
+could also be expressed as
+
+\begin{lstlisting}
+	while line (write line) (set line: readline)
+\end{lstlisting}
+
+This small bit of syntactic sugar significantly reduces the number of
+parentheses needed when writing oh scripts.
 
 
 \section{Control Flow}
