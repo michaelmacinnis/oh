@@ -2077,7 +2077,6 @@ define and: syntax e {
     return r
 }
 define echo: builtin: $stdout::write @$args
-define expand: builtin: return $args
 define for: method l m {
     define r: cons () ()
     define c r
@@ -2088,6 +2087,7 @@ define for: method l m {
     }
     return: cdr r
 }
+define glob: builtin: return $args
 define list-ref: method k x: car: list-tail k x
 define list-tail: method k x {
     if k {

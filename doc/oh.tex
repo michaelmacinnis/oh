@@ -6,20 +6,22 @@
 
 \begin{document}
 
+\def\blfootnote{\xdef\@thefnmark{}\@footnotetext}
+
 \lstset{aboveskip={\bigskipamount}, basicstyle=\tt,
         language=sh, showspaces=false, showstringspaces=false
 }
 
-\title{{\Huge \bf Using oh}\thanks{Much of this document
-shamelessly copied from Steve Bourne's ``An Introduction to the UNIX
-Shell''.~\cite{sh}}}
+\title{\Huge \bf Using oh}
 \author{}
 \date{}
 
 \maketitle
 
 
-\chapter{Introduction}
+\chapter[Introducion]{Introduction\footnote{Much of this chapter
+shamelessly copied from ``An Introduction to the UNIX Shell''.~\cite{sh}}}
+
 
 In addition to being a programming language, oh also provides a
 command-line interface to Unix and Unix-like systems.
@@ -217,118 +219,212 @@ The quoted string may not contain an unexcaped double quote but may
 contain newlines, which are preserved.
 
 
-\chapter{Oh programming}
+\chapter[Oh programming]{Oh programming\footnote{Much of this
+chapter shamelessly copied from ``Yet Another Scheme
+Tutorial''.~\cite{YAST}}}
 
 In addition to providing a command-line interface to Unix and
 Unix-like systmes, oh is also a programming language.
 
 
-\section{Variables}
+\section{Using oh as a calculator}
 
-In oh, variables are declared using the keyword 'define'. For example,
-
-\begin{lstlisting}
-	define x "hello"
-\end{lstlisting}
-
-Values are assumed to be strings. To create another type of value
-use a generator.
+We can add the numbers 1 and 2, using oh.
 
 \begin{lstlisting}
-	define i: integer 0
+	add 1 2
 \end{lstlisting}
 
-The following types are available: boolean, float, integer, status,
-string, symbol. The 'status' type is in integer that evaluates to
-true in a boolean context when equal to zero and false otherwise.
-The status type is useful for treating the return status from methods
-and Unix commands in a uniform fashion.
-
-
-\section{Lists}
-
-Lists are a fundamental oh data type. The are modelled after Lisp's
-list type. Like Lisp, oh uses the same syntax for code and data.
-Many interactive commands are simple lists but more structured lists
-are also possible. The command
+To see the result we have to use the command write,
 
 \begin{lstlisting}
-	define i: integer 0
+	write (add 1 2)
 \end{lstlisting}
 
-could also be expressed as
+or more convieniently,
 
 \begin{lstlisting}
-	define i (integer 0)
+	write: add 1 2
 \end{lstlisting}
 
-If the last element in a list is a sub-list a colon may be used in
-place of parenstheses. If the last elements in a list are all
-sub-lists curly braces may be used. The following
+We can perform other operations.
 
 \begin{lstlisting}
-	define line: readline
-	while line {
-		write line
-		set line: readline
-	}
+	write: sub 10 3 5
+	write: mul 2 3
+	write: div 6 3
+	write: mod 6 5
 \end{lstlisting}
 
-could also be expressed as
+Floating point numbers can also be used
 
 \begin{lstlisting}
-	define line (readline)
-	while line (write line) (set line: readline)
+	write: div 1.0 9.0
 \end{lstlisting}
 
-This small bit of syntactic sugar significantly reduces the number of
-parentheses needed when writing oh scripts.
-
-
-\section{Control flow}
-
-Like other languages, oh has an if statement.
+and operations can be nested.
 
 \begin{lstlisting}
-	if (cd /tmp) {
-		# Do stuff in /tmp.
-	}
+	write: mul (add 2 3) (sub 5 3)
 \end{lstlisting}
 
-If statements may have an else clause.
+
+\section{Making lists}
+
+Lists, in oh, are composed of cons cells. A cons cell is a pair of
+values. The first value is refered to as the car of the cons cell and
+the second as the cdr. The command cons is used to create a new cons
+cell.
 
 \begin{lstlisting}
-	if (cd /tmp) {
-		# Do stuff in /tmp.
-	} else {
-		write "Couldn't cd to /tmp."
-	}
+	write: cons 1 2
 \end{lstlisting}
 
-If statements can be chained.
+The car and cdr of a cons cell can also be cons cells. A list is formed
+by chaining cons cells. The cdr of each cons cell is set to the next
+element in the list. The cdr of the last element in the list is set to
+empty list, which is written as ().
 
 \begin{lstlisting}
-	if (cd /tmp) {
-		# Do stuff in /tmp.
-	} else: if (cd /var/tmp) {
-		# I guess /var/tmp will have to do???
-	} else {
-		write "Couldn't cd to /tmp or /var/tmp."
-	}
+	write: cons 1 (cons 2 (cons 3 ()))
 \end{lstlisting}
 
-Loops are also possible.
+or more convieniently,
 
 \begin{lstlisting}
-	define line: readline
-	while line {
-		write line
-		set line: readline
-	}
+	write: cons 1: cons 2: cons 3 ()
 \end{lstlisting}
 
-\section{Objects and methods}
+or even better,
 
+\begin{lstlisting}
+	write: list 1 2 3
+\end{lstlisting}
+
+The commands car and cdr can be used to access the car and cdr of a
+cons cell, respectively.
+
+\begin{lstlisting}
+	write: car: list 1 2 3
+	write: cdr: list 1 2 3
+\end{lstlisting}
+
+Lists can also be represented directly but must be quoted, by preceding
+them with a single quote, to stop oh from trying to evaluate them. The
+empty list is an exception to this rule as it evaluates to itself.
+
+\begin{lstlisting}
+	write: car '(1 2 3)
+	write: cdr '(1 2 3)
+\end{lstlisting}
+
+
+%\section{Variables}
+%
+%In oh, variables are declared using the keyword 'define'. For example,
+%
+%\begin{lstlisting}
+%	define x "hello"
+%\end{lstlisting}
+%
+%Values are assumed to be strings. To create another type of value
+%use a generator.
+%
+%\begin{lstlisting}
+%	define i: integer 0
+%\end{lstlisting}
+%
+%The following types are available: boolean, float, integer, status,
+%string, symbol. The 'status' type is in integer that evaluates to
+%true in a boolean context when equal to zero and false otherwise.
+%The status type is useful for treating the return status from methods
+%and Unix commands in a uniform fashion.
+%
+%
+%\section{Lists}
+%
+%Lists are a fundamental oh data type. The are modelled after Lisp's
+%list type. Like Lisp, oh uses the same syntax for code and data.
+%Many interactive commands are simple lists but more structured lists
+%are also possible. The command
+%
+%\begin{lstlisting}
+%	define i: integer 0
+%\end{lstlisting}
+%
+%could also be expressed as
+%
+%\begin{lstlisting}
+%	define i (integer 0)
+%\end{lstlisting}
+%
+%If the last element in a list is a sub-list a colon may be used in
+%place of parenstheses. If the last elements in a list are all
+%sub-lists curly braces may be used. The following
+%
+%\begin{lstlisting}
+%	define line: readline
+%	while line {
+%		write line
+%		set line: readline
+%	}
+%\end{lstlisting}
+%
+%could also be expressed as
+%
+%\begin{lstlisting}
+%	define line (readline)
+%	while line (write line) (set line: readline)
+%\end{lstlisting}
+%
+%This small bit of syntactic sugar significantly reduces the number of
+%parentheses needed when writing oh scripts.
+%
+%
+%\section{Control flow}
+%
+%Like other languages, oh has an if statement.
+%
+%\begin{lstlisting}
+%	if (cd /tmp) {
+%		# Do stuff in /tmp.
+%	}
+%\end{lstlisting}
+%
+%If statements may have an else clause.
+%
+%\begin{lstlisting}
+%	if (cd /tmp) {
+%		# Do stuff in /tmp.
+%	} else {
+%		write "Couldn't cd to /tmp."
+%	}
+%\end{lstlisting}
+%
+%If statements can be chained.
+%
+%\begin{lstlisting}
+%	if (cd /tmp) {
+%		# Do stuff in /tmp.
+%	} else: if (cd /var/tmp) {
+%		# I guess /var/tmp will have to do???
+%	} else {
+%		write "Couldn't cd to /tmp or /var/tmp."
+%	}
+%\end{lstlisting}
+%
+%Loops are also possible.
+%
+%\begin{lstlisting}
+%	define line: readline
+%	while line {
+%		write line
+%		set line: readline
+%	}
+%\end{lstlisting}
+%
+%\section{Objects and methods}
+%
 %Methods can be created with 'method'. For loops take a method parameter. TODO
 %Builtins can be created with 'builtin' TODO - globbing, no passing
 %of complex types.
