@@ -6,7 +6,9 @@
 
 \begin{document}
 
-\lstset{language=sh, aboveskip={\bigskipamount}}
+\lstset{aboveskip={\bigskipamount}, basicstyle=\tt,
+        language=sh, showspaces=false, showstringspaces=false
+}
 
 \title{{\Huge \bf Using oh}\thanks{Much of this document
 shamelessly copied from Steve Bourne's ``An Introduction to the UNIX
@@ -266,6 +268,7 @@ place of parenstheses. If the last elements in a list are all
 sub-lists curly braces may be used. The following
 
 \begin{lstlisting}
+	define line: readline
 	while line {
 		write line
 		set line: readline
@@ -284,14 +287,51 @@ parentheses needed when writing oh scripts.
 
 \section{Control Flow}
 
-if, for, while
+Like other languages, oh has an if statement.
 
+\begin{lstlisting}
+	if (cd /tmp) {
+		# Do stuff in /tmp.
+	}
+\end{lstlisting}
+
+If statements may have an else clause.
+
+\begin{lstlisting}
+	if (cd /tmp) {
+		# Do stuff in /tmp.
+	} else {
+		write "Couldn't cd to /tmp."
+	}
+\end{lstlisting}
+
+If statements can be chained.
+
+\begin{lstlisting}
+	if (cd /tmp) {
+		# Do stuff in /tmp.
+	} else: if (cd /var/tmp) {
+		# I guess /var/tmp will have to do???
+	} else {
+		write "Couldn't cd to /tmp or /var/tmp."
+	}
+\end{lstlisting}
+
+Loops are also possible.
+
+\begin{lstlisting}
+	define line: readline
+	while line {
+		write line
+		set line: readline
+	}
+\end{lstlisting}
 
 \section{Methods}
 
-Methods can be created with 'method' TODO
-Builtins can be created with 'builtin' TODO - globbing, no passing
-of complex types.
+%Methods can be created with 'method'. For loops take a method parameter. TODO
+%Builtins can be created with 'builtin' TODO - globbing, no passing
+%of complex types.
 
 \bibliographystyle{abbrv}
 \bibliography{oh}
