@@ -280,12 +280,16 @@ func rpipe(c Cell) *os.File {
 	return r.GetValue().(*Channel).ReadEnd()
 }
 
-func run(p *Process) {
+func run(p *Process) (successful bool) {
+	successful = true
+
 	defer func(saved Process) {
 		r := recover()
 		if r == nil {
 			return
 		}
+
+		successful = false
 
 		fmt.Printf("oh: %v\n", r)
 
@@ -293,7 +297,7 @@ func run(p *Process) {
 
 		p.Code = Null
 		p.Scratch = Cons(False, p.Scratch)
-		p.Stack = Cdr(p.Stack)
+		p.Stack = Cdddr(p.Stack)
 	}(*p)
 
 	for p.Stack != Null {
@@ -1004,6 +1008,8 @@ func run(p *Process) {
 
 		p.RemoveState()
 	}
+
+	return
 }
 
 func strict(p *Process) (ok bool) {
@@ -1034,6 +1040,8 @@ func wpipe(c Cell) *os.File {
 }
 
 func Evaluate(c Cell) {
+	saved := block0
+
 	SetCar(block0, c)
 	SetCdr(block0, Cons(nil, Null))
 	block0 = Cdr(block0)
@@ -1042,13 +1050,18 @@ func Evaluate(c Cell) {
 	proc0.NewState(psEvalCommand)
 	proc0.Code = c
 
-	run(proc0)
+	if !run(proc0) {
+		block0 = saved
+		SetCar(block0, nil)
+		SetCdr(block0, Null)
+		proc0.Code = block0
+	} else {
+		if proc0.Stack == Null {
+			os.Exit(ExitStatus())
+		}
 
-	if proc0.Stack == Null {
-		os.Exit(ExitStatus())
+		proc0.Scratch = Cdr(proc0.Scratch)
 	}
-
-	proc0.Scratch = Cdr(proc0.Scratch)
 }
 
 func ExitStatus() int {
