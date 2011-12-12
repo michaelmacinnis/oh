@@ -8,16 +8,20 @@ define counter: method n {
 
     write n ack
 
-    while true: write: set n: add n 1 >(ack::read-car)
+    while true {
+        write: set n: add n 1
+    } >(ack::read-car)
 }
 
-define filter: method base {
+define filter: method b {
     define ack: channel
     define n: read-car
 
     write n ack 
 
-    while true: if (mod (set n: read-car) base): write n >(ack::read-car)
+    while true {
+        if (mod (set n: read-car) b): write n
+    } >(ack::read-car)
 }
 
 counter 2 | block {
@@ -38,7 +42,7 @@ counter 2 | block {
 } > prime-numbers &
 
 define count: integer 250
-echo "The first" count "prime numbers"
+printf "The first %d prime numbers" count
 
 while count {
     write: read-car 

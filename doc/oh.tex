@@ -467,7 +467,66 @@ in the list.
 	}
 \end{lstlisting}
 
-%Methods can be created with 'method'. For loops take a method parameter. TODO
+
+\section{Channels and concurrency}
+
+Oh's channel-based approach to concurrency allows particularly elegant
+solutions to some problems, as in the prime sieve example, adapted
+from \cite{NALfCwM}, shown below. In this example each time a new prime
+number is found a process is spawned to filter out multiples of that
+prime number. These processes are strung together like beads on a string.
+
+\begin{lstlisting}
+	define prime-numbers: channel
+	define read-car: method: car: $self::read
+
+	define counter: method n {
+    	define ack: channel 
+
+    	write n ack
+
+    	while true {
+	       	write: set n: add n 1
+	    } >(ack::read-car)
+	}
+
+	define filter: method b {
+	    define ack: channel
+	    define n: read-car
+
+	    write n ack 
+
+	    while true {
+	        if (mod (set n: read-car) b): write n
+	    } >(ack::read-car)
+	}
+
+	counter 2 | block {
+	    define in $stdin
+
+	    while true {
+	        define l: in::read
+	        define out: channel
+
+	        write: car l
+
+	        spawn: filter (car l) <in >out
+
+	        (cadr l)::write in
+
+	        set in out
+	    }
+	} > prime-numbers &
+
+	define count: integer 250
+	printf "The first %d prime numbers" count
+
+	while count {
+	    write: read-car 
+	    set count: sub count 1
+	} <prime-numbers
+\end{lstlisting}
+
 %Builtins can be created with 'builtin' TODO - globbing, no passing
 %of complex types.
 
