@@ -1,53 +1,53 @@
 #!/usr/local/bin/oh
 
-define strict
+define strict true
 
-define $prime-numbers: channel
+define prime-numbers: channel
 define read-car: method: car: $self::read
 
-define counter: method $n {
-    define $ack: channel 
+define counter: method n {
+    define ack: channel 
 
-    write $n $ack
+    write n ack
 
-    while 'true {
-        write: set $n: add $n "1"
-    } >($ack::read-car)
+    while true {
+        write: set n: add n 1
+    } >(ack::read-car)
 }
 
-define filter: method $b {
-    define $ack: channel
-    define $n: read-car
+define filter: method b {
+    define ack: channel
+    define n: read-car
 
-    write $n $ack 
+    write n ack 
 
-    while 'true {
-        if (mod (set $n: read-car) $b): write $n
-    } >($ack::read-car)
+    while true {
+        if (mod (set n: read-car) b): write n
+    } >(ack::read-car)
 }
 
-counter: integer "2" | block {
-    define $in $stdin
+counter 2 | block {
+    define in $stdin
 
-    while 'true {
-        define $l: $in::read
-        define $out: channel
+    while true {
+        define l: in::read
+        define out: channel
 
-        write: car $l
+        write: car l
 
-        spawn: filter (car $l) <$in >$out
+        spawn: filter (car l) <in >out
 
-        (cadr $l)::write $in
+        (cadr l)::write in
 
-        set $in $out
+        set in out
     }
-} > $prime-numbers &
+} > prime-numbers &
 
-define $count: integer "250"
-printf "The first %d prime numbers" $count
+define count: integer 250
+printf "The first %d prime numbers" count
 
-while $count {
+while count {
     write: read-car 
-    set $count: sub $count "1"
-} <$prime-numbers
+    set count: sub count 1
+} <prime-numbers
 

@@ -10,6 +10,7 @@ import (
 //	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
@@ -206,6 +207,24 @@ func function(body, param Cell, scope *Scope) *Applicative {
 	return NewApplicative(NewClosure(body, param, scope), nil)
 }
 
+func lookup(p *Process, sym *Symbol) (bool, string) {
+	c := Resolve(p.Lexical, p.Dynamic, sym)
+	if c == nil {
+		r := Raw(sym)
+		if strict(p) && !number(r) {
+			return false, r + " undefined"
+		} else {
+			p.Scratch = Cons(sym, p.Scratch)
+		}
+	} else if p.GetState() == psEvalElementBC && !IsSimple(c.GetValue()) {
+		p.Scratch = Cons(sym, p.Scratch)
+	} else {
+		p.Scratch = Cons(c.GetValue(), p.Scratch)
+	}
+
+	return true, ""
+}
+
 func method(body, param Cell, scope *Scope) *Applicative {
 	return NewApplicative(NewClosure(body, param, scope), scope)
 }
@@ -249,6 +268,11 @@ func next(p *Process) bool {
 	}
 
 	return true
+}
+
+func number(s string) bool {
+	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
+	return err == nil && m
 }
 
 func rpipe(c Cell) *os.File {
@@ -340,19 +364,9 @@ func run(p *Process) {
 					continue
 				}
 			} else if sym, ok := p.Code.(*Symbol); ok {
-				c := Resolve(p.Lexical, p.Dynamic, sym)
-				if c == nil {
-					if Resolve(p.Lexical, nil,
-						NewSymbol("strict")) != nil {
-						panic(sym.String() + " undefined")
-					} else {
-						p.Scratch = Cons(sym, p.Scratch)
-					}
-				} else if p.GetState() == psEvalElementBC &&
-					!IsSimple(c.GetValue()) {
-					p.Scratch = Cons(sym, p.Scratch)
-				} else {
-					p.Scratch = Cons(c.GetValue(), p.Scratch)
+				ok, msg := lookup(p, sym)
+				if !ok {
+					panic(msg)
 				}
 				break
 			} else {
@@ -527,6 +541,11 @@ func run(p *Process) {
 
 			k := Car(p.Code)
 
+			r := Raw(k)
+			if strict(p) && number(r) {
+				panic(r + " cannot be used as a variable name")
+			}
+			
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -544,8 +563,13 @@ func run(p *Process) {
 		case psDynamic, psSetenv:
 			k := Car(p.Code)
 
+			r := Raw(k)
+			if strict(p) && number(r) {
+				panic(r + " cannot be used as a variable name")
+			}
+
 			if state == psSetenv {
-				if !strings.HasPrefix(k.String(), "$") {
+				if !strings.HasPrefix(r, "$") {
 					break
 				}
 				p.ReplaceState(psExecSetenv)
@@ -982,6 +1006,24 @@ func run(p *Process) {
 	}
 }
 
+func strict(p *Process) (ok bool) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+
+		ok = false
+	}()
+
+	c := Resolve(p.Lexical, nil, NewSymbol("strict"))
+	if c == nil {
+		return false
+	}
+
+	return c.GetValue().(Atom).Bool()
+}
+
 func syntax(body, param Cell, scope *Scope) *Operative {
 	return NewOperative(NewClosure(body, param, scope), scope)
 }
@@ -1026,6 +1068,9 @@ func Start() {
 	proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
+
+	e.Define(NewSymbol("false"), False)
+	e.Define(NewSymbol("true"), True)
 
 	e.Define(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
 	e.Define(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
