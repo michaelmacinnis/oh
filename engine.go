@@ -297,7 +297,7 @@ func run(p *Process) (successful bool) {
 
 		p.Code = Null
 		p.Scratch = Cons(False, p.Scratch)
-		p.Stack = Cdddr(p.Stack)
+		p.Stack = Cdr(p.Stack)
 	}(*p)
 
 	for p.Stack != Null {
@@ -1054,7 +1054,9 @@ func Evaluate(c Cell) {
 		block0 = saved
 		SetCar(block0, nil)
 		SetCdr(block0, Null)
+
 		proc0.Code = block0
+		proc0.Stack = Cddr(proc0.Stack)
 	} else {
 		if proc0.Stack == Null {
 			os.Exit(ExitStatus())
