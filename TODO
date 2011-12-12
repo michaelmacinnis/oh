@@ -3,14 +3,11 @@
   atan]
 - Parameter substitution (for environment variables)
 - Detection and formatting/parsing of recursive structures
-- (let|define)-syntax, syntax-rules
 - Signal handing:
   - 'trap' builtin (trap <signal1> [... <signalN>] <method>)
   - 'wait' builtin.
 - Go FFI (for modules that are really Go->shell wrappers)
 - Module path environment variable.
 - If we push nil before head is evaluated can '@' work as first element?
-- Strict mode (Must quote strings. Referencing undefined variable is an error).
-- Quasiquote and unquote.
 - Internal 'mv'/'cp' methods that can be passed from and to pattern?
 - Can executable size / memory use be reduced?
