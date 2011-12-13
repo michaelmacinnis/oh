@@ -176,12 +176,13 @@ func external(p *Process, args Cell) bool {
 	c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$cwd"))
 	dir := c.GetValue().String()
 
-	var fd []*os.File //{os.Stdin, os.Stdout, os.Stderr}
+	stdin := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()
+	stdout := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()
+	stderr := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()
 
-	fd = append(fd,
-		rpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()),
-		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()),
-		wpipe(Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()))
+	//{os.Stdin, os.Stdout, os.Stderr}
+	//fd = append(fd,
+	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
 	proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd, nil})
 	if err != nil {
@@ -774,9 +775,7 @@ func run(p *Process) (successful bool) {
 			go func() {
 				run(child)
 
-				r := Resolve(c, nil, NewSymbol("guts"))
-				ch := r.GetValue().(*Channel)
-				ch.WriteEnd().Close()
+				wpipe(c).Close()
 			} ()
 
 			b := bufio.NewReader(rpipe(c))
