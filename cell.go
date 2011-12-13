@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -984,8 +985,13 @@ type Channel struct {
 	Implicit bool
 }
 
-func NewChannel(r *os.File, w *os.File) *Channel {
+func NewChannel(r *os.File, w *os.File, cap int) *Channel {
 	ch := &Channel{nil, nil, nil, r, w, false}
+
+	if cap >= 0 {
+		ch.c = make(chan Cell, cap)
+		return ch
+	}
 
 	if r == nil && w == nil {
 		var err error
@@ -994,6 +1000,8 @@ func NewChannel(r *os.File, w *os.File) *Channel {
 			ch.r, ch.w = nil, nil
 		}
 	}
+
+	runtime.SetFinalizer(ch, (*Channel).Close);
 
 	return ch
 }
@@ -1038,7 +1046,7 @@ func (self *Channel) reader() *bufio.Reader {
 
 func (self *Channel) Read() Cell {
 	if self.r == nil {
-		return Null
+		return <-self.c
 	}
 
 	if self.c == nil {
@@ -1054,7 +1062,7 @@ func (self *Channel) Read() Cell {
 
 func (self *Channel) ReadLine() Cell {
 	if self.r == nil {
-		return Null
+		return <-self.c
 	}
 
 	s, err := self.reader().ReadString('\n')
@@ -1071,8 +1079,12 @@ func (self *Channel) ReadEnd() *os.File {
 }
 
 func (self *Channel) Write(c Cell) {
-	if self.w == nil || c == Null {
+	if c == Null {
 		return
+	}
+
+	if self.w == nil {
+		self.c <- c
 	}
 
 	fmt.Fprintln(self.w, c)

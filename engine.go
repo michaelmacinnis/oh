@@ -92,8 +92,8 @@ const (
 var proc0 *Process
 var block0 Cell
 
-func channel(p *Process, r, w *os.File) Interface {
-	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w)
+func channel(p *Process, r, w *os.File, cap int) Interface {
+	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
 	var read Function = func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, ch.Read())
@@ -757,7 +757,7 @@ func run(p *Process) (successful bool) {
 			go run(child)
 
 		case psBacktick:
-			c := channel(p, nil, nil)
+			c := channel(p, nil, nil, -1)
 
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
@@ -771,7 +771,13 @@ func run(p *Process) (successful bool) {
 
 			child.NewState(psEvalCommand)
 
-			go run(child)
+			go func() {
+				run(child)
+
+				r := Resolve(c, nil, NewSymbol("guts"))
+				ch := r.GetValue().(*Channel)
+				ch.WriteEnd().Close()
+			} ()
 
 			b := bufio.NewReader(rpipe(c))
 
@@ -876,7 +882,7 @@ func run(p *Process) (successful bool) {
 			p.RemoveState()
 			p.SaveState(SaveDynamic)
 
-			c := channel(p, nil, nil)
+			c := channel(p, nil, nil, -1)
 
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
@@ -973,9 +979,9 @@ func run(p *Process) (successful bool) {
 				}
 
 				if name == "$stdin" {
-					c = channel(p, f, nil)
+					c = channel(p, f, nil, -1)
 				} else {
-					c = channel(p, nil, f)
+					c = channel(p, nil, f, -1)
 				}
 				SetCar(p.Scratch, c)
 
@@ -1087,9 +1093,9 @@ func Start() {
 	e.Define(NewSymbol("false"), False)
 	e.Define(NewSymbol("true"), True)
 
-	e.Define(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil))
-	e.Define(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout))
-	e.Define(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr))
+	e.Define(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil, -1))
+	e.Define(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout, -1))
+	e.Define(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr, -1))
 
 	if wd, err := os.Getwd(); err == nil {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
@@ -1605,7 +1611,7 @@ func Start() {
 			panic(err)
 		}
 
-		SetCar(p.Scratch, channel(p, f, f))
+		SetCar(p.Scratch, channel(p, f, f, -1))
 
 		return false
 	})
@@ -1849,7 +1855,11 @@ func Start() {
 		return false
 	})
 	s.DefineMethod("channel", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, channel(p, nil, nil))
+		c := 0
+		if args != Null {
+			c = int(Car(args).(Atom).Int())
+		}
+		SetCar(p.Scratch, channel(p, nil, nil, c))
 
 		return false
 	})
@@ -1862,6 +1872,11 @@ func Start() {
 	s.DefineMethod("integer", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch,
 			NewInteger(Car(args).(Atom).Int()))
+
+		return false
+	})
+	s.DefineMethod("pipe", func(p *Process, args Cell) bool {
+		SetCar(p.Scratch, channel(p, nil, nil, -1))
 
 		return false
 	})
