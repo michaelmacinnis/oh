@@ -477,54 +477,46 @@ number is found a process is spawned to filter out multiples of that
 prime number. These processes are strung together like beads on a string.
 
 \begin{lstlisting}
-	define prime-numbers: channel
-	define read-car: method: car: $self::read
+define strict true
 
-	define counter: method n {
-    	define ack: channel 
+define read-car: method: car: $self::read
 
-    	write n ack
+define counter: method n {
+    while true {
+        write: set n: add n 1
+    }
+}
 
-    	while true {
-	       	write: set n: add n 1
-	    } >(ack::read-car)
-	}
+define filter: method base {
+    while true {
+	define n: read-car
+        if (mod n base): write n
+    }
+}
 
-	define filter: method b {
-	    define ack: channel
-	    define n: read-car
+define prime-numbers: channel
 
-	    write n ack 
+counter 2 | block {
+    define in $stdin
 
-	    while true {
-	        if (mod (set n: read-car) b): write n
-	    } >(ack::read-car)
-	}
+    while true {
+        define prime: in::read-car
+        write prime
 
-	counter 2 | block {
-	    define in $stdin
+        define out: channel
+        spawn: filter prime <in >out
 
-	    while true {
-	        define l: in::read
-	        define out: channel
+        set in out
+    }
+} > prime-numbers &
 
-	        write: car l
+define count: integer 250
+printf "The first %d prime numbers" count
 
-	        spawn: filter (car l) <in >out
-
-	        (cadr l)::write in
-
-	        set in out
-	    }
-	} > prime-numbers &
-
-	define count: integer 250
-	printf "The first %d prime numbers" count
-
-	while count {
-	    write: read-car 
-	    set count: sub count 1
-	} <prime-numbers
+while count {
+    write: read-car 
+    set count: sub count 1
+} <prime-numbers
 \end{lstlisting}
 
 %Builtins can be created with 'builtin' TODO - globbing, no passing
