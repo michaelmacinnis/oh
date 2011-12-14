@@ -1062,7 +1062,7 @@ func (self *Channel) Read() Cell {
 
 func (self *Channel) ReadLine() Cell {
 	if self.r == nil {
-		return <-self.c
+		return NewString((<-self.c).String())
 	}
 
 	s, err := self.reader().ReadString('\n')
