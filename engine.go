@@ -2061,6 +2061,28 @@ define append-stdout: syntax e {
     eval e: cadr $args
     if (not: is-null f): f::writer-close
 }
+define channel-stderr: syntax e {
+    define p: channel
+    spawn {
+        dynamic $stderr p
+        eval e (car $args)
+    }
+    block {
+        dynamic $stdin p
+        eval e (cadr $args)
+    }
+}
+define channel-stdout: syntax e {
+    define p: channel
+    spawn {
+        dynamic $stdout p
+        eval e (car $args)
+    }
+    block {
+        dynamic $stdin p
+        eval e (cadr $args)
+    }
+}
 define echo: builtin: $stdout::write @$args
 define for: method l m {
     define r: cons () ()

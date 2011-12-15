@@ -19,7 +19,7 @@ define filter: method base {
 
 define prime-numbers: channel
 
-counter 2 | block {
+counter 2 |+ block {
     define in $stdin
 
     while true {

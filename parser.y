@@ -246,12 +246,14 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
         "!>": "redirect-stderr",
         "!>>": "append-stderr",
         "!|": "pipe-stderr",
+        "!|+": "channel-stderr",
         "&": "background",
         "&&": "and",
         "<": "redirect-stdin",
         ">": "redirect-stdout",
         ">>": "append-stdout",
         "|": "pipe-stdout",
+        "|+": "channel-stdout",
         "||": "or",
     }
 
@@ -342,7 +344,7 @@ main:
             case '>':
                 s.state = ssBangGreater
             case '|':
-                s.token = PIPE
+		s.state = ssPipe
             default:
                 s.state = ssSymbol
                 continue main
@@ -382,6 +384,8 @@ main:
 
         case ssPipe:
             switch s.line.At(s.cursor) {
+            case '+':
+                s.token = PIPE
             case '|':
                 s.token = ORF
             default:
