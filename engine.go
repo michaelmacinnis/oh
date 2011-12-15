@@ -76,10 +76,7 @@ const (
 
 	psAppendStdout
 	psAppendStderr
-	psPipeChild
-	psPipeParent
-	psPipeStderr
-	psPipeStdout
+	psBacktickCleanup
 	psRedirectCleanup
 	psRedirectSetup
 	psRedirectStderr
@@ -95,6 +92,11 @@ var block0 Cell
 func channel(p *Process, r, w *os.File, cap int) Interface {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
+	var rclose Function = func(p *Process, args Cell) bool {
+		SetCar(p.Scratch, NewBoolean(ch.ReaderClose()))
+		return false
+	}
+
 	var read Function = func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, ch.Read())
 		return false
@@ -105,6 +107,11 @@ func channel(p *Process, r, w *os.File, cap int) Interface {
 		return false
 	}
 
+	var wclose Function = func(p *Process, args Cell) bool {
+		SetCar(p.Scratch, NewBoolean(ch.WriterClose()))
+		return false
+	}
+
 	var write Function = func(p *Process, args Cell) bool {
 		ch.Write(args)
 		SetCar(p.Scratch, True)
@@ -112,8 +119,10 @@ func channel(p *Process, r, w *os.File, cap int) Interface {
 	}
 
 	c.Public(NewSymbol("guts"), ch)
+	c.Public(NewSymbol("reader-close"), method(rclose, Null, c))
 	c.Public(NewSymbol("read"), method(read, Null, c))
 	c.Public(NewSymbol("readline"), method(readline, Null, c))
+	c.Public(NewSymbol("writer-close"), method(wclose, Null, c))
 	c.Public(NewSymbol("write"), method(write, Null, c))
 
 	return NewObject(c)
@@ -278,7 +287,7 @@ func number(s string) bool {
 
 func rpipe(c Cell) *os.File {
 	r := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
-	return r.GetValue().(*Channel).ReadEnd()
+	return r.GetValue().(*Channel).ReadFd()
 }
 
 func run(p *Process) (successful bool) {
@@ -762,7 +771,7 @@ func run(p *Process) (successful bool) {
 
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
-			child.NewState(psPipeChild)
+			child.NewState(psBacktickCleanup)
 
 			s := NewSymbol("$stdout")
 			child.SaveState(SaveCode, s)
@@ -877,49 +886,9 @@ func run(p *Process) (successful bool) {
 			p.NewState(psEvalElement)
 			continue
 
-		case psPipeStderr, psPipeStdout:
-			p.RemoveState()
-			p.SaveState(SaveDynamic)
-
-			c := channel(p, nil, nil, -1)
-
-			child := NewProcess(psNone, p.Dynamic, p.Lexical)
-
-			child.NewState(psPipeChild)
-
-			var s *Symbol
-			if state == psPipeStderr {
-				s = NewSymbol("$stderr")
-			} else {
-				s = NewSymbol("$stdout")
-			}
-			child.SaveState(SaveCode, s)
-
-			child.Code = Car(p.Code)
-			child.Dynamic.Define(s, c)
-
-			child.NewState(psEvalCommand)
-
-			go run(child)
-
-			p.Code = Cadr(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			p.Dynamic.Define(NewSymbol("$stdin"), c)
-
-			p.NewState(psPipeParent)
-			p.NewState(psEvalCommand)
-			continue
-
-		case psPipeChild:
+		case psBacktickCleanup:
 			c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol)).GetValue()
 			wpipe(c).Close()
-
-		case psPipeParent:
-			c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()
-			rpipe(c).Close()
 
 		case psAppendStderr, psAppendStdout, psRedirectStderr,
 			psRedirectStdin, psRedirectStdout:
@@ -1041,7 +1010,7 @@ func syntax(body, param Cell, scope *Scope) *Operative {
 
 func wpipe(c Cell) *os.File {
 	w := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
-	return w.GetValue().(*Channel).WriteEnd()
+	return w.GetValue().(*Channel).WriteFd()
 }
 
 func Evaluate(c Cell) {
@@ -1119,8 +1088,6 @@ func Start() {
 	s.PublicState("public", psPublic)
 
 	s.DefineState("background", psBackground)
-	s.DefineState("pipe-stdout", psPipeStdout)
-	s.DefineState("pipe-stderr", psPipeStderr)
 	s.DefineState("redirect-stdin", psRedirectStdin)
 	s.DefineState("redirect-stdout", psRedirectStdout)
 	s.DefineState("redirect-stderr", psRedirectStderr)
@@ -2186,6 +2153,32 @@ define or: syntax e {
         set l: cdr l
     }
     return r
+}
+define pipe-stderr: syntax e {
+    define p: pipe
+    spawn {
+        dynamic $stderr p
+        eval e (car $args)
+        p::writer-close
+    }
+    block {
+        dynamic $stdin p
+        eval e (cadr $args)
+        p::reader-close
+    }
+}
+define pipe-stdout: syntax e {
+    define p: pipe
+    spawn {
+        dynamic $stdout p
+        eval e (car $args)
+        p::writer-close
+    }
+    block {
+        dynamic $stdin p
+        eval e (cadr $args)
+        p::reader-close
+    }
 }
 define printf: method: echo: sprintf (car $args) @(cdr $args)
 define read: builtin: $stdin::read

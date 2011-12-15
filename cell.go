@@ -1022,15 +1022,11 @@ func (self *Channel) Equal(c Cell) bool {
 
 func (self *Channel) Close() {
 	if self.r != nil && len(self.r.Name()) > 0 {
-
-		self.r.Close()
-		self.r = nil
+		self.ReaderClose()
 	}
 
 	if self.w != nil && len(self.w.Name()) > 0 {
-
-		self.w.Close()
-		self.w = nil
+		self.WriterClose()
 	}
 
 	return
@@ -1042,6 +1038,15 @@ func (self *Channel) reader() *bufio.Reader {
 	}
 
 	return self.b
+}
+
+func (self *Channel) ReaderClose() bool {
+	if self.r != nil {
+		self.r.Close()
+		self.r = nil
+	}
+
+	return true
 }
 
 func (self *Channel) Read() Cell {
@@ -1074,8 +1079,17 @@ func (self *Channel) ReadLine() Cell {
 	return NewString(strings.TrimRight(s, "\n"))
 }
 
-func (self *Channel) ReadEnd() *os.File {
+func (self *Channel) ReadFd() *os.File {
 	return self.r
+}
+
+func (self *Channel) WriterClose() bool {
+	if self.w != nil {
+		self.w.Close()
+		self.w = nil
+	}
+
+	return true
 }
 
 func (self *Channel) Write(c Cell) {
@@ -1090,7 +1104,7 @@ func (self *Channel) Write(c Cell) {
 	fmt.Fprintln(self.w, c)
 }
 
-func (self *Channel) WriteEnd() *os.File {
+func (self *Channel) WriteFd() *os.File {
 	return self.w
 }
 
