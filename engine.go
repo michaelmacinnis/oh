@@ -74,8 +74,6 @@ const (
 	psBackground
 	psBacktick
 
-	psBacktickCleanup
-
 	psMax
 )
 
@@ -764,13 +762,8 @@ func run(p *Process) (successful bool) {
 
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
-			child.NewState(psBacktickCleanup)
-
-			s := NewSymbol("$stdout")
-			child.SaveState(SaveCode, s)
-
 			child.Code = Car(p.Code)
-			child.Dynamic.Define(s, c)
+			child.Dynamic.Define(NewSymbol("$stdout"), c)
 
 			child.NewState(psEvalCommand)
 
@@ -878,10 +871,6 @@ func run(p *Process) (successful bool) {
 
 			p.NewState(psEvalElement)
 			continue
-
-		case psBacktickCleanup:
-			c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol)).GetValue()
-			wpipe(c).Close()
 
 		default:
 			if state >= SaveMax {
