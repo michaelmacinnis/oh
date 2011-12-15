@@ -74,14 +74,7 @@ const (
 	psBackground
 	psBacktick
 
-	psAppendStdout
-	psAppendStderr
 	psBacktickCleanup
-	psRedirectCleanup
-	psRedirectSetup
-	psRedirectStderr
-	psRedirectStdin
-	psRedirectStdout
 
 	psMax
 )
@@ -890,88 +883,6 @@ func run(p *Process) (successful bool) {
 			c := Resolve(p.Lexical, p.Dynamic, p.Code.(*Symbol)).GetValue()
 			wpipe(c).Close()
 
-		case psAppendStderr, psAppendStdout, psRedirectStderr,
-			psRedirectStdin, psRedirectStdout:
-			p.RemoveState()
-			p.SaveState(SaveDynamic)
-
-			initial := NewInteger(state)
-
-			p.NewState(psRedirectCleanup)
-			p.NewState(psEvalCommand)
-			p.SaveState(SaveCode, Cadr(p.Code))
-			p.NewState(psRedirectSetup)
-			p.SaveState(SaveCode, initial)
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			p.NewState(psEvalElement)
-			continue
-
-		case psRedirectSetup:
-			flags, name := 0, ""
-			initial := p.Code.(Atom).Int()
-
-			switch initial {
-			case psAppendStderr:
-				flags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
-				name = "$stderr"
-
-			case psAppendStdout:
-				flags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
-				name = "$stdout"
-
-			case psRedirectStderr:
-				flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-				name = "$stderr"
-
-			case psRedirectStdin:
-				flags = os.O_RDONLY
-				name = "$stdin"
-
-			case psRedirectStdout:
-				flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-				name = "$stdout"
-			}
-
-			c, ok := Car(p.Scratch).(Interface)
-			if !ok {
-				n := Raw(Car(p.Scratch))
-
-				f, err := os.OpenFile(n, flags, 0666)
-				if err != nil {
-					panic(err)
-				}
-
-				if name == "$stdin" {
-					c = channel(p, f, nil, -1)
-				} else {
-					c = channel(p, nil, f, -1)
-				}
-				SetCar(p.Scratch, c)
-
-				r := Resolve(c, nil, NewSymbol("guts"))
-				ch := r.GetValue().(*Channel)
-
-				ch.Implicit = true
-			}
-
-			p.Dynamic.Define(NewSymbol(name), c)
-
-		case psRedirectCleanup:
-			c := Cadr(p.Scratch).(Interface)
-			r := Resolve(c, nil, NewSymbol("guts"))
-			ch := r.GetValue().(*Channel)
-
-			if ch.Implicit {
-				ch.Close()
-			}
-
-			SetCdr(p.Scratch, Cddr(p.Scratch))
-
 		default:
 			if state >= SaveMax {
 				panic(fmt.Sprintf("command not found: %s", p.Code))
@@ -1088,11 +999,6 @@ func Start() {
 	s.PublicState("public", psPublic)
 
 	s.DefineState("background", psBackground)
-	s.DefineState("redirect-stdin", psRedirectStdin)
-	s.DefineState("redirect-stdout", psRedirectStdout)
-	s.DefineState("redirect-stderr", psRedirectStderr)
-	s.DefineState("append-stdout", psAppendStdout)
-	s.DefineState("append-stderr", psAppendStderr)
 
 	/* Builtins. */
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {
@@ -1560,16 +1466,30 @@ func Start() {
 
 		flags := os.O_CREATE
 
+		read := false
 		if strings.IndexAny(mode, "r") != -1 {
-			flags |= os.O_WRONLY
-		} else if strings.IndexAny(mode, "aw") != -1 {
-			flags |= os.O_RDONLY
-		} else {
-			flags |= os.O_RDWR
+			read = true
+		}
+
+		write := false
+		if strings.IndexAny(mode, "w") != -1 {
+			write = true
+			if strings.IndexAny(mode, "a") == -1 {
+				flags |= os.O_TRUNC
+			}
 		}
 
 		if strings.IndexAny(mode, "a") != -1 {
+			write = true
 			flags |= os.O_APPEND
+		}
+
+		if read == write {
+			read = true
+			write = true
+			flags |= os.O_RDWR
+		} else if write {
+			flags |= os.O_WRONLY
 		}
 
 		f, err := os.OpenFile(name, flags, 0666)
@@ -1577,7 +1497,17 @@ func Start() {
 			panic(err)
 		}
 
-		SetCar(p.Scratch, channel(p, f, f, -1))
+		r := f
+		if !read {
+			r = nil
+		}
+
+		w := f
+		if !write {
+			w = nil
+		}
+
+		SetCar(p.Scratch, channel(p, r, w, -1))
 
 		return false
 	})
@@ -2110,7 +2040,6 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
-define quote: syntax: car $args
 define and: syntax e {
     define l $args
     define r false
@@ -2120,6 +2049,28 @@ define and: syntax e {
         set l: cdr l
     }
     return r
+}
+define append-stderr: syntax e {
+    define c: eval e: car $args
+    define f ()
+    if (not: is-channel c) {
+        set f: open c "a"
+        set c f
+    }
+    dynamic $stderr c
+    eval e: cadr $args
+    if (not: is-null f): f::writer-close
+}
+define append-stdout: syntax e {
+    define c: eval e: car $args
+    define f ()
+    if (not: is-channel c) {
+        set f: open c "a"
+        set c f
+    }
+    dynamic $stdout c
+    eval e: cadr $args
+    if (not: is-null f): f::writer-close
 }
 define echo: builtin: $stdout::write @$args
 define for: method l m {
@@ -2181,8 +2132,42 @@ define pipe-stdout: syntax e {
     }
 }
 define printf: method: echo: sprintf (car $args) @(cdr $args)
+define quote: syntax: car $args
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
+define redirect-stderr: syntax e {
+    define c: eval e: car $args
+    define f ()
+    if (not: is-channel c) {
+        set f: open c "w"
+        set c f
+    }
+    dynamic $stderr c
+    eval e: cadr $args
+    if (not: is-null f): f::writer-close
+}
+define redirect-stdin: syntax e {
+    define c: eval e: car $args
+    define f ()
+    if (not: is-channel c) {
+        set f: open c "r"
+        set c f
+    }
+    dynamic $stdin c
+    eval e: cadr $args
+    if (not: is-null f): f::reader-close
+}
+define redirect-stdout: syntax e {
+    define c: eval e: car $args
+    define f ()
+    if (not: is-channel c) {
+        set f: open c "w"
+        set c f
+    }
+    dynamic $stdout c
+    eval e: cadr $args
+    if (not: is-null f): f::writer-close
+}
 define write: method: $stdout::write @$args
 `)), Evaluate)
 

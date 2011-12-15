@@ -34,7 +34,7 @@ counter 2 | block {
 } > prime-numbers &
 
 define count: integer 250
-printf "The first %d prime numbers" count
+#printf "The first %d prime numbers" count
 
 while count {
     write: read-car 
