@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-//	"os/signal"
+	//	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -191,10 +191,10 @@ func external(p *Process, args Cell) bool {
 		panic(err)
 	}
 
-//	go func() {
-//		<-signal.Incoming
-//		panic("Caught signal")
-//	} ();
+	//	go func() {
+	//		<-signal.Incoming
+	//		panic("Caught signal")
+	//	} ();
 
 	var status int64 = 0
 
@@ -552,7 +552,7 @@ func run(p *Process) (successful bool) {
 			if strict(p) && number(r) {
 				panic(r + " cannot be used as a variable name")
 			}
-			
+
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -778,7 +778,7 @@ func run(p *Process) (successful bool) {
 				run(child)
 
 				wpipe(c).Close()
-			} ()
+			}()
 
 			b := bufio.NewReader(rpipe(c))
 
@@ -2182,4 +2182,3 @@ define write: method: $stdout::write @$args
 		proc0.Scratch = Cdr(proc0.Scratch)
 	}
 }
-

@@ -3,9 +3,9 @@
 package main
 
 import (
+	"github.com/michaelmacinnis/tecla"
 	"os"
 	"runtime"
-	"github.com/michaelmacinnis/tecla"
 )
 
 func init() {

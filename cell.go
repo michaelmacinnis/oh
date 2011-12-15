@@ -977,16 +977,15 @@ func (self *Applicative) Equal(c Cell) bool {
 /* Channel cell definition. */
 
 type Channel struct {
-	b        *bufio.Reader
-	c        chan Cell
-	d        chan bool
-	r        *os.File
-	w        *os.File
-	Implicit bool
+	b *bufio.Reader
+	c chan Cell
+	d chan bool
+	r *os.File
+	w *os.File
 }
 
 func NewChannel(r *os.File, w *os.File, cap int) *Channel {
-	ch := &Channel{nil, nil, nil, r, w, false}
+	ch := &Channel{nil, nil, nil, r, w}
 
 	if cap >= 0 {
 		ch.c = make(chan Cell, cap)
@@ -1001,7 +1000,7 @@ func NewChannel(r *os.File, w *os.File, cap int) *Channel {
 		}
 	}
 
-	runtime.SetFinalizer(ch, (*Channel).Close);
+	runtime.SetFinalizer(ch, (*Channel).Close)
 
 	return ch
 }
