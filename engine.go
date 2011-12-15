@@ -1261,7 +1261,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsControl(int(t.Int())))
+			r = NewBoolean(unicode.IsControl(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1275,7 +1275,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsDigit(int(t.Int())))
+			r = NewBoolean(unicode.IsDigit(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1289,7 +1289,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsGraphic(int(t.Int())))
+			r = NewBoolean(unicode.IsGraphic(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1303,7 +1303,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsLetter(int(t.Int())))
+			r = NewBoolean(unicode.IsLetter(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1317,7 +1317,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsLower(int(t.Int())))
+			r = NewBoolean(unicode.IsLower(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1331,7 +1331,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsMark(int(t.Int())))
+			r = NewBoolean(unicode.IsMark(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1345,7 +1345,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsPrint(int(t.Int())))
+			r = NewBoolean(unicode.IsPrint(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1359,7 +1359,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsPunct(int(t.Int())))
+			r = NewBoolean(unicode.IsPunct(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1373,7 +1373,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsSpace(int(t.Int())))
+			r = NewBoolean(unicode.IsSpace(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1387,7 +1387,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsSymbol(int(t.Int())))
+			r = NewBoolean(unicode.IsSymbol(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1401,7 +1401,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsTitle(int(t.Int())))
+			r = NewBoolean(unicode.IsTitle(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1415,7 +1415,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewBoolean(unicode.IsUpper(int(t.Int())))
+			r = NewBoolean(unicode.IsUpper(rune(t.Int())))
 		default:
 			r = Null
 		}
@@ -1544,7 +1544,7 @@ func Start() {
 	s.DefineMethod("substring", func(p *Process, args Cell) bool {
 		var r Cell
 
-		s := []int(Raw(Car(args)))
+		s := []rune(Raw(Car(args)))
 
 		start := int(Cadr(args).(Atom).Int())
 		end := len(s)
@@ -1580,7 +1580,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToLower(int(t.Int()))))
+			r = NewInteger(int64(unicode.ToLower(rune(t.Int()))))
 		case *String:
 			r = NewString(strings.ToLower(Raw(t)))
 		case *Symbol:
@@ -1598,7 +1598,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToTitle(int(t.Int()))))
+			r = NewInteger(int64(unicode.ToTitle(rune(t.Int()))))
 		case *String:
 			r = NewString(strings.ToTitle(Raw(t)))
 		case *Symbol:
@@ -1616,7 +1616,7 @@ func Start() {
 
 		switch t := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToUpper(int(t.Int()))))
+			r = NewInteger(int64(unicode.ToUpper(rune(t.Int()))))
 		case *String:
 			r = NewString(strings.ToUpper(Raw(t)))
 		case *Symbol:

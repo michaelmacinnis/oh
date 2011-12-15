@@ -229,8 +229,8 @@ type scanner struct {
     cursor int
     start int
 
-    previous int
-    token int
+    previous rune
+    token rune
 
     finished bool
 }
@@ -426,7 +426,7 @@ main:
         }
     }
 
-    return s.token
+    return int(s.token)
 }
 
 func (s *scanner) Error (msg string) {
