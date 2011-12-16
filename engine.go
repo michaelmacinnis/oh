@@ -83,6 +83,12 @@ var next = map[int64] int64 {
 	psEvalArgumentsBC : psDoEvalArgumentsBC,
 	psDoEvalArguments : psEvalElement,
 	psDoEvalArgumentsBC : psDoEvalArgumentsBC,
+	psDefine : psExecDefine,
+	psDynamic : psExecDynamic,
+	psImport : psExecImport,
+	psPublic : psExecPublic,
+	psSetenv : psExecSetenv,
+	psSource : psExecSource,
 }
 
 func channel(p *Process, r, w *os.File, cap int) Interface {
@@ -328,7 +334,7 @@ func run(p *Process) (successful bool) {
 
 			if p.GetState() == psExecExternal ||
 				p.GetState() == psExecApplicative &&
-					Car(p.Scratch).(*Applicative).Self == nil {
+				Car(p.Scratch).(*Applicative).Self == nil {
 				p.NewState(psEvalArgumentsBC)
 			} else {
 				p.NewState(psEvalArguments)
@@ -346,12 +352,12 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			state = p.GetState()
+			state = next[p.GetState()]
 
 			p.SaveState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 
-			p.ReplaceState(next[state]);
+			p.ReplaceState(state);
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
@@ -535,11 +541,7 @@ func run(p *Process) (successful bool) {
 				p.Lexical = l
 			}
 
-			if state == psDefine {
-				p.NewState(psExecDefine)
-			} else {
-				p.NewState(psExecPublic)
-			}
+			p.NewState(next[p.GetState()]);
 
 			k := Car(p.Code)
 
@@ -574,10 +576,9 @@ func run(p *Process) (successful bool) {
 				if !strings.HasPrefix(r, "$") {
 					break
 				}
-				p.ReplaceState(psExecSetenv)
-			} else {
-				p.ReplaceState(psExecDynamic)
 			}
+
+			p.ReplaceState(next[p.GetState()]);
 
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
@@ -818,11 +819,7 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psImport, psSource:
-			if state == psImport {
-				p.ReplaceState(psExecImport)
-			} else {
-				p.ReplaceState(psExecSource)
-			}
+			p.ReplaceState(next[p.GetState()]);
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
