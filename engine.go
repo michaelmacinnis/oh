@@ -76,8 +76,14 @@ const (
 	psMax
 )
 
-var proc0 *Process
 var block0 Cell
+var proc0 *Process
+var next = map[int64] int64 {
+	psEvalArguments : psDoEvalArguments,
+	psEvalArgumentsBC : psDoEvalArgumentsBC,
+	psDoEvalArguments : psEvalElement,
+	psDoEvalArgumentsBC : psDoEvalArgumentsBC,
+}
 
 func channel(p *Process, r, w *os.File, cap int) Interface {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
@@ -116,6 +122,33 @@ func channel(p *Process, r, w *os.File, cap int) Interface {
 	c.Public(NewSymbol("write"), method(write, Null, c))
 
 	return NewObject(c)
+}
+
+func combiner(p *Process) bool {
+	switch Car(p.Scratch).(type) {
+	case *Applicative:
+
+		body := Car(p.Scratch).(*Applicative).Func.Body
+
+		switch t := body.(type) {
+		case Function:
+			p.ReplaceState(psExecBuiltin)
+
+		case *Integer:
+			p.ReplaceState(t.Int())
+			return true
+
+		default:
+			p.ReplaceState(psExecApplicative)
+		}
+
+		return false
+
+	case *Operative:
+		p.ReplaceState(psExecOperative)
+	}
+
+	return true
 }
 
 func debug(p *Process, s string) {
@@ -243,33 +276,6 @@ func module(f string) (string, error) {
 	return m, nil
 }
 
-func next(p *Process) bool {
-	switch Car(p.Scratch).(type) {
-	case *Applicative:
-
-		body := Car(p.Scratch).(*Applicative).Func.Body
-
-		switch t := body.(type) {
-		case Function:
-			p.ReplaceState(psExecBuiltin)
-
-		case *Integer:
-			p.ReplaceState(t.Int())
-			return true
-
-		default:
-			p.ReplaceState(psExecApplicative)
-		}
-
-		return false
-
-	case *Operative:
-		p.ReplaceState(psExecOperative)
-	}
-
-	return true
-}
-
 func number(s string) bool {
 	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
 	return err == nil && m
@@ -315,7 +321,7 @@ func run(p *Process) (successful bool) {
 				p.ReplaceState(psExecExternal)
 
 			default:
-				if next(p) {
+				if combiner(p) {
 					continue
 				}
 			}
@@ -332,11 +338,7 @@ func run(p *Process) (successful bool) {
 		case psEvalArguments, psEvalArgumentsBC:
 			p.Scratch = Cons(nil, p.Scratch)
 
-			if p.GetState() == psEvalArgumentsBC {
-				p.ReplaceState(psDoEvalArgumentsBC)
-			} else {
-				p.ReplaceState(psDoEvalArguments)
-			}
+			p.ReplaceState(next[p.GetState()]);
 
 			fallthrough
 		case psDoEvalArguments, psDoEvalArgumentsBC:
@@ -349,11 +351,7 @@ func run(p *Process) (successful bool) {
 			p.SaveState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 
-			if state == psDoEvalArgumentsBC {
-				p.NewState(psEvalElementBC)
-			} else {
-				p.NewState(psEvalElement)
-			}
+			p.ReplaceState(next[state]);
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
@@ -1029,7 +1027,7 @@ func Start() {
 
 	s.DefineMethod("apply", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, Car(args))
-		next(p)
+		combiner(p)
 
 		p.Scratch = Cons(nil, p.Scratch)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
