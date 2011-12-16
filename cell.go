@@ -98,7 +98,6 @@ func init() {
 
 		"append-stdout",
 		"append-stderr",
-		"background",
 		"channel-stdout",
 		"channel-stderr",
 		"pipe-stdout",

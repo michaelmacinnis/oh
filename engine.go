@@ -71,7 +71,6 @@ const (
 	psWhile
 
 	/* Operators. */
-	psBackground
 	psBacktick
 
 	psMax
@@ -747,16 +746,6 @@ func run(p *Process) (successful bool) {
 			}
 
 			/* Command states */
-		case psBackground:
-			child := NewProcess(psNone, p.Dynamic, p.Lexical)
-
-			child.NewState(psEvalCommand)
-
-			child.Code = Car(p.Code)
-			SetCar(p.Scratch, True)
-
-			go run(child)
-
 		case psBacktick:
 			c := channel(p, nil, nil, -1)
 
@@ -856,10 +845,12 @@ func run(p *Process) (successful bool) {
 		case psSpawn:
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
-			child.Scratch = Cons(Null, child.Scratch)
 			child.NewState(psEvalBlock)
 
 			child.Code = p.Code
+			child.Scratch = Cons(Null, child.Scratch)
+
+			SetCar(p.Scratch, True)
 
 			go run(child)
 
@@ -986,8 +977,6 @@ func Start() {
 	s.DefineState("while", psWhile)
 
 	s.PublicState("public", psPublic)
-
-	s.DefineState("background", psBackground)
 
 	/* Builtins. */
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {

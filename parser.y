@@ -247,7 +247,7 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
         "!>>": "append-stderr",
         "!|": "pipe-stderr",
         "!|+": "channel-stderr",
-        "&": "background",
+        "&": "spawn",
         "&&": "and",
         "<": "redirect-stdin",
         ">": "redirect-stdout",
