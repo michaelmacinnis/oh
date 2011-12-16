@@ -2029,6 +2029,40 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
+define $connect: syntax {
+    define type: eval: car $args
+    define out: cadr $args
+    define close: eval: caddr $args
+    syntax e {
+        define p: type
+        spawn {
+            eval: list 'dynamic out 'p
+            eval e (car $args)
+            if close: p::writer-close
+        }
+        block {
+            dynamic $stdin p
+            eval e (cadr $args)
+            if close: p::reader-close
+        }
+    }
+}
+define $redirect: syntax {
+    define chan: car $args
+    define mode: cadr $args
+    define mthd: caddr $args
+    syntax e {
+        define c: eval e: car $args
+        define f ()
+        if (not: is-channel c) {
+            set f: open c mode
+            set c f
+        }
+        eval: list 'dynamic chan 'c
+        eval e: cadr $args
+        if (not: is-null f): eval: cons 'f mthd
+    }
+}
 define and: syntax e {
     define l $args
     define r false
@@ -2039,50 +2073,10 @@ define and: syntax e {
     }
     return r
 }
-define append-stderr: syntax e {
-    define c: eval e: car $args
-    define f ()
-    if (not: is-channel c) {
-        set f: open c "a"
-        set c f
-    }
-    dynamic $stderr c
-    eval e: cadr $args
-    if (not: is-null f): f::writer-close
-}
-define append-stdout: syntax e {
-    define c: eval e: car $args
-    define f ()
-    if (not: is-channel c) {
-        set f: open c "a"
-        set c f
-    }
-    dynamic $stdout c
-    eval e: cadr $args
-    if (not: is-null f): f::writer-close
-}
-define channel-stderr: syntax e {
-    define p: channel
-    spawn {
-        dynamic $stderr p
-        eval e (car $args)
-    }
-    block {
-        dynamic $stdin p
-        eval e (cadr $args)
-    }
-}
-define channel-stdout: syntax e {
-    define p: channel
-    spawn {
-        dynamic $stdout p
-        eval e (car $args)
-    }
-    block {
-        dynamic $stdin p
-        eval e (cadr $args)
-    }
-}
+define append-stderr: $redirect $stderr "a" writer-close
+define append-stdout: $redirect $stdout "a" writer-close
+define channel-stderr: $connect channel $stderr true
+define channel-stdout: $connect channel $stdout true
 define echo: builtin: $stdout::write @$args
 define for: method l m {
     define r: cons () ()
@@ -2116,69 +2110,15 @@ define or: syntax e {
     }
     return r
 }
-define pipe-stderr: syntax e {
-    define p: pipe
-    spawn {
-        dynamic $stderr p
-        eval e (car $args)
-        p::writer-close
-    }
-    block {
-        dynamic $stdin p
-        eval e (cadr $args)
-        p::reader-close
-    }
-}
-define pipe-stdout: syntax e {
-    define p: pipe
-    spawn {
-        dynamic $stdout p
-        eval e (car $args)
-        p::writer-close
-    }
-    block {
-        dynamic $stdin p
-        eval e (cadr $args)
-        p::reader-close
-    }
-}
+define pipe-stderr: $connect pipe $stderr true
+define pipe-stdout: $connect pipe $stdout true
 define printf: method: echo: sprintf (car $args) @(cdr $args)
 define quote: syntax: car $args
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
-define redirect-stderr: syntax e {
-    define c: eval e: car $args
-    define f ()
-    if (not: is-channel c) {
-        set f: open c "w"
-        set c f
-    }
-    dynamic $stderr c
-    eval e: cadr $args
-    if (not: is-null f): f::writer-close
-}
-define redirect-stdin: syntax e {
-    define c: eval e: car $args
-    define f ()
-    if (not: is-channel c) {
-        set f: open c "r"
-        set c f
-    }
-    dynamic $stdin c
-    eval e: cadr $args
-    if (not: is-null f): f::reader-close
-}
-define redirect-stdout: syntax e {
-    define c: eval e: car $args
-    define f ()
-    if (not: is-channel c) {
-        set f: open c "w"
-        set c f
-    }
-    dynamic $stdout c
-    eval e: cadr $args
-    if (not: is-null f): f::writer-close
-}
+define redirect-stderr: $redirect $stderr "w" writer-close
+define redirect-stdin: $redirect $stdin "r" reader-close
+define redirect-stdout: $redirect $stdout "w" writer-close
 define write: method: $stdout::write @$args
 `)), Evaluate)
 
