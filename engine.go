@@ -357,7 +357,7 @@ func run(p *Process) (successful bool) {
 			p.SaveState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 
-			p.ReplaceState(state);
+			p.NewState(state);
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
@@ -541,7 +541,7 @@ func run(p *Process) (successful bool) {
 				p.Lexical = l
 			}
 
-			p.NewState(next[p.GetState()]);
+			p.NewState(next[state]);
 
 			k := Car(p.Code)
 
@@ -578,7 +578,7 @@ func run(p *Process) (successful bool) {
 				}
 			}
 
-			p.ReplaceState(next[p.GetState()]);
+			p.ReplaceState(next[state]);
 
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
@@ -819,7 +819,7 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psImport, psSource:
-			p.ReplaceState(next[p.GetState()]);
+			p.ReplaceState(state);
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
