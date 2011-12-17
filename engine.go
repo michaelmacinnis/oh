@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	//	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -130,33 +129,6 @@ func channel(p *Process, r, w *os.File, cap int) Interface {
 	return NewObject(c)
 }
 
-func combiner(p *Process) bool {
-	switch Car(p.Scratch).(type) {
-	case *Applicative:
-
-		body := Car(p.Scratch).(*Applicative).Func.Body
-
-		switch t := body.(type) {
-		case Function:
-			p.ReplaceState(psExecBuiltin)
-
-		case *Integer:
-			p.ReplaceState(t.Int())
-			return true
-
-		default:
-			p.ReplaceState(psExecApplicative)
-		}
-
-		return false
-
-	case *Operative:
-		p.ReplaceState(psExecOperative)
-	}
-
-	return true
-}
-
 func debug(p *Process, s string) {
 	fmt.Printf("%s: p.Code = %v, p.Scratch = %v\n", s, p.Code, p.Scratch)
 }
@@ -218,19 +190,12 @@ func external(p *Process, args Cell) bool {
 	stdout := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()
 	stderr := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()
 
-	//{os.Stdin, os.Stdout, os.Stderr}
-	//fd = append(fd,
 	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
 	proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd, nil})
 	if err != nil {
 		panic(err)
 	}
-
-	//	go func() {
-	//		<-signal.Incoming
-	//		panic("Caught signal")
-	//	} ();
 
 	var status int64 = 0
 
@@ -244,6 +209,33 @@ func external(p *Process, args Cell) bool {
 
 func function(body, param Cell, scope *Scope) *Applicative {
 	return NewApplicative(NewClosure(body, param, scope), nil)
+}
+
+func head(p *Process) bool {
+	switch Car(p.Scratch).(type) {
+	case *Applicative:
+
+		body := Car(p.Scratch).(*Applicative).Func.Body
+
+		switch t := body.(type) {
+		case Function:
+			p.ReplaceState(psExecBuiltin)
+
+		case *Integer:
+			p.ReplaceState(t.Int())
+			return true
+
+		default:
+			p.ReplaceState(psExecApplicative)
+		}
+
+		return false
+
+	case *Operative:
+		p.ReplaceState(psExecOperative)
+	}
+
+	return true
 }
 
 func lookup(p *Process, sym *Symbol) (bool, string) {
@@ -327,13 +319,15 @@ func run(p *Process) (successful bool) {
 				p.ReplaceState(psExecExternal)
 
 			default:
-				if combiner(p) {
+				if head(p) {
 					continue
 				}
 			}
 
-			if p.GetState() == psExecExternal ||
-				p.GetState() == psExecApplicative &&
+			state = p.GetState()
+			if state == psExecExternal {
+				p.NewState(psEvalArgumentsBC)
+			} else if state == psExecApplicative &&
 				Car(p.Scratch).(*Applicative).Self == nil {
 				p.NewState(psEvalArgumentsBC)
 			} else {
@@ -354,7 +348,7 @@ func run(p *Process) (successful bool) {
 
 			state = next[p.GetState()]
 
-			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 
 			p.NewState(state);
@@ -384,12 +378,11 @@ func run(p *Process) (successful bool) {
 
 			fallthrough
 		case psEvalAccess:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.NewState(psEvalElement)
 			p.NewState(psChangeScope)
-			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(SaveCode, Cdr(p.Code))
 
 			p.Code = Car(p.Code)
 
@@ -401,7 +394,7 @@ func run(p *Process) (successful bool) {
 				return
 			}
 
-			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(SaveCode, Cdr(p.Code))
 			p.NewState(psEvalCommand)
 
 			p.Code = Car(p.Code)
@@ -409,8 +402,7 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psBlock:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.NewScope(p.Dynamic, p.Lexical)
 
@@ -425,7 +417,7 @@ func run(p *Process) (successful bool) {
 			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
 				p.ReplaceState(psEvalCommand)
 			} else {
-				p.SaveState(SaveCode, Cdr(p.Code))
+				p.NewState(SaveCode, Cdr(p.Code))
 				p.NewState(psEvalCommand)
 			}
 
@@ -440,7 +432,7 @@ func run(p *Process) (successful bool) {
 			}
 
 			p.ReplaceState(psDoEvalCommand)
-			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(SaveCode, Cdr(p.Code))
 
 			p.Code = Car(p.Code)
 
@@ -455,8 +447,7 @@ func run(p *Process) (successful bool) {
 				args = expand(args)
 			}
 
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.Code = m.Func.Body
 			p.NewScope(p.Dynamic, m.Func.Lexical)
@@ -483,8 +474,7 @@ func run(p *Process) (successful bool) {
 				args = expand(args)
 			}
 
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.Code = m.Func.Body
 			p.NewScope(p.Dynamic, m.Func.Lexical)
@@ -502,20 +492,19 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psSet:
-			p.RemoveState()
 			p.Scratch = Cdr(p.Scratch)
 
 			s := Car(p.Code)
 			if !IsCons(s) {
-				p.NewState(psExecSet)
-				p.SaveState(SaveCode, s)
+				p.ReplaceState(psExecSet)
+				p.NewState(SaveCode, s)
 			} else {
-				p.SaveState(SaveDynamic | SaveLexical)
+				p.ReplaceState(SaveDynamic | SaveLexical)
 				p.NewState(psExecSet)
-				p.SaveState(SaveCode, Cdr(s))
+				p.NewState(SaveCode, Cdr(s))
 				p.NewState(psChangeScope)
 				p.NewState(psEvalElement)
-				p.SaveState(SaveCode, Car(s))
+				p.NewState(SaveCode, Car(s))
 			}
 
 			p.NewState(psEvalElement)
@@ -537,7 +526,7 @@ func run(p *Process) (successful bool) {
 
 			l := Car(p.Scratch).(*Applicative).Self
 			if p.Lexical != l {
-				p.SaveState(SaveLexical)
+				p.NewState(SaveLexical)
 				p.Lexical = l
 			}
 
@@ -553,7 +542,7 @@ func run(p *Process) (successful bool) {
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.SaveState(SaveCode|SaveLexical, k)
+			p.NewState(SaveCode|SaveLexical, k)
 			p.NewState(psEvalElement)
 			continue
 
@@ -583,7 +572,7 @@ func run(p *Process) (successful bool) {
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.SaveState(SaveCode|SaveDynamic, k)
+			p.NewState(SaveCode|SaveDynamic, k)
 			p.NewState(psEvalElement)
 			continue
 
@@ -599,15 +588,14 @@ func run(p *Process) (successful bool) {
 			p.Dynamic.Define(k, v)
 
 		case psWhile:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.NewState(psEvalWhileTest)
 
 			fallthrough
 		case psEvalWhileTest:
 			p.ReplaceState(psEvalWhileBody)
-			p.SaveState(SaveCode, p.Code)
+			p.NewState(SaveCode, p.Code)
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
@@ -621,7 +609,7 @@ func run(p *Process) (successful bool) {
 			}
 
 			p.ReplaceState(psEvalWhileTest)
-			p.SaveState(SaveCode, p.Code)
+			p.NewState(SaveCode, p.Code)
 
 			p.Code = Cdr(p.Code)
 
@@ -685,7 +673,7 @@ func run(p *Process) (successful bool) {
 			}
 
 			p.ReplaceState(psCreateModule)
-			p.SaveState(SaveCode, NewSymbol(n))
+			p.NewState(SaveCode, NewSymbol(n))
 			p.NewState(psExecSource)
 
 			fallthrough
@@ -703,8 +691,7 @@ func run(p *Process) (successful bool) {
 			})
 
 			if state == psExecImport {
-				p.RemoveState()
-				p.SaveState(SaveDynamic | SaveLexical)
+				p.ReplaceState(SaveDynamic | SaveLexical)
 
 				p.NewScope(p.Dynamic, p.Lexical)
 
@@ -805,13 +792,12 @@ func run(p *Process) (successful bool) {
 			}
 
 		case psIf:
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.NewScope(p.Dynamic, p.Lexical)
 
 			p.NewState(psExecIf)
-			p.SaveState(SaveCode, Cdr(p.Code))
+			p.NewState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -863,6 +849,7 @@ func run(p *Process) (successful bool) {
 				panic(fmt.Sprintf("command not found: %s", p.Code))
 			} else {
 				p.RestoreState()
+				continue
 			}
 		}
 
@@ -906,7 +893,7 @@ func Evaluate(c Cell) {
 	SetCdr(block0, Cons(nil, Null))
 	block0 = Cdr(block0)
 
-	proc0.SaveState(SaveCode, block0)
+	proc0.NewState(SaveCode, block0)
 	proc0.NewState(psEvalCommand)
 	proc0.Code = c
 
@@ -1024,7 +1011,7 @@ func Start() {
 
 	s.DefineMethod("apply", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, Car(args))
-		combiner(p)
+		head(p)
 
 		p.Scratch = Cons(nil, p.Scratch)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
@@ -1209,8 +1196,7 @@ func Start() {
 	})
 	s.DefineMethod("eval", func(p *Process, args Cell) bool {
 		if Cdr(args) != Null {
-			p.RemoveState()
-			p.SaveState(SaveDynamic | SaveLexical)
+			p.ReplaceState(SaveDynamic | SaveLexical)
 
 			p.NewState(psEvalElement)
 

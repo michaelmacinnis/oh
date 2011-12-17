@@ -1349,22 +1349,71 @@ func (self *Process) NewScope(dynamic, lexical Interface) {
 	self.Lexical = NewLexicalScope(lexical)
 }
 
-func (self *Process) NewState(state int64) {
-	self.Stack = Cons(NewInteger(state), self.Stack)
+func (self *Process) NewState(f int64, c ...Cell) bool {
+	if f >= SaveMax {
+		self.Stack = Cons(NewInteger(f), self.Stack)
+		return true
+	}
+
+	if s := self.GetState(); s < SaveMax && f&s == f {
+		return false
+	}
+
+	if f&SaveCode > 0 {
+		self.Stack = Cons(c[0], self.Stack)
+	}
+
+	if f&SaveDynamic > 0 {
+		self.Stack = Cons(self.Dynamic, self.Stack)
+	}
+
+	if f&SaveLexical > 0 {
+		self.Stack = Cons(self.Lexical, self.Stack)
+	}
+
+	if f&SaveScratch > 0 {
+		self.Stack = Cons(self.Scratch, self.Stack)
+	}
+
+	self.Stack = Cons(NewInteger(f), self.Stack)
+
+	return true
 }
 
 func (self *Process) RemoveState() {
-	self.Stack = Cdr(self.Stack)
+	f := self.GetState()
+
+        self.Stack = Cdr(self.Stack)
+	if f >= SaveMax {
+		return
+	}
+
+	if f&SaveScratch > 0 {
+		self.Stack = Cdr(self.Stack)
+	}
+
+	if f&SaveLexical > 0 {
+		self.Stack = Cdr(self.Stack)
+	}
+
+	if f&SaveDynamic > 0 {
+		self.Stack = Cdr(self.Stack)
+	}
+
+	if f&SaveCode > 0 {
+		self.Stack = Cdr(self.Stack)
+	}
 }
 
-func (self *Process) ReplaceState(state int64) {
-	SetCar(self.Stack, NewInteger(state))
+func (self *Process) ReplaceState(f int64, c ...Cell) bool {
+	self.RemoveState();
+	return self.NewState(f, c...)
 }
 
 func (self *Process) RestoreState() {
 	f := self.GetState()
 
-	if f >= SaveMax {
+	if f == 0 || f >= SaveMax {
 		return
 	}
 
@@ -1387,32 +1436,10 @@ func (self *Process) RestoreState() {
 		self.Stack = Cdr(self.Stack)
 		self.Code = Car(self.Stack)
 	}
+
+	self.Stack = Cdr(self.Stack)
 }
 
-func (self *Process) SaveState(f int64, c ...Cell) bool {
-	if s := self.GetState(); s < SaveMax && f&s == f {
-		return false
-	}
-
-	if f&SaveCode > 0 {
-		self.Stack = Cons(c[0], self.Stack)
-	}
-
-	if f&SaveDynamic > 0 {
-		self.Stack = Cons(self.Dynamic, self.Stack)
-	}
-
-	if f&SaveLexical > 0 {
-		self.Stack = Cons(self.Lexical, self.Stack)
-	}
-
-	if f&SaveScratch > 0 {
-		self.Stack = Cons(self.Scratch, self.Stack)
-	}
-
-	self.NewState(f)
-	return true
-}
 
 /*
  * Scope cell definition.
