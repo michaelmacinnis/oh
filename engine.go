@@ -69,9 +69,6 @@ const (
 	psSplice
 	psWhile
 
-	/* Operators. */
-	psBacktick
-
 	psMax
 )
 
@@ -732,44 +729,6 @@ func run(p *Process) (successful bool) {
 			}
 
 			/* Command states */
-		case psBacktick:
-			c := channel(p, nil, nil, -1)
-
-			child := NewProcess(psNone, p.Dynamic, p.Lexical)
-
-			child.Code = Car(p.Code)
-			child.Dynamic.Define(NewSymbol("$stdout"), c)
-
-			child.NewState(psEvalCommand)
-
-			go func() {
-				run(child)
-
-				wpipe(c).Close()
-			}()
-
-			b := bufio.NewReader(rpipe(c))
-
-			l := Null
-
-			done := false
-			line, err := b.ReadString('\n')
-			for !done {
-				if err != nil {
-					done = true
-				}
-
-				line = strings.Trim(line, " \t\n")
-
-				if len(line) > 0 {
-					l = AppendTo(l, NewString(line))
-				}
-
-				line, err = b.ReadString('\n')
-			}
-
-			SetCar(p.Scratch, l)
-
 		case psBuiltin, psMethod, psSyntax:
 			param := Null
 			for !IsCons(Car(p.Code)) {
@@ -943,7 +902,6 @@ func Start() {
 	}
 
 	s.DefineState("block", psBlock)
-	s.DefineState("backtick", psBacktick)
 	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
 	s.DefineState("builtin", psBuiltin)
@@ -2045,6 +2003,22 @@ define and: syntax e {
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
+define backtick: syntax e {
+    define r ()
+    define p: pipe
+    spawn {
+        dynamic $stdout p
+        eval e: car $args
+        p::writer-close
+    }
+    define l: p::readline
+    while l {
+        set r: append r l
+        set l: p::readline
+    }
+    p::reader-close
+    return r
+}
 define channel-stderr: $connect channel $stderr true
 define channel-stdout: $connect channel $stdout true
 define echo: builtin: $stdout::write @$args
