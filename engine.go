@@ -78,7 +78,7 @@ var next = map[int64]int64{
 	psEvalArguments:     psDoEvalArguments,
 	psEvalArgumentsBC:   psDoEvalArgumentsBC,
 	psDoEvalArguments:   psEvalElement,
-	psDoEvalArgumentsBC: psDoEvalArgumentsBC,
+	psDoEvalArgumentsBC: psEvalElementBC,
 	psDefine:            psExecDefine,
 	psDynamic:           psExecDynamic,
 	psImport:            psExecImport,
@@ -230,9 +230,10 @@ func head(p *Process) bool {
 
 	case *Operative:
 		p.ReplaceState(psExecOperative)
+		return true
 	}
 
-	return true
+	return false
 }
 
 func lookup(p *Process, sym *Symbol) (bool, string) {
@@ -298,11 +299,13 @@ func run(p *Process) (successful bool) {
 
 		p.Code = Null
 		p.Scratch = Cons(False, p.Scratch)
-		p.Stack = Cdr(p.Stack)
+		p.RemoveState()
 	}(*p)
 
 	for p.Stack != Null {
-		switch state := p.GetState(); state {
+		state := p.GetState()
+
+		switch state {
 		case psNone:
 			return
 
@@ -862,14 +865,13 @@ func Evaluate(c Cell) {
 		SetCdr(block0, Null)
 
 		proc0.Code = block0
-		proc0.Stack = Cddr(proc0.Stack)
+		proc0.RemoveState()
 	} else {
 		if proc0.Stack == Null {
 			os.Exit(ExitStatus())
 		}
-
-		proc0.Scratch = Cdr(proc0.Scratch)
 	}
+	proc0.Scratch = Cdr(proc0.Scratch)
 }
 
 func ExitStatus() int {
@@ -1981,7 +1983,7 @@ define $redirect: syntax {
     define mthd: caddr $args
     syntax e {
         define c: eval e: car $args
-        define f ()
+        define f '()
         if (not: is-channel c) {
             set f: open c mode
             set c f
@@ -2004,8 +2006,8 @@ define and: syntax e {
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
 define backtick: syntax e {
-    define r ()
     define p: pipe
+    define r '()
     spawn {
         dynamic $stdout p
         eval e: car $args
@@ -2023,10 +2025,10 @@ define channel-stderr: $connect channel $stderr true
 define channel-stdout: $connect channel $stdout true
 define echo: builtin: $stdout::write @$args
 define for: method l m {
-    define r: cons () ()
+    define r: cons '() '()
     define c r
     while (not: is-null l) {
-        set-cdr c: cons (m: car l) ()
+        set-cdr c: cons (m: car l) '()
         set c: cdr c
         set l: cdr l
     }
