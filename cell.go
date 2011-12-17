@@ -1383,7 +1383,7 @@ func (self *Process) NewState(f int64, c ...Cell) bool {
 func (self *Process) RemoveState() {
 	f := self.GetState()
 
-        self.Stack = Cdr(self.Stack)
+	self.Stack = Cdr(self.Stack)
 	if f >= SaveMax {
 		return
 	}
@@ -1406,7 +1406,7 @@ func (self *Process) RemoveState() {
 }
 
 func (self *Process) ReplaceState(f int64, c ...Cell) bool {
-	self.RemoveState();
+	self.RemoveState()
 	return self.NewState(f, c...)
 }
 
@@ -1439,7 +1439,6 @@ func (self *Process) RestoreState() {
 
 	self.Stack = Cdr(self.Stack)
 }
-
 
 /*
  * Scope cell definition.

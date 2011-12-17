@@ -37,10 +37,10 @@ const (
 	psEvalWhileTest
 
 	psExecApplicative
-	psExecBuiltin
 	psExecDefine
 	psExecDynamic
 	psExecExternal
+	psExecFunction
 	psExecIf
 	psExecImport
 	psExecSource
@@ -74,17 +74,17 @@ const (
 
 var block0 Cell
 var proc0 *Process
-var next = map[int64] int64 {
-	psEvalArguments : psDoEvalArguments,
-	psEvalArgumentsBC : psDoEvalArgumentsBC,
-	psDoEvalArguments : psEvalElement,
-	psDoEvalArgumentsBC : psDoEvalArgumentsBC,
-	psDefine : psExecDefine,
-	psDynamic : psExecDynamic,
-	psImport : psExecImport,
-	psPublic : psExecPublic,
-	psSetenv : psExecSetenv,
-	psSource : psExecSource,
+var next = map[int64]int64{
+	psEvalArguments:     psDoEvalArguments,
+	psEvalArgumentsBC:   psDoEvalArgumentsBC,
+	psDoEvalArguments:   psEvalElement,
+	psDoEvalArgumentsBC: psDoEvalArgumentsBC,
+	psDefine:            psExecDefine,
+	psDynamic:           psExecDynamic,
+	psImport:            psExecImport,
+	psPublic:            psExecPublic,
+	psSetenv:            psExecSetenv,
+	psSource:            psExecSource,
 }
 
 func channel(p *Process, r, w *os.File, cap int) Interface {
@@ -216,7 +216,7 @@ func head(p *Process) bool {
 
 		switch t := body.(type) {
 		case Function:
-			p.ReplaceState(psExecBuiltin)
+			p.ReplaceState(psExecFunction)
 
 		case *Integer:
 			p.ReplaceState(t.Int())
@@ -335,7 +335,7 @@ func run(p *Process) (successful bool) {
 		case psEvalArguments, psEvalArgumentsBC:
 			p.Scratch = Cons(nil, p.Scratch)
 
-			p.ReplaceState(next[p.GetState()]);
+			p.ReplaceState(next[p.GetState()])
 
 			fallthrough
 		case psDoEvalArguments, psDoEvalArgumentsBC:
@@ -348,7 +348,7 @@ func run(p *Process) (successful bool) {
 			p.NewState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 
-			p.NewState(state);
+			p.NewState(state)
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
@@ -527,7 +527,7 @@ func run(p *Process) (successful bool) {
 				p.Lexical = l
 			}
 
-			p.NewState(next[state]);
+			p.NewState(next[state])
 
 			k := Car(p.Code)
 
@@ -564,7 +564,7 @@ func run(p *Process) (successful bool) {
 				}
 			}
 
-			p.ReplaceState(next[state]);
+			p.ReplaceState(next[state])
 
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
@@ -618,7 +618,7 @@ func run(p *Process) (successful bool) {
 			p.Lexical = Car(p.Scratch).(Interface)
 			p.Scratch = Cdr(p.Scratch)
 
-		case psExecBuiltin:
+		case psExecFunction:
 			args := p.Arguments()
 
 			m := Car(p.Scratch).(*Applicative)
@@ -764,7 +764,7 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psImport, psSource:
-			p.ReplaceState(state);
+			p.ReplaceState(state)
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
