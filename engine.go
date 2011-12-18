@@ -767,7 +767,7 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psImport, psSource:
-			p.ReplaceState(state)
+			p.ReplaceState(next[state])
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
@@ -1006,146 +1006,6 @@ func Start() {
 	})
 	s.DefineMethod("cdr", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, Cdar(args))
-
-		return false
-	})
-	s.DefineMethod("caar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caaar(args))
-
-		return false
-	})
-	s.DefineMethod("cadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cadar(args))
-
-		return false
-	})
-	s.DefineMethod("cdar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdaar(args))
-
-		return false
-	})
-	s.DefineMethod("cddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cddar(args))
-
-		return false
-	})
-	s.DefineMethod("caaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("caadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("cadar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("caddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(Cddar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdr(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdr(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("cddar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdr(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdr(Cddar(args)))
-
-		return false
-	})
-	s.DefineMethod("caaaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caar(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("caaadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caar(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("caadar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caar(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("caaddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caar(Cddar(args)))
-
-		return false
-	})
-	s.DefineMethod("cadaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cadr(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cadadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cadr(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("caddar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cadr(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cadddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cadr(Cddar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdaaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdar(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdaadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdar(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdadar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdar(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdaddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdar(Cddar(args)))
-
-		return false
-	})
-	s.DefineMethod("cddaar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cddr(Caaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cddadr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cddr(Cadar(args)))
-
-		return false
-	})
-	s.DefineMethod("cdddar", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cddr(Cdaar(args)))
-
-		return false
-	})
-	s.DefineMethod("cddddr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cddr(Cddar(args)))
 
 		return false
 	})
@@ -1959,6 +1819,34 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
+define caar: method l: car: car l
+define cadr: method l: car: cdr l
+define cdar: method l: cdr: car l
+define cddr: method l: cdr: cdr l
+define caaar: method l: car: caar l
+define caadr: method l: car: cadr l
+define cadar: method l: car: cdar l
+define caddr: method l: car: cddr l
+define cdaar: method l: cdr: caar l
+define cdadr: method l: cdr: cadr l
+define cddar: method l: cdr: cdar l
+define cdddr: method l: cdr: cddr l
+define caaaar: method l: caar: caar l
+define caaadr: method l: caar: cadr l
+define caadar: method l: caar: cdar l
+define caaddr: method l: caar: cddr l
+define cadaar: method l: cadr: caar l
+define cadadr: method l: cadr: cadr l
+define caddar: method l: cadr: cdar l
+define cadddr: method l: cadr: cddr l
+define cdaaar: method l: cdar: caar l
+define cdaadr: method l: cdar: cadr l
+define cdadar: method l: cdar: cdar l
+define cdaddr: method l: cdar: cddr l
+define cddaar: method l: cddr: caar l
+define cddadr: method l: cddr: cadr l
+define cdddar: method l: cddr: cdar l
+define cddddr: method l: cddr: cddr l
 define $connect: syntax {
     define type: eval: car $args
     define out: cadr $args
@@ -2066,16 +1954,7 @@ define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define write: method: $stdout::write @$args
+[ -r (add $HOME /.ohrc) ] && source (add $HOME /.ohrc)
 `)), Evaluate)
-
-	/* Read and execute rc script if it exists. */
-	rc := filepath.Join(os.Getenv("HOME"), ".ohrc")
-	if _, err := os.Stat(rc); err == nil {
-		proc0.NewState(psEvalCommand)
-		proc0.Code = List(NewSymbol("source"), NewSymbol(rc))
-
-		run(proc0)
-
-		proc0.Scratch = Cdr(proc0.Scratch)
-	}
 }
+
