@@ -1,4 +1,4 @@
-/* released under an MIT-style license. See LICENSE. */
+/* Released under an MIT-style license. See LICENSE. */
 
 package main
 
@@ -969,17 +969,6 @@ func Start() {
 		return false
 	})
 
-	s.DefineMethod("apply", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(args))
-		head(p)
-
-		p.Scratch = Cons(nil, p.Scratch)
-		for args = Cdr(args); args != Null; args = Cdr(args) {
-			p.Scratch = Cons(Car(args), p.Scratch)
-		}
-
-		return true
-	})
 	s.DefineMethod("append", func(p *Process, args Cell) bool {
 		/*
 		 * NOTE: Our append works differently than Scheme's append.
@@ -998,6 +987,17 @@ func Start() {
 		SetCar(p.Scratch, Append(l, argv...))
 
 		return false
+	})
+	s.DefineMethod("apply", func(p *Process, args Cell) bool {
+		SetCar(p.Scratch, Car(args))
+		head(p)
+
+		p.Scratch = Cons(nil, p.Scratch)
+		for args = Cdr(args); args != Null; args = Cdr(args) {
+			p.Scratch = Cons(Car(args), p.Scratch)
+		}
+
+		return true
 	})
 	s.DefineMethod("car", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, Caar(args))
@@ -1046,196 +1046,8 @@ func Start() {
 
 		return false
 	})
-	s.DefineMethod("is-control", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsControl(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-digit", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsDigit(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-graphic", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsGraphic(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-letter", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsLetter(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-lower", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsLower(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-mark", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsMark(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-print", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsPrint(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-punct", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsPunct(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-space", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsSpace(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-symbol", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsSymbol(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-title", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsTitle(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("is-upper", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsUpper(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
 	s.DefineMethod("list", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, args)
-
-		return false
-	})
-	s.DefineMethod("list-to-string", func(p *Process, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
-
-		SetCar(p.Scratch, NewString(s))
-
-		return false
-	})
-	s.DefineMethod("list-to-symbol", func(p *Process, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
-
-		SetCar(p.Scratch, NewSymbol(s))
 
 		return false
 	})
@@ -1304,118 +1116,6 @@ func Start() {
 	s.DefineMethod("set-cdr", func(p *Process, args Cell) bool {
 		SetCdr(Car(args), Cadr(args))
 		SetCar(p.Scratch, Cadr(args))
-
-		return false
-	})
-	s.DefineMethod("sprintf", func(p *Process, args Cell) bool {
-		f := Raw(Car(args))
-
-		argv := []interface{}{}
-		for l := Cdr(args); l != Null; l = Cdr(l) {
-			switch t := Car(l).(type) {
-			case *Boolean:
-				argv = append(argv, *t)
-			case *Integer:
-				argv = append(argv, *t)
-			case *Status:
-				argv = append(argv, *t)
-			case *Float:
-				argv = append(argv, *t)
-			default:
-				argv = append(argv, Raw(t))
-			}
-		}
-
-		s := fmt.Sprintf(f, argv...)
-		SetCar(p.Scratch, NewString(s))
-
-		return false
-	})
-	s.DefineMethod("substring", func(p *Process, args Cell) bool {
-		var r Cell
-
-		s := []rune(Raw(Car(args)))
-
-		start := int(Cadr(args).(Atom).Int())
-		end := len(s)
-
-		if Cddr(args) != Null {
-			end = int(Caddr(args).(Atom).Int())
-		}
-
-		switch Car(args).(type) {
-		case *String:
-			r = NewString(string(s[start:end]))
-		case *Symbol:
-			r = NewSymbol(string(s[start:end]))
-		default:
-			r = Null
-		}
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("text-to-list", func(p *Process, args Cell) bool {
-		l := Null
-		for _, char := range Raw(Car(args)) {
-			l = Cons(NewInteger(int64(char)), l)
-		}
-
-		SetCar(p.Scratch, Reverse(l))
-
-		return false
-	})
-	s.DefineMethod("to-lower", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToLower(rune(t.Int()))))
-		case *String:
-			r = NewString(strings.ToLower(Raw(t)))
-		case *Symbol:
-			r = NewSymbol(strings.ToLower(Raw(t)))
-		default:
-			r = NewInteger(0)
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("to-title", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToTitle(rune(t.Int()))))
-		case *String:
-			r = NewString(strings.ToTitle(Raw(t)))
-		case *Symbol:
-			r = NewSymbol(strings.ToTitle(Raw(t)))
-		default:
-			r = NewInteger(0)
-		}
-
-		SetCar(p.Scratch, r)
-
-		return false
-	})
-	s.DefineMethod("to-upper", func(p *Process, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToUpper(rune(t.Int()))))
-		case *String:
-			r = NewString(strings.ToUpper(Raw(t)))
-		case *Symbol:
-			r = NewSymbol(strings.ToUpper(Raw(t)))
-		default:
-			r = NewInteger(0)
-		}
-
-		SetCar(p.Scratch, r)
 
 		return false
 	})
@@ -1790,6 +1490,316 @@ func Start() {
 		return false
 	})
 
+
+	/* Standard namespaces. */
+	list := NewObject(NewLexicalScope(s))
+	s.Define(NewSymbol("$list"), list)
+
+	list.PublicMethod("to-string", func(p *Process, args Cell) bool {
+		s := ""
+		for l := Car(args); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+		SetCar(p.Scratch, NewString(s))
+
+		return false
+	})
+	list.PublicMethod("to-symbol", func(p *Process, args Cell) bool {
+		s := ""
+		for l := Car(args); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+		SetCar(p.Scratch, NewSymbol(s))
+
+		return false
+	})
+
+	text := NewObject(NewLexicalScope(s))
+	s.Define(NewSymbol("$text"), text)
+
+	text.PublicMethod("is-control", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsControl(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-digit", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsDigit(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-graphic", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsGraphic(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-letter", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsLetter(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-lower", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsLower(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-mark", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsMark(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-print", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsPrint(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-punct", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsPunct(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-space", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsSpace(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-symbol", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsSymbol(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-title", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsTitle(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("is-upper", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewBoolean(unicode.IsUpper(rune(t.Int())))
+		default:
+			r = Null
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("sprintf", func(p *Process, args Cell) bool {
+		f := Raw(Car(args))
+
+		argv := []interface{}{}
+		for l := Cdr(args); l != Null; l = Cdr(l) {
+			switch t := Car(l).(type) {
+			case *Boolean:
+				argv = append(argv, *t)
+			case *Integer:
+				argv = append(argv, *t)
+			case *Status:
+				argv = append(argv, *t)
+			case *Float:
+				argv = append(argv, *t)
+			default:
+				argv = append(argv, Raw(t))
+			}
+		}
+
+		s := fmt.Sprintf(f, argv...)
+		SetCar(p.Scratch, NewString(s))
+
+		return false
+	})
+	text.PublicMethod("substring", func(p *Process, args Cell) bool {
+		var r Cell
+
+		s := []rune(Raw(Car(args)))
+
+		start := int(Cadr(args).(Atom).Int())
+		end := len(s)
+
+		if Cddr(args) != Null {
+			end = int(Caddr(args).(Atom).Int())
+		}
+
+		switch Car(args).(type) {
+		case *String:
+			r = NewString(string(s[start:end]))
+		case *Symbol:
+			r = NewSymbol(string(s[start:end]))
+		default:
+			r = Null
+		}
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("to-list", func(p *Process, args Cell) bool {
+		l := Null
+		for _, char := range Raw(Car(args)) {
+			l = Cons(NewInteger(int64(char)), l)
+		}
+
+		SetCar(p.Scratch, Reverse(l))
+
+		return false
+	})
+	text.PublicMethod("to-lower", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewInteger(int64(unicode.ToLower(rune(t.Int()))))
+		case *String:
+			r = NewString(strings.ToLower(Raw(t)))
+		case *Symbol:
+			r = NewSymbol(strings.ToLower(Raw(t)))
+		default:
+			r = NewInteger(0)
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("to-title", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewInteger(int64(unicode.ToTitle(rune(t.Int()))))
+		case *String:
+			r = NewString(strings.ToTitle(Raw(t)))
+		case *Symbol:
+			r = NewSymbol(strings.ToTitle(Raw(t)))
+		default:
+			r = NewInteger(0)
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+	text.PublicMethod("to-upper", func(p *Process, args Cell) bool {
+		var r Cell
+
+		switch t := Car(args).(type) {
+		case *Integer:
+			r = NewInteger(int64(unicode.ToUpper(rune(t.Int()))))
+		case *String:
+			r = NewString(strings.ToUpper(Raw(t)))
+		case *Symbol:
+			r = NewSymbol(strings.ToUpper(Raw(t)))
+		default:
+			r = NewInteger(0)
+		}
+
+		SetCar(p.Scratch, r)
+
+		return false
+	})
+
 	s.Public(NewSymbol("$dynamic"), e)
 	s.Public(NewSymbol("$lexical"), s)
 
@@ -1903,7 +1913,7 @@ define backtick: syntax e {
     }
     define l: p::readline
     while l {
-        set r: append r l
+        set r: $list::append r l
         set l: p::readline
     }
     p::reader-close
@@ -1946,7 +1956,7 @@ define or: syntax e {
 }
 define pipe-stderr: $connect pipe $stderr true
 define pipe-stdout: $connect pipe $stdout true
-define printf: method: echo: sprintf (car $args) @(cdr $args)
+define printf: method: echo: $text::sprintf (car $args) @(cdr $args)
 define quote: syntax: car $args
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
