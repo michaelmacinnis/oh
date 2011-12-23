@@ -1903,7 +1903,7 @@ define backtick: syntax e {
     }
     define l: p::readline
     while l {
-        set r: $list::append r l
+        set r: append r l
         set l: p::readline
     }
     p::reader-close
@@ -1923,10 +1923,10 @@ define for: method l m {
     return: cdr r
 }
 define glob: builtin: return $args
-define list-ref: method k x: car: list-tail k x
-define list-tail: method k x {
+$list::public ref: method k x: car: $list::tail k x
+$list::public tail: method k x {
     if k {
-        list-tail (sub k 1): cdr x
+        $list::tail (sub k 1): cdr x
     } else {
         return x
     }
@@ -1953,6 +1953,15 @@ define readline: builtin: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
+define $source: syntax e {
+        define f: open (car $args) "r"
+        define l: f::read
+        while l {
+                eval e l
+                set l: f::read
+        }
+        f::reader-close
+}
 define write: method: $stdout::write @$args
 [ -r (add $HOME /.ohrc) ] && source (add $HOME /.ohrc)
 `)), Evaluate)

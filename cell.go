@@ -109,12 +109,9 @@ func init() {
 		"is-control",
 		"is-graphic",
 		"is-letter",
-		"list-to-string",
-		"list-to-symbol",
+		"to-string",
+		"to-symbol",
 		"substring",
-		"text-to-list",
-
-		"list-tail",
 	} {
 		sym[v] = NewSymbol(v)
 	}
@@ -1057,7 +1054,12 @@ func (self *Channel) Read() Cell {
 	if self.c == nil {
 		self.c = make(chan Cell)
 		self.d = make(chan bool)
-		go Parse(self.reader(), func(c Cell) { self.c <- c; <-self.d })
+		go func() {
+			Parse(self.reader(), func(c Cell) {
+				self.c <- c; <-self.d
+			})
+			self.c <- Null
+		} ()
 	} else {
 		self.d <- true
 	}
