@@ -21,10 +21,6 @@ const (
 	psChangeScope = SaveMax + iota
 	psCreateModule
 
-	psDoEvalArguments
-	psDoEvalArgumentsBC
-	psDoEvalCommand
-
 	psEvalAccess
 	psEvalArguments
 	psEvalArgumentsBC
@@ -37,6 +33,7 @@ const (
 	psEvalWhileTest
 
 	psExecApplicative
+	psExecCommand
 	psExecDefine
 	psExecDynamic
 	psExecExternal
@@ -75,10 +72,8 @@ const (
 var block0 Cell
 var proc0 *Process
 var next = map[int64]int64{
-	psEvalArguments:     psDoEvalArguments,
-	psEvalArgumentsBC:   psDoEvalArgumentsBC,
-	psDoEvalArguments:   psEvalElement,
-	psDoEvalArgumentsBC: psEvalElementBC,
+	psEvalArguments:     psEvalElement,
+	psEvalArgumentsBC:   psEvalElementBC,
 	psDefine:            psExecDefine,
 	psDynamic:           psExecDynamic,
 	psImport:            psExecImport,
@@ -309,7 +304,19 @@ func run(p *Process) (successful bool) {
 		case psNone:
 			return
 
-		case psDoEvalCommand:
+		case psEvalTopBlock:
+			if p.Code == block0 {
+				return
+			}
+
+			p.NewState(SaveCode, Cdr(p.Code))
+			p.NewState(psEvalCommand)
+
+			p.Code = Car(p.Code)
+			p.Scratch = Cdr(p.Scratch)
+			continue
+
+		case psExecCommand:
 			if Car(p.Scratch) == Null {
 				break
 			}
@@ -317,31 +324,26 @@ func run(p *Process) (successful bool) {
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
 				p.ReplaceState(psExecExternal)
+				p.NewState(psEvalArgumentsBC)
 
 			default:
 				if head(p) {
 					continue
 				}
+
+				state = p.GetState()
+				if state == psExecApplicative &&
+					Car(p.Scratch).(*Applicative).Self == nil {
+                                	p.NewState(psEvalArgumentsBC)
+                        	} else {
+                                	p.NewState(psEvalArguments)
+                        	}
 			}
 
-			state = p.GetState()
-			if state == psExecExternal {
-				p.NewState(psEvalArgumentsBC)
-			} else if state == psExecApplicative &&
-				Car(p.Scratch).(*Applicative).Self == nil {
-				p.NewState(psEvalArgumentsBC)
-			} else {
-				p.NewState(psEvalArguments)
-			}
+			p.Scratch = Cons(nil, p.Scratch)
 
 			fallthrough
 		case psEvalArguments, psEvalArgumentsBC:
-			p.Scratch = Cons(nil, p.Scratch)
-
-			p.ReplaceState(next[p.GetState()])
-
-			fallthrough
-		case psDoEvalArguments, psDoEvalArgumentsBC:
 			if p.Code == Null {
 				break
 			}
@@ -389,18 +391,6 @@ func run(p *Process) (successful bool) {
 			p.NewState(psEvalElement)
 			continue
 
-		case psEvalTopBlock:
-			if p.Code == block0 {
-				return
-			}
-
-			p.NewState(SaveCode, Cdr(p.Code))
-			p.NewState(psEvalCommand)
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
 		case psBlock:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 
@@ -431,7 +421,7 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			p.ReplaceState(psDoEvalCommand)
+			p.ReplaceState(psExecCommand)
 			p.NewState(SaveCode, Cdr(p.Code))
 
 			p.Code = Car(p.Code)
