@@ -19,7 +19,6 @@ const (
 	psNone = 0
 
 	psChangeScope = SaveMax + iota
-	psCreateModule
 
 	psEvalAccess
 	psEvalArguments
@@ -39,9 +38,6 @@ const (
 	psExecExternal
 	psExecFunction
 	psExecIf
-	psExecImport
-	psExecSource
-	psExecObject
 	psExecOperative
 	psExecPublic
 	psExecSet
@@ -54,13 +50,11 @@ const (
 	psDefine
 	psDynamic
 	psIf
-	psImport
 	psMethod
 	psPublic
 	psReturn
 	psSet
 	psSetenv
-	psSource
 	psSyntax
 	psSpawn
 	psSplice
@@ -76,10 +70,8 @@ var next = map[int64]int64{
 	psEvalArgumentsBC:   psEvalElementBC,
 	psDefine:            psExecDefine,
 	psDynamic:           psExecDynamic,
-	psImport:            psExecImport,
 	psPublic:            psExecPublic,
 	psSetenv:            psExecSetenv,
-	psSource:            psExecSource,
 }
 
 func channel(p *Process, r, w *os.File, cap int) Interface {
@@ -259,9 +251,8 @@ func module(f string) (string, error) {
 		return "", err
 	}
 
-	m := "$" + f + "-" + i.Name() + "-" +
-		strconv.FormatInt(i.Size(), 10) + "-" +
-		strconv.Itoa(i.ModTime().Second()) + "-" +
+	m := "$" + i.Name() + "-" + strconv.FormatInt(i.Size(), 10) + "-" +
+		strconv.Itoa(i.ModTime().Second()) + "." +
 		strconv.Itoa(i.ModTime().Nanosecond())
 
 	return m, nil
@@ -647,67 +638,6 @@ func run(p *Process) (successful bool) {
 			p.ReplaceState(psEvalBlock)
 			continue
 
-		case psExecImport:
-			n := Raw(Car(p.Scratch))
-
-			k, err := module(n)
-			if err != nil {
-				SetCar(p.Scratch, False)
-				break
-			}
-
-			v := Resolve(p.Lexical, p.Dynamic, NewSymbol(k))
-			if v != nil {
-				SetCar(p.Scratch, v.GetValue())
-				break
-			}
-
-			p.ReplaceState(psCreateModule)
-			p.NewState(SaveCode, NewSymbol(n))
-			p.NewState(psExecSource)
-
-			fallthrough
-		case psExecSource:
-			f, err := os.OpenFile(
-				Raw(Car(p.Scratch)),
-				os.O_RDONLY, 0666)
-			if err != nil {
-				panic(err)
-			}
-
-			p.Code = Null
-			ParseFile(f, func(c Cell) {
-				p.Code = AppendTo(p.Code, c)
-			})
-
-			if state == psExecImport {
-				p.ReplaceState(SaveDynamic | SaveLexical)
-
-				p.NewScope(p.Dynamic, p.Lexical)
-
-				p.NewState(psExecObject)
-				p.NewState(psEvalBlock)
-			} else {
-				if p.Code == Null {
-					break
-				}
-
-				p.ReplaceState(psEvalBlock)
-			}
-			continue
-
-		case psCreateModule:
-			k, _ := module(p.Code.String())
-
-			s := p.Lexical
-			for s.Prev() != nil {
-				s = s.Prev()
-			}
-			p.Lexical.Define(NewSymbol(k), Car(p.Scratch))
-
-		case psExecObject:
-			SetCar(p.Scratch, NewObject(p.Lexical))
-
 		case psExecSplice:
 			l := Car(p.Scratch)
 			p.Scratch = Cdr(p.Scratch)
@@ -750,15 +680,6 @@ func run(p *Process) (successful bool) {
 
 			p.NewState(psExecIf)
 			p.NewState(SaveCode, Cdr(p.Code))
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			p.NewState(psEvalElement)
-			continue
-
-		case psImport, psSource:
-			p.ReplaceState(next[state])
-
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -898,8 +819,6 @@ func Start() {
 	s.DefineState("dynamic", psDynamic)
 	s.DefineState("builtin", psBuiltin)
 	s.DefineState("if", psIf)
-	s.DefineState("import", psImport)
-	s.DefineState("source", psSource)
 	s.DefineState("method", psMethod)
 	s.DefineState("set", psSet)
 	s.DefineState("setenv", psSetenv)
@@ -942,6 +861,28 @@ func Start() {
 		p.Stack = Null
 
 		return true
+	})
+	s.DefineFunction("module", func(p *Process, args Cell) bool {
+		str, err := module(Raw(Car(args)))
+
+		if err != nil {
+			SetCar(p.Scratch, Null)
+
+			return false
+		}
+
+		sym := NewSymbol(str)
+		c := Resolve(p.Lexical, p.Dynamic, sym)
+		
+		if c == nil {
+			SetCar(p.Scratch, sym)
+
+			return false
+		}
+
+		SetCar(p.Scratch, c.GetValue())
+
+		return false
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
@@ -1790,8 +1731,7 @@ func Start() {
 		return false
 	})
 
-	s.Public(NewSymbol("$dynamic"), e)
-	s.Public(NewSymbol("$lexical"), s)
+	s.Public(NewSymbol("$root"), s)
 
 	e.Define(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 
@@ -1923,6 +1863,17 @@ define for: method l m {
     return: cdr r
 }
 define glob: builtin: return $args
+define import: syntax e {
+    define m: module: car $args
+    if (or (is-null m) (is-object m)) {
+        return m
+    }
+
+    define l: list 'source: car $args
+    set l: cons 'object: cons l '()
+    set l: list '$root::define m l
+    eval e l
+}
 $list::public ref: method k x: car: $list::tail k x
 $list::public tail: method k x {
     if k {
@@ -1953,8 +1904,8 @@ define readline: builtin: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define $source: syntax e {
-        define f: open (car $args) "r"
+define source: syntax e {
+        define f: open (eval e: car $args) "r"
         define l: f::read
         while l {
                 eval e l
