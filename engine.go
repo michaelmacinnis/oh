@@ -295,6 +295,11 @@ func run(p *Process) (successful bool) {
 		case psNone:
 			return
 
+		case psChangeScope:
+			p.Dynamic = nil
+			p.Lexical = Car(p.Scratch).(Interface)
+			p.Scratch = Cdr(p.Scratch)
+
 		case psEvalTopBlock:
 			if p.Code == block0 {
 				return
@@ -305,6 +310,96 @@ func run(p *Process) (successful bool) {
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
+			continue
+
+		case psExecApplicative:
+			args := p.Arguments()
+
+			m := Car(p.Scratch).(*Applicative)
+			if m.Self == nil {
+				args = expand(args)
+			}
+
+			p.ReplaceState(SaveDynamic | SaveLexical)
+
+			p.Code = m.Func.Body
+			p.NewScope(p.Dynamic, m.Func.Lexical)
+
+			param := m.Func.Param
+			for args != Null && param != Null {
+				p.Lexical.Public(Car(param), Car(args))
+				args, param = Cdr(args), Cdr(param)
+			}
+			p.Lexical.Public(NewSymbol("$args"), args)
+			p.Lexical.Public(NewSymbol("$self"), m.Self)
+			p.Lexical.Public(NewSymbol("return"),
+				p.Continuation(psReturn))
+
+			p.NewState(psEvalBlock)
+			continue
+
+		case psExecOperative:
+			args := p.Code
+			env := p.Lexical
+
+			m := Car(p.Scratch).(*Operative)
+			if m.Self == nil {
+				args = expand(args)
+			}
+
+			p.ReplaceState(SaveDynamic | SaveLexical)
+
+			p.Code = m.Func.Body
+			p.NewScope(p.Dynamic, m.Func.Lexical)
+
+			param := m.Func.Param
+			if param != Null {
+				p.Lexical.Public(Car(param), env)
+			}
+			p.Lexical.Public(NewSymbol("$args"), args)
+			p.Lexical.Public(NewSymbol("$self"), m.Self)
+			p.Lexical.Public(NewSymbol("return"),
+				p.Continuation(psReturn))
+
+			p.NewState(psEvalBlock)
+			continue
+
+		case psBlock:
+			p.ReplaceState(SaveDynamic | SaveLexical)
+
+			p.NewScope(p.Dynamic, p.Lexical)
+
+			p.NewState(psEvalBlock)
+
+			fallthrough
+		case psEvalBlock:
+			if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
+				break
+			}
+
+			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
+				p.ReplaceState(psEvalCommand)
+			} else {
+				p.NewState(SaveCode, Cdr(p.Code))
+				p.NewState(psEvalCommand)
+			}
+
+			p.Code = Car(p.Code)
+			p.Scratch = Cdr(p.Scratch)
+
+			fallthrough
+		case psEvalCommand:
+			if p.Code == Null {
+				p.Scratch = Cons(p.Code, p.Scratch)
+				break
+			}
+
+			p.ReplaceState(psExecCommand)
+			p.NewState(SaveCode, Cdr(p.Code))
+
+			p.Code = Car(p.Code)
+
+			p.NewState(psEvalElement)
 			continue
 
 		case psExecCommand:
@@ -382,125 +477,26 @@ func run(p *Process) (successful bool) {
 			p.NewState(psEvalElement)
 			continue
 
-		case psBlock:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			p.NewState(psEvalBlock)
-
-			fallthrough
-		case psEvalBlock:
-			if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
-				break
+		case psBuiltin, psMethod, psSyntax:
+			param := Null
+			for !IsCons(Car(p.Code)) {
+				param = Cons(Car(p.Code), param)
+				p.Code = Cdr(p.Code)
 			}
 
-			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
-				p.ReplaceState(psEvalCommand)
+			if state == psBuiltin {
+				SetCar(
+					p.Scratch,
+					function(p.Code, Reverse(param), p.Lexical.Expose()))
+			} else if state == psMethod {
+				SetCar(
+					p.Scratch,
+					method(p.Code, Reverse(param), p.Lexical.Expose()))
 			} else {
-				p.NewState(SaveCode, Cdr(p.Code))
-				p.NewState(psEvalCommand)
+				SetCar(
+					p.Scratch,
+					syntax(p.Code, Reverse(param), p.Lexical.Expose()))
 			}
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			fallthrough
-		case psEvalCommand:
-			if p.Code == Null {
-				p.Scratch = Cons(p.Code, p.Scratch)
-				break
-			}
-
-			p.ReplaceState(psExecCommand)
-			p.NewState(SaveCode, Cdr(p.Code))
-
-			p.Code = Car(p.Code)
-
-			p.NewState(psEvalElement)
-			continue
-
-		case psExecApplicative:
-			args := p.Arguments()
-
-			m := Car(p.Scratch).(*Applicative)
-			if m.Self == nil {
-				args = expand(args)
-			}
-
-			p.ReplaceState(SaveDynamic | SaveLexical)
-
-			p.Code = m.Func.Body
-			p.NewScope(p.Dynamic, m.Func.Lexical)
-
-			param := m.Func.Param
-			for args != Null && param != Null {
-				p.Lexical.Public(Car(param), Car(args))
-				args, param = Cdr(args), Cdr(param)
-			}
-			p.Lexical.Public(NewSymbol("$args"), args)
-			p.Lexical.Public(NewSymbol("$self"), m.Self)
-			p.Lexical.Public(NewSymbol("return"),
-				p.Continuation(psReturn))
-
-			p.NewState(psEvalBlock)
-			continue
-
-		case psExecOperative:
-			args := p.Code
-			env := p.Lexical
-
-			m := Car(p.Scratch).(*Operative)
-			if m.Self == nil {
-				args = expand(args)
-			}
-
-			p.ReplaceState(SaveDynamic | SaveLexical)
-
-			p.Code = m.Func.Body
-			p.NewScope(p.Dynamic, m.Func.Lexical)
-
-			param := m.Func.Param
-			if param != Null {
-				p.Lexical.Public(Car(param), env)
-			}
-			p.Lexical.Public(NewSymbol("$args"), args)
-			p.Lexical.Public(NewSymbol("$self"), m.Self)
-			p.Lexical.Public(NewSymbol("return"),
-				p.Continuation(psReturn))
-
-			p.NewState(psEvalBlock)
-			continue
-
-		case psSet:
-			p.Scratch = Cdr(p.Scratch)
-
-			s := Car(p.Code)
-			if !IsCons(s) {
-				p.ReplaceState(psExecSet)
-				p.NewState(SaveCode, s)
-			} else {
-				p.ReplaceState(SaveDynamic | SaveLexical)
-				p.NewState(psExecSet)
-				p.NewState(SaveCode, Cdr(s))
-				p.NewState(psChangeScope)
-				p.NewState(psEvalElement)
-				p.NewState(SaveCode, Car(s))
-			}
-
-			p.NewState(psEvalElement)
-
-			p.Code = Cadr(p.Code)
-			continue
-
-		case psExecSet:
-			k := p.Code.(*Symbol)
-			r := Resolve(p.Lexical, p.Dynamic, k)
-			if r == nil {
-				panic("'" + k.String() + "' is not defined")
-			}
-
-			r.SetValue(Car(p.Scratch))
 
 		case psDefine, psPublic:
 			p.RemoveState()
@@ -568,6 +564,36 @@ func run(p *Process) (successful bool) {
 
 			p.Dynamic.Define(k, v)
 
+		case psIf:
+			p.ReplaceState(SaveDynamic | SaveLexical)
+
+			p.NewScope(p.Dynamic, p.Lexical)
+
+			p.NewState(psExecIf)
+			p.NewState(SaveCode, Cdr(p.Code))
+			p.Code = Car(p.Code)
+			p.Scratch = Cdr(p.Scratch)
+
+			p.NewState(psEvalElement)
+			continue
+
+		case psExecIf:
+			if !Car(p.Scratch).Bool() {
+				for Car(p.Code) != Null &&
+					!IsAtom(Car(p.Code)) {
+					p.Code = Cdr(p.Code)
+				}
+
+				p.Code = Cdr(p.Code)
+			}
+
+			if p.Code == Null {
+				break
+			}
+
+			p.ReplaceState(psEvalBlock)
+			continue
+
 		case psWhile:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 
@@ -597,95 +623,6 @@ func run(p *Process) (successful bool) {
 			p.NewState(psEvalBlock)
 			continue
 
-		case psChangeScope:
-			p.Dynamic = nil
-			p.Lexical = Car(p.Scratch).(Interface)
-			p.Scratch = Cdr(p.Scratch)
-
-		case psExecFunction:
-			args := p.Arguments()
-
-			m := Car(p.Scratch).(*Applicative)
-			if m.Self == nil {
-				args = expand(args)
-			}
-
-			if m.Func.Body.(Function)(p, args) {
-				continue
-			}
-
-		case psExecExternal:
-			args := p.Arguments()
-
-			if external(p, args) {
-				continue
-			}
-
-		case psExecIf:
-			if !Car(p.Scratch).Bool() {
-				for Car(p.Code) != Null &&
-					!IsAtom(Car(p.Code)) {
-					p.Code = Cdr(p.Code)
-				}
-
-				p.Code = Cdr(p.Code)
-			}
-
-			if p.Code == Null {
-				break
-			}
-
-			p.ReplaceState(psEvalBlock)
-			continue
-
-		case psExecSplice:
-			l := Car(p.Scratch)
-			p.Scratch = Cdr(p.Scratch)
-
-			if !IsCons(l) {
-				break
-			}
-
-			for l != Null {
-				p.Scratch = Cons(Car(l), p.Scratch)
-				l = Cdr(l)
-			}
-
-			/* Command states */
-		case psBuiltin, psMethod, psSyntax:
-			param := Null
-			for !IsCons(Car(p.Code)) {
-				param = Cons(Car(p.Code), param)
-				p.Code = Cdr(p.Code)
-			}
-
-			if state == psBuiltin {
-				SetCar(
-					p.Scratch,
-					function(p.Code, Reverse(param), p.Lexical.Expose()))
-			} else if state == psMethod {
-				SetCar(
-					p.Scratch,
-					method(p.Code, Reverse(param), p.Lexical.Expose()))
-			} else {
-				SetCar(
-					p.Scratch,
-					syntax(p.Code, Reverse(param), p.Lexical.Expose()))
-			}
-
-		case psIf:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			p.NewState(psExecIf)
-			p.NewState(SaveCode, Cdr(p.Code))
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			p.NewState(psEvalElement)
-			continue
-
 		case psReturn:
 			p.Code = Car(p.Code)
 
@@ -695,6 +632,36 @@ func run(p *Process) (successful bool) {
 
 			p.NewState(psEvalElement)
 			continue
+
+		case psSet:
+			p.Scratch = Cdr(p.Scratch)
+
+			s := Car(p.Code)
+			if !IsCons(s) {
+				p.ReplaceState(psExecSet)
+				p.NewState(SaveCode, s)
+			} else {
+				p.ReplaceState(SaveDynamic | SaveLexical)
+				p.NewState(psExecSet)
+				p.NewState(SaveCode, Cdr(s))
+				p.NewState(psChangeScope)
+				p.NewState(psEvalElement)
+				p.NewState(SaveCode, Car(s))
+			}
+
+			p.NewState(psEvalElement)
+
+			p.Code = Cadr(p.Code)
+			continue
+
+		case psExecSet:
+			k := p.Code.(*Symbol)
+			r := Resolve(p.Lexical, p.Dynamic, k)
+			if r == nil {
+				panic("'" + k.String() + "' is not defined")
+			}
+
+			r.SetValue(Car(p.Scratch))
 
 		case psSpawn:
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
@@ -716,6 +683,38 @@ func run(p *Process) (successful bool) {
 
 			p.NewState(psEvalElement)
 			continue
+
+		case psExecSplice:
+			l := Car(p.Scratch)
+			p.Scratch = Cdr(p.Scratch)
+
+			if !IsCons(l) {
+				break
+			}
+
+			for l != Null {
+				p.Scratch = Cons(Car(l), p.Scratch)
+				l = Cdr(l)
+			}
+
+		case psExecExternal:
+			args := p.Arguments()
+
+			if external(p, args) {
+				continue
+			}
+
+		case psExecFunction:
+			args := p.Arguments()
+
+			m := Car(p.Scratch).(*Applicative)
+			if m.Self == nil {
+				args = expand(args)
+			}
+
+			if m.Func.Body.(Function)(p, args) {
+				continue
+			}
 
 		default:
 			if state >= SaveMax {
