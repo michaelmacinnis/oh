@@ -44,7 +44,6 @@ const (
 	psExecSplice
 
 	/* Commands. */
-	psBlock
 	psBuiltin
 	psDefine
 	psDynamic
@@ -317,8 +316,10 @@ func run(p *Process) (successful bool) {
 			args := p.Arguments()
 
 			m := Car(p.Scratch).(*Applicative)
-			if m.Self == nil {
+			s := m.Self
+			if s == nil {
 				args = expand(args)
+				s = p.Lexical.Expose()
 			}
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
@@ -332,21 +333,30 @@ func run(p *Process) (successful bool) {
 				args, param = Cdr(args), Cdr(param)
 			}
 			p.Lexical.Public(NewSymbol("$args"), args)
-			p.Lexical.Public(NewSymbol("$self"), m.Self)
+			p.Lexical.Public(NewSymbol("$self"), s)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
 
 			p.NewState(psEvalBlock)
 			continue
 
+		case psExecFunction:
+			args := p.Arguments()
+
+			m := Car(p.Scratch).(*Applicative)
+			if m.Self == nil {
+				args = expand(args)
+			}
+
+			if m.Func.Body.(Function)(p, args) {
+				continue
+			}
+
 		case psExecOperative:
 			args := p.Code
 			env := p.Lexical
 
 			m := Car(p.Scratch).(*Operative)
-			if m.Self == nil {
-				args = expand(args)
-			}
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
 
@@ -361,14 +371,6 @@ func run(p *Process) (successful bool) {
 			p.Lexical.Public(NewSymbol("$self"), m.Self)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
-
-			p.NewState(psEvalBlock)
-			continue
-
-		case psBlock:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-
-			p.NewScope(p.Dynamic, p.Lexical)
 
 			p.NewState(psEvalBlock)
 
@@ -702,18 +704,6 @@ func run(p *Process) (successful bool) {
 				l = Cdr(l)
 			}
 
-		case psExecFunction:
-			args := p.Arguments()
-
-			m := Car(p.Scratch).(*Applicative)
-			if m.Self == nil {
-				args = expand(args)
-			}
-
-			if m.Func.Body.(Function)(p, args) {
-				continue
-			}
-
 		default:
 			if state >= SaveMax {
 				panic(fmt.Sprintf("command not found: %s", p.Code))
@@ -811,7 +801,6 @@ func Start() {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("block", psBlock)
 	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
 	s.DefineState("builtin", psBuiltin)
@@ -1756,6 +1745,7 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
+define block: syntax: eval: list: cons 'syntax $args
 define caar: method l: car: car l
 define cadr: method l: car: cdr l
 define cdar: method l: cdr: car l
@@ -1795,11 +1785,10 @@ define $connect: syntax {
             eval e (car $args)
             if close: p::writer-close
         }
-        block {
-            dynamic $stdin p
-            eval e (cadr $args)
-            if close: p::reader-close
-        }
+
+        dynamic $stdin p
+        eval e (cadr $args)
+        if close: p::reader-close
     }
 }
 define $redirect: syntax {
@@ -1819,12 +1808,11 @@ define $redirect: syntax {
     }
 }
 define and: syntax e {
-    define l $args
     define r false
-    while (not: is-null: car l) {
-        set r: eval e: car l
+    while (not: is-null: car $args) {
+        set r: eval e: car $args
         if (not r): return r
-        set l: cdr l
+        set $args: cdr $args
     }
     return r
 }
@@ -1883,12 +1871,11 @@ define object: syntax e {
     eval e: cons 'block: append $args '((method: return: $self::clone))
 }
 define or: syntax e {
-    define l $args
     define r false
-    while (not: is-null: car l) {
-	set r: eval e: car l
+    while (not: is-null: car $args) {
+	set r: eval e: car $args
         if r: return r
-        set l: cdr l
+        set $args: cdr $args
     }
     return r
 }
