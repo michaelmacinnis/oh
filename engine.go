@@ -35,7 +35,6 @@ const (
 	psExecCommand
 	psExecDefine
 	psExecDynamic
-	psExecExternal
 	psExecFunction
 	psExecIf
 	psExecOperative
@@ -153,6 +152,8 @@ func expand(args Cell) Cell {
 }
 
 func external(p *Process, args Cell) bool {
+	p.Scratch = Cdr(p.Scratch)
+
 	name, err := exec.LookPath(Raw(Car(p.Scratch)))
 
 	SetCar(p.Scratch, False)
@@ -163,7 +164,7 @@ func external(p *Process, args Cell) bool {
 
 	argv := []string{name}
 
-	for args = expand(args); args != Null; args = Cdr(args) {
+	for ; args != Null; args = Cdr(args) {
 		argv = append(argv, Car(args).String())
 	}
 
@@ -409,7 +410,11 @@ func run(p *Process) (successful bool) {
 
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
-				p.ReplaceState(psExecExternal)
+				c := NewClosure(Function(external), Null, p.Lexical.Expose())
+				a := NewApplicative(c, nil)
+				p.Scratch = Cons(a, p.Scratch)
+
+				p.ReplaceState(psExecFunction)
 				p.NewState(psEvalArgumentsBC)
 
 			default:
@@ -695,13 +700,6 @@ func run(p *Process) (successful bool) {
 			for l != Null {
 				p.Scratch = Cons(Car(l), p.Scratch)
 				l = Cdr(l)
-			}
-
-		case psExecExternal:
-			args := p.Arguments()
-
-			if external(p, args) {
-				continue
 			}
 
 		case psExecFunction:
