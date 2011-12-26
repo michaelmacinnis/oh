@@ -1056,10 +1056,11 @@ func (self *Channel) Read() Cell {
 		self.d = make(chan bool)
 		go func() {
 			Parse(self.reader(), func(c Cell) {
-				self.c <- c; <-self.d
+				self.c <- c
+				<-self.d
 			})
 			self.c <- Null
-		} ()
+		}()
 	} else {
 		self.d <- true
 	}

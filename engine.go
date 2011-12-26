@@ -64,12 +64,12 @@ const (
 var block0 Cell
 var proc0 *Process
 var next = map[int64]int64{
-	psEvalArguments:     psEvalElement,
-	psEvalArgumentsBC:   psEvalElementBC,
-	psDefine:            psExecDefine,
-	psDynamic:           psExecDynamic,
-	psPublic:            psExecPublic,
-	psSetenv:            psExecSetenv,
+	psEvalArguments:   psEvalElement,
+	psEvalArgumentsBC: psEvalElementBC,
+	psDefine:          psExecDefine,
+	psDynamic:         psExecDynamic,
+	psPublic:          psExecPublic,
+	psSetenv:          psExecSetenv,
 }
 
 func channel(p *Process, r, w *os.File, cap int) Interface {
@@ -427,10 +427,10 @@ func run(p *Process) (successful bool) {
 				state = p.GetState()
 				if state == psExecApplicative &&
 					Car(p.Scratch).(*Applicative).Self == nil {
-                                	p.NewState(psEvalArgumentsBC)
-                        	} else {
-                                	p.NewState(psEvalArguments)
-                        	}
+					p.NewState(psEvalArgumentsBC)
+				} else {
+					p.NewState(psEvalArguments)
+				}
 			}
 
 			p.Scratch = Cons(nil, p.Scratch)
@@ -859,7 +859,7 @@ func Start() {
 
 		sym := NewSymbol(str)
 		c := Resolve(p.Lexical, p.Dynamic, sym)
-		
+
 		if c == nil {
 			SetCar(p.Scratch, sym)
 
@@ -1407,7 +1407,6 @@ func Start() {
 		return false
 	})
 
-
 	/* Standard namespaces. */
 	list := NewObject(NewLexicalScope(s))
 	s.Define(NewSymbol("$list"), list)
@@ -1745,7 +1744,7 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
-define block: syntax: eval: list: cons 'syntax $args
+define block: syntax e: eval e: list: cons 'syntax $args
 define caar: method l: car: car l
 define cadr: method l: car: cdr l
 define cdar: method l: cdr: car l
@@ -1780,15 +1779,18 @@ define $connect: syntax {
     define close: eval: caddr $args
     syntax e {
         define p: type
+        define left: car $args
+        define right: cadr $args
         spawn {
             eval: list 'dynamic out 'p
-            eval e (car $args)
+            eval e left
             if close: p::writer-close
         }
-
-        dynamic $stdin p
-        eval e (cadr $args)
-        if close: p::reader-close
+	block {
+            dynamic $stdin p
+            eval e right
+            if close: p::reader-close
+	}
     }
 }
 define $redirect: syntax {
@@ -1901,4 +1903,3 @@ define write: method: $stdout::write @$args
 [ -r (add $HOME /.ohrc) ] && source (add $HOME /.ohrc)
 `)), Evaluate)
 }
-
