@@ -1754,7 +1754,6 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
-define block: syntax e: eval e: list: list 'syntax $args
 define caar: method l: car: car l
 define cadr: method l: car: cdr l
 define cdar: method l: cdr: car l
