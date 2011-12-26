@@ -44,6 +44,7 @@ const (
 	psExecSplice
 
 	/* Commands. */
+	psBlock
 	psBuiltin
 	psDefine
 	psDynamic
@@ -294,6 +295,14 @@ func run(p *Process) (successful bool) {
 		switch state {
 		case psNone:
 			return
+
+		case psBlock:
+			p.ReplaceState(SaveDynamic | SaveLexical)
+
+			p.NewScope(p.Dynamic, p.Lexical)
+
+			p.NewState(psEvalBlock)
+			continue
 
 		case psChangeScope:
 			p.Dynamic = nil
@@ -801,9 +810,10 @@ func Start() {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
+	s.DefineState("block", psBlock)
+	s.DefineState("builtin", psBuiltin)
 	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
-	s.DefineState("builtin", psBuiltin)
 	s.DefineState("if", psIf)
 	s.DefineState("method", psMethod)
 	s.DefineState("set", psSet)
@@ -1744,7 +1754,7 @@ func Start() {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
-define block: syntax e: eval e: list: cons 'syntax $args
+define block: syntax e: eval e: list: list 'syntax $args
 define caar: method l: car: car l
 define cadr: method l: car: cdr l
 define cdar: method l: cdr: car l
@@ -1786,11 +1796,10 @@ define $connect: syntax {
             eval e left
             if close: p::writer-close
         }
-	block {
-            dynamic $stdin p
-            eval e right
-            if close: p::reader-close
-	}
+
+        dynamic $stdin p
+        eval e right
+        if close: p::reader-close
     }
 }
 define $redirect: syntax {
