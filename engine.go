@@ -385,7 +385,7 @@ func run(p *Process) (successful bool) {
 
 			fallthrough
 		case psEvalBlock:
-			if !IsCons(p.Code) || !IsCons(Car(p.Code)) {
+			if p.Code == Null || !IsCons(p.Code) || !IsCons(Car(p.Code)) {
 				break
 			}
 
@@ -515,6 +515,8 @@ func run(p *Process) (successful bool) {
 			}
 
 		case psDefine, psPublic:
+			state = next[p.GetState()]
+
 			p.RemoveState()
 
 			l := Car(p.Scratch).(*Applicative).Self
@@ -523,7 +525,7 @@ func run(p *Process) (successful bool) {
 				p.Lexical = l
 			}
 
-			p.NewState(next[state])
+			p.NewState(state)
 
 			k := Car(p.Code)
 
@@ -540,9 +542,11 @@ func run(p *Process) (successful bool) {
 			continue
 
 		case psExecDefine, psExecPublic:
-			if state == psDefine {
+			if state == psExecDefine {
+				fmt.Printf("Private %v\n", p.Code);
 				p.Lexical.Define(p.Code, Car(p.Scratch))
 			} else {
+				fmt.Printf("Public %v\n", p.Code);
 				p.Lexical.Public(p.Code, Car(p.Scratch))
 			}
 
@@ -1878,7 +1882,7 @@ $list::public tail: method k x {
     }
 }
 define object: syntax e {
-    eval e: cons 'block: append $args '((method: return: $self::clone))
+    eval e: cons 'block: append $args '(clone)
 }
 define or: syntax e {
     define r false
