@@ -7,7 +7,7 @@ import (
     "fmt"
     "os"
     "strconv"
-    "unicode/utf8"
+    "exp/utf8string"
     "unsafe"
 )
 
@@ -61,7 +61,7 @@ type scanner struct {
     process func(Cell)
         
     input ReadStringer
-    line *utf8.String
+    line *utf8string.String
 
     state int
     indent int
@@ -283,7 +283,7 @@ func Parse(r ReadStringer, p func(Cell)) {
     s.process = p
 
     s.input = r
-    s.line = utf8.NewString("")
+    s.line = utf8string.NewString("")
 
     s.state = ssStart
     s.indent = 0
@@ -613,10 +613,9 @@ yydefault:
 					}
 				}
 
-				/* the current p has no shift onn "error", pop stack */
+				/* the current p has no shift on "error", pop stack */
 				if yyDebug >= 2 {
-					fmt.Printf("error recovery pops state %d, uncovers %d\n",
-						yyS[yyp].yys, yyS[yyp-1].yys)
+					fmt.Printf("error recovery pops state %d\n", yyS[yyp].yys)
 				}
 				yyp--
 			}
