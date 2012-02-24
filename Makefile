@@ -1,7 +1,9 @@
-include ${GOROOT}/src/Make.inc
-
 TARGET=oh
 SOURCE=cell.go engine.go parser.go main.go
+
+O=8
+GC=go tool 8g
+LD=go tool 8l
 
 all: ${TARGET}
 

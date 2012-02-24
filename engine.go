@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"unicode"
 )
 
@@ -184,8 +185,8 @@ func external(p *Process, args Cell) bool {
 
 	var status int64 = 0
 
-	msg, err := proc.Wait(0)
-	status = int64(msg.WaitStatus.ExitStatus())
+	msg, err := proc.Wait()
+	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
 	SetCar(p.Scratch, NewStatus(status))
 
@@ -543,10 +544,8 @@ func run(p *Process) (successful bool) {
 
 		case psExecDefine, psExecPublic:
 			if state == psExecDefine {
-				fmt.Printf("Private %v\n", p.Code);
 				p.Lexical.Define(p.Code, Car(p.Scratch))
 			} else {
-				fmt.Printf("Public %v\n", p.Code);
 				p.Lexical.Public(p.Code, Car(p.Scratch))
 			}
 
