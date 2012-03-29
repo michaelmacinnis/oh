@@ -19,7 +19,6 @@ import (
     "fmt"
     "os"
     "strconv"
-    "exp/utf8string"
     "unsafe"
 )
 
@@ -221,7 +220,7 @@ type scanner struct {
     process func(Cell)
         
     input ReadStringer
-    line *utf8string.String
+    line []rune
 
     state int
     indent int
@@ -238,7 +237,6 @@ type scanner struct {
 const (
     ssStart = iota; ssAmpersand; ssBang; ssBangGreater;
     ssColon; ssComment; ssGreater; ssPipe; ssString; ssSymbol
-
 )
 
 func (s *scanner) Lex(lval *yySymType) (token int) {
@@ -262,13 +260,13 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 
         switch s.token {
         case BACKGROUND, ORF, ANDF, PIPE, REDIRECT:
-            lval.s, exists = operator[s.line.Slice(s.start, s.cursor)]
+            lval.s, exists = operator[string(s.line[s.start:s.cursor])]
             if exists {
                 break
             }
             fallthrough
         default:
-            lval.s = s.line.Slice(s.start, s.cursor)
+            lval.s = string(s.line[s.start:s.cursor])
         }
 
         s.state = ssStart
@@ -278,7 +276,7 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 
 main:
     for s.token == 0 {
-        if s.cursor >= s.line.RuneCount() {
+        if s.cursor >= len(s.line) {
             if s.finished {
                 return 0
             }
@@ -290,12 +288,12 @@ main:
             }
             
             if s.start < s.cursor - 1 {
-                line = s.line.Slice(s.start, s.cursor) + line
+                s.line = append(s.line[s.start:s.cursor], []rune(line)...)
                 s.cursor -= s.start
             } else {
-                s. cursor = 0
+                s.cursor = 0
             }
-            s.line.Init(line)
+            s.line = []rune(line)
             s.start = 0
             s.token = 0
         }
@@ -304,12 +302,12 @@ main:
         case ssStart:
             s.start = s.cursor
 
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             default:
                 s.state = ssSymbol
                 continue main
             case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
-                s.token = s.line.At(s.cursor)
+                s.token = s.line[s.cursor]
             case '&':
                 s.state = ssAmpersand
             case '<':
@@ -331,7 +329,7 @@ main:
             }
 
         case ssAmpersand:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '&':
                 s.token = ANDF
             default:
@@ -340,7 +338,7 @@ main:
             }
 
         case ssBang:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '>':
                 s.state = ssBangGreater
             case '|':
@@ -352,12 +350,12 @@ main:
 
         case ssBangGreater:
             s.token = REDIRECT
-            if s.line.At(s.cursor) != '>' {
+            if s.line[s.cursor] != '>' {
                 continue main
             }
 
         case ssColon:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case ':':
                 s.token = CONS
             default:
@@ -366,24 +364,24 @@ main:
             }
 
         case ssComment:
-            for s.line.At(s.cursor) != '\n' ||
-                s.line.At(s.cursor - 1) == '\\' {
+            for s.line[s.cursor + 1] != '\n' ||
+                s.line[s.cursor] == '\\' {
                 s.cursor++
 
-                if s.cursor >= s.line.RuneCount() {
+                if s.cursor + 1 >= len(s.line) {
                     continue main
                 }
             }
-            s.token = '\n'
+            s.state = ssStart
 
         case ssGreater:
             s.token = REDIRECT
-            if s.line.At(s.cursor) != '>' {
+            if s.line[s.cursor] != '>' {
                 continue main
             }
 
         case ssPipe:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '+':
                 s.token = PIPE
             case '|':
@@ -394,22 +392,22 @@ main:
             }
 
         case ssString:
-            for s.line.At(s.cursor) != '"' ||
-                s.line.At(s.cursor - 1) == '\\' {
+            for s.line[s.cursor] != '"' ||
+                s.line[s.cursor - 1] == '\\' {
                 s.cursor++
 
-                if s.cursor >= s.line.RuneCount() {
+                if s.cursor >= len(s.line) {
                     continue main
                 }
             }
             s.token = STRING
 
         case ssSymbol:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '\n','%','&','\'','(',')',';',
                 '<','@','`','{','|','}',
                 '\t',' ','"','#',':','>':
-                if s.line.At(s.cursor - 1) != '\\' {
+                if s.line[s.cursor - 1] != '\\' {
                     s.token = SYMBOL
                     continue main
                 }
@@ -443,7 +441,7 @@ func Parse(r ReadStringer, p func(Cell)) {
     s.process = p
 
     s.input = r
-    s.line = utf8string.NewString("")
+    s.line = []rune("")
 
     s.state = ssStart
     s.indent = 0

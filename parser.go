@@ -7,7 +7,6 @@ import (
     "fmt"
     "os"
     "strconv"
-    "exp/utf8string"
     "unsafe"
 )
 
@@ -50,7 +49,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:214
+//line parser.y:213
 
 
 type ReadStringer interface {
@@ -61,7 +60,7 @@ type scanner struct {
     process func(Cell)
         
     input ReadStringer
-    line *utf8string.String
+    line []rune
 
     state int
     indent int
@@ -78,7 +77,6 @@ type scanner struct {
 const (
     ssStart = iota; ssAmpersand; ssBang; ssBangGreater;
     ssColon; ssComment; ssGreater; ssPipe; ssString; ssSymbol
-
 )
 
 func (s *scanner) Lex(lval *yySymType) (token int) {
@@ -102,13 +100,13 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 
         switch s.token {
         case BACKGROUND, ORF, ANDF, PIPE, REDIRECT:
-            lval.s, exists = operator[s.line.Slice(s.start, s.cursor)]
+            lval.s, exists = operator[string(s.line[s.start:s.cursor])]
             if exists {
                 break
             }
             fallthrough
         default:
-            lval.s = s.line.Slice(s.start, s.cursor)
+            lval.s = string(s.line[s.start:s.cursor])
         }
 
         s.state = ssStart
@@ -118,7 +116,7 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 
 main:
     for s.token == 0 {
-        if s.cursor >= s.line.RuneCount() {
+        if s.cursor >= len(s.line) {
             if s.finished {
                 return 0
             }
@@ -130,12 +128,12 @@ main:
             }
             
             if s.start < s.cursor - 1 {
-                line = s.line.Slice(s.start, s.cursor) + line
+                s.line = append(s.line[s.start:s.cursor], []rune(line)...)
                 s.cursor -= s.start
             } else {
-                s. cursor = 0
+                s.cursor = 0
             }
-            s.line.Init(line)
+            s.line = []rune(line)
             s.start = 0
             s.token = 0
         }
@@ -144,12 +142,12 @@ main:
         case ssStart:
             s.start = s.cursor
 
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             default:
                 s.state = ssSymbol
                 continue main
             case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
-                s.token = s.line.At(s.cursor)
+                s.token = s.line[s.cursor]
             case '&':
                 s.state = ssAmpersand
             case '<':
@@ -171,7 +169,7 @@ main:
             }
 
         case ssAmpersand:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '&':
                 s.token = ANDF
             default:
@@ -180,7 +178,7 @@ main:
             }
 
         case ssBang:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '>':
                 s.state = ssBangGreater
             case '|':
@@ -192,12 +190,12 @@ main:
 
         case ssBangGreater:
             s.token = REDIRECT
-            if s.line.At(s.cursor) != '>' {
+            if s.line[s.cursor] != '>' {
                 continue main
             }
 
         case ssColon:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case ':':
                 s.token = CONS
             default:
@@ -206,24 +204,24 @@ main:
             }
 
         case ssComment:
-            for s.line.At(s.cursor) != '\n' ||
-                s.line.At(s.cursor - 1) == '\\' {
+            for s.line[s.cursor + 1] != '\n' ||
+                s.line[s.cursor] == '\\' {
                 s.cursor++
 
-                if s.cursor >= s.line.RuneCount() {
+                if s.cursor + 1 >= len(s.line) {
                     continue main
                 }
             }
-            s.token = '\n'
+            s.state = ssStart
 
         case ssGreater:
             s.token = REDIRECT
-            if s.line.At(s.cursor) != '>' {
+            if s.line[s.cursor] != '>' {
                 continue main
             }
 
         case ssPipe:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '+':
                 s.token = PIPE
             case '|':
@@ -234,22 +232,22 @@ main:
             }
 
         case ssString:
-            for s.line.At(s.cursor) != '"' ||
-                s.line.At(s.cursor - 1) == '\\' {
+            for s.line[s.cursor] != '"' ||
+                s.line[s.cursor - 1] == '\\' {
                 s.cursor++
 
-                if s.cursor >= s.line.RuneCount() {
+                if s.cursor >= len(s.line) {
                     continue main
                 }
             }
             s.token = STRING
 
         case ssSymbol:
-            switch s.line.At(s.cursor) {
+            switch s.line[s.cursor] {
             case '\n','%','&','\'','(',')',';',
                 '<','@','`','{','|','}',
                 '\t',' ','"','#',':','>':
-                if s.line.At(s.cursor - 1) != '\\' {
+                if s.line[s.cursor - 1] != '\\' {
                     s.token = SYMBOL
                     continue main
                 }
@@ -283,7 +281,7 @@ func Parse(r ReadStringer, p func(Cell)) {
     s.process = p
 
     s.input = r
-    s.line = utf8string.NewString("")
+    s.line = []rune("")
 
     s.state = ssStart
     s.indent = 0
@@ -663,10 +661,10 @@ yydefault:
 	switch yynt {
 
 	case 5:
-		//line parser.y:43
+		//line parser.y:42
 		{ yyVAL.c = Null }
 	case 6:
-		//line parser.y:45
+		//line parser.y:44
 		{
 	    yyVAL.c = yyS[yypt-0].c
 	    if (yyS[yypt-0].c != Null) {
@@ -674,38 +672,38 @@ yydefault:
 	    }
 	}
 	case 7:
-		//line parser.y:52
+		//line parser.y:51
 		{
 	    yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
 	}
 	case 8:
-		//line parser.y:56
+		//line parser.y:55
 		{
 	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 	}
 	case 9:
-		//line parser.y:60
+		//line parser.y:59
 		{
 	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 	}
 	case 10:
-		//line parser.y:64
+		//line parser.y:63
 		{
 	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 	}
 	case 11:
-		//line parser.y:68
+		//line parser.y:67
 		{
 	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
 	}
 	case 12:
-		//line parser.y:72
+		//line parser.y:71
 		{ yyVAL.c = yyS[yypt-0].c }
 	case 13:
-		//line parser.y:74
+		//line parser.y:73
 		{ yyVAL.c = Null }
 	case 14:
-		//line parser.y:76
+		//line parser.y:75
 		{
 	    if yyS[yypt-0].c == Null {
 	        yyVAL.c = yyS[yypt-1].c
@@ -714,30 +712,30 @@ yydefault:
 	    }
 	}
 	case 19:
-		//line parser.y:92
+		//line parser.y:91
 		{ yyVAL.c = Null }
 	case 20:
-		//line parser.y:94
+		//line parser.y:93
 		{ yyVAL.c = yyS[yypt-1].c }
 	case 21:
-		//line parser.y:96
+		//line parser.y:95
 		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
 	case 22:
-		//line parser.y:98
+		//line parser.y:97
 		{ yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c) }
 	case 23:
-		//line parser.y:100
+		//line parser.y:99
 		{ yyVAL.c = yyS[yypt-0].c }
 	case 24:
-		//line parser.y:102
+		//line parser.y:101
 		{
 	    yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
 	}
 	case 25:
-		//line parser.y:106
+		//line parser.y:105
 		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
 	case 26:
-		//line parser.y:108
+		//line parser.y:107
 		{
 	    if yyS[yypt-1].c == Null {
 	        yyVAL.c = yyS[yypt-0].c
@@ -746,18 +744,18 @@ yydefault:
 	    }
 	}
 	case 27:
-		//line parser.y:116
+		//line parser.y:115
 		{
 	    yyVAL.c = yyS[yypt-0].c
 	}
 	case 28:
-		//line parser.y:120
+		//line parser.y:119
 		{ yyVAL.c = Null }
 	case 29:
-		//line parser.y:122
+		//line parser.y:121
 		{ yyVAL.c = yyS[yypt-2].c }
 	case 30:
-		//line parser.y:124
+		//line parser.y:123
 		{
 	    if yyS[yypt-0].c == Null {
 	        yyVAL.c = yyS[yypt-0].c
@@ -766,7 +764,7 @@ yydefault:
 	    }
 	}
 	case 31:
-		//line parser.y:132
+		//line parser.y:131
 		{
 	    if yyS[yypt-2].c == Null {
 	        if yyS[yypt-0].c == Null {
@@ -783,39 +781,39 @@ yydefault:
 	    }
 	}
 	case 32:
-		//line parser.y:148
+		//line parser.y:147
 		{ yyVAL.c = Null }
 	case 33:
-		//line parser.y:150
+		//line parser.y:149
 		{ yyVAL.c = yyS[yypt-0].c }
 	case 34:
-		//line parser.y:152
+		//line parser.y:151
 		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
 	case 35:
-		//line parser.y:154
+		//line parser.y:153
 		{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
 	case 36:
-		//line parser.y:156
+		//line parser.y:155
 		{
 	    yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
 	}
 	case 37:
-		//line parser.y:160
+		//line parser.y:159
 		{
 	    yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
 	}
 	case 38:
-		//line parser.y:164
+		//line parser.y:163
 		{
 	    yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
 	}
 	case 39:
-		//line parser.y:168
+		//line parser.y:167
 		{
 	    yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
 	}
 	case 40:
-		//line parser.y:172
+		//line parser.y:171
 		{
 	    kind := yyS[yypt-2].s
 	    value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
@@ -848,19 +846,19 @@ yydefault:
 	
 	}
 	case 41:
-		//line parser.y:204
+		//line parser.y:203
 		{ yyVAL = yyS[yypt-1] }
 	case 42:
-		//line parser.y:206
+		//line parser.y:205
 		{ yyVAL.c = Null }
 	case 43:
-		//line parser.y:208
+		//line parser.y:207
 		{ yyVAL = yyS[yypt-0] }
 	case 44:
-		//line parser.y:210
+		//line parser.y:209
 		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
 	case 45:
-		//line parser.y:212
+		//line parser.y:211
 		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
 	}
 	goto yystack /* stack new state and value */

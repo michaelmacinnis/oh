@@ -62,10 +62,11 @@ the C library libtecla:
 
 On Ubuntu you may also need to install libncurses5-dev.
 
-Then goinstall oh:
+Then go get oh:
 
-    goinstall github.com/michaelmacinnis/oh
+    go get github.com/michaelmacinnis/oh
 
 Oh is released under an MIT-style license.
 
 Thanks to André Cormier for suggesting the name.
+
