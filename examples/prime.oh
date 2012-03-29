@@ -2,7 +2,8 @@
 
 define strict true
 
-define read-car: method: car: $self::read
+# TODO: This method used to work. Is $self not being set correctly?
+# define read-car: method: car: $self::read
 
 define counter: method n {
     while true {
@@ -12,7 +13,7 @@ define counter: method n {
 
 define filter: method base {
     while true {
-	define n: read-car
+	define n: car: read
         if (mod n base): write n
     }
 }
@@ -23,7 +24,7 @@ counter 2 |+ block {
     define in $stdin
 
     while true {
-        define prime: in::read-car
+        define prime: car: in::read
         write prime
 
         define out: channel
@@ -34,10 +35,10 @@ counter 2 |+ block {
 } > prime-numbers &
 
 define count: integer 250
-#printf "The first %d prime numbers" count
+printf "The first %d prime numbers" count
 
 while count {
-    write: read-car 
+    write: car: read
     set count: sub count 1
 } <prime-numbers
 
