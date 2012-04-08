@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -65,6 +66,9 @@ const (
 
 var block0 Cell
 var proc0 *Process
+
+var interactive bool
+var irq chan os.Signal
 var next = map[int64]int64{
 	psEvalArguments:   psEvalElement,
 	psEvalArgumentsBC: psEvalElementBC,
@@ -290,7 +294,28 @@ func run(p *Process) (successful bool) {
 		p.RemoveState()
 	}(*p)
 
+	clearing: for interactive && p == proc0 {	
+		select {
+		case <-irq:
+			continue clearing
+		default:
+			break clearing
+		}
+	}
+
 	for p.Stack != Null {
+		select {
+		case <-irq:
+                        if interactive {
+				panic("interrupted")
+			} else {
+				proc0.Stack = Null
+				return true
+			}
+		default:
+			;
+		}
+
 		state := p.GetState()
 
 		switch state {
@@ -792,12 +817,17 @@ func ExitStatus() int {
 	return int(s.Int())
 }
 
-func Start() {
-	block0 = Cons(nil, Null)
+func Start(i bool) {
+	interactive = i
+
+	irq = make(chan os.Signal, 1)
+	signal.Notify(irq, syscall.SIGINT)
 
 	proc0 = NewProcess(psEvalTopBlock, nil, nil)
 
+	block0 = Cons(nil, Null)
 	proc0.Code = block0
+
 	proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
