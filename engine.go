@@ -1941,6 +1941,6 @@ define source: syntax e {
         f::reader-close
 }
 define write: method: $stdout::write @$args
-[ -r (add $HOME /.ohrc) ] && source (add $HOME /.ohrc)
+test -r (add $HOME /.ohrc) && source (add $HOME /.ohrc)
 `)), Evaluate)
 }
