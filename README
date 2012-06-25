@@ -44,11 +44,10 @@ top-level definitions in 'file' can be accessed using the object 'm'.
 
     define m: import file
 
-Channels are objects. Oh exposes channels, which are implicit in other shells
-in the form of pipes, as first-class values. Channels can be created with the
-'channel' command:
+Pipes are objects. Oh exposes pipes, which are implicit in other shells, as
+first-class values. Pipes can be created with the 'pipe' command:
 
-    define c: channel
+    define p: pipe
 
 Oh incorporates many features, including first-class functions, from the
 Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
