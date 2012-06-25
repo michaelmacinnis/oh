@@ -214,7 +214,7 @@ will echo
 		xx****xx
 \end{lstlisting}
 
-The quoted string may not contain an unexcaped double quote but may
+The quoted string may not contain an unescaped double quote but may
 contain newlines, which are preserved.
 
 
@@ -437,9 +437,9 @@ If statements may have an else clause.
 If statements can be chained.
 
 \begin{lstlisting}
-	if (cd i/tmp) {
+	if (cd /tmp) {
 		# Do stuff in /tmp.
-	} else: if (cd i/var/tmp) {
+	} else: if (cd /var/tmp) {
 		# Do stuff in /var/tmp
 	} else {
 		write "Couldn't cd to /tmp or /var/tmp."
@@ -478,7 +478,7 @@ prime number. These processes are strung together like beads on a string.
 \begin{lstlisting}
 define strict true
 
-define read-car: method: car: $self::read
+public read-car: method: car: $self::read
 
 define counter: method n {
     while true {
@@ -488,14 +488,14 @@ define counter: method n {
 
 define filter: method base {
     while true {
-	define n: read-car
+define n: read-car
         if (mod n base): write n
     }
 }
 
 define prime-numbers: channel
 
-counter 2 | block {
+counter 2 |+ block {
     define in $stdin
 
     while true {
@@ -513,7 +513,7 @@ define count: integer 250
 printf "The first %d prime numbers" count
 
 while count {
-    write: read-car 
+    write: read-car
     set count: sub count 1
 } <prime-numbers
 \end{lstlisting}
