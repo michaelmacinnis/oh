@@ -1443,6 +1443,13 @@ func (self *Process) RestoreState() {
 	self.Stack = Cdr(self.Stack)
 }
 
+func (self *Process) Return(rv Cell) bool {
+	SetCar(self.Scratch, rv)
+
+	return false
+}
+
+
 /*
  * Scope cell definition.
  * (A scope cell is an object's public + private face).

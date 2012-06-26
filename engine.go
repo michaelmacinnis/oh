@@ -82,29 +82,24 @@ func channel(p *Process, r, w *os.File, cap int) Interface {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
 	var rclose Function = func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(ch.ReaderClose()))
-		return false
+		return p.Return(NewBoolean(ch.ReaderClose()))
 	}
 
 	var read Function = func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, ch.Read())
-		return false
+		return p.Return(ch.Read())
 	}
 
 	var readline Function = func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, ch.ReadLine())
-		return false
+		return p.Return(ch.ReadLine())
 	}
 
 	var wclose Function = func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(ch.WriterClose()))
-		return false
+		return p.Return(NewBoolean(ch.WriterClose()))
 	}
 
 	var write Function = func(p *Process, args Cell) bool {
 		ch.Write(args)
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	}
 
 	c.Public(NewSymbol("guts"), ch)
@@ -192,9 +187,7 @@ func external(p *Process, args Cell) bool {
 	msg, err := proc.Wait()
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	SetCar(p.Scratch, NewStatus(status))
-
-	return false
+	return p.Return(NewStatus(status))
 }
 
 func function(body, param Cell, scope *Scope) *Applicative {
@@ -866,13 +859,12 @@ func Start(i bool) {
 		if err != nil {
 			status = 1
 		}
-		SetCar(p.Scratch, NewStatus(int64(status)))
 
 		if wd, err := os.Getwd(); err == nil {
 			p.Dynamic.Define(NewSymbol("$cwd"), NewSymbol(wd))
 		}
 
-		return false
+		return p.Return(NewStatus(int64(status)))
 	})
 	s.DefineFunction("debug", func(p *Process, args Cell) bool {
 		debug(p, "debug")
@@ -896,38 +888,28 @@ func Start(i bool) {
 		str, err := module(Raw(Car(args)))
 
 		if err != nil {
-			SetCar(p.Scratch, Null)
-
-			return false
+			return p.Return(Null)
 		}
 
 		sym := NewSymbol(str)
 		c := Resolve(p.Lexical, p.Dynamic, sym)
 
 		if c == nil {
-			SetCar(p.Scratch, sym)
-
-			return false
+			return p.Return(sym)
 		}
 
-		SetCar(p.Scratch, c.GetValue())
-
-		return false
+		return p.Return(c.GetValue())
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
 		o := Car(p.Scratch).(*Applicative).Self.Expose()
 
-		SetCar(p.Scratch, NewObject(NewLexicalScope(o)))
-
-		return false
+		return p.Return(NewObject(NewLexicalScope(o)))
 	})
 	s.PublicMethod("clone", func(p *Process, args Cell) bool {
 		o := Car(p.Scratch).(*Applicative).Self.Expose()
 
-		SetCar(p.Scratch, NewObject(o.Copy()))
-
-		return false
+		return p.Return(NewObject(o.Copy()))
 	})
 
 	s.DefineMethod("append", func(p *Process, args Cell) bool {
@@ -945,9 +927,7 @@ func Start(i bool) {
 			argv = append(argv, Car(args))
 		}
 
-		SetCar(p.Scratch, Append(l, argv...))
-
-		return false
+		return p.Return(Append(l, argv...))
 	})
 	s.DefineMethod("apply", func(p *Process, args Cell) bool {
 		SetCar(p.Scratch, Car(args))
@@ -961,19 +941,13 @@ func Start(i bool) {
 		return true
 	})
 	s.DefineMethod("car", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Caar(args))
-
-		return false
+		return p.Return(Caar(args))
 	})
 	s.DefineMethod("cdr", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cdar(args))
-
-		return false
+		return p.Return(Cdar(args))
 	})
 	s.DefineMethod("cons", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Cons(Car(args), Cadr(args)))
-
-		return false
+		return p.Return(Cons(Car(args), Cadr(args)))
 	})
 	s.DefineMethod("eval", func(p *Process, args Cell) bool {
 		if Cdr(args) != Null {
@@ -1003,14 +977,10 @@ func Start(i bool) {
 			l = Length(c)
 		}
 
-		SetCar(p.Scratch, NewInteger(l))
-
-		return false
+		return p.Return(NewInteger(l))
 	})
 	s.DefineMethod("list", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, args)
-
-		return false
+		return p.Return(args)
 	})
 	s.DefineMethod("open", func(p *Process, args Cell) bool {
 		name := Raw(Car(args))
@@ -1059,296 +1029,230 @@ func Start(i bool) {
 			w = nil
 		}
 
-		SetCar(p.Scratch, channel(p, r, w, -1))
-
-		return false
+		return p.Return(channel(p, r, w, -1))
 	})
 	s.DefineMethod("reverse", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Reverse(Car(args)))
-
-		return false
+		return p.Return(Reverse(Car(args)))
 	})
 	s.DefineMethod("set-car", func(p *Process, args Cell) bool {
 		SetCar(Car(args), Cadr(args))
-		SetCar(p.Scratch, Cadr(args))
 
-		return false
+		return p.Return(Cadr(args))
 	})
 	s.DefineMethod("set-cdr", func(p *Process, args Cell) bool {
 		SetCdr(Car(args), Cadr(args))
-		SetCar(p.Scratch, Cadr(args))
 
-		return false
+		return p.Return(Cadr(args))
 	})
 
 	/* Predicates. */
 	s.DefineMethod("is-atom", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(IsAtom(Car(args))))
-
-		return false
+		return p.Return(NewBoolean(IsAtom(Car(args))))
 	})
-	s.DefineMethod("is-boolean",
-		func(p *Process, args Cell) bool {
-			_, ok := Car(args).(*Boolean)
-			SetCar(p.Scratch, NewBoolean(ok))
-
-			return false
-		})
-	s.DefineMethod("is-channel",
-		func(p *Process, args Cell) bool {
-			o, ok := Car(args).(Interface)
-			if ok {
-				ok = false
-				c := Resolve(o.Expose(), nil, NewSymbol("guts"))
-				if c != nil {
-					_, ok = c.GetValue().(*Channel)
-				}
+	s.DefineMethod("is-boolean", func(p *Process, args Cell) bool {
+		_, ok := Car(args).(*Boolean)
+		
+		return p.Return(NewBoolean(ok))
+	})
+	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
+		o, ok := Car(args).(Interface)
+		if ok {
+			ok = false
+			c := Resolve(o.Expose(), nil, NewSymbol("guts"))
+			if c != nil {
+				_, ok = c.GetValue().(*Channel)
 			}
-
-			SetCar(p.Scratch, NewBoolean(ok))
-
-			return false
-		})
+		}
+		
+		return p.Return(NewBoolean(ok))
+	})
 	s.DefineMethod("is-cons", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(IsCons(Car(args))))
-
-		return false
+		return p.Return(NewBoolean(IsCons(Car(args))))
 	})
 	s.DefineMethod("is-float", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Float)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-integer",
-		func(p *Process, args Cell) bool {
-			_, ok := Car(args).(*Integer)
-			SetCar(p.Scratch, NewBoolean(ok))
-
-			return false
-		})
+	s.DefineMethod("is-integer", func(p *Process, args Cell) bool {
+		_, ok := Car(args).(*Integer)
+		
+		return p.Return(NewBoolean(ok))
+	})
 	s.DefineMethod("is-list", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(IsList(Car(args))))
-
-		return false
+		return p.Return(NewBoolean(IsList(Car(args))))
 	})
 	s.DefineMethod("is-method", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Applicative)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-null", func(p *Process, args Cell) bool {
 		ok := Car(args) == Null
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-number", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(Number)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-object", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(Interface)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-status", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Status)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-string", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*String)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-symbol", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Symbol)
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-text", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Symbol)
 		if !ok {
 			_, ok = Car(args).(*String)
 		}
-		SetCar(p.Scratch, NewBoolean(ok))
 
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 
 	/* Generators. */
 	s.DefineMethod("boolean", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(Car(args).Bool()))
-
-		return false
+		return p.Return(NewBoolean(Car(args).Bool()))
 	})
 	s.DefineMethod("channel", func(p *Process, args Cell) bool {
 		c := 0
 		if args != Null {
 			c = int(Car(args).(Atom).Int())
 		}
-		SetCar(p.Scratch, channel(p, nil, nil, c))
 
-		return false
+		return p.Return(channel(p, nil, nil, c))
 	})
 	s.DefineMethod("float", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch,
-			NewFloat(Car(args).(Atom).Float()))
-
-		return false
+		return p.Return(NewFloat(Car(args).(Atom).Float()))
 	})
 	s.DefineMethod("integer", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch,
-			NewInteger(Car(args).(Atom).Int()))
-
-		return false
+		return p.Return(NewInteger(Car(args).(Atom).Int()))
 	})
 	s.DefineMethod("pipe", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, channel(p, nil, nil, -1))
-
-		return false
+		return p.Return(channel(p, nil, nil, -1))
 	})
 	s.DefineMethod("status", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch,
-			NewStatus(Car(args).(Atom).Status()))
-
-		return false
+		return p.Return(NewStatus(Car(args).(Atom).Status()))
 	})
 	s.DefineMethod("string", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch,
-			NewString(Car(args).String()))
-
-		return false
+		return p.Return(NewString(Car(args).String()))
 	})
 	s.DefineMethod("symbol", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch,
-			NewSymbol(Raw(Car(args))))
-
-		return false
+		return p.Return(NewSymbol(Raw(Car(args))))
 	})
 
 	/* Relational. */
 	s.DefineMethod("eq", func(p *Process, args Cell) bool {
 		prev := Car(args)
 
-		SetCar(p.Scratch, False)
-
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args)
 
 			if !prev.Equal(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("ge", func(p *Process, args Cell) bool {
 		prev := Car(args).(Atom)
-
-		SetCar(p.Scratch, False)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args).(Atom)
 
 			if prev.Less(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("gt", func(p *Process, args Cell) bool {
 		prev := Car(args).(Atom)
-
-		SetCar(p.Scratch, False)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args).(Atom)
 
 			if !prev.Greater(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("is", func(p *Process, args Cell) bool {
 		prev := Car(args)
-
-		SetCar(p.Scratch, False)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args)
 
 			if prev != curr {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("le", func(p *Process, args Cell) bool {
 		prev := Car(args).(Atom)
-
-		SetCar(p.Scratch, False)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args).(Atom)
 
 			if prev.Greater(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("lt", func(p *Process, args Cell) bool {
 		prev := Car(args).(Atom)
-
-		SetCar(p.Scratch, False)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args).(Atom)
 
 			if !prev.Less(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("match", func(p *Process, args Cell) bool {
 		pattern := Raw(Car(args))
@@ -1359,9 +1263,7 @@ func Start(i bool) {
 			panic(err)
 		}
 
-		SetCar(p.Scratch, NewBoolean(ok))
-
-		return false
+		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("ne", func(p *Process, args Cell) bool {
 		/*
@@ -1371,26 +1273,21 @@ func Start(i bool) {
 
 		prev := Car(args)
 
-		SetCar(p.Scratch, False)
-
 		for Cdr(args) != Null {
 			args = Cdr(args)
 			curr := Car(args)
 
 			if prev.Equal(curr) {
-				return false
+				return p.Return(False)
 			}
 
 			prev = curr
 		}
 
-		SetCar(p.Scratch, True)
-		return false
+		return p.Return(True)
 	})
 	s.DefineMethod("not", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, NewBoolean(!Car(args).Bool()))
-
-		return false
+		return p.Return(NewBoolean(!Car(args).Bool()))
 	})
 
 	/* Arithmetic. */
@@ -1403,8 +1300,7 @@ func Start(i bool) {
 
 		}
 
-		SetCar(p.Scratch, acc)
-		return false
+		return p.Return(acc)
 	})
 	s.DefineMethod("sub", func(p *Process, args Cell) bool {
 		acc := Car(args).(Number)
@@ -1414,8 +1310,7 @@ func Start(i bool) {
 			acc = acc.Subtract(Car(args))
 		}
 
-		SetCar(p.Scratch, acc)
-		return false
+		return p.Return(acc)
 	})
 	s.DefineMethod("div", func(p *Process, args Cell) bool {
 		acc := Car(args).(Number)
@@ -1425,8 +1320,7 @@ func Start(i bool) {
 			acc = acc.Divide(Car(args))
 		}
 
-		SetCar(p.Scratch, acc)
-		return false
+		return p.Return(acc)
 	})
 	s.DefineMethod("mod", func(p *Process, args Cell) bool {
 		acc := Car(args).(Number)
@@ -1436,8 +1330,7 @@ func Start(i bool) {
 			acc = acc.Modulo(Car(args))
 		}
 
-		SetCar(p.Scratch, acc)
-		return false
+		return p.Return(acc)
 	})
 	s.DefineMethod("mul", func(p *Process, args Cell) bool {
 		acc := Car(args).(Atom)
@@ -1447,8 +1340,7 @@ func Start(i bool) {
 			acc = acc.Multiply(Car(args))
 		}
 
-		SetCar(p.Scratch, acc)
-		return false
+		return p.Return(acc)
 	})
 
 	/* Standard namespaces. */
@@ -1461,9 +1353,7 @@ func Start(i bool) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		SetCar(p.Scratch, NewString(s))
-
-		return false
+		return p.Return(NewString(s))
 	})
 	list.PublicMethod("to-symbol", func(p *Process, args Cell) bool {
 		s := ""
@@ -1471,9 +1361,7 @@ func Start(i bool) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		SetCar(p.Scratch, NewSymbol(s))
-
-		return false
+		return p.Return(NewSymbol(s))
 	})
 
 	text := NewObject(NewLexicalScope(s))
@@ -1489,9 +1377,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-digit", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1503,9 +1389,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-graphic", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1517,9 +1401,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-letter", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1531,9 +1413,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-lower", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1545,9 +1425,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-mark", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1559,9 +1437,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-print", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1573,9 +1449,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-punct", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1587,9 +1461,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-space", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1601,9 +1473,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-symbol", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1615,9 +1485,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-title", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1629,9 +1497,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("is-upper", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1643,9 +1509,7 @@ func Start(i bool) {
 			r = Null
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("sprintf", func(p *Process, args Cell) bool {
 		f := Raw(Car(args))
@@ -1667,9 +1531,8 @@ func Start(i bool) {
 		}
 
 		s := fmt.Sprintf(f, argv...)
-		SetCar(p.Scratch, NewString(s))
 
-		return false
+		return p.Return(NewString(s))
 	})
 	text.PublicMethod("substring", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1691,9 +1554,8 @@ func Start(i bool) {
 		default:
 			r = Null
 		}
-		SetCar(p.Scratch, r)
 
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("to-list", func(p *Process, args Cell) bool {
 		l := Null
@@ -1701,9 +1563,7 @@ func Start(i bool) {
 			l = Cons(NewInteger(int64(char)), l)
 		}
 
-		SetCar(p.Scratch, Reverse(l))
-
-		return false
+		return p.Return(Reverse(l))
 	})
 	text.PublicMethod("to-lower", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1719,9 +1579,7 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("to-title", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1737,9 +1595,7 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 	text.PublicMethod("to-upper", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1755,9 +1611,7 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		SetCar(p.Scratch, r)
-
-		return false
+		return p.Return(r)
 	})
 
 	s.Public(NewSymbol("$root"), s)
