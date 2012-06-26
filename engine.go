@@ -294,7 +294,8 @@ func run(p *Process) (successful bool) {
 		p.RemoveState()
 	}(*p)
 
-	clearing: for interactive && p == proc0 {	
+clearing:
+	for interactive && p == proc0 {
 		select {
 		case <-irq:
 			continue clearing
@@ -306,14 +307,14 @@ func run(p *Process) (successful bool) {
 	for p.Stack != Null {
 		select {
 		case <-irq:
-                        if interactive {
+			if interactive {
 				panic("interrupted")
 			} else {
 				proc0.Stack = Null
 				return true
 			}
 		default:
-			;
+
 		}
 
 		state := p.GetState()

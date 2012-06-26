@@ -1,20 +1,20 @@
-
 //line parser.y:15
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "os"
-    "strconv"
-    "unsafe"
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"unsafe"
 )
 
 type yySymType struct {
-    yys int
-    c Cell
-    s string
+	yys int
+	c   Cell
+	s   string
 }
+
 const DEDENT = 57346
 const END = 57347
 const INDENT = 57348
@@ -51,248 +51,255 @@ const yyMaxDepth = 200
 
 //line parser.y:213
 
-
 type ReadStringer interface {
-    ReadString(delim byte) (line string, err error)
+	ReadString(delim byte) (line string, err error)
 }
 
 type scanner struct {
-    process func(Cell)
-        
-    input ReadStringer
-    line []rune
+	process func(Cell)
 
-    state int
-    indent int
+	input ReadStringer
+	line  []rune
 
-    cursor int
-    start int
+	state  int
+	indent int
 
-    previous rune
-    token rune
+	cursor int
+	start  int
 
-    finished bool
+	previous rune
+	token    rune
+
+	finished bool
 }
 
 const (
-    ssStart = iota; ssAmpersand; ssBang; ssBangGreater;
-    ssColon; ssComment; ssGreater; ssPipe; ssString; ssSymbol
+	ssStart = iota
+	ssAmpersand
+	ssBang
+	ssBangGreater
+	ssColon
+	ssComment
+	ssGreater
+	ssPipe
+	ssString
+	ssSymbol
 )
 
 func (s *scanner) Lex(lval *yySymType) (token int) {
-    var operator = map[string] string {
-        "!>": "redirect-stderr",
-        "!>>": "append-stderr",
-        "!|": "pipe-stderr",
-        "!|+": "channel-stderr",
-        "&": "spawn",
-        "&&": "and",
-        "<": "redirect-stdin",
-        ">": "redirect-stdout",
-        ">>": "append-stdout",
-        "|": "pipe-stdout",
-        "|+": "channel-stdout",
-        "||": "or",
-    }
+	var operator = map[string]string{
+		"!>":  "redirect-stderr",
+		"!>>": "append-stderr",
+		"!|":  "pipe-stderr",
+		"!|+": "channel-stderr",
+		"&":   "spawn",
+		"&&":  "and",
+		"<":   "redirect-stdin",
+		">":   "redirect-stdout",
+		">>":  "append-stdout",
+		"|":   "pipe-stdout",
+		"|+":  "channel-stdout",
+		"||":  "or",
+	}
 
-    defer func() {
-        exists := false
+	defer func() {
+		exists := false
 
-        switch s.token {
-        case BACKGROUND, ORF, ANDF, PIPE, REDIRECT:
-            lval.s, exists = operator[string(s.line[s.start:s.cursor])]
-            if exists {
-                break
-            }
-            fallthrough
-        default:
-            lval.s = string(s.line[s.start:s.cursor])
-        }
+		switch s.token {
+		case BACKGROUND, ORF, ANDF, PIPE, REDIRECT:
+			lval.s, exists = operator[string(s.line[s.start:s.cursor])]
+			if exists {
+				break
+			}
+			fallthrough
+		default:
+			lval.s = string(s.line[s.start:s.cursor])
+		}
 
-        s.state = ssStart
-        s.previous = s.token
-        s.token = 0
-    }()
+		s.state = ssStart
+		s.previous = s.token
+		s.token = 0
+	}()
 
 main:
-    for s.token == 0 {
-        if s.cursor >= len(s.line) {
-            if s.finished {
-                return 0
-            }
-            
-            line, error := s.input.ReadString('\n')
-            if error != nil {
-                line += "\n"
-                s.finished = true
-            }
-            
-            if s.start < s.cursor - 1 {
-                s.line = append(s.line[s.start:s.cursor], []rune(line)...)
-                s.cursor -= s.start
-            } else {
-                s.cursor = 0
-            }
-            s.line = []rune(line)
-            s.start = 0
-            s.token = 0
-        }
+	for s.token == 0 {
+		if s.cursor >= len(s.line) {
+			if s.finished {
+				return 0
+			}
 
-        switch s.state {
-        case ssStart:
-            s.start = s.cursor
+			line, error := s.input.ReadString('\n')
+			if error != nil {
+				line += "\n"
+				s.finished = true
+			}
 
-            switch s.line[s.cursor] {
-            default:
-                s.state = ssSymbol
-                continue main
-            case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
-                s.token = s.line[s.cursor]
-            case '&':
-                s.state = ssAmpersand
-            case '<':
-                s.token = REDIRECT
-            case '|':
-                s.state = ssPipe
-            case '\t', ' ':
-                s.state = ssStart
-            case '!':
-                s.state = ssBang
-            case '"':
-                s.state = ssString
-            case '#':
-                s.state = ssComment
-            case ':':
-                s.state = ssColon
-            case '>':
-                s.state = ssGreater
-            }
+			if s.start < s.cursor-1 {
+				s.line = append(s.line[s.start:s.cursor], []rune(line)...)
+				s.cursor -= s.start
+			} else {
+				s.cursor = 0
+			}
+			s.line = []rune(line)
+			s.start = 0
+			s.token = 0
+		}
 
-        case ssAmpersand:
-            switch s.line[s.cursor] {
-            case '&':
-                s.token = ANDF
-            default:
-                s.token = BACKGROUND
-                continue main
-            }
+		switch s.state {
+		case ssStart:
+			s.start = s.cursor
 
-        case ssBang:
-            switch s.line[s.cursor] {
-            case '>':
-                s.state = ssBangGreater
-            case '|':
-		s.state = ssPipe
-            default:
-                s.state = ssSymbol
-                continue main
-            }
+			switch s.line[s.cursor] {
+			default:
+				s.state = ssSymbol
+				continue main
+			case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
+				s.token = s.line[s.cursor]
+			case '&':
+				s.state = ssAmpersand
+			case '<':
+				s.token = REDIRECT
+			case '|':
+				s.state = ssPipe
+			case '\t', ' ':
+				s.state = ssStart
+			case '!':
+				s.state = ssBang
+			case '"':
+				s.state = ssString
+			case '#':
+				s.state = ssComment
+			case ':':
+				s.state = ssColon
+			case '>':
+				s.state = ssGreater
+			}
 
-        case ssBangGreater:
-            s.token = REDIRECT
-            if s.line[s.cursor] != '>' {
-                continue main
-            }
+		case ssAmpersand:
+			switch s.line[s.cursor] {
+			case '&':
+				s.token = ANDF
+			default:
+				s.token = BACKGROUND
+				continue main
+			}
 
-        case ssColon:
-            switch s.line[s.cursor] {
-            case ':':
-                s.token = CONS
-            default:
-                s.token = ':'
-                continue main
-            }
+		case ssBang:
+			switch s.line[s.cursor] {
+			case '>':
+				s.state = ssBangGreater
+			case '|':
+				s.state = ssPipe
+			default:
+				s.state = ssSymbol
+				continue main
+			}
 
-        case ssComment:
-            for s.line[s.cursor + 1] != '\n' ||
-                s.line[s.cursor] == '\\' {
-                s.cursor++
+		case ssBangGreater:
+			s.token = REDIRECT
+			if s.line[s.cursor] != '>' {
+				continue main
+			}
 
-                if s.cursor + 1 >= len(s.line) {
-                    continue main
-                }
-            }
-            s.state = ssStart
+		case ssColon:
+			switch s.line[s.cursor] {
+			case ':':
+				s.token = CONS
+			default:
+				s.token = ':'
+				continue main
+			}
 
-        case ssGreater:
-            s.token = REDIRECT
-            if s.line[s.cursor] != '>' {
-                continue main
-            }
+		case ssComment:
+			for s.line[s.cursor+1] != '\n' ||
+				s.line[s.cursor] == '\\' {
+				s.cursor++
 
-        case ssPipe:
-            switch s.line[s.cursor] {
-            case '+':
-                s.token = PIPE
-            case '|':
-                s.token = ORF
-            default:
-                s.token = PIPE
-                continue main
-            }
+				if s.cursor+1 >= len(s.line) {
+					continue main
+				}
+			}
+			s.state = ssStart
 
-        case ssString:
-            for s.line[s.cursor] != '"' ||
-                s.line[s.cursor - 1] == '\\' {
-                s.cursor++
+		case ssGreater:
+			s.token = REDIRECT
+			if s.line[s.cursor] != '>' {
+				continue main
+			}
 
-                if s.cursor >= len(s.line) {
-                    continue main
-                }
-            }
-            s.token = STRING
+		case ssPipe:
+			switch s.line[s.cursor] {
+			case '+':
+				s.token = PIPE
+			case '|':
+				s.token = ORF
+			default:
+				s.token = PIPE
+				continue main
+			}
 
-        case ssSymbol:
-            switch s.line[s.cursor] {
-            case '\n','%','&','\'','(',')',';',
-                '<','@','`','{','|','}',
-                '\t',' ','"','#',':','>':
-                if s.line[s.cursor - 1] != '\\' {
-                    s.token = SYMBOL
-                    continue main
-                }
-            }
+		case ssString:
+			for s.line[s.cursor] != '"' ||
+				s.line[s.cursor-1] == '\\' {
+				s.cursor++
 
-        }
-        s.cursor++
+				if s.cursor >= len(s.line) {
+					continue main
+				}
+			}
+			s.token = STRING
 
-        if (s.token == '\n') {
-            switch s.previous {
-            case ORF, ANDF, PIPE, REDIRECT:
-                s.token = 0
-            }
-        }
-    }
+		case ssSymbol:
+			switch s.line[s.cursor] {
+			case '\n', '%', '&', '\'', '(', ')', ';',
+				'<', '@', '`', '{', '|', '}',
+				'\t', ' ', '"', '#', ':', '>':
+				if s.line[s.cursor-1] != '\\' {
+					s.token = SYMBOL
+					continue main
+				}
+			}
 
-    return int(s.token)
+		}
+		s.cursor++
+
+		if s.token == '\n' {
+			switch s.previous {
+			case ORF, ANDF, PIPE, REDIRECT:
+				s.token = 0
+			}
+		}
+	}
+
+	return int(s.token)
 }
 
-func (s *scanner) Error (msg string) {
-    println(msg)
+func (s *scanner) Error(msg string) {
+	println(msg)
 }
 
 func ParseFile(r *os.File, p func(Cell)) {
-    Parse(bufio.NewReader(r), p)
+	Parse(bufio.NewReader(r), p)
 }
 
 func Parse(r ReadStringer, p func(Cell)) {
-    s := new(scanner)
+	s := new(scanner)
 
-    s.process = p
+	s.process = p
 
-    s.input = r
-    s.line = []rune("")
+	s.input = r
+	s.line = []rune("")
 
-    s.state = ssStart
-    s.indent = 0
+	s.state = ssStart
+	s.indent = 0
 
-    s.cursor = 0
-    s.start = 0
+	s.cursor = 0
+	s.start = 0
 
-    s.previous = 0
-    s.token = 0
+	s.previous = 0
+	s.token = 0
 
-    yyParse(s)
+	yyParse(s)
 }
 
 //line yacctab:1
@@ -662,204 +669,244 @@ yydefault:
 
 	case 5:
 		//line parser.y:42
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 6:
 		//line parser.y:44
 		{
-	    yyVAL.c = yyS[yypt-0].c
-	    if (yyS[yypt-0].c != Null) {
-	        yylex.(*scanner).process(yyS[yypt-0].c)
-	    }
-	}
+			yyVAL.c = yyS[yypt-0].c
+			if yyS[yypt-0].c != Null {
+				yylex.(*scanner).process(yyS[yypt-0].c)
+			}
+		}
 	case 7:
 		//line parser.y:51
 		{
-	    yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
-	}
+			yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
+		}
 	case 8:
 		//line parser.y:55
 		{
-	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+		}
 	case 9:
 		//line parser.y:59
 		{
-	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+		}
 	case 10:
 		//line parser.y:63
 		{
-	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
+		}
 	case 11:
 		//line parser.y:67
 		{
-	    yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
-	}
+			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
+		}
 	case 12:
 		//line parser.y:71
-		{ yyVAL.c = yyS[yypt-0].c }
+		{
+			yyVAL.c = yyS[yypt-0].c
+		}
 	case 13:
 		//line parser.y:73
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 14:
 		//line parser.y:75
 		{
-	    if yyS[yypt-0].c == Null {
-	        yyVAL.c = yyS[yypt-1].c
-	    } else {
-	        yyVAL.c = Cons(NewSymbol("block"), Cons(yyS[yypt-1].c, yyS[yypt-0].c))
-	    }
-	}
+			if yyS[yypt-0].c == Null {
+				yyVAL.c = yyS[yypt-1].c
+			} else {
+				yyVAL.c = Cons(NewSymbol("block"), Cons(yyS[yypt-1].c, yyS[yypt-0].c))
+			}
+		}
 	case 19:
 		//line parser.y:91
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 20:
 		//line parser.y:93
-		{ yyVAL.c = yyS[yypt-1].c }
+		{
+			yyVAL.c = yyS[yypt-1].c
+		}
 	case 21:
 		//line parser.y:95
-		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+		{
+			yyVAL.c = Cons(yyS[yypt-0].c, Null)
+		}
 	case 22:
 		//line parser.y:97
-		{ yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c) }
+		{
+			yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
+		}
 	case 23:
 		//line parser.y:99
-		{ yyVAL.c = yyS[yypt-0].c }
+		{
+			yyVAL.c = yyS[yypt-0].c
+		}
 	case 24:
 		//line parser.y:101
 		{
-	    yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
-	}
+			yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
+		}
 	case 25:
 		//line parser.y:105
-		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+		{
+			yyVAL.c = Cons(yyS[yypt-0].c, Null)
+		}
 	case 26:
 		//line parser.y:107
 		{
-	    if yyS[yypt-1].c == Null {
-	        yyVAL.c = yyS[yypt-0].c
-	    } else {
-	        yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
-	    }
-	}
+			if yyS[yypt-1].c == Null {
+				yyVAL.c = yyS[yypt-0].c
+			} else {
+				yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
+			}
+		}
 	case 27:
 		//line parser.y:115
 		{
-	    yyVAL.c = yyS[yypt-0].c
-	}
+			yyVAL.c = yyS[yypt-0].c
+		}
 	case 28:
 		//line parser.y:119
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 29:
 		//line parser.y:121
-		{ yyVAL.c = yyS[yypt-2].c }
+		{
+			yyVAL.c = yyS[yypt-2].c
+		}
 	case 30:
 		//line parser.y:123
 		{
-	    if yyS[yypt-0].c == Null {
-	        yyVAL.c = yyS[yypt-0].c
-	    } else {
-	        yyVAL.c = Cons(yyS[yypt-0].c, Null)
-	    }
-	}
+			if yyS[yypt-0].c == Null {
+				yyVAL.c = yyS[yypt-0].c
+			} else {
+				yyVAL.c = Cons(yyS[yypt-0].c, Null)
+			}
+		}
 	case 31:
 		//line parser.y:131
 		{
-	    if yyS[yypt-2].c == Null {
-	        if yyS[yypt-0].c == Null {
-	            yyVAL.c = yyS[yypt-0].c
-	        } else {
-	            yyVAL.c = Cons(yyS[yypt-0].c, Null)
-	        }
-	    } else {
-	        if yyS[yypt-0].c == Null {
-	            yyVAL.c = yyS[yypt-2].c
-	        } else {
-	            yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
-	        }
-	    }
-	}
+			if yyS[yypt-2].c == Null {
+				if yyS[yypt-0].c == Null {
+					yyVAL.c = yyS[yypt-0].c
+				} else {
+					yyVAL.c = Cons(yyS[yypt-0].c, Null)
+				}
+			} else {
+				if yyS[yypt-0].c == Null {
+					yyVAL.c = yyS[yypt-2].c
+				} else {
+					yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
+				}
+			}
+		}
 	case 32:
 		//line parser.y:147
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 33:
 		//line parser.y:149
-		{ yyVAL.c = yyS[yypt-0].c }
+		{
+			yyVAL.c = yyS[yypt-0].c
+		}
 	case 34:
 		//line parser.y:151
-		{ yyVAL.c = Cons(yyS[yypt-0].c, Null) }
+		{
+			yyVAL.c = Cons(yyS[yypt-0].c, Null)
+		}
 	case 35:
 		//line parser.y:153
-		{ yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c) }
+		{
+			yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c)
+		}
 	case 36:
 		//line parser.y:155
 		{
-	    yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
+		}
 	case 37:
 		//line parser.y:159
 		{
-	    yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
+		}
 	case 38:
 		//line parser.y:163
 		{
-	    yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
-	}
+			yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
+		}
 	case 39:
 		//line parser.y:167
 		{
-	    yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
-	}
+			yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
+		}
 	case 40:
 		//line parser.y:171
 		{
-	    kind := yyS[yypt-2].s
-	    value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
-	
-	    addr := uintptr(value)
-	
-	    switch {
-	    case kind == "channel":
-	        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
-	    case kind == "closure":
-	        yyVAL.c = (*Closure)(unsafe.Pointer(addr))
-	    case kind == "env":
-	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
-	    case kind == "function":
-	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
-	    case kind == "method":
-	        yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
-	    case kind == "object":
-	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
-	    case kind == "process":
-	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
-	    case kind == "scope":
-	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
-	    case kind == "syntax":
-	        yyVAL.c = (*Operative)(unsafe.Pointer(addr))
-	
-	    default:
-	        yyVAL.c = Null
-	    }
-	
-	}
+			kind := yyS[yypt-2].s
+			value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
+
+			addr := uintptr(value)
+
+			switch {
+			case kind == "channel":
+				yyVAL.c = (*Channel)(unsafe.Pointer(addr))
+			case kind == "closure":
+				yyVAL.c = (*Closure)(unsafe.Pointer(addr))
+			case kind == "env":
+				yyVAL.c = (*Env)(unsafe.Pointer(addr))
+			case kind == "function":
+				yyVAL.c = (*Function)(unsafe.Pointer(addr))
+			case kind == "method":
+				yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
+			case kind == "object":
+				yyVAL.c = (*Object)(unsafe.Pointer(addr))
+			case kind == "process":
+				yyVAL.c = (*Process)(unsafe.Pointer(addr))
+			case kind == "scope":
+				yyVAL.c = (*Scope)(unsafe.Pointer(addr))
+			case kind == "syntax":
+				yyVAL.c = (*Operative)(unsafe.Pointer(addr))
+
+			default:
+				yyVAL.c = Null
+			}
+
+		}
 	case 41:
 		//line parser.y:203
-		{ yyVAL = yyS[yypt-1] }
+		{
+			yyVAL = yyS[yypt-1]
+		}
 	case 42:
 		//line parser.y:205
-		{ yyVAL.c = Null }
+		{
+			yyVAL.c = Null
+		}
 	case 43:
 		//line parser.y:207
-		{ yyVAL = yyS[yypt-0] }
+		{
+			yyVAL = yyS[yypt-0]
+		}
 	case 44:
 		//line parser.y:209
-		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
+		{
+			yyVAL.c = NewString(yyS[yypt-0].s[1 : len(yyS[yypt-0].s)-1])
+		}
 	case 45:
 		//line parser.y:211
-		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
+		{
+			yyVAL.c = NewSymbol(yyS[yypt-0].s)
+		}
 	}
 	goto yystack /* stack new state and value */
 }
