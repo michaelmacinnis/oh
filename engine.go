@@ -318,10 +318,10 @@ clearing:
 
 		case psBlock:
 			p.ReplaceState(SaveDynamic | SaveLexical)
+			p.NewState(psEvalBlock)
 
 			p.NewScope(p.Dynamic, p.Lexical)
 
-			p.NewState(psEvalBlock)
 			continue
 
 		case psChangeScope:
@@ -352,6 +352,7 @@ clearing:
 			}
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
+			p.NewState(psEvalBlock)
 
 			p.Code = m.Func.Body
 			p.NewScope(p.Dynamic, m.Func.Lexical)
@@ -366,7 +367,6 @@ clearing:
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
 
-			p.NewState(psEvalBlock)
 			continue
 
 		case psExecFunction:
@@ -388,6 +388,7 @@ clearing:
 			m := Car(p.Scratch).(*Operative)
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
+			p.NewState(psEvalBlock)
 
 			p.Code = m.Func.Body
 			p.NewScope(p.Dynamic, m.Func.Lexical)
@@ -400,8 +401,6 @@ clearing:
 			p.Lexical.Public(NewSymbol("$self"), m.Self)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
-
-			p.NewState(psEvalBlock)
 
 			fallthrough
 		case psEvalBlock:
@@ -428,10 +427,10 @@ clearing:
 
 			p.ReplaceState(psExecCommand)
 			p.NewState(SaveCode, Cdr(p.Code))
+			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
 
-			p.NewState(psEvalElement)
 			continue
 
 		case psExecCommand:
@@ -473,9 +472,9 @@ clearing:
 			state = next[p.GetState()]
 
 			p.NewState(SaveCode, Cdr(p.Code))
-			p.Code = Car(p.Code)
-
 			p.NewState(state)
+
+			p.Code = Car(p.Code)
 
 			fallthrough
 		case psEvalElement, psEvalElementBC:
@@ -503,14 +502,13 @@ clearing:
 			fallthrough
 		case psEvalAccess:
 			p.ReplaceState(SaveDynamic | SaveLexical)
-
 			p.NewState(psEvalElement)
 			p.NewState(psChangeScope)
 			p.NewState(SaveCode, Cdr(p.Code))
+			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
 
-			p.NewState(psEvalElement)
 			continue
 
 		case psBuiltin, psMethod, psSyntax:
@@ -583,12 +581,12 @@ clearing:
 			}
 
 			p.ReplaceState(next[state])
+			p.NewState(SaveCode|SaveDynamic, k)
+			p.NewState(psEvalElement)
 
 			p.Code = Cadr(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.NewState(SaveCode|SaveDynamic, k)
-			p.NewState(psEvalElement)
 			continue
 
 		case psExecDynamic, psExecSetenv:
@@ -604,15 +602,15 @@ clearing:
 
 		case psIf:
 			p.ReplaceState(SaveDynamic | SaveLexical)
+			p.NewState(psExecIf)
+			p.NewState(SaveCode, Cdr(p.Code))
+			p.NewState(psEvalElement)
 
 			p.NewScope(p.Dynamic, p.Lexical)
 
-			p.NewState(psExecIf)
-			p.NewState(SaveCode, Cdr(p.Code))
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.NewState(psEvalElement)
 			continue
 
 		case psExecIf:
@@ -634,18 +632,17 @@ clearing:
 
 		case psWhile:
 			p.ReplaceState(SaveDynamic | SaveLexical)
-
 			p.NewState(psEvalWhileTest)
 
 			fallthrough
 		case psEvalWhileTest:
 			p.ReplaceState(psEvalWhileBody)
 			p.NewState(SaveCode, p.Code)
+			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.NewState(psEvalElement)
 			continue
 
 		case psEvalWhileBody:
@@ -655,10 +652,10 @@ clearing:
 
 			p.ReplaceState(psEvalWhileTest)
 			p.NewState(SaveCode, p.Code)
+			p.NewState(psEvalBlock)
 
 			p.Code = Cdr(p.Code)
 
-			p.NewState(psEvalBlock)
 			continue
 
 		case psReturn:
@@ -715,11 +712,11 @@ clearing:
 
 		case psSplice:
 			p.ReplaceState(psExecSplice)
+			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
-			p.NewState(psEvalElement)
 			continue
 
 		case psExecSplice:
@@ -952,7 +949,6 @@ func Start(i bool) {
 	s.DefineMethod("eval", func(p *Process, args Cell) bool {
 		if Cdr(args) != Null {
 			p.ReplaceState(SaveDynamic | SaveLexical)
-
 			p.NewState(psEvalElement)
 
 			p.Lexical = Car(args).(Interface)
