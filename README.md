@@ -1,4 +1,7 @@
-﻿Oh is a Unix shell written in Go.  Like the rc shell, oh is similar in spirit
+﻿oh
+==
+
+Oh is a Unix shell written in Go.  Like the rc shell, oh is similar in spirit
 but different in detail from other Unix shells.
 
 Oh extends the shell's programming language features without sacrificing the
