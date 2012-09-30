@@ -1,8 +1,8 @@
 ﻿oh
 ==
 
-Oh is a Unix shell written in Go.  Like the rc shell, oh is similar in spirit
-but different in detail from other Unix shells.
+Oh is a Unix shell written in Go.  It is similar in spirit but different in
+detail from other Unix shells.
 
 Oh extends the shell's programming language features without sacrificing the
 shell's interactive features. The following commands behave as expected:
@@ -54,7 +54,7 @@ first-class values. Pipes can be created with the 'pipe' command:
 
 Oh incorporates many features, including first-class functions, from the
 Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
-When data is sent across a channel it is converted to text so that it can be
+When data is sent across a pipe it is converted to text so that it can be
 sent to (or even through) external Unix programs.
 
 To compile and run oh you will need to install (./configure; make install)
