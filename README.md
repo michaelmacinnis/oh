@@ -57,12 +57,11 @@ Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
 When data is sent across a pipe it is converted to text so that it can be
 sent to (or even through) external Unix programs.
 
-To compile and run oh you will need to install (./configure; make install)
-the C library libtecla:
+To compile and run oh you will need to install the C libraries ncurses and
+libtecla. On Ubuntu 12.10 do:
 
-    http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz
-
-On Ubuntu you may also need to install libncurses5-dev.
+    sudo apt-get install libncurses5-dev
+    sudo apt-get install libtecla1-dev
 
 Then go get oh:
 
