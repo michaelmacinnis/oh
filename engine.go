@@ -1507,6 +1507,25 @@ func Start(i bool) {
 
 		return p.Return(r)
 	})
+	text.PublicMethod("split", func(p *Process, args Cell) bool {
+		var r Cell = Null
+
+		sep := Car(args)
+		str := Cadr(args)
+
+		l := strings.Split(string(Raw(str)), string(Raw(sep)))
+
+		for i := len(l) - 1; i >= 0; i-- {
+			switch str.(type) {
+			case *Symbol:
+				r = Cons(NewSymbol(l[i]), r)
+			case *String:
+				r = Cons(NewString(l[i]), r)
+			}
+		}
+
+		return p.Return(r)
+	})
 	text.PublicMethod("sprintf", func(p *Process, args Cell) bool {
 		f := Raw(Car(args))
 
