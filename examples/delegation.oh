@@ -1,4 +1,4 @@
-#!/usr/local/bin/oh
+#!/usr/bin/env oh
 
 # Trait. All objects 'inherit' this method. 
 public me: method: echo $self::name

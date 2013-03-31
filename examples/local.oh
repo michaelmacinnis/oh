@@ -1,4 +1,4 @@
-#!/usr/local/bin/oh
+#!/usr/bin/env oh
 
 define blah: method {
     define foo "I'm a local variable!"

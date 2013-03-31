@@ -1,4 +1,4 @@
-#!/usr/local/bin/oh
+#!/usr/bin/env oh
 
 # This script doesn't do much on its own. It is imported by import-prime.oh.
 

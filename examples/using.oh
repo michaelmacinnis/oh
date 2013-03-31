@@ -1,4 +1,4 @@
-#!/usr/local/bin/oh
+#!/usr/bin/env oh
 
 # The following examples adapted from "Chapter 3: Using the Shell" in The
 # Unix Programming Environment.  As demonstrated below, oh is very similar

@@ -1,9 +1,9 @@
-#!/usr/local/bin/oh
+#!/usr/bin/env oh
 
 # The import below is relative to the current working directory.
-# This script must be invoked as: ./examples/import-prime.oh
+# This script must be invoked as: ./import-prime.oh
 
-define prime: import "./examples/another-prime.oh"
+define prime: import "./another-prime.oh"
 
 define count: integer 100
 while count {
