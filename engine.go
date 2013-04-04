@@ -1047,7 +1047,7 @@ func Start(i bool) {
 	})
 	s.DefineMethod("is-boolean", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Boolean)
-		
+
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
@@ -1059,7 +1059,7 @@ func Start(i bool) {
 				_, ok = c.GetValue().(*Channel)
 			}
 		}
-		
+
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-cons", func(p *Process, args Cell) bool {
@@ -1072,7 +1072,7 @@ func Start(i bool) {
 	})
 	s.DefineMethod("is-integer", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Integer)
-		
+
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-list", func(p *Process, args Cell) bool {
@@ -1506,6 +1506,26 @@ func Start(i bool) {
 		}
 
 		return p.Return(r)
+	})
+	text.PublicMethod("join", func(p *Process, args Cell) bool {
+		str := false
+		sep := Car(args)
+		list := Cadr(args)
+
+		arr := make([]string, Length(list))
+
+		for i := 0; list != Null; i++ {
+			_, str = Car(list).(*String)
+			arr[i] = string(Raw(Car(list)))
+			list = Cdr(list)
+		}
+
+		r := strings.Join(arr, string(Raw(sep)))
+
+		if str {
+			return p.Return(NewString(r))
+		}
+		return p.Return(NewSymbol(r))
 	})
 	text.PublicMethod("split", func(p *Process, args Cell) bool {
 		var r Cell = Null
