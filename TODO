@@ -7,7 +7,6 @@
   - 'trap' builtin (trap <signal1> [... <signalN>] <method>)
   - 'wait' builtin.
 - Go FFI (for modules that are really Go->shell wrappers)
-- Module path environment variable.
 - If we push nil before head is evaluated can '@' work as first element?
 - Can executable size / memory use be reduced?
 - Improve error checking and error messages.

@@ -981,8 +981,11 @@ func Start(i bool) {
 	s.DefineMethod("open", func(p *Process, args Cell) bool {
 		name := Raw(Car(args))
 		mode := Raw(Cadr(args))
+		flags := 0
 
-		flags := os.O_CREATE
+		if strings.IndexAny(mode, "-") == -1 {
+			flags = os.O_CREATE
+		}
 
 		read := false
 		if strings.IndexAny(mode, "r") != -1 {
@@ -1510,7 +1513,7 @@ func Start(i bool) {
 	text.PublicMethod("join", func(p *Process, args Cell) bool {
 		str := false
 		sep := Car(args)
-		list := Cadr(args)
+		list := Cdr(args)
 
 		arr := make([]string, Length(list))
 
@@ -1822,15 +1825,26 @@ define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define source: syntax e {
-        define f: open (eval e: car $args) "r"
-        define l: f::read
-        while l {
-                eval e l
-                set l: f::read
-        }
-        f::reader-close
+	define basename: eval e: car $args
+	define paths: $text::split ":" $OHPATH
+	define name basename
+
+	while (and (not: is-null paths) (not: test -r name)) {
+		set name: $text::join / (car paths) basename
+		set paths: cdr paths
+	}
+
+	if (not: test -r name): set name basename
+
+	define f: open name "r-"
+	define l: f::read
+	while l {
+		eval e l
+		set l: f::read
+	}
+	f::reader-close
 }
 define write: method: $stdout::write @$args
-test -r (add $HOME /.ohrc) && source (add $HOME /.ohrc)
+test -r ($text::join / $HOME .ohrc) && source ($text::join / $HOME .ohrc)
 `)), Evaluate)
 }
