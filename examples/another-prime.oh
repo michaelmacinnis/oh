@@ -10,7 +10,7 @@ define list-of-primes '(1)
 
 spawn: while count {
     define previous list-of-primes
-    define prime: boolean true
+    define prime: boolean True
 
     while (and (cdr previous) prime) {
         set prime: mod number (cadr previous)

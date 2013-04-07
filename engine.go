@@ -825,8 +825,8 @@ func Start(i bool) {
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
 
-	e.Define(NewSymbol("false"), False)
-	e.Define(NewSymbol("true"), True)
+	e.Define(NewSymbol("False"), False)
+	e.Define(NewSymbol("True"), True)
 
 	e.Define(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil, -1))
 	e.Define(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout, -1))
@@ -1746,7 +1746,7 @@ define $redirect: syntax {
     }
 }
 define and: syntax e {
-    define r false
+    define r False
     while (not: is-null: car $args) {
         set r: eval e: car $args
         if (not r): return r
@@ -1772,8 +1772,8 @@ define backtick: syntax e {
     p::reader-close
     return r
 }
-define channel-stderr: $connect channel $stderr true
-define channel-stdout: $connect channel $stdout true
+define channel-stderr: $connect channel $stderr True
+define channel-stdout: $connect channel $stdout True
 define echo: builtin: $stdout::write @$args
 define for: method l m {
     define r: cons '() '()
@@ -1809,7 +1809,7 @@ define object: syntax e {
     eval e: cons 'block: append $args '(clone)
 }
 define or: syntax e {
-    define r false
+    define r False
     while (not: is-null: car $args) {
 	set r: eval e: car $args
         if r: return r
@@ -1817,8 +1817,8 @@ define or: syntax e {
     }
     return r
 }
-define pipe-stderr: $connect pipe $stderr true
-define pipe-stdout: $connect pipe $stdout true
+define pipe-stderr: $connect pipe $stderr True
+define pipe-stdout: $connect pipe $stdout True
 define printf: method: echo: $text::sprintf (car $args) @(cdr $args)
 define quote: syntax: car $args
 define read: builtin: $stdin::read

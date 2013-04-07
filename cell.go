@@ -435,9 +435,9 @@ func (self *Boolean) Status() int64 {
 
 func (self *Boolean) String() string {
 	if bool(self == True) {
-		return "true"
+		return "True"
 	}
-	return "false"
+	return "False"
 }
 
 func (self *Boolean) Equal(c Cell) bool {
@@ -698,7 +698,7 @@ func NewSymbol(v string) *Symbol {
 }
 
 func (self *Symbol) Bool() bool {
-	if string(*self) == "false" {
+	if string(*self) == "False" {
 		return false
 	}
 

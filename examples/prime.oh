@@ -1,17 +1,17 @@
 #!/usr/bin/env oh
 
-define strict true
+define strict True
 
 public read-car: method: car: $self::read
 
 define counter: method n {
-    while true {
+    while True {
         write: set n: add n 1
     }
 }
 
 define filter: method base {
-    while true {
+    while True {
 	define n: read-car
         if (mod n base): write n
     }
@@ -22,7 +22,7 @@ define prime-numbers: channel
 counter 2 |+ block {
     define in $stdin
 
-    while true {
+    while True {
         define prime: in::read-car
         write prime
 
