@@ -434,7 +434,9 @@ clearing:
 			continue
 
 		case psExecCommand:
-			if Car(p.Scratch) == Null {
+			if Car(p.Scratch) == Null || 
+				Car(p.Scratch) == True ||
+				Car(p.Scratch) == False {
 				break
 			}
 
