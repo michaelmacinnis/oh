@@ -1267,22 +1267,15 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("ne", func(p *Process, args Cell) bool {
-		/*
-		 * This should really check to make sure no arguments are equal.
-		 * Currently it only checks whether adjacent pairs are not equal.
-		 */
+		for l1 := args; l1 != Null; l1 = Cdr(l1) {
+			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
+				v1 := Car(l1)
+				v2 := Car(l2)
 
-		prev := Car(args)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args)
-
-			if prev.Equal(curr) {
-				return p.Return(False)
+				if v1.Equal(v2) {
+					return p.Return(False)
+				}	
 			}
-
-			prev = curr
 		}
 
 		return p.Return(True)
