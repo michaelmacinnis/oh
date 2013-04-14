@@ -1118,14 +1118,6 @@ func Start(i bool) {
 
 		return p.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-text", func(p *Process, args Cell) bool {
-		_, ok := Car(args).(*Symbol)
-		if !ok {
-			_, ok = Car(args).(*String)
-		}
-
-		return p.Return(NewBoolean(ok))
-	})
 
 	/* Generators. */
 	s.DefineMethod("boolean", func(p *Process, args Cell) bool {
@@ -1339,7 +1331,7 @@ func Start(i bool) {
 
 	/* Standard namespaces. */
 	list := NewObject(NewLexicalScope(s))
-	s.Define(NewSymbol("$list"), list)
+	s.Define(NewSymbol("List"), list)
 
 	list.PublicMethod("to-string", func(p *Process, args Cell) bool {
 		s := ""
@@ -1359,7 +1351,7 @@ func Start(i bool) {
 	})
 
 	text := NewObject(NewLexicalScope(s))
-	s.Define(NewSymbol("$text"), text)
+	s.Define(NewSymbol("Text"), text)
 
 	text.PublicMethod("is-control", func(p *Process, args Cell) bool {
 		var r Cell
@@ -1598,7 +1590,7 @@ func Start(i bool) {
 
 		return p.Return(Reverse(l))
 	})
-	text.PublicMethod("to-lower", func(p *Process, args Cell) bool {
+	text.PublicMethod("lower", func(p *Process, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1614,7 +1606,7 @@ func Start(i bool) {
 
 		return p.Return(r)
 	})
-	text.PublicMethod("to-title", func(p *Process, args Cell) bool {
+	text.PublicMethod("title", func(p *Process, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1630,7 +1622,7 @@ func Start(i bool) {
 
 		return p.Return(r)
 	})
-	text.PublicMethod("to-upper", func(p *Process, args Cell) bool {
+	text.PublicMethod("upper", func(p *Process, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1647,7 +1639,7 @@ func Start(i bool) {
 		return p.Return(r)
 	})
 
-	s.Public(NewSymbol("$root"), s)
+	s.Public(NewSymbol("Root"), s)
 
 	e.Define(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 
@@ -1787,17 +1779,10 @@ define import: syntax e {
 
     define l: list 'source: car $args
     set l: cons 'object: cons l '()
-    set l: list '$root::define m l
+    set l: list 'Root::define m l
     eval e l
 }
-$list::public ref: method k x: car: $list::tail k x
-$list::public tail: method k x {
-    if k {
-        $list::tail (sub k 1): cdr x
-    } else {
-        return x
-    }
-}
+define is-text: method t: or (is-string t) (is-symbol t)
 define object: syntax e {
     eval e: cons 'block: append $args '(clone)
 }
@@ -1812,7 +1797,7 @@ define or: syntax e {
 }
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
-define printf: method: echo: $text::sprintf (car $args) @(cdr $args)
+define printf: method: echo: Text::sprintf (car $args) @(cdr $args)
 define quote: syntax: car $args
 define read: builtin: $stdin::read
 define readline: builtin: $stdin::readline
@@ -1821,11 +1806,11 @@ define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define source: syntax e {
 	define basename: eval e: car $args
-	define paths: $text::split ":" $OHPATH
+	define paths: Text::split ":" $OHPATH
 	define name basename
 
 	while (and (not: is-null paths) (not: test -r name)) {
-		set name: $text::join / (car paths) basename
+		set name: Text::join / (car paths) basename
 		set paths: cdr paths
 	}
 
@@ -1840,6 +1825,16 @@ define source: syntax e {
 	f::reader-close
 }
 define write: method: $stdout::write @$args
-test -r ($text::join / $HOME .ohrc) && source ($text::join / $HOME .ohrc)
+
+List::public ref: method k x: car: List::tail k x
+List::public tail: method k x {
+    if k {
+        List::tail (sub k 1): cdr x
+    } else {
+        return x
+    }
+}
+
+test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), Evaluate)
 }
