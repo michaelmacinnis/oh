@@ -910,6 +910,12 @@ func Start(i bool) {
 
 		return p.Return(NewObject(o.Copy()))
 	})
+	s.PublicMethod("exists", func(p *Process, args Cell) bool {
+		l := Car(p.Scratch).(*Applicative).Self
+		c := Resolve(l, p.Dynamic, NewSymbol(Raw(Car(args))))
+
+		return p.Return(NewBoolean(c != nil))
+	})
 
 	s.DefineMethod("append", func(p *Process, args Cell) bool {
 		/*
@@ -1057,13 +1063,21 @@ func Start(i bool) {
 	})
 	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
 		o, ok := Car(args).(Interface)
-		if ok {
-			ok = false
-			c := Resolve(o.Expose(), nil, NewSymbol("guts"))
-			if c != nil {
-				_, ok = c.GetValue().(*Channel)
-			}
+		if !ok {
+			return p.Return(False)
 		}
+
+		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
+		if g == nil {
+			return p.Return(False)
+		}
+
+		c, ok := g.GetValue().(*Channel)
+		if !ok {
+			return p.Return(False)
+		}
+
+		ok = (c.ReadFd() == nil && c.WriteFd() == nil)
 
 		return p.Return(NewBoolean(ok))
 	})
@@ -1103,6 +1117,26 @@ func Start(i bool) {
 
 		return p.Return(NewBoolean(ok))
 	})
+	s.DefineMethod("is-pipe", func(p *Process, args Cell) bool {
+		o, ok := Car(args).(Interface)
+		if !ok {
+			return p.Return(False)
+		}
+
+		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
+		if g == nil {
+			return p.Return(False)
+		}
+
+		c, ok := g.GetValue().(*Channel)
+		if !ok {
+			return p.Return(False)
+		}
+
+		ok = (c.ReadFd() != nil || c.WriteFd() != nil)
+
+		return p.Return(NewBoolean(ok))
+	})
 	s.DefineMethod("is-status", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Status)
 
@@ -1115,6 +1149,11 @@ func Start(i bool) {
 	})
 	s.DefineMethod("is-symbol", func(p *Process, args Cell) bool {
 		_, ok := Car(args).(*Symbol)
+
+		return p.Return(NewBoolean(ok))
+	})
+	s.DefineMethod("is-syntax", func(p *Process, args Cell) bool {
+		_, ok := Car(args).(*Operative)
 
 		return p.Return(NewBoolean(ok))
 	})
@@ -1721,7 +1760,7 @@ define $redirect: syntax {
     syntax e {
         define c: eval e: car $args
         define f '()
-        if (not: is-channel c) {
+        if (not: or (is-channel c) (is-pipe c)) {
             set f: open c mode
             set c f
         }
