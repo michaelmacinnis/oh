@@ -916,6 +916,12 @@ func Start(i bool) {
 
 		return p.Return(NewBoolean(c != nil))
 	})
+	s.PublicMethod("unset", func(p *Process, args Cell) bool {
+		l := Car(p.Scratch).(*Applicative).Self
+		r := l.Remove(NewSymbol(Raw(Car(args))))
+
+		return p.Return(NewBoolean(r))
+	})
 
 	s.DefineMethod("append", func(p *Process, args Cell) bool {
 		/*

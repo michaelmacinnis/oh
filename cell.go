@@ -42,6 +42,7 @@ type Interface interface {
 	Faces() *Env
 	Prev() Interface
 	Public(key, value Cell)
+	Remove(key Cell) bool
 }
 
 type Number interface {
@@ -1192,6 +1193,14 @@ func (self *Env) Prev() *Env {
 	return self.prev
 }
 
+func (self *Env) Remove(key Cell) bool {
+	_, ok := self.hash[key.String()]
+
+	delete(self.hash, key.String())
+
+	return ok
+}
+
 /* Function cell definition. */
 
 type Function func(p *Process, args Cell) bool
@@ -1515,6 +1524,14 @@ func (self *Scope) Define(key Cell, value Cell) {
 
 func (self *Scope) Public(key Cell, value Cell) {
 	self.env.prev.Add(key, value)
+}
+
+func (self *Scope) Remove(key Cell) bool {
+	if (!self.env.prev.Remove(key)) {
+		return self.env.Remove(key)
+	}
+
+	return true
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
