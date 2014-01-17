@@ -4,6 +4,13 @@
 Oh is a Unix shell written in Go.  It is similar in spirit but different in
 detail from other Unix shells.
 
+Oh was motivated by the belief that many of the flaws in current Unix shells
+are not inherent but rather historical. Design choices that are clearly
+unfortunate in retrospect have been carried forward in the name of backward
+compatibility. As a re-imagining of the Unix shell, oh revisits these design
+choices while adding support for concurrent, functional and object-based
+programming.
+
 Oh extends the shell's programming language features without sacrificing the
 shell's interactive features. The following commands behave as expected:
 
