@@ -102,6 +102,8 @@ statement: list sub_statement {
     $$.c = JoinTo($1.c, $2.c)
 };
 
+statement: sub_statement { $$.c = $1.c };
+
 sub_statement: ":" statement { $$.c = Cons($2.c, Null) };
 
 sub_statement: "{" sub_block statement {
