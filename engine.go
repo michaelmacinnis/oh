@@ -358,11 +358,13 @@ clearing:
 			p.NewScope(p.Dynamic, m.Func.Lexical)
 
 			param := m.Func.Param
-			for args != Null && param != Null {
+			for args != Null && param != Null && IsAtom(Car(param)) {
 				p.Lexical.Public(Car(param), Car(args))
 				args, param = Cdr(args), Cdr(param)
 			}
-			p.Lexical.Public(NewSymbol("$args"), args)
+			if IsCons(Car(param)) {
+				p.Lexical.Public(Caar(param), args)
+			}
 			p.Lexical.Public(NewSymbol("$self"), s)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
@@ -395,9 +397,18 @@ clearing:
 
 			param := m.Func.Param
 			if param != Null {
-				p.Lexical.Public(Car(param), env)
+				if Car(param) != Null {
+					p.Lexical.Public(Car(param), env)
+				}
+				param = Cdr(param)
+				for args != Null && param != Null && IsAtom(Car(param)) {
+					p.Lexical.Public(Car(param), Car(args))
+					args, param = Cdr(args), Cdr(param)
+				}
+				if IsCons(Car(param)) {
+					p.Lexical.Public(Caar(param), args)
+				}
 			}
-			p.Lexical.Public(NewSymbol("$args"), args)
 			p.Lexical.Public(NewSymbol("$self"), m.Self)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
@@ -525,15 +536,12 @@ clearing:
 			block := Cddr(p.Code)
 			scope := p.Lexical.Expose()
 
-			if context != Null {
-				param = Cons(context, param)
-			}
-
 			if state == psBuiltin {
 				SetCar(p.Scratch, function(block, param, scope))
 			} else if state == psMethod {
 				SetCar(p.Scratch, method(block, param, scope))
 			} else {
+				param = Cons(context, param)
 				SetCar(p.Scratch, syntax(block, param, scope))
 			}
 
@@ -1743,11 +1751,11 @@ define cddaar: method (l) as: cddr: caar l
 define cddadr: method (l) as: cddr: cadr l
 define cdddar: method (l) as: cddr: cdar l
 define cddddr: method (l) as: cddr: cddr l
-define $connect: syntax () as {
+define $connect: syntax (:$args) as {
     define type: eval: car $args
     define out: cadr $args
     define close: eval: caddr $args
-    syntax e () as {
+    syntax e (:$args) as {
         define p: type
         define left: car $args
         define right: cadr $args
@@ -1762,11 +1770,11 @@ define $connect: syntax () as {
         if close: p::reader-close
     }
 }
-define $redirect: syntax () as {
+define $redirect: syntax (:$args) as {
     define chan: car $args
     define mode: cadr $args
     define mthd: caddr $args
-    syntax e () as {
+    syntax e (:$args) as {
         define c: eval e: car $args
         define f '()
         if (not: or (is-channel c) (is-pipe c)) {
@@ -1778,7 +1786,7 @@ define $redirect: syntax () as {
         if (not: is-null f): eval: cons 'f mthd
     }
 }
-define and: syntax e () as {
+define and: syntax e (:$args) as {
     define r False
     while (not: is-null: car $args) {
         set r: eval e: car $args
@@ -1789,7 +1797,7 @@ define and: syntax e () as {
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
-define backtick: syntax e () as {
+define backtick: syntax e (:$args) as {
     define p: pipe
     define r '()
     spawn {
@@ -1807,7 +1815,7 @@ define backtick: syntax e () as {
 }
 define channel-stderr: $connect channel $stderr True
 define channel-stdout: $connect channel $stdout True
-define echo: builtin () as: $stdout::write @$args
+define echo: builtin (:$args) as: $stdout::write @$args
 define for: method (l m) as {
     define r: cons '() '()
     define c r
@@ -1818,8 +1826,8 @@ define for: method (l m) as {
     }
     return: cdr r
 }
-define glob: builtin () as: return $args
-define import: syntax e () as {
+define glob: builtin (:$args) as: return $args
+define import: syntax e (:$args) as {
     define m: module: car $args
     if (or (is-null m) (is-object m)) {
         return m
@@ -1831,10 +1839,10 @@ define import: syntax e () as {
     eval e l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
-define object: syntax e () as {
+define object: syntax e (:$args) as {
     eval e: cons 'block: append $args '(clone)
 }
-define or: syntax e () as {
+define or: syntax e (:$args) as {
     define r False
     while (not: is-null: car $args) {
 	set r: eval e: car $args
@@ -1845,14 +1853,14 @@ define or: syntax e () as {
 }
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
-define printf: method () as: echo: Text::sprintf (car $args) @(cdr $args)
-define quote: syntax () as: car $args
+define printf: method (:$args) as: echo: Text::sprintf (car $args) @(cdr $args)
+define quote: syntax (:$args) as: car $args
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define source: syntax e () as {
+define source: syntax e (:$args) as {
 	define basename: eval e: car $args
 	define paths: Text::split ":" $OHPATH
 	define name basename
@@ -1872,7 +1880,7 @@ define source: syntax e () as {
 	}
 	f::reader-close
 }
-define write: method () as: $stdout::write @$args
+define write: method (:$args) as: $stdout::write @$args
 
 List::public ref: method (k x) as: car: List::tail k x
 List::public tail: method (k x) as {

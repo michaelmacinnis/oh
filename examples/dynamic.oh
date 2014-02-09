@@ -3,13 +3,13 @@
 define a "lexical"
 dynamic caller "top-level"
 
-define foo: method {
+define foo: method () as {
     echo a caller
 }
 
 foo
 
-define bar: method {
+define bar: method () as {
     define a "local"
     dynamic caller "bar"
 
@@ -18,7 +18,7 @@ define bar: method {
 
 bar
 
-define baz: method {
+define baz: method () as {
     dynamic a "nice try"
     dynamic caller "baz"
 

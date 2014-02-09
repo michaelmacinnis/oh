@@ -1,6 +1,13 @@
 /*
-Oh is a Unix shell written in Go. Like the rc shell, oh is similar in spirit
-but different in detail from other Unix shells.
+Oh is a Unix shell written in Go.  It is similar in spirit but different in
+detail from other Unix shells.
+
+Oh was motivated by the belief that many of the flaws in current Unix shells
+are not inherent but rather historical. Design choices that are clearly
+unfortunate in retrospect have been carried forward in the name of backward
+compatibility. As a re-imagining of the Unix shell, oh revisits these design
+choices while adding support for concurrent, functional and object-based
+programming.
 
 Oh extends the shell's programming language features without sacrificing the
 shell's interactive features. The following commands behave as expected:
@@ -26,12 +33,12 @@ public members are defined using the 'public' command:
         define x: integer 0
         define y: integer 0
 
-        public move: method a b {
+        public move: method (a b) as {
             set $self::x: add $self::x a
             set $self::y: add $self::y b
         }
 
-        public show: method {
+        public show: method () as {
             echo $self::x $self::y
         }
     }
@@ -52,21 +59,20 @@ first-class values. Pipes can be created with the 'pipe' command:
 
 Oh incorporates many features, including first-class functions, from the
 Scheme dialect of Lisp. Like Lisp, oh uses the same syntax for code and data.
-When data is sent across a channel it is converted to text so that it can be
+When data is sent across a pipe it is converted to text so that it can be
 sent to (or even through) external Unix programs.
 
-To compile and run oh you will need to install (./configure; make install)
-the C library libtecla:
+To compile and run oh you will need to install the C libraries ncurses and
+libtecla. On Ubuntu 12.10 do:
 
-    http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz
-
-On Ubuntu you may also need to install libncurses5-dev.
+    sudo apt-get install libncurses5-dev
+    sudo apt-get install libtecla1-dev
 
 Then go get oh:
 
     go get github.com/michaelmacinnis/oh
 
-Oh is released under an MIT-style license. See LICENSE.
+Oh is released under an MIT-style license.
 */
 package main
 

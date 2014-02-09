@@ -2,15 +2,15 @@
 
 define strict True
 
-public read-car: method: car: $self::read
+public read-car: method () as: car: $self::read
 
-define counter: method n {
+define counter: method (n) as {
     while True {
         write: set n: add n 1
     }
 }
 
-define filter: method base {
+define filter: method (base) as {
     while True {
 	define n: read-car
         if (mod n base): write n

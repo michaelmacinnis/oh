@@ -76,24 +76,24 @@ echo "Type a few words.  One on each line.  Then hit Ctrl-D:"; echo @`(cat)
 # A new object can be created "ex nihilo" with the 'object' command.
 # Private members are defined using the command 'define' and public members
 # are defined using the command 'public'.
-define point: method r s: object {
+define point: method (r s) as: object {
     define x: integer r
     define y: integer s
 
-    public get-x: method {
+    public get-x: method () as {
         return $self::x
     }
 
-    public get-y: method {
+    public get-y: method () as {
         return $self::y
    	}
 
-    public move: method a b {
+    public move: method (a b) as {
         set $self::x: add $self::x a
         set $self::y: add $self::y b
     }
 
-	public show: method {
+	public show: method () as {
         echo $self::x $self::y
     }
 }
@@ -134,7 +134,7 @@ define p: point 0 0
 p::move 3 4
 
 # New public members may be added to any object:
-p::public show: method {
+p::public show: method () as {
     echo: add "(" $self::x "," $self::y ")\n"
 }
 
