@@ -78,7 +78,7 @@ var next = map[int64]int64{
 	psSetenv:          psExecSetenv,
 }
 
-func channel(p *Process, r, w *os.File, cap int) Interface {
+func channel(p *Process, r, w *os.File, cap int) Context {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
 	var rclose Function = func(p *Process, args Cell) bool {
@@ -263,7 +263,7 @@ func number(s string) bool {
 }
 
 func rpipe(c Cell) *os.File {
-	r := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
+	r := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
 	return r.GetValue().(*Channel).ReadFd()
 }
 
@@ -326,7 +326,7 @@ clearing:
 
 		case psChangeScope:
 			p.Dynamic = nil
-			p.Lexical = Car(p.Scratch).(Interface)
+			p.Lexical = Car(p.Scratch).(Context)
 			p.Scratch = Cdr(p.Scratch)
 
 		case psEvalTopBlock:
@@ -772,7 +772,7 @@ func syntax(body, param Cell, scope *Scope) *Operative {
 }
 
 func wpipe(c Cell) *os.File {
-	w := Resolve(c.(Interface).Expose(), nil, NewSymbol("guts"))
+	w := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
 	return w.GetValue().(*Channel).WriteFd()
 }
 
@@ -965,7 +965,7 @@ func Start(i bool) {
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalElement)
 
-			p.Lexical = Car(args).(Interface)
+			p.Lexical = Car(args).(Context)
 			p.Code = Cadr(args)
 		} else {
 			p.ReplaceState(psEvalElement)
@@ -1068,7 +1068,7 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
-		o, ok := Car(args).(Interface)
+		o, ok := Car(args).(Context)
 		if !ok {
 			return p.Return(False)
 		}
@@ -1119,12 +1119,12 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-object", func(p *Process, args Cell) bool {
-		_, ok := Car(args).(Interface)
+		_, ok := Car(args).(Context)
 
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-pipe", func(p *Process, args Cell) bool {
-		o, ok := Car(args).(Interface)
+		o, ok := Car(args).(Context)
 		if !ok {
 			return p.Return(False)
 		}

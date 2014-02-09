@@ -32,15 +32,15 @@ type Cell interface {
 	Equal(c Cell) bool
 }
 
-type Interface interface {
+type Context interface {
 	Cell
 
 	Access(key Cell) *Reference
-	Copy() Interface
+	Copy() Context
 	Define(key, value Cell)
 	Expose() *Scope
 	Faces() *Env
-	Prev() Interface
+	Prev() Context
 	Public(key, value Cell)
 	Remove(key Cell) bool
 }
@@ -355,7 +355,7 @@ func Raw(c Cell) string {
 	return c.String()
 }
 
-func Resolve(s, e Interface, k *Symbol) (v *Reference) {
+func Resolve(s, e Context, k *Symbol) (v *Reference) {
 	v = nil
 
 	if v = s.Access(k); v == nil {
@@ -1219,13 +1219,16 @@ func (self Function) Equal(c Cell) bool {
 	return false
 }
 
-/* Object cell definition. (An object cell is an object's public face). */
+/*
+ * Object cell definition.
+ * (An object cell allows access to a context's public members).
+ */
 
 type Object struct {
 	*Scope
 }
 
-func NewObject(v Interface) *Object {
+func NewObject(v Context) *Object {
 	return &Object{v.Expose()}
 }
 
@@ -1240,7 +1243,7 @@ func (self *Object) Equal(c Cell) bool {
 /* Object-specific functions */
 
 func (self *Object) Access(key Cell) *Reference {
-	var obj Interface
+	var obj Context
 	for obj = self.Scope; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().prev.Access(key); value != nil {
 			return value
@@ -1250,7 +1253,7 @@ func (self *Object) Access(key Cell) *Reference {
 	return nil
 }
 
-func (self *Object) Copy() Interface {
+func (self *Object) Copy() Context {
 	return &Object{&Scope{self.Scope.env.Copy(), self.Scope.prev}}
 }
 
@@ -1262,7 +1265,7 @@ func (self *Object) Faces() *Env {
 	return self.env.prev
 }
 
-func (self *Object) Prev() Interface {
+func (self *Object) Prev() Context {
 	return self.prev
 }
 
@@ -1299,11 +1302,11 @@ func (self *Operative) Equal(c Cell) bool {
 type Process struct {
 	Code           Cell
 	Dynamic        *Scope
-	Lexical        Interface
+	Lexical        Context
 	Scratch, Stack Cell
 }
 
-func NewProcess(state int64, dynamic, lexical Interface) *Process {
+func NewProcess(state int64, dynamic, lexical Context) *Process {
 	p := &Process{Null, nil, nil, Null, List(NewInteger(state))}
 
 	p.NewScope(dynamic, lexical)
@@ -1356,7 +1359,7 @@ func (self *Process) GetState() int64 {
 	return Car(self.Stack).(Atom).Int()
 }
 
-func (self *Process) NewScope(dynamic, lexical Interface) {
+func (self *Process) NewScope(dynamic, lexical Context) {
 	self.Dynamic = NewDynamicScope(dynamic)
 	self.Lexical = NewLexicalScope(lexical)
 }
@@ -1436,7 +1439,7 @@ func (self *Process) RestoreState() {
 
 	if f&SaveLexical > 0 {
 		self.Stack = Cdr(self.Stack)
-		self.Lexical = Car(self.Stack).(Interface)
+		self.Lexical = Car(self.Stack).(Context)
 	}
 
 	if f&SaveDynamic > 0 {
@@ -1461,19 +1464,19 @@ func (self *Process) Return(rv Cell) bool {
 
 /*
  * Scope cell definition.
- * (A scope cell is an object's public + private face).
+ * (A scope cell allows access to a context's public and private members).
  */
 
 type Scope struct {
 	env  *Env
-	prev Interface
+	prev Context
 }
 
-func NewDynamicScope(prev Interface) *Scope {
+func NewDynamicScope(prev Context) *Scope {
 	return &Scope{NewEnv(nil), prev}
 }
 
-func NewLexicalScope(prev Interface) *Scope {
+func NewLexicalScope(prev Context) *Scope {
 	return &Scope{NewEnv(NewEnv(nil)), prev}
 }
 
@@ -1492,7 +1495,7 @@ func (self *Scope) Equal(c Cell) bool {
 /* Scope-specific functions */
 
 func (self *Scope) Access(key Cell) *Reference {
-	var obj Interface
+	var obj Context
 	for obj = self; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
 			return value
@@ -1502,7 +1505,7 @@ func (self *Scope) Access(key Cell) *Reference {
 	return nil
 }
 
-func (self *Scope) Copy() Interface {
+func (self *Scope) Copy() Context {
 	return &Scope{self.env.Copy(), self.prev}
 }
 
@@ -1514,7 +1517,7 @@ func (self *Scope) Faces() *Env {
 	return self.env
 }
 
-func (self *Scope) Prev() Interface {
+func (self *Scope) Prev() Context {
 	return self.prev
 }
 
