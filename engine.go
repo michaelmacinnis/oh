@@ -514,24 +514,27 @@ clearing:
 			continue
 
 		case psBuiltin, psMethod, psSyntax:
-			param := Null
-			for !IsCons(Car(p.Code)) {
-				param = Cons(Car(p.Code), param)
+			context := Null
+			param := Car(p.Code)
+			for Raw(Cadr(p.Code)) != "as" {
+				context = param
+				param = Cadr(p.Code)
 				p.Code = Cdr(p.Code)
 			}
 
+			block := Cddr(p.Code)
+			scope := p.Lexical.Expose()
+
+			if context != Null {
+				param = Cons(context, param)
+			}
+
 			if state == psBuiltin {
-				SetCar(
-					p.Scratch,
-					function(p.Code, Reverse(param), p.Lexical.Expose()))
+				SetCar(p.Scratch, function(block, param, scope))
 			} else if state == psMethod {
-				SetCar(
-					p.Scratch,
-					method(p.Code, Reverse(param), p.Lexical.Expose()))
+				SetCar(p.Scratch, method(block, param, scope))
 			} else {
-				SetCar(
-					p.Scratch,
-					syntax(p.Code, Reverse(param), p.Lexical.Expose()))
+				SetCar(p.Scratch, syntax(block, param, scope))
 			}
 
 		case psDefine, psPublic:
@@ -1712,39 +1715,39 @@ func Start(i bool) {
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`
-define caar: method l: car: car l
-define cadr: method l: car: cdr l
-define cdar: method l: cdr: car l
-define cddr: method l: cdr: cdr l
-define caaar: method l: car: caar l
-define caadr: method l: car: cadr l
-define cadar: method l: car: cdar l
-define caddr: method l: car: cddr l
-define cdaar: method l: cdr: caar l
-define cdadr: method l: cdr: cadr l
-define cddar: method l: cdr: cdar l
-define cdddr: method l: cdr: cddr l
-define caaaar: method l: caar: caar l
-define caaadr: method l: caar: cadr l
-define caadar: method l: caar: cdar l
-define caaddr: method l: caar: cddr l
-define cadaar: method l: cadr: caar l
-define cadadr: method l: cadr: cadr l
-define caddar: method l: cadr: cdar l
-define cadddr: method l: cadr: cddr l
-define cdaaar: method l: cdar: caar l
-define cdaadr: method l: cdar: cadr l
-define cdadar: method l: cdar: cdar l
-define cdaddr: method l: cdar: cddr l
-define cddaar: method l: cddr: caar l
-define cddadr: method l: cddr: cadr l
-define cdddar: method l: cddr: cdar l
-define cddddr: method l: cddr: cddr l
-define $connect: syntax {
+define caar: method (l) as: car: car l
+define cadr: method (l) as: car: cdr l
+define cdar: method (l) as: cdr: car l
+define cddr: method (l) as: cdr: cdr l
+define caaar: method (l) as: car: caar l
+define caadr: method (l) as: car: cadr l
+define cadar: method (l) as: car: cdar l
+define caddr: method (l) as: car: cddr l
+define cdaar: method (l) as: cdr: caar l
+define cdadr: method (l) as: cdr: cadr l
+define cddar: method (l) as: cdr: cdar l
+define cdddr: method (l) as: cdr: cddr l
+define caaaar: method (l) as: caar: caar l
+define caaadr: method (l) as: caar: cadr l
+define caadar: method (l) as: caar: cdar l
+define caaddr: method (l) as: caar: cddr l
+define cadaar: method (l) as: cadr: caar l
+define cadadr: method (l) as: cadr: cadr l
+define caddar: method (l) as: cadr: cdar l
+define cadddr: method (l) as: cadr: cddr l
+define cdaaar: method (l) as: cdar: caar l
+define cdaadr: method (l) as: cdar: cadr l
+define cdadar: method (l) as: cdar: cdar l
+define cdaddr: method (l) as: cdar: cddr l
+define cddaar: method (l) as: cddr: caar l
+define cddadr: method (l) as: cddr: cadr l
+define cdddar: method (l) as: cddr: cdar l
+define cddddr: method (l) as: cddr: cddr l
+define $connect: syntax () as {
     define type: eval: car $args
     define out: cadr $args
     define close: eval: caddr $args
-    syntax e {
+    syntax e () as {
         define p: type
         define left: car $args
         define right: cadr $args
@@ -1759,11 +1762,11 @@ define $connect: syntax {
         if close: p::reader-close
     }
 }
-define $redirect: syntax {
+define $redirect: syntax () as {
     define chan: car $args
     define mode: cadr $args
     define mthd: caddr $args
-    syntax e {
+    syntax e () as {
         define c: eval e: car $args
         define f '()
         if (not: or (is-channel c) (is-pipe c)) {
@@ -1775,7 +1778,7 @@ define $redirect: syntax {
         if (not: is-null f): eval: cons 'f mthd
     }
 }
-define and: syntax e {
+define and: syntax e () as {
     define r False
     while (not: is-null: car $args) {
         set r: eval e: car $args
@@ -1786,7 +1789,7 @@ define and: syntax e {
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
-define backtick: syntax e {
+define backtick: syntax e () as {
     define p: pipe
     define r '()
     spawn {
@@ -1804,8 +1807,8 @@ define backtick: syntax e {
 }
 define channel-stderr: $connect channel $stderr True
 define channel-stdout: $connect channel $stdout True
-define echo: builtin: $stdout::write @$args
-define for: method l m {
+define echo: builtin () as: $stdout::write @$args
+define for: method (l m) as {
     define r: cons '() '()
     define c r
     while (not: is-null l) {
@@ -1815,8 +1818,8 @@ define for: method l m {
     }
     return: cdr r
 }
-define glob: builtin: return $args
-define import: syntax e {
+define glob: builtin () as: return $args
+define import: syntax e () as {
     define m: module: car $args
     if (or (is-null m) (is-object m)) {
         return m
@@ -1827,11 +1830,11 @@ define import: syntax e {
     set l: list 'Root::define m l
     eval e l
 }
-define is-text: method t: or (is-string t) (is-symbol t)
-define object: syntax e {
+define is-text: method (t) as: or (is-string t) (is-symbol t)
+define object: syntax e () as {
     eval e: cons 'block: append $args '(clone)
 }
-define or: syntax e {
+define or: syntax e () as {
     define r False
     while (not: is-null: car $args) {
 	set r: eval e: car $args
@@ -1842,14 +1845,14 @@ define or: syntax e {
 }
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
-define printf: method: echo: Text::sprintf (car $args) @(cdr $args)
-define quote: syntax: car $args
-define read: builtin: $stdin::read
-define readline: builtin: $stdin::readline
+define printf: method () as: echo: Text::sprintf (car $args) @(cdr $args)
+define quote: syntax () as: car $args
+define read: builtin () as: $stdin::read
+define readline: builtin () as: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define source: syntax e {
+define source: syntax e () as {
 	define basename: eval e: car $args
 	define paths: Text::split ":" $OHPATH
 	define name basename
@@ -1869,10 +1872,10 @@ define source: syntax e {
 	}
 	f::reader-close
 }
-define write: method: $stdout::write @$args
+define write: method () as: $stdout::write @$args
 
-List::public ref: method k x: car: List::tail k x
-List::public tail: method k x {
+List::public ref: method (k x) as: car: List::tail k x
+List::public tail: method (k x) as {
     if k {
         List::tail (sub k 1): cdr x
     } else {
