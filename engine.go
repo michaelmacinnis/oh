@@ -1751,14 +1751,11 @@ define cddaar: method (l) as: cddr: caar l
 define cddadr: method (l) as: cddr: cadr l
 define cdddar: method (l) as: cddr: cdar l
 define cddddr: method (l) as: cddr: cddr l
-define $connect: syntax (:$args) as {
-    define type: eval: car $args
-    define out: cadr $args
-    define close: eval: caddr $args
-    syntax e (:$args) as {
+define $connect: syntax (type out close) as {
+    set type: eval type
+    set close: eval close
+    syntax e (left right) as {
         define p: type
-        define left: car $args
-        define right: cadr $args
         spawn {
             eval: list 'dynamic out 'p
             eval e left
@@ -1770,39 +1767,36 @@ define $connect: syntax (:$args) as {
         if close: p::reader-close
     }
 }
-define $redirect: syntax (:$args) as {
-    define chan: car $args
-    define mode: cadr $args
-    define mthd: caddr $args
-    syntax e (:$args) as {
-        define c: eval e: car $args
+define $redirect: syntax (chan mode mthd) as {
+    syntax e (c cmd) as {
+        define c: eval e c
         define f '()
         if (not: or (is-channel c) (is-pipe c)) {
             set f: open c mode
             set c f
         }
         eval: list 'dynamic chan 'c
-        eval e: cadr $args
+        eval e cmd
         if (not: is-null f): eval: cons 'f mthd
     }
 }
-define and: syntax e (:$args) as {
+define and: syntax e (:lst) as {
     define r False
-    while (not: is-null: car $args) {
-        set r: eval e: car $args
+    while (not: is-null: car lst) {
+        set r: eval e: car lst
         if (not r): return r
-        set $args: cdr $args
+        set lst: cdr lst
     }
     return r
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
-define backtick: syntax e (:$args) as {
+define backtick: syntax e (cmd) as {
     define p: pipe
     define r '()
     spawn {
         dynamic $stdout p
-        eval e: car $args
+        eval e cmd
         p::writer-close
     }
     define l: p::readline
@@ -1815,7 +1809,7 @@ define backtick: syntax e (:$args) as {
 }
 define channel-stderr: $connect channel $stderr True
 define channel-stdout: $connect channel $stdout True
-define echo: builtin (:$args) as: $stdout::write @$args
+define echo: builtin (:args) as: $stdout::write @args
 define for: method (l m) as {
     define r: cons '() '()
     define c r
@@ -1826,42 +1820,42 @@ define for: method (l m) as {
     }
     return: cdr r
 }
-define glob: builtin (:$args) as: return $args
-define import: syntax e (:$args) as {
-    define m: module: car $args
+define glob: builtin (:args) as: return args
+define import: syntax e (name) as {
+    define m: module name
     if (or (is-null m) (is-object m)) {
         return m
     }
 
-    define l: list 'source: car $args
+    define l: list 'source name
     set l: cons 'object: cons l '()
     set l: list 'Root::define m l
     eval e l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
-define object: syntax e (:$args) as {
-    eval e: cons 'block: append $args '(clone)
+define object: syntax e (:body) as {
+    eval e: cons 'block: append body '(clone)
 }
-define or: syntax e (:$args) as {
+define or: syntax e (:lst) as {
     define r False
-    while (not: is-null: car $args) {
-	set r: eval e: car $args
+    while (not: is-null: car lst) {
+	set r: eval e: car lst
         if r: return r
-        set $args: cdr $args
+        set lst: cdr lst 
     }
     return r
 }
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
-define printf: method (:$args) as: echo: Text::sprintf (car $args) @(cdr $args)
-define quote: syntax (:$args) as: car $args
+define printf: method (:args) as: echo: Text::sprintf (car args) @(cdr args)
+define quote: syntax (:args) as: car args
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define source: syntax e (:$args) as {
-	define basename: eval e: car $args
+define source: syntax e (name) as {
+	define basename: eval e name
 	define paths: Text::split ":" $OHPATH
 	define name basename
 
@@ -1880,7 +1874,7 @@ define source: syntax e (:$args) as {
 	}
 	f::reader-close
 }
-define write: method (:$args) as: $stdout::write @$args
+define write: method (:args) as: $stdout::write @args
 
 List::public ref: method (k x) as: car: List::tail k x
 List::public tail: method (k x) as {
