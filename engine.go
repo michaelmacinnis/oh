@@ -1780,7 +1780,7 @@ define $redirect: syntax (chan mode mthd) as {
         if (not: is-null f): eval: cons 'f mthd
     }
 }
-define and: syntax e (:lst) as {
+define and: syntax e (: lst) as {
     define r False
     while (not: is-null: car lst) {
         set r: e::eval: car lst
@@ -1809,7 +1809,7 @@ define backtick: syntax e (cmd) as {
 }
 define channel-stderr: $connect channel $stderr True
 define channel-stdout: $connect channel $stdout True
-define echo: builtin (:args) as: $stdout::write @args
+define echo: builtin (: args) as: $stdout::write @args
 define for: method (l m) as {
     define r: cons '() '()
     define c r
@@ -1820,7 +1820,7 @@ define for: method (l m) as {
     }
     return: cdr r
 }
-define glob: builtin (:args) as: return args
+define glob: builtin (: args) as: return args
 define import: syntax e (name) as {
     define m: module name
     if (or (is-null m) (is-object m)) {
@@ -1833,10 +1833,10 @@ define import: syntax e (name) as {
     e::eval l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
-define object: syntax e (:body) as {
+define object: syntax e (: body) as {
     e::eval: cons 'block: append body '(clone)
 }
-define or: syntax e (:lst) as {
+define or: syntax e (: lst) as {
     define r False
     while (not: is-null: car lst) {
 	set r: e::eval: car lst
@@ -1847,8 +1847,8 @@ define or: syntax e (:lst) as {
 }
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
-define printf: method (:args) as: echo: Text::sprintf (car args) @(cdr args)
-define quote: syntax (:args) as: car args
+define printf: method (: args) as: echo: Text::sprintf (car args) @(cdr args)
+define quote: syntax (: args) as: car args
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
@@ -1874,7 +1874,7 @@ define source: syntax e (name) as {
 	}
 	f::reader-close
 }
-define write: method (:args) as: $stdout::write @args
+define write: method (: args) as: $stdout::write @args
 
 List::public ref: method (k x) as: car: List::tail k x
 List::public tail: method (k x) as {
