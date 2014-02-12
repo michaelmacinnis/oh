@@ -527,10 +527,14 @@ clearing:
 		case psBuiltin, psMethod, psSyntax:
 			context := Null
 			param := Car(p.Code)
-			for Raw(Cadr(p.Code)) != "as" {
+			for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
 				context = param
 				param = Cadr(p.Code)
 				p.Code = Cdr(p.Code)
+			}
+
+			if p.Code == Null {
+				panic("expected 'as'")
 			}
 
 			block := Cddr(p.Code)
@@ -971,19 +975,15 @@ func Start(i bool) {
 	s.DefineMethod("cons", func(p *Process, args Cell) bool {
 		return p.Return(Cons(Car(args), Cadr(args)))
 	})
-	s.DefineMethod("eval", func(p *Process, args Cell) bool {
-		if Cdr(args) != Null {
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalElement)
-
-			p.Lexical = Car(args).(Context)
-			p.Code = Cadr(args)
-		} else {
-			p.ReplaceState(psEvalElement)
-
-			p.Code = Car(args)
+	s.PublicMethod("eval", func(p *Process, args Cell) bool {
+		scope := Car(p.Scratch).(*Applicative).Self.Expose()
+		p.RemoveState()
+		if p.Lexical != scope {
+			p.NewState(SaveLexical)
+			p.Lexical = scope
 		}
-
+		p.NewState(psEvalElement)
+		p.Code = Car(args)
 		p.Scratch = Cdr(p.Scratch)
 
 		return true
@@ -1758,32 +1758,32 @@ define $connect: syntax (type out close) as {
         define p: type
         spawn {
             eval: list 'dynamic out 'p
-            eval e left
+            e::eval left
             if close: p::writer-close
         }
 
         dynamic $stdin p
-        eval e right
+        e::eval right
         if close: p::reader-close
     }
 }
 define $redirect: syntax (chan mode mthd) as {
     syntax e (c cmd) as {
-        define c: eval e c
+        define c: e::eval c
         define f '()
         if (not: or (is-channel c) (is-pipe c)) {
             set f: open c mode
             set c f
         }
         eval: list 'dynamic chan 'c
-        eval e cmd
+        e::eval cmd
         if (not: is-null f): eval: cons 'f mthd
     }
 }
 define and: syntax e (:lst) as {
     define r False
     while (not: is-null: car lst) {
-        set r: eval e: car lst
+        set r: e::eval: car lst
         if (not r): return r
         set lst: cdr lst
     }
@@ -1796,7 +1796,7 @@ define backtick: syntax e (cmd) as {
     define r '()
     spawn {
         dynamic $stdout p
-        eval e cmd
+        e::eval cmd
         p::writer-close
     }
     define l: p::readline
@@ -1830,16 +1830,16 @@ define import: syntax e (name) as {
     define l: list 'source name
     set l: cons 'object: cons l '()
     set l: list 'Root::define m l
-    eval e l
+    e::eval l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
 define object: syntax e (:body) as {
-    eval e: cons 'block: append body '(clone)
+    e::eval: cons 'block: append body '(clone)
 }
 define or: syntax e (:lst) as {
     define r False
     while (not: is-null: car lst) {
-	set r: eval e: car lst
+	set r: e::eval: car lst
         if r: return r
         set lst: cdr lst 
     }
@@ -1855,7 +1855,7 @@ define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define source: syntax e (name) as {
-	define basename: eval e name
+	define basename: e::eval name
 	define paths: Text::split ":" $OHPATH
 	define name basename
 
@@ -1869,7 +1869,7 @@ define source: syntax e (name) as {
 	define f: open name "r-"
 	define l: f::read
 	while l {
-		eval e l
+		e::eval l
 		set l: f::read
 	}
 	f::reader-close
