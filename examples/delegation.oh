@@ -1,7 +1,7 @@
 #!/usr/bin/env oh
 
 # Trait. All objects 'inherit' this method. 
-public me: method () as: echo $self::name
+public me: method self () as: echo self::name
 
 define x: object {
     define name "x"

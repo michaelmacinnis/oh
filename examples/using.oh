@@ -80,21 +80,21 @@ define point: method (r s) as: object {
     define x: integer r
     define y: integer s
 
-    public get-x: method () as {
-        return $self::x
+    public get-x: method self () as {
+        return self::x
     }
 
-    public get-y: method () as {
-        return $self::y
+    public get-y: method self () as {
+        return self::y
    	}
 
-    public move: method (a b) as {
-        set $self::x: add $self::x a
-        set $self::y: add $self::y b
+    public move: method self (a b) as {
+        set self::x: add self::x a
+        set self::y: add self::y b
     }
 
-	public show: method () as {
-        echo $self::x $self::y
+	public show: method self () as {
+        echo self::x self::y
     }
 }
 
@@ -134,8 +134,8 @@ define p: point 0 0
 p::move 3 4
 
 # New public members may be added to any object:
-p::public show: method () as {
-    echo: add "(" $self::x "," $self::y ")\n"
+p::public show: method self () as {
+    echo: add "(" self::x "," self::y ")\n"
 }
 
 # Public methods may access private members.  This means it is possible to

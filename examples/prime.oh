@@ -2,7 +2,7 @@
 
 define strict True
 
-public read-car: method () as: car: $self::read
+public read-car: method self () as: car: self::read
 
 define counter: method (n) as {
     while True {

@@ -366,14 +366,19 @@ clearing:
 			p.NewScope(p.Dynamic, m.Func.Lexical)
 
 			param := m.Func.Param
-			for args != Null && param != Null && IsAtom(Car(param)) {
-				p.Lexical.Public(Car(param), Car(args))
-				args, param = Cdr(args), Cdr(param)
+			if param != Null {
+				if Car(param) != Null {
+					p.Lexical.Public(Car(param), s)
+				}
+				param = Cdr(param)
+				for args != Null && param != Null && IsAtom(Car(param)) {
+					p.Lexical.Public(Car(param), Car(args))
+					args, param = Cdr(args), Cdr(param)
+				}
+				if IsCons(Car(param)) {
+					p.Lexical.Public(Caar(param), args)
+				}
 			}
-			if IsCons(Car(param)) {
-				p.Lexical.Public(Caar(param), args)
-			}
-			p.Lexical.Public(NewSymbol("$self"), s)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
 
@@ -417,7 +422,6 @@ clearing:
 					p.Lexical.Public(Caar(param), args)
 				}
 			}
-			p.Lexical.Public(NewSymbol("$self"), s)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
 
@@ -549,8 +553,10 @@ clearing:
 			scope := p.Lexical.Expose()
 
 			if state == psBuiltin {
+				param = Cons(context, param)
 				SetCar(p.Scratch, function(block, param, scope))
 			} else if state == psMethod {
+				param = Cons(context, param)
 				SetCar(p.Scratch, method(block, param, scope))
 			} else {
 				param = Cons(context, param)
