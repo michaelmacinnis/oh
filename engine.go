@@ -1862,7 +1862,7 @@ define or: syntax e (: lst) as {
 define pipe-stderr: $connect pipe $stderr True
 define pipe-stdout: $connect pipe $stdout True
 define printf: method (: args) as: echo: Text::sprintf (car args) @(cdr args)
-define quote: syntax (: args) as: car args
+define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
