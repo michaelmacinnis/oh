@@ -233,6 +233,14 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		}
 	} else if p.GetState() == psEvalElementBC && !IsSimple(c.GetValue()) {
 		p.Scratch = Cons(sym, p.Scratch)
+        } else if a, ok := c.GetValue().(*Applicative); ok &&
+                a.Self != nil && a.Self != p.Lexical.Expose() {
+		p.Scratch = Cons(NewApplicative(a.Func, p.Lexical.Expose()),
+				 p.Scratch)
+        } else if a, ok := c.GetValue().(*Operative); ok &&
+                a.Self != nil && a.Self != p.Lexical.Expose() {
+		p.Scratch = Cons(NewOperative(a.Func, p.Lexical.Expose()),
+				 p.Scratch)
 	} else {
 		p.Scratch = Cons(c.GetValue(), p.Scratch)
 	}
@@ -385,9 +393,9 @@ clearing:
 
 		case psExecOperative:
 			args := p.Code
-			env := p.Lexical
 
 			m := Car(p.Scratch).(*Operative)
+			s := m.Self
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
@@ -398,7 +406,7 @@ clearing:
 			param := m.Func.Param
 			if param != Null {
 				if Car(param) != Null {
-					p.Lexical.Public(Car(param), env)
+					p.Lexical.Public(Car(param), s)
 				}
 				param = Cdr(param)
 				for args != Null && param != Null && IsAtom(Car(param)) {
@@ -409,7 +417,7 @@ clearing:
 					p.Lexical.Public(Caar(param), args)
 				}
 			}
-			p.Lexical.Public(NewSymbol("$self"), m.Self)
+			p.Lexical.Public(NewSymbol("$self"), s)
 			p.Lexical.Public(NewSymbol("return"),
 				p.Continuation(psReturn))
 

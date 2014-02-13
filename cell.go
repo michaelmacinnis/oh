@@ -364,9 +364,6 @@ func Resolve(s, e Context, k *Symbol) (v *Reference) {
 		}
 
 		v = e.Access(k)
-	} else if m, ok := v.GetValue().(*Applicative); ok &&
-		m.Self != nil && m.Self != s.Expose() {
-		v = NewReference(NewApplicative(m.Func, s.Expose()))
 	}
 
 	return v
