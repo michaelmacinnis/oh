@@ -375,17 +375,17 @@ An object can be created explicitly with the object command.
 		define x: integer r
 		define y: integer s
 
-		public get-x: method {
-			return $self::x
+		public get-x: method self () as {
+			return self::x
 		}
 
-		public get-y: method {
-			return $self::y
+		public get-y: method self () as {
+			return self::y
 		}
 
-		public move: method a b {
-			set $self::x: add $self::x a
-			set $self::y: add $self::y b
+		public move: method self (a b) as {
+			set self::x: add self::x a
+			set self::y: add self::y b
 		}
 	}
 
@@ -408,8 +408,8 @@ Dynamic communication patterns are enabled by the fact that public slots
 can be updated or added to any object, at runtime.
 
 \begin{lstlisting}
-	p::public show: method {
-		echo: add "(" $self::x "," $self::y ")\n"
+	p::public show: method self () as {
+		echo: add "(" self::x "," self::y ")\n"
 	}
 \end{lstlisting}
 
@@ -478,7 +478,7 @@ prime number. These processes are strung together like beads on a string.
 \begin{lstlisting}
 define strict true
 
-public read-car: method: car: $self::read
+public read-car: method self () as: car: self::read
 
 define counter: method n {
     while true {

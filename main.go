@@ -33,13 +33,13 @@ public members are defined using the 'public' command:
         define x: integer 0
         define y: integer 0
 
-        public move: method (a b) as {
-            set $self::x: add $self::x a
-            set $self::y: add $self::y b
+        public move: method self (a b) as {
+            set self::x: add self::x a
+            set self::y: add self::y b
         }
 
-        public show: method () as {
-            echo $self::x $self::y
+        public show: method self () as {
+            echo self::x self::y
         }
     }
 
