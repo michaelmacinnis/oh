@@ -189,16 +189,16 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Env)(unsafe.Pointer(addr))
     case kind == "function":
         $$.c = (*Function)(unsafe.Pointer(addr))
-    case kind == "binding":
-        $$.c = (*Binding)(unsafe.Pointer(addr))
+    case kind == "bound":
+        $$.c = (*Bound)(unsafe.Pointer(addr))
     case kind == "object":
         $$.c = (*Object)(unsafe.Pointer(addr))
     case kind == "process":
         $$.c = (*Process)(unsafe.Pointer(addr))
     case kind == "scope":
         $$.c = (*Scope)(unsafe.Pointer(addr))
-    case kind == "unbound":
-        $$.c = (*Unbound)(unsafe.Pointer(addr))
+    case kind == "reference":
+        $$.c = (*Reference)(unsafe.Pointer(addr))
 
     default:
         $$.c = Null

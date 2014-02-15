@@ -840,16 +840,16 @@ yydefault:
 	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
 	    case kind == "function":
 	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
-	    case kind == "binding":
-	        yyVAL.c = (*Binding)(unsafe.Pointer(addr))
+	    case kind == "bound":
+	        yyVAL.c = (*Bound)(unsafe.Pointer(addr))
 	    case kind == "object":
 	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
 	    case kind == "process":
 	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
 	    case kind == "scope":
 	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
-	    case kind == "unbound":
-	        yyVAL.c = (*Unbound)(unsafe.Pointer(addr))
+	    case kind == "reference":
+	        yyVAL.c = (*Reference)(unsafe.Pointer(addr))
 	
 	    default:
 	        yyVAL.c = Null

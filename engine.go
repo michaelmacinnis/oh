@@ -67,6 +67,7 @@ const (
 var block0 Cell
 var proc0 *Process
 
+var ext Cell
 var interactive bool
 var irq chan os.Signal
 var next = map[int64]int64{
@@ -190,14 +191,14 @@ func external(p *Process, args Cell) bool {
 	return p.Return(NewStatus(status))
 }
 
-func function(body, param Cell, scope *Scope) *Binding {
-	return NewBinding(NewBuiltin(body, param, scope), nil)
+func function(body, param Cell, scope *Scope) Binding {
+	return NewBound(NewBuiltin(body, param, scope), nil)
 }
 
 func head(p *Process) bool {
 	switch t := Car(p.Scratch).(type) {
-	case *Binding:
-		switch r := t.Ref.(type) {
+	case Binding:
+		switch r := t.Ref().(type) {
 		case *Builtin, *Method:
 			switch b := r.Body().(type) {
 			case Function:
@@ -209,16 +210,20 @@ func head(p *Process) bool {
 
 			default:
 				p.ReplaceState(psExecApplicative)
+				if (t.Self() == nil) {
+					p.NewState(psEvalArgumentsBC)
+					return false
+				}
+
 			}
 
 		case *Syntax:
 			p.ReplaceState(psExecOperative)
 			return true
 		}
-
-		return false
 	}
 
+	p.NewState(psEvalArguments)
 	return false
 }
 
@@ -233,9 +238,9 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		}
 	} else if p.GetState() == psEvalElementBC && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
-        } else if a, ok := c.Get().(*Binding); ok &&
-                a.Self != nil && a.Self != p.Lexical.Expose() {
-		p.Scratch = Cons(NewBinding(a.Ref, p.Lexical.Expose()),
+        } else if a, ok := c.Get().(Binding); ok &&
+                a.Self() != nil && a.Self() != p.Lexical.Expose() {
+		p.Scratch = Cons(NewBound(a.Ref(), p.Lexical.Expose()),
 				 p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
@@ -244,8 +249,8 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	return true, ""
 }
 
-func method(body, param Cell, scope *Scope) *Binding {
-	return NewBinding(NewMethod(body, param, scope), scope)
+func method(body, param Cell, scope *Scope) Binding {
+	return NewBound(NewMethod(body, param, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -348,8 +353,8 @@ clearing:
 		case psExecApplicative:
 			args := p.Arguments()
 
-			m := Car(p.Scratch).(*Binding)
-			s := m.Self
+			m := Car(p.Scratch).(Binding)
+			s := m.Self()
 			if s == nil {
 				args = expand(args)
 				s = p.Lexical.Expose()
@@ -358,10 +363,10 @@ clearing:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Ref.Body()
-			p.NewScope(p.Dynamic, m.Ref.Lexical())
+			p.Code = m.Ref().Body()
+			p.NewScope(p.Dynamic, m.Ref().Lexical())
 
-			param := m.Ref.Formal()
+			param := m.Ref().Formal()
 			if param != Null {
 				if Car(param) != Null {
 					p.Lexical.Public(Car(param), s)
@@ -383,28 +388,28 @@ clearing:
 		case psExecFunction:
 			args := p.Arguments()
 
-			m := Car(p.Scratch).(*Binding)
-			if m.Self == nil {
+			m := Car(p.Scratch).(Binding)
+			if m.Self() == nil {
 				args = expand(args)
 			}
 
-			if m.Ref.Body().(Function)(p, args) {
+			if m.Ref().Body().(Function)(p, args) {
 				continue
 			}
 
 		case psExecOperative:
 			args := p.Code
 
-			m := Car(p.Scratch).(*Binding)
-			s := m.Self
+			m := Car(p.Scratch).(Binding)
+			s := m.Self()
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Ref.Body()
-			p.NewScope(p.Dynamic, m.Ref.Lexical())
+			p.Code = m.Ref().Body()
+			p.NewScope(p.Dynamic, m.Ref().Lexical())
 
-			param := m.Ref.Formal()
+			param := m.Ref().Formal()
 			if param != Null {
 				if Car(param) != Null {
 					p.Lexical.Public(Car(param), s)
@@ -461,9 +466,7 @@ clearing:
 
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
-				m := NewBuiltin(Function(external), Null, p.Lexical.Expose())
-				a := NewBinding(m, nil)
-				p.Scratch = Cons(a, p.Scratch)
+				p.Scratch = Cons(ext, p.Scratch)
 
 				p.ReplaceState(psExecFunction)
 				p.NewState(psEvalArgumentsBC)
@@ -471,14 +474,6 @@ clearing:
 			default:
 				if head(p) {
 					continue
-				}
-
-				state = p.GetState()
-				if state == psExecApplicative &&
-					Car(p.Scratch).(*Binding).Self == nil {
-					p.NewState(psEvalArgumentsBC)
-				} else {
-					p.NewState(psEvalArguments)
 				}
 			}
 
@@ -564,7 +559,7 @@ clearing:
 
 			p.RemoveState()
 
-			l := Car(p.Scratch).(*Binding).Self
+			l := Car(p.Scratch).(Binding).Self()
 			if p.Lexical != l {
 				p.NewState(SaveLexical)
 				p.Lexical = l
@@ -688,9 +683,9 @@ clearing:
 		case psReturn:
 			p.Code = Car(p.Code)
 
-			m := Car(p.Scratch).(*Binding)
-			p.Scratch = Car(m.Ref.Formal())
-			p.Stack = Cadr(m.Ref.Formal())
+			m := Car(p.Scratch).(Binding)
+			p.Scratch = Car(m.Ref().Formal())
+			p.Stack = Cadr(m.Ref().Formal())
 
 			p.NewState(psEvalElement)
 			continue
@@ -792,8 +787,8 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func syntax(body, param Cell, scope *Scope) *Binding {
-	return NewBinding(NewSyntax(body, param, scope), scope)
+func syntax(body, param Cell, scope *Scope) Binding {
+	return NewBound(NewSyntax(body, param, scope), scope)
 }
 
 func wpipe(c Cell) *os.File {
@@ -837,6 +832,8 @@ func ExitStatus() int {
 
 func Start(i bool) {
 	interactive = i
+
+	ext = NewBound(NewBuiltin(Function(external), Null, nil), nil)
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)
@@ -926,23 +923,23 @@ func Start(i bool) {
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(*Binding).Self.Expose()
+		o := Car(p.Scratch).(Binding).Self().Expose()
 
 		return p.Return(NewObject(NewLexicalScope(o)))
 	})
 	s.PublicMethod("clone", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(*Binding).Self.Expose()
+		o := Car(p.Scratch).(Binding).Self().Expose()
 
 		return p.Return(NewObject(o.Copy()))
 	})
 	s.PublicMethod("exists", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(*Binding).Self
+		l := Car(p.Scratch).(Binding).Self()
 		c := Resolve(l, p.Dynamic, NewSymbol(Raw(Car(args))))
 
 		return p.Return(NewBoolean(c != nil))
 	})
 	s.PublicMethod("unset", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(*Binding).Self
+		l := Car(p.Scratch).(Binding).Self()
 		r := l.Remove(NewSymbol(Raw(Car(args))))
 
 		return p.Return(NewBoolean(r))
@@ -965,17 +962,6 @@ func Start(i bool) {
 
 		return p.Return(Append(l, argv...))
 	})
-	s.DefineMethod("apply", func(p *Process, args Cell) bool {
-		SetCar(p.Scratch, Car(args))
-		head(p)
-
-		p.Scratch = Cons(nil, p.Scratch)
-		for args = Cdr(args); args != Null; args = Cdr(args) {
-			p.Scratch = Cons(Car(args), p.Scratch)
-		}
-
-		return true
-	})
 	s.DefineMethod("car", func(p *Process, args Cell) bool {
 		return p.Return(Caar(args))
 	})
@@ -986,7 +972,7 @@ func Start(i bool) {
 		return p.Return(Cons(Car(args), Cadr(args)))
 	})
 	s.PublicMethod("eval", func(p *Process, args Cell) bool {
-		scope := Car(p.Scratch).(*Binding).Self.Expose()
+		scope := Car(p.Scratch).(Binding).Self().Expose()
 		p.RemoveState()
 		if p.Lexical != scope {
 			p.NewState(SaveLexical)
@@ -1089,9 +1075,9 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-builtin", func(p *Process, args Cell) bool {
-		b, ok := Car(args).(*Binding)
+		b, ok := Car(args).(Binding)
 		if ok {
-			_, ok = b.Ref.(*Builtin)
+			_, ok = b.Ref().(*Builtin)
 			ok = !ok
 		}
 
@@ -1134,9 +1120,9 @@ func Start(i bool) {
 		return p.Return(NewBoolean(IsList(Car(args))))
 	})
 	s.DefineMethod("is-method", func(p *Process, args Cell) bool {
-		b, ok := Car(args).(*Binding)
+		b, ok := Car(args).(Binding)
 		if ok {
-			_, ok = b.Ref.(*Method)
+			_, ok = b.Ref().(*Method)
 			ok = !ok
 		}
 
@@ -1193,9 +1179,9 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-syntax", func(p *Process, args Cell) bool {
-		b, ok := Car(args).(*Binding)
+		b, ok := Car(args).(Binding)
 		if ok {
-			_, ok = b.Ref.(*Syntax)
+			_, ok = b.Ref().(*Syntax)
 		}
 
 		return p.Return(NewBoolean(ok))
@@ -1817,6 +1803,7 @@ define and: syntax e (: lst) as {
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
+define apply: method (f: args) as: f @args
 define backtick: syntax e (cmd) as {
     define p: pipe
     define r '()

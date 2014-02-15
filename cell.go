@@ -25,6 +25,13 @@ type Atom interface {
 	Multiply(c Cell) Atom
 }
 
+type Binding interface {
+	Cell
+
+	Ref() Closure
+	Self() *Scope
+}
+
 type Cell interface {
 	Bool() bool
 	String() string
@@ -43,7 +50,7 @@ type Closure interface {
 type Context interface {
 	Cell
 
-	Access(key Cell) Reference
+	Access(key Cell) *Reference
 	Copy() Context
 	Define(key, value Cell)
 	Expose() *Scope
@@ -59,15 +66,6 @@ type Number interface {
 	Divide(c Cell) Number
 	Modulo(c Cell) Number
 	Subtract(c Cell) Number
-}
-
-type Reference interface {
-	Cell
-
-	Copy() Reference
-	Bind(s *Scope) Reference
-	Get() Cell
-	Set(c Cell)
 }
 
 const (
@@ -372,7 +370,7 @@ func Raw(c Cell) string {
 	return c.String()
 }
 
-func Resolve(s, e Context, k *Symbol) (v Reference) {
+func Resolve(s, e Context, k *Symbol) (v *Reference) {
 	v = nil
 
 	if v = s.Access(k); v == nil {
@@ -1219,12 +1217,12 @@ func (self *Syntax) Lexical() *Scope {
 /* Env cell definition. */
 
 type Env struct {
-	hash map[string]Reference
+	hash map[string]*Reference
 	prev *Env
 }
 
 func NewEnv(prev *Env) *Env {
-	return &Env{make(map[string]Reference), prev}
+	return &Env{make(map[string]*Reference), prev}
 }
 
 func (self *Env) Bool() bool {
@@ -1241,7 +1239,7 @@ func (self *Env) Equal(c Cell) bool {
 
 /* Env-specific functions */
 
-func (self *Env) Access(key Cell) Reference {
+func (self *Env) Access(key Cell) *Reference {
 	for env := self; env != nil; env = env.prev {
 		if value, ok := env.hash[key.String()]; ok {
 			return value
@@ -1252,7 +1250,7 @@ func (self *Env) Access(key Cell) Reference {
 }
 
 func (self *Env) Add(key Cell, value Cell) {
-	self.hash[key.String()] = NewUnbound(value)
+	self.hash[key.String()] = NewReference(value)
 }
 
 func (self *Env) Copy() *Env {
@@ -1322,7 +1320,7 @@ func (self *Object) Equal(c Cell) bool {
 
 /* Object-specific functions */
 
-func (self *Object) Access(key Cell) Reference {
+func (self *Object) Access(key Cell) *Reference {
 	var obj Context
 	for obj = self.Scope; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().prev.Access(key); value != nil {
@@ -1400,8 +1398,8 @@ func (self *Process) Arguments() Cell {
 	return l
 }
 
-func (self *Process) Continuation(state int64) *Binding {
-	return NewBinding(NewMethod(
+func (self *Process) Continuation(state int64) Binding {
+	return NewBound(NewMethod(
 		NewInteger(state),
 		List(Cdr(self.Scratch), self.Stack),
 		nil),
@@ -1550,7 +1548,7 @@ func (self *Scope) Equal(c Cell) bool {
 
 /* Scope-specific functions */
 
-func (self *Scope) Access(key Cell) Reference {
+func (self *Scope) Access(key Cell) *Reference {
 	var obj Context
 	for obj = self; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
@@ -1594,85 +1592,93 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewBinding(NewBuiltin(f, Null, self), nil))
+	self.Define(NewSymbol(k), NewBound(NewBuiltin(f, Null, self), nil))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {
-	self.Define(NewSymbol(k), NewBinding(NewMethod(f, Null, self), self))
+	self.Define(NewSymbol(k), NewBound(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
-	self.Public(NewSymbol(k), NewBinding(NewMethod(f, Null, self), self))
+	self.Public(NewSymbol(k), NewBound(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) DefineState(k string, v int64) {
 	self.Define(NewSymbol(k),
-		NewBinding(NewMethod(NewInteger(v), Null, self), self))
+		NewBound(NewMethod(NewInteger(v), Null, self), self))
 }
 
 func (self *Scope) PublicState(k string, v int64) {
 	self.Public(NewSymbol(k),
-		NewBinding(NewMethod(NewInteger(v), Null, self), self))
+		NewBound(NewMethod(NewInteger(v), Null, self), self))
 }
 
-/* Binding cell definition. */
+/* Bound cell definition. */
 
-type Binding struct {
-	Ref Closure
-	Self *Scope
+type Bound struct {
+	ref Closure
+	self *Scope
 }
 
-func NewBinding(Ref Closure, Self *Scope) *Binding {
-	return &Binding{Ref, Self}
+func NewBound(Ref Closure, Self *Scope) *Bound {
+	return &Bound{Ref, Self}
 }
 
-func (self *Binding) Bool() bool {
+func (self *Bound) Bool() bool {
 	return true
 }
 
-func (self *Binding) String() string {
-	return fmt.Sprintf("%%binding %p%%", self)
+func (self *Bound) String() string {
+	return fmt.Sprintf("%%bound %p%%", self)
 }
 
-func (self *Binding) Equal(c Cell) bool {
-	m := c.(*Binding)
-	return m.Ref == self.Ref && m.Self == self.Self
+func (self *Bound) Equal(c Cell) bool {
+	m := c.(*Bound)
+	return m.Ref() == self.Ref() && m.Self() == self.Self()
 }
 
-/* Unbound (reference) cell definition. */
+/* Bound-specific functions */
 
-type Unbound struct {
+func (self *Bound) Ref() Closure {
+	return self.ref
+}
+
+func (self *Bound) Self() *Scope {
+	return self.self
+}
+
+/* Reference cell definition. */
+
+type Reference struct {
 	v Cell
 }
 
-func NewUnbound(v Cell) *Unbound {
-	return &Unbound{v}
+func NewReference(v Cell) *Reference {
+	return &Reference{v}
 }
 
-func (self *Unbound) Bool() bool {
+func (self *Reference) Bool() bool {
 	return true
 }
 
-func (self *Unbound) String() string {
-	return fmt.Sprintf("%%unbound %p%%", self)
+func (self *Reference) String() string {
+	return fmt.Sprintf("%%reference %p%%", self)
 }
 
-func (self *Unbound) Equal(c Cell) bool {
+func (self *Reference) Equal(c Cell) bool {
 	return self.v.Equal(c)
 }
 
-func (self *Unbound) Bind(s *Scope) Reference {
-	return self
+/* Reference-specific functions */
+
+func (self *Reference) Copy() *Reference {
+	return NewReference(self.v)
 }
 
-func (self *Unbound) Copy() Reference {
-	return NewUnbound(self.v)
-}
-
-func (self *Unbound) Get() Cell {
+func (self *Reference) Get() Cell {
 	return self.v
 }
 
-func (self *Unbound) Set(c Cell) {
+func (self *Reference) Set(c Cell) {
 	self.v = c
 }
