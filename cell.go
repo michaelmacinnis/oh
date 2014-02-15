@@ -32,6 +32,14 @@ type Cell interface {
 	Equal(c Cell) bool
 }
 
+type Closure interface {
+	Cell
+
+	Body() Cell
+	Formal() Cell
+	Lexical() *Scope
+}
+
 type Context interface {
 	Cell
 
@@ -958,12 +966,12 @@ func (self *Pair) Equal(c Cell) bool {
 /* Applicative cell definition. */
 
 type Applicative struct {
-	Func *Closure
+	Ref Closure
 	Self *Scope
 }
 
-func NewApplicative(Func *Closure, Self *Scope) *Applicative {
-	return &Applicative{Func, Self}
+func NewApplicative(Ref Closure, Self *Scope) *Applicative {
+	return &Applicative{Ref, Self}
 }
 
 func (self *Applicative) Bool() bool {
@@ -971,12 +979,12 @@ func (self *Applicative) Bool() bool {
 }
 
 func (self *Applicative) String() string {
-	return fmt.Sprintf("%%method %p%%", self)
+	return fmt.Sprintf("%%applicative %p%%", self)
 }
 
 func (self *Applicative) Equal(c Cell) bool {
 	m := c.(*Applicative)
-	return m.Func == self.Func && m.Self == self.Self
+	return m.Ref == self.Ref && m.Self == self.Self
 }
 
 /* Channel cell definition. */
@@ -1118,28 +1126,42 @@ func (self *Channel) WriteFd() *os.File {
 	return self.w
 }
 
-/* Closure cell definition. */
+/* Method cell definition. */
 
-type Closure struct {
-	Body    Cell
-	Param   Cell
-	Lexical *Scope
+type Method struct {
+	body    Cell
+	formal   Cell
+	lexical *Scope
 }
 
-func NewClosure(Body, Param Cell, Lexical *Scope) *Closure {
-	return &Closure{Body, Param, Lexical}
+func NewMethod(body, formal Cell, lexical *Scope) *Method {
+	return &Method{body, formal, lexical}
 }
 
-func (self *Closure) Bool() bool {
+func (self *Method) Bool() bool {
 	return true
 }
 
-func (self *Closure) String() string {
-	return fmt.Sprintf("%%closure %p%%", self)
+func (self *Method) String() string {
+	return fmt.Sprintf("%%method %p%%", self)
 }
 
-func (self *Closure) Equal(c Cell) bool {
-	return c.(*Closure) == self
+func (self *Method) Equal(c Cell) bool {
+	return c.(*Method) == self
+}
+
+/* Method-specific functions */
+
+func (self *Method) Body() Cell {
+	return self.body
+}
+
+func (self *Method) Formal() Cell {
+	return self.formal
+}
+
+func (self *Method) Lexical() *Scope {
+	return self.lexical
 }
 
 /* Env cell definition. */
@@ -1282,12 +1304,12 @@ func (self *Object) Define(key Cell, value Cell) {
 /* Operative cell definition. */
 
 type Operative struct {
-	Func *Closure
+	Ref Closure
 	Self *Scope
 }
 
-func NewOperative(Func *Closure, Self *Scope) *Operative {
-	return &Operative{Func, Self}
+func NewOperative(Ref Closure, Self *Scope) *Operative {
+	return &Operative{Ref, Self}
 }
 
 func (self *Operative) Bool() bool {
@@ -1295,12 +1317,12 @@ func (self *Operative) Bool() bool {
 }
 
 func (self *Operative) String() string {
-	return fmt.Sprintf("%%syntax %p%%", self)
+	return fmt.Sprintf("%%operative %p%%", self)
 }
 
 func (self *Operative) Equal(c Cell) bool {
 	m := c.(*Operative)
-	return m.Func == self.Func && m.Self == self.Self
+	return m.Ref == self.Ref && m.Self == self.Self
 }
 
 /* Process cell definition. */
@@ -1351,7 +1373,7 @@ func (self *Process) Arguments() Cell {
 }
 
 func (self *Process) Continuation(state int64) *Applicative {
-	return NewApplicative(NewClosure(
+	return NewApplicative(NewMethod(
 		NewInteger(state),
 		List(Cdr(self.Scratch), self.Stack),
 		nil),
@@ -1544,25 +1566,25 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), nil))
+	self.Define(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), nil))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {
-	self.Define(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), self))
+	self.Define(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
-	self.Public(NewSymbol(k), NewApplicative(NewClosure(f, Null, self), self))
+	self.Public(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) DefineState(k string, v int64) {
 	self.Define(NewSymbol(k),
-		NewApplicative(NewClosure(NewInteger(v), Null, self), self))
+		NewApplicative(NewMethod(NewInteger(v), Null, self), self))
 }
 
 func (self *Scope) PublicState(k string, v int64) {
 	self.Public(NewSymbol(k),
-		NewApplicative(NewClosure(NewInteger(v), Null, self), self))
+		NewApplicative(NewMethod(NewInteger(v), Null, self), self))
 }
 
 /* Unbound (reference) cell definition. */

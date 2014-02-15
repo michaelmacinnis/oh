@@ -179,13 +179,13 @@ expression: "%" SYMBOL SYMBOL "%" {
     switch {
     case kind == "channel":
         $$.c = (*Channel)(unsafe.Pointer(addr))
-    case kind == "closure":
-        $$.c = (*Closure)(unsafe.Pointer(addr))
+    case kind == "method":
+        $$.c = (*Method)(unsafe.Pointer(addr))
     case kind == "env":
         $$.c = (*Env)(unsafe.Pointer(addr))
     case kind == "function":
         $$.c = (*Function)(unsafe.Pointer(addr))
-    case kind == "method":
+    case kind == "applicative":
         $$.c = (*Applicative)(unsafe.Pointer(addr))
     case kind == "object":
         $$.c = (*Object)(unsafe.Pointer(addr))
@@ -193,7 +193,7 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Process)(unsafe.Pointer(addr))
     case kind == "scope":
         $$.c = (*Scope)(unsafe.Pointer(addr))
-    case kind == "syntax":
+    case kind == "operative":
         $$.c = (*Operative)(unsafe.Pointer(addr))
 
     default:

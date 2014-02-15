@@ -830,13 +830,13 @@ yydefault:
 	    switch {
 	    case kind == "channel":
 	        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
-	    case kind == "closure":
-	        yyVAL.c = (*Closure)(unsafe.Pointer(addr))
+	    case kind == "method":
+	        yyVAL.c = (*Method)(unsafe.Pointer(addr))
 	    case kind == "env":
 	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
 	    case kind == "function":
 	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
-	    case kind == "method":
+	    case kind == "applicative":
 	        yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
 	    case kind == "object":
 	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
@@ -844,7 +844,7 @@ yydefault:
 	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
 	    case kind == "scope":
 	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
-	    case kind == "syntax":
+	    case kind == "operative":
 	        yyVAL.c = (*Operative)(unsafe.Pointer(addr))
 	
 	    default:

@@ -191,14 +191,14 @@ func external(p *Process, args Cell) bool {
 }
 
 func function(body, param Cell, scope *Scope) *Applicative {
-	return NewApplicative(NewClosure(body, param, scope), nil)
+	return NewApplicative(NewMethod(body, param, scope), nil)
 }
 
 func head(p *Process) bool {
 	switch Car(p.Scratch).(type) {
 	case *Applicative:
 
-		body := Car(p.Scratch).(*Applicative).Func.Body
+		body := Car(p.Scratch).(*Applicative).Ref.Body()
 
 		switch t := body.(type) {
 		case Function:
@@ -235,11 +235,11 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		p.Scratch = Cons(sym, p.Scratch)
         } else if a, ok := c.Get().(*Applicative); ok &&
                 a.Self != nil && a.Self != p.Lexical.Expose() {
-		p.Scratch = Cons(NewApplicative(a.Func, p.Lexical.Expose()),
+		p.Scratch = Cons(NewApplicative(a.Ref, p.Lexical.Expose()),
 				 p.Scratch)
         } else if a, ok := c.Get().(*Operative); ok &&
                 a.Self != nil && a.Self != p.Lexical.Expose() {
-		p.Scratch = Cons(NewOperative(a.Func, p.Lexical.Expose()),
+		p.Scratch = Cons(NewOperative(a.Ref, p.Lexical.Expose()),
 				 p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
@@ -249,7 +249,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 }
 
 func method(body, param Cell, scope *Scope) *Applicative {
-	return NewApplicative(NewClosure(body, param, scope), scope)
+	return NewApplicative(NewMethod(body, param, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -362,10 +362,10 @@ clearing:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Func.Body
-			p.NewScope(p.Dynamic, m.Func.Lexical)
+			p.Code = m.Ref.Body()
+			p.NewScope(p.Dynamic, m.Ref.Lexical())
 
-			param := m.Func.Param
+			param := m.Ref.Formal()
 			if param != Null {
 				if Car(param) != Null {
 					p.Lexical.Public(Car(param), s)
@@ -392,7 +392,7 @@ clearing:
 				args = expand(args)
 			}
 
-			if m.Func.Body.(Function)(p, args) {
+			if m.Ref.Body().(Function)(p, args) {
 				continue
 			}
 
@@ -405,10 +405,10 @@ clearing:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Func.Body
-			p.NewScope(p.Dynamic, m.Func.Lexical)
+			p.Code = m.Ref.Body()
+			p.NewScope(p.Dynamic, m.Ref.Lexical())
 
-			param := m.Func.Param
+			param := m.Ref.Formal()
 			if param != Null {
 				if Car(param) != Null {
 					p.Lexical.Public(Car(param), s)
@@ -465,8 +465,8 @@ clearing:
 
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
-				c := NewClosure(Function(external), Null, p.Lexical.Expose())
-				a := NewApplicative(c, nil)
+				m := NewMethod(Function(external), Null, p.Lexical.Expose())
+				a := NewApplicative(m, nil)
 				p.Scratch = Cons(a, p.Scratch)
 
 				p.ReplaceState(psExecFunction)
@@ -693,8 +693,8 @@ clearing:
 			p.Code = Car(p.Code)
 
 			m := Car(p.Scratch).(*Applicative)
-			p.Scratch = Car(m.Func.Param)
-			p.Stack = Cadr(m.Func.Param)
+			p.Scratch = Car(m.Ref.Formal())
+			p.Stack = Cadr(m.Ref.Formal())
 
 			p.NewState(psEvalElement)
 			continue
@@ -797,7 +797,7 @@ func strict(p *Process) (ok bool) {
 }
 
 func syntax(body, param Cell, scope *Scope) *Operative {
-	return NewOperative(NewClosure(body, param, scope), scope)
+	return NewOperative(NewMethod(body, param, scope), scope)
 }
 
 func wpipe(c Cell) *os.File {
