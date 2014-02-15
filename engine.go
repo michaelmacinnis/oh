@@ -190,33 +190,33 @@ func external(p *Process, args Cell) bool {
 	return p.Return(NewStatus(status))
 }
 
-func function(body, param Cell, scope *Scope) *Applicative {
-	return NewApplicative(NewMethod(body, param, scope), nil)
+func function(body, param Cell, scope *Scope) *Binding {
+	return NewBinding(NewBuiltin(body, param, scope), nil)
 }
 
 func head(p *Process) bool {
-	switch Car(p.Scratch).(type) {
-	case *Applicative:
+	switch t := Car(p.Scratch).(type) {
+	case *Binding:
+		switch r := t.Ref.(type) {
+		case *Builtin, *Method:
+			switch b := r.Body().(type) {
+			case Function:
+				p.ReplaceState(psExecFunction)
 
-		body := Car(p.Scratch).(*Applicative).Ref.Body()
+			case *Integer:
+				p.ReplaceState(b.Int())
+				return true
 
-		switch t := body.(type) {
-		case Function:
-			p.ReplaceState(psExecFunction)
+			default:
+				p.ReplaceState(psExecApplicative)
+			}
 
-		case *Integer:
-			p.ReplaceState(t.Int())
+		case *Syntax:
+			p.ReplaceState(psExecOperative)
 			return true
-
-		default:
-			p.ReplaceState(psExecApplicative)
 		}
 
 		return false
-
-	case *Operative:
-		p.ReplaceState(psExecOperative)
-		return true
 	}
 
 	return false
@@ -233,13 +233,9 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		}
 	} else if p.GetState() == psEvalElementBC && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
-        } else if a, ok := c.Get().(*Applicative); ok &&
+        } else if a, ok := c.Get().(*Binding); ok &&
                 a.Self != nil && a.Self != p.Lexical.Expose() {
-		p.Scratch = Cons(NewApplicative(a.Ref, p.Lexical.Expose()),
-				 p.Scratch)
-        } else if a, ok := c.Get().(*Operative); ok &&
-                a.Self != nil && a.Self != p.Lexical.Expose() {
-		p.Scratch = Cons(NewOperative(a.Ref, p.Lexical.Expose()),
+		p.Scratch = Cons(NewBinding(a.Ref, p.Lexical.Expose()),
 				 p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
@@ -248,8 +244,8 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	return true, ""
 }
 
-func method(body, param Cell, scope *Scope) *Applicative {
-	return NewApplicative(NewMethod(body, param, scope), scope)
+func method(body, param Cell, scope *Scope) *Binding {
+	return NewBinding(NewMethod(body, param, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -352,7 +348,7 @@ clearing:
 		case psExecApplicative:
 			args := p.Arguments()
 
-			m := Car(p.Scratch).(*Applicative)
+			m := Car(p.Scratch).(*Binding)
 			s := m.Self
 			if s == nil {
 				args = expand(args)
@@ -387,7 +383,7 @@ clearing:
 		case psExecFunction:
 			args := p.Arguments()
 
-			m := Car(p.Scratch).(*Applicative)
+			m := Car(p.Scratch).(*Binding)
 			if m.Self == nil {
 				args = expand(args)
 			}
@@ -399,7 +395,7 @@ clearing:
 		case psExecOperative:
 			args := p.Code
 
-			m := Car(p.Scratch).(*Operative)
+			m := Car(p.Scratch).(*Binding)
 			s := m.Self
 
 			p.ReplaceState(SaveDynamic | SaveLexical)
@@ -465,8 +461,8 @@ clearing:
 
 			switch Car(p.Scratch).(type) {
 			case *String, *Symbol:
-				m := NewMethod(Function(external), Null, p.Lexical.Expose())
-				a := NewApplicative(m, nil)
+				m := NewBuiltin(Function(external), Null, p.Lexical.Expose())
+				a := NewBinding(m, nil)
 				p.Scratch = Cons(a, p.Scratch)
 
 				p.ReplaceState(psExecFunction)
@@ -479,7 +475,7 @@ clearing:
 
 				state = p.GetState()
 				if state == psExecApplicative &&
-					Car(p.Scratch).(*Applicative).Self == nil {
+					Car(p.Scratch).(*Binding).Self == nil {
 					p.NewState(psEvalArgumentsBC)
 				} else {
 					p.NewState(psEvalArguments)
@@ -568,7 +564,7 @@ clearing:
 
 			p.RemoveState()
 
-			l := Car(p.Scratch).(*Applicative).Self
+			l := Car(p.Scratch).(*Binding).Self
 			if p.Lexical != l {
 				p.NewState(SaveLexical)
 				p.Lexical = l
@@ -692,7 +688,7 @@ clearing:
 		case psReturn:
 			p.Code = Car(p.Code)
 
-			m := Car(p.Scratch).(*Applicative)
+			m := Car(p.Scratch).(*Binding)
 			p.Scratch = Car(m.Ref.Formal())
 			p.Stack = Cadr(m.Ref.Formal())
 
@@ -796,8 +792,8 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func syntax(body, param Cell, scope *Scope) *Operative {
-	return NewOperative(NewMethod(body, param, scope), scope)
+func syntax(body, param Cell, scope *Scope) *Binding {
+	return NewBinding(NewSyntax(body, param, scope), scope)
 }
 
 func wpipe(c Cell) *os.File {
@@ -930,23 +926,23 @@ func Start(i bool) {
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(*Applicative).Self.Expose()
+		o := Car(p.Scratch).(*Binding).Self.Expose()
 
 		return p.Return(NewObject(NewLexicalScope(o)))
 	})
 	s.PublicMethod("clone", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(*Applicative).Self.Expose()
+		o := Car(p.Scratch).(*Binding).Self.Expose()
 
 		return p.Return(NewObject(o.Copy()))
 	})
 	s.PublicMethod("exists", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(*Applicative).Self
+		l := Car(p.Scratch).(*Binding).Self
 		c := Resolve(l, p.Dynamic, NewSymbol(Raw(Car(args))))
 
 		return p.Return(NewBoolean(c != nil))
 	})
 	s.PublicMethod("unset", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(*Applicative).Self
+		l := Car(p.Scratch).(*Binding).Self
 		r := l.Remove(NewSymbol(Raw(Car(args))))
 
 		return p.Return(NewBoolean(r))
@@ -990,7 +986,7 @@ func Start(i bool) {
 		return p.Return(Cons(Car(args), Cadr(args)))
 	})
 	s.PublicMethod("eval", func(p *Process, args Cell) bool {
-		scope := Car(p.Scratch).(*Applicative).Self.Expose()
+		scope := Car(p.Scratch).(*Binding).Self.Expose()
 		p.RemoveState()
 		if p.Lexical != scope {
 			p.NewState(SaveLexical)
@@ -1092,6 +1088,15 @@ func Start(i bool) {
 
 		return p.Return(NewBoolean(ok))
 	})
+	s.DefineMethod("is-builtin", func(p *Process, args Cell) bool {
+		b, ok := Car(args).(*Binding)
+		if ok {
+			_, ok = b.Ref.(*Builtin)
+			ok = !ok
+		}
+
+		return p.Return(NewBoolean(ok))
+	})
 	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
 		o, ok := Car(args).(Context)
 		if !ok {
@@ -1129,7 +1134,11 @@ func Start(i bool) {
 		return p.Return(NewBoolean(IsList(Car(args))))
 	})
 	s.DefineMethod("is-method", func(p *Process, args Cell) bool {
-		_, ok := Car(args).(*Applicative)
+		b, ok := Car(args).(*Binding)
+		if ok {
+			_, ok = b.Ref.(*Method)
+			ok = !ok
+		}
 
 		return p.Return(NewBoolean(ok))
 	})
@@ -1184,7 +1193,10 @@ func Start(i bool) {
 		return p.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-syntax", func(p *Process, args Cell) bool {
-		_, ok := Car(args).(*Operative)
+		b, ok := Car(args).(*Binding)
+		if ok {
+			_, ok = b.Ref.(*Syntax)
+		}
 
 		return p.Return(NewBoolean(ok))
 	})

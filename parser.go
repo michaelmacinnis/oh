@@ -49,7 +49,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:215
+//line parser.y:219
 
 
 type ReadStringer interface {
@@ -830,22 +830,26 @@ yydefault:
 	    switch {
 	    case kind == "channel":
 	        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
+	    case kind == "builtin":
+	        yyVAL.c = (*Builtin)(unsafe.Pointer(addr))
 	    case kind == "method":
 	        yyVAL.c = (*Method)(unsafe.Pointer(addr))
+	    case kind == "syntax":
+	        yyVAL.c = (*Syntax)(unsafe.Pointer(addr))
 	    case kind == "env":
 	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
 	    case kind == "function":
 	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
-	    case kind == "applicative":
-	        yyVAL.c = (*Applicative)(unsafe.Pointer(addr))
+	    case kind == "binding":
+	        yyVAL.c = (*Binding)(unsafe.Pointer(addr))
 	    case kind == "object":
 	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
 	    case kind == "process":
 	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
 	    case kind == "scope":
 	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
-	    case kind == "operative":
-	        yyVAL.c = (*Operative)(unsafe.Pointer(addr))
+	    case kind == "unbound":
+	        yyVAL.c = (*Unbound)(unsafe.Pointer(addr))
 	
 	    default:
 	        yyVAL.c = Null
@@ -853,19 +857,19 @@ yydefault:
 	
 	}
 	case 42:
-		//line parser.y:205
+		//line parser.y:209
 		{ yyVAL = yyS[yypt-1] }
 	case 43:
-		//line parser.y:207
+		//line parser.y:211
 		{ yyVAL.c = Null }
 	case 44:
-		//line parser.y:209
+		//line parser.y:213
 		{ yyVAL = yyS[yypt-0] }
 	case 45:
-		//line parser.y:211
+		//line parser.y:215
 		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
 	case 46:
-		//line parser.y:213
+		//line parser.y:217
 		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
 	}
 	goto yystack /* stack new state and value */

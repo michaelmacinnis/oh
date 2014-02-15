@@ -963,30 +963,6 @@ func (self *Pair) Equal(c Cell) bool {
 	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
 }
 
-/* Applicative cell definition. */
-
-type Applicative struct {
-	Ref Closure
-	Self *Scope
-}
-
-func NewApplicative(Ref Closure, Self *Scope) *Applicative {
-	return &Applicative{Ref, Self}
-}
-
-func (self *Applicative) Bool() bool {
-	return true
-}
-
-func (self *Applicative) String() string {
-	return fmt.Sprintf("%%applicative %p%%", self)
-}
-
-func (self *Applicative) Equal(c Cell) bool {
-	m := c.(*Applicative)
-	return m.Ref == self.Ref && m.Self == self.Self
-}
-
 /* Channel cell definition. */
 
 type Channel struct {
@@ -1126,6 +1102,44 @@ func (self *Channel) WriteFd() *os.File {
 	return self.w
 }
 
+/* Builtin cell definition. */
+
+type Builtin struct {
+	body    Cell
+	formal   Cell
+	lexical *Scope
+}
+
+func NewBuiltin(body, formal Cell, lexical *Scope) *Builtin {
+	return &Builtin{body, formal, lexical}
+}
+
+func (self *Builtin) Bool() bool {
+	return true
+}
+
+func (self *Builtin) String() string {
+	return fmt.Sprintf("%%builtin %p%%", self)
+}
+
+func (self *Builtin) Equal(c Cell) bool {
+	return c.(*Builtin) == self
+}
+
+/* Builtin-specific functions */
+
+func (self *Builtin) Body() Cell {
+	return self.body
+}
+
+func (self *Builtin) Formal() Cell {
+	return self.formal
+}
+
+func (self *Builtin) Lexical() *Scope {
+	return self.lexical
+}
+
 /* Method cell definition. */
 
 type Method struct {
@@ -1161,6 +1175,44 @@ func (self *Method) Formal() Cell {
 }
 
 func (self *Method) Lexical() *Scope {
+	return self.lexical
+}
+
+/* Syntax cell definition. */
+
+type Syntax struct {
+	body    Cell
+	formal   Cell
+	lexical *Scope
+}
+
+func NewSyntax(body, formal Cell, lexical *Scope) *Syntax {
+	return &Syntax{body, formal, lexical}
+}
+
+func (self *Syntax) Bool() bool {
+	return true
+}
+
+func (self *Syntax) String() string {
+	return fmt.Sprintf("%%syntax %p%%", self)
+}
+
+func (self *Syntax) Equal(c Cell) bool {
+	return c.(*Syntax) == self
+}
+
+/* Syntax-specific functions */
+
+func (self *Syntax) Body() Cell {
+	return self.body
+}
+
+func (self *Syntax) Formal() Cell {
+	return self.formal
+}
+
+func (self *Syntax) Lexical() *Scope {
 	return self.lexical
 }
 
@@ -1301,30 +1353,6 @@ func (self *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
 
-/* Operative cell definition. */
-
-type Operative struct {
-	Ref Closure
-	Self *Scope
-}
-
-func NewOperative(Ref Closure, Self *Scope) *Operative {
-	return &Operative{Ref, Self}
-}
-
-func (self *Operative) Bool() bool {
-	return true
-}
-
-func (self *Operative) String() string {
-	return fmt.Sprintf("%%operative %p%%", self)
-}
-
-func (self *Operative) Equal(c Cell) bool {
-	m := c.(*Operative)
-	return m.Ref == self.Ref && m.Self == self.Self
-}
-
 /* Process cell definition. */
 
 type Process struct {
@@ -1372,8 +1400,8 @@ func (self *Process) Arguments() Cell {
 	return l
 }
 
-func (self *Process) Continuation(state int64) *Applicative {
-	return NewApplicative(NewMethod(
+func (self *Process) Continuation(state int64) *Binding {
+	return NewBinding(NewMethod(
 		NewInteger(state),
 		List(Cdr(self.Scratch), self.Stack),
 		nil),
@@ -1566,25 +1594,49 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), nil))
+	self.Define(NewSymbol(k), NewBinding(NewBuiltin(f, Null, self), nil))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {
-	self.Define(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), self))
+	self.Define(NewSymbol(k), NewBinding(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
-	self.Public(NewSymbol(k), NewApplicative(NewMethod(f, Null, self), self))
+	self.Public(NewSymbol(k), NewBinding(NewMethod(f, Null, self), self))
 }
 
 func (self *Scope) DefineState(k string, v int64) {
 	self.Define(NewSymbol(k),
-		NewApplicative(NewMethod(NewInteger(v), Null, self), self))
+		NewBinding(NewMethod(NewInteger(v), Null, self), self))
 }
 
 func (self *Scope) PublicState(k string, v int64) {
 	self.Public(NewSymbol(k),
-		NewApplicative(NewMethod(NewInteger(v), Null, self), self))
+		NewBinding(NewMethod(NewInteger(v), Null, self), self))
+}
+
+/* Binding cell definition. */
+
+type Binding struct {
+	Ref Closure
+	Self *Scope
+}
+
+func NewBinding(Ref Closure, Self *Scope) *Binding {
+	return &Binding{Ref, Self}
+}
+
+func (self *Binding) Bool() bool {
+	return true
+}
+
+func (self *Binding) String() string {
+	return fmt.Sprintf("%%binding %p%%", self)
+}
+
+func (self *Binding) Equal(c Cell) bool {
+	m := c.(*Binding)
+	return m.Ref == self.Ref && m.Self == self.Self
 }
 
 /* Unbound (reference) cell definition. */
@@ -1598,11 +1650,11 @@ func NewUnbound(v Cell) *Unbound {
 }
 
 func (self *Unbound) Bool() bool {
-	return self.v.Bool()
+	return true
 }
 
 func (self *Unbound) String() string {
-	return self.v.String()
+	return fmt.Sprintf("%%unbound %p%%", self)
 }
 
 func (self *Unbound) Equal(c Cell) bool {
