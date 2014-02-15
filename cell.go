@@ -28,6 +28,7 @@ type Atom interface {
 type Binding interface {
 	Cell
 
+	Bind(s *Scope) Binding
 	Ref() Closure
 	Self() *Scope
 }
@@ -1617,11 +1618,11 @@ func (self *Scope) PublicState(k string, v int64) {
 
 type Bound struct {
 	ref Closure
-	self *Scope
+	scope *Scope
 }
 
-func NewBound(Ref Closure, Self *Scope) *Bound {
-	return &Bound{Ref, Self}
+func NewBound(ref Closure, scope *Scope) *Bound {
+	return &Bound{ref, scope}
 }
 
 func (self *Bound) Bool() bool {
@@ -1634,17 +1635,61 @@ func (self *Bound) String() string {
 
 func (self *Bound) Equal(c Cell) bool {
 	m := c.(*Bound)
-	return m.Ref() == self.Ref() && m.Self() == self.Self()
+	return m.Ref() == self.ref && m.Self() == self.scope
 }
 
 /* Bound-specific functions */
+
+func (self *Bound) Bind(s* Scope) Binding {
+	if s == self.scope {
+		return self
+	}
+	return NewBound(self.ref, s)
+}
 
 func (self *Bound) Ref() Closure {
 	return self.ref
 }
 
 func (self *Bound) Self() *Scope {
-	return self.self
+	return self.scope
+}
+
+/* Unbound cell definition. */
+
+type Unbound struct {
+	ref Closure
+}
+
+func NewUnbound(Ref Closure) *Unbound {
+	return &Unbound{Ref}
+}
+
+func (self *Unbound) Bool() bool {
+	return true
+}
+
+func (self *Unbound) String() string {
+	return fmt.Sprintf("%%unbound %p%%", self)
+}
+
+func (self *Unbound) Equal(c Cell) bool {
+	m := c.(*Unbound)
+	return m.Ref() == self.ref
+}
+
+/* Unbound-specific functions */
+
+func (self *Unbound) Bind(s* Scope) Binding {
+	return self
+}
+
+func (self *Unbound) Ref() Closure {
+	return self.ref
+}
+
+func (self *Unbound) Self() *Scope {
+	return nil
 }
 
 /* Reference cell definition. */

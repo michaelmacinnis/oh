@@ -240,8 +240,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		p.Scratch = Cons(sym, p.Scratch)
         } else if a, ok := c.Get().(Binding); ok &&
                 a.Self() != nil && a.Self() != p.Lexical.Expose() {
-		p.Scratch = Cons(NewBound(a.Ref(), p.Lexical.Expose()),
-				 p.Scratch)
+		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
 	}
