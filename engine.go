@@ -169,11 +169,11 @@ func external(p *Process, args Cell) bool {
 	}
 
 	c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$cwd"))
-	dir := c.GetValue().String()
+	dir := c.Get().String()
 
-	stdin := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).GetValue()
-	stdout := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).GetValue()
-	stderr := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).GetValue()
+	stdin := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).Get()
+	stdout := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).Get()
+	stderr := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).Get()
 
 	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
@@ -231,18 +231,18 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		} else {
 			p.Scratch = Cons(sym, p.Scratch)
 		}
-	} else if p.GetState() == psEvalElementBC && !IsSimple(c.GetValue()) {
+	} else if p.GetState() == psEvalElementBC && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
-        } else if a, ok := c.GetValue().(*Applicative); ok &&
+        } else if a, ok := c.Get().(*Applicative); ok &&
                 a.Self != nil && a.Self != p.Lexical.Expose() {
 		p.Scratch = Cons(NewApplicative(a.Func, p.Lexical.Expose()),
 				 p.Scratch)
-        } else if a, ok := c.GetValue().(*Operative); ok &&
+        } else if a, ok := c.Get().(*Operative); ok &&
                 a.Self != nil && a.Self != p.Lexical.Expose() {
 		p.Scratch = Cons(NewOperative(a.Func, p.Lexical.Expose()),
 				 p.Scratch)
 	} else {
-		p.Scratch = Cons(c.GetValue(), p.Scratch)
+		p.Scratch = Cons(c.Get(), p.Scratch)
 	}
 
 	return true, ""
@@ -272,7 +272,7 @@ func number(s string) bool {
 
 func rpipe(c Cell) *os.File {
 	r := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
-	return r.GetValue().(*Channel).ReadFd()
+	return r.Get().(*Channel).ReadFd()
 }
 
 func run(p *Process) (successful bool) {
@@ -727,7 +727,7 @@ clearing:
 				panic("'" + k.String() + "' is not defined")
 			}
 
-			r.SetValue(Car(p.Scratch))
+			r.Set(Car(p.Scratch))
 
 		case psSpawn:
 			child := NewProcess(psNone, p.Dynamic, p.Lexical)
@@ -793,7 +793,7 @@ func strict(p *Process) (ok bool) {
 		return false
 	}
 
-	return c.GetValue().(Atom).Bool()
+	return c.Get().(Atom).Bool()
 }
 
 func syntax(body, param Cell, scope *Scope) *Operative {
@@ -802,7 +802,7 @@ func syntax(body, param Cell, scope *Scope) *Operative {
 
 func wpipe(c Cell) *os.File {
 	w := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
-	return w.GetValue().(*Channel).WriteFd()
+	return w.Get().(*Channel).WriteFd()
 }
 
 func Evaluate(c Cell) {
@@ -926,7 +926,7 @@ func Start(i bool) {
 			return p.Return(sym)
 		}
 
-		return p.Return(c.GetValue())
+		return p.Return(c.Get())
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
@@ -1103,7 +1103,7 @@ func Start(i bool) {
 			return p.Return(False)
 		}
 
-		c, ok := g.GetValue().(*Channel)
+		c, ok := g.Get().(*Channel)
 		if !ok {
 			return p.Return(False)
 		}
@@ -1159,7 +1159,7 @@ func Start(i bool) {
 			return p.Return(False)
 		}
 
-		c, ok := g.GetValue().(*Channel)
+		c, ok := g.Get().(*Channel)
 		if !ok {
 			return p.Return(False)
 		}
