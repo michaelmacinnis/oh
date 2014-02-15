@@ -1400,11 +1400,8 @@ func (self *Process) Arguments() Cell {
 }
 
 func (self *Process) Continuation(state int64) Binding {
-	return NewBound(NewMethod(
-		NewInteger(state),
-		List(Cdr(self.Scratch), self.Stack),
-		nil),
-		nil)
+	return NewUnbound(NewMethod(
+		NewInteger(state), List(Cdr(self.Scratch), self.Stack), nil))
 }
 
 func (self *Process) GetState() int64 {
@@ -1593,7 +1590,7 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewBound(NewBuiltin(f, Null, self), nil))
+	self.Define(NewSymbol(k), NewUnbound(NewBuiltin(f, Null, self)))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {

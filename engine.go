@@ -192,7 +192,7 @@ func external(p *Process, args Cell) bool {
 }
 
 func function(body, param Cell, scope *Scope) Binding {
-	return NewBound(NewBuiltin(body, param, scope), nil)
+	return NewUnbound(NewBuiltin(body, param, scope))
 }
 
 func head(p *Process) bool {
@@ -832,7 +832,7 @@ func ExitStatus() int {
 func Start(i bool) {
 	interactive = i
 
-	ext = NewBound(NewBuiltin(Function(external), Null, nil), nil)
+	ext = NewUnbound(NewBuiltin(Function(external), Null, nil))
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)

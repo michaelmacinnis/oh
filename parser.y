@@ -177,28 +177,30 @@ expression: "%" SYMBOL SYMBOL "%" {
     addr := uintptr(value)
 
     switch {
-    case kind == "channel":
-        $$.c = (*Channel)(unsafe.Pointer(addr))
+    case kind == "bound":
+        $$.c = (*Bound)(unsafe.Pointer(addr))
     case kind == "builtin":
         $$.c = (*Builtin)(unsafe.Pointer(addr))
-    case kind == "method":
-        $$.c = (*Method)(unsafe.Pointer(addr))
-    case kind == "syntax":
-        $$.c = (*Syntax)(unsafe.Pointer(addr))
+    case kind == "channel":
+        $$.c = (*Channel)(unsafe.Pointer(addr))
     case kind == "env":
         $$.c = (*Env)(unsafe.Pointer(addr))
     case kind == "function":
         $$.c = (*Function)(unsafe.Pointer(addr))
-    case kind == "bound":
-        $$.c = (*Bound)(unsafe.Pointer(addr))
+    case kind == "method":
+        $$.c = (*Method)(unsafe.Pointer(addr))
     case kind == "object":
         $$.c = (*Object)(unsafe.Pointer(addr))
     case kind == "process":
         $$.c = (*Process)(unsafe.Pointer(addr))
-    case kind == "scope":
-        $$.c = (*Scope)(unsafe.Pointer(addr))
     case kind == "reference":
         $$.c = (*Reference)(unsafe.Pointer(addr))
+    case kind == "scope":
+        $$.c = (*Scope)(unsafe.Pointer(addr))
+    case kind == "syntax":
+        $$.c = (*Syntax)(unsafe.Pointer(addr))
+    case kind == "unbound":
+        $$.c = (*Unbound)(unsafe.Pointer(addr))
 
     default:
         $$.c = Null
