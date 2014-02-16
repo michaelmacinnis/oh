@@ -195,40 +195,38 @@ func external(p *Process, args Cell) bool {
 	return p.Return(NewStatus(status))
 }
 
-func head(p *Process) bool {
-	switch t := Car(p.Scratch).(type) {
-	case Binding:
-		switch r := t.Ref().(type) {
-		case *Builtin, *Method:
-			switch b := r.Code().(type) {
-			case Function:
-				p.ReplaceState(psExecFunction)
-				if (t.Self() == nil) {
-					p.NewState(psEvalArgumentsBC)
-					return false
-				}
+func head(p *Process, t Binding) bool {
+	r := false
+	var s int64 = psEvalArguments
 
+	switch c := t.Ref().(type) {
+	case *Builtin, *Method:
+		if _, ok := c.(*Builtin); ok {
+			s = psEvalArgumentsBC
+		}
+
+		if c.Body() != nil {
+			p.ReplaceState(psExecFunction)
+		} else {
+			switch b := c.Code().(type) {
 			case *Integer:
+				r = true
 				p.ReplaceState(b.Int())
-				return true
 
 			default:
 				p.ReplaceState(psExecApplicative)
-				if (t.Self() == nil) {
-					p.NewState(psEvalArgumentsBC)
-					return false
-				}
-
 			}
-
-		case *Syntax:
-			p.ReplaceState(psExecOperative)
-			return true
 		}
+
+	case *Syntax:
+		r = true
+		p.ReplaceState(psExecOperative)
 	}
 
-	p.NewState(psEvalArguments)
-	return false
+	if !r {
+		p.NewState(s)
+	}
+	return r
 }
 
 func lookup(p *Process, sym *Symbol) (bool, string) {
@@ -467,17 +465,20 @@ clearing:
 				break
 			}
 
-			switch Car(p.Scratch).(type) {
+			switch t := Car(p.Scratch).(type) {
 			case *String, *Symbol:
 				p.Scratch = Cons(ext, p.Scratch)
 
 				p.ReplaceState(psExecFunction)
 				p.NewState(psEvalArgumentsBC)
 
-			default:
-				if head(p) {
+			case Binding:
+				if head(p, t) {
 					continue
 				}
+
+			default:
+				panic(fmt.Sprintf("cannot evaluate: %v", t))
 			}
 
 			p.Scratch = Cons(nil, p.Scratch)
