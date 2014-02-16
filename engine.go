@@ -78,7 +78,6 @@ var next = map[int64]int64{
 
 func apply(p *Process, args Cell) bool {
 	m := Car(p.Scratch).(Binding)
-	s := m.Self()
 
 	p.ReplaceState(SaveDynamic | SaveLexical)
 	p.NewState(psEvalBlock)
@@ -86,28 +85,28 @@ func apply(p *Process, args Cell) bool {
 	p.Code = m.Ref().Code()
 	p.NewScope(p.Dynamic, m.Ref().Lexical())
 
-	formal := m.Ref().Formal()
-	if formal != Null {
-		if Car(formal) != Null {
-			p.Lexical.Public(Car(formal), s)
-		}
-		formal = Cdr(formal)
-		for args != Null && formal != Null && IsAtom(Car(formal)) {
-			p.Lexical.Public(Car(formal), Car(args))
-			args, formal = Cdr(args), Cdr(formal)
-		}
-		if IsCons(Car(formal)) {
-			p.Lexical.Public(Caar(formal), args)
-		}
+	label := m.Ref().Label()
+	if label != Null {
+		p.Lexical.Public(label, m.Self())
 	}
-	con := NewUnbound(NewMethod(tinue, Cdr(p.Scratch), p.Stack, nil))
+
+	formal := m.Ref().Formal()
+	for args != Null && formal != Null && IsAtom(Car(formal)) {
+		p.Lexical.Public(Car(formal), Car(args))
+		args, formal = Cdr(args), Cdr(formal)
+	}
+	if IsCons(Car(formal)) {
+		p.Lexical.Public(Caar(formal), args)
+	}
+
+	con := NewUnbound(NewMethod(tinue, Cdr(p.Scratch), p.Stack, Null, nil))
 	p.Lexical.Public(NewSymbol("return"), con)
 
 	return true
 }
 
-func builtin(body Function, code, formal Cell, scope *Scope) Binding {
-	return NewUnbound(NewBuiltin(body, code, formal, scope))
+func builtin(body Function, code, formal, label Cell, scope *Scope) Binding {
+	return NewUnbound(NewBuiltin(body, code, formal, label, scope))
 }
 
 func channel(p *Process, r, w *os.File, cap int) Context {
@@ -135,11 +134,11 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 	}
 
 	c.Public(NewSymbol("guts"), ch)
-	c.Public(NewSymbol("reader-close"), method(rclose, rclose, Null, c))
-	c.Public(NewSymbol("read"), method(read, read, Null, c))
-	c.Public(NewSymbol("readline"), method(readline, readline, Null, c))
-	c.Public(NewSymbol("writer-close"), method(wclose, wclose, Null, c))
-	c.Public(NewSymbol("write"), method(write, write, Null, c))
+	c.Public(NewSymbol("reader-close"), method(rclose, rclose, Null, Null, c))
+	c.Public(NewSymbol("read"), method(read, read, Null, Null, c))
+	c.Public(NewSymbol("readline"), method(readline, readline, Null, Null, c))
+	c.Public(NewSymbol("writer-close"), method(wclose, wclose, Null, Null, c))
+	c.Public(NewSymbol("write"), method(write, write, Null, Null, c))
 
 	return NewObject(c)
 }
@@ -233,8 +232,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		}
 	} else if p.GetState() == psEvalElementBC && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
-        } else if a, ok := c.Get().(Binding); ok &&
-                a.Self() != nil && a.Self() != p.Lexical.Expose() {
+        } else if a, ok := c.Get().(Binding); ok {
 		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
@@ -243,8 +241,8 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	return true, ""
 }
 
-func method(body Function, code, formal Cell, scope *Scope) Binding {
-	return NewBound(NewMethod(body, code, formal, scope), scope)
+func method(body Function, code, formal, label Cell, scope *Scope) Binding {
+	return NewBound(NewMethod(body, code, formal, label, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -498,15 +496,14 @@ clearing:
 			}
 
 			block := Cddr(p.Code)
-			formal = Cons(context, formal)
 			scope := p.Lexical.Expose()
 
 			if state == psBuiltin {
-				SetCar(p.Scratch, builtin(apply, block, formal, scope))
+				SetCar(p.Scratch, builtin(apply, block, formal, context, scope))
 			} else if state == psMethod {
-				SetCar(p.Scratch, method(apply, block, formal, scope))
+				SetCar(p.Scratch, method(apply, block, formal, context, scope))
 			} else {
-				SetCar(p.Scratch, syntax(apply, block, formal, scope))
+				SetCar(p.Scratch, syntax(apply, block, formal, context, scope))
 			}
 
 		case psDefine, psPublic:
@@ -732,8 +729,8 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func syntax(body Function, code, formal Cell, scope *Scope) Binding {
-	return NewBound(NewSyntax(body, code, formal, scope), scope)
+func syntax(body Function, code, formal, label Cell, scope *Scope) Binding {
+	return NewBound(NewSyntax(body, code, formal, label, scope), scope)
 }
 
 func tinue(p *Process, args Cell) bool {
@@ -792,7 +789,7 @@ func Start(i bool) {
 
 	f := Function(external)
 
-	ext = NewUnbound(NewBuiltin(f, Null, Null, nil))
+	ext = NewUnbound(NewBuiltin(f, Null, Null, Null, nil))
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)

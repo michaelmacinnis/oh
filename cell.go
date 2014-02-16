@@ -46,6 +46,7 @@ type Closure interface {
 	Body() Function
 	Code() Cell
 	Formal() Cell
+	Label() Cell
 	Lexical() *Scope
 }
 
@@ -76,6 +77,11 @@ const (
 	SaveLexical
 	SaveScratch
 	SaveMax
+)
+
+const (
+	ctEvalArgs = 1 << iota
+	ctExpandArgs
 )
 
 var Null Cell
@@ -1107,12 +1113,13 @@ func (self *Channel) WriteFd() *os.File {
 type Builtin struct {
 	body	Function
 	code    Cell
-	formal   Cell
+	formal  Cell
+	label	Cell
 	lexical *Scope
 }
 
-func NewBuiltin(body Function, code, formal Cell, lexical *Scope) *Builtin {
-	return &Builtin{body, code, formal, lexical}
+func NewBuiltin(b Function, c, f, l Cell, s *Scope) *Builtin {
+	return &Builtin{b, c, f, l, s}
 }
 
 func (self *Builtin) Bool() bool {
@@ -1141,6 +1148,10 @@ func (self *Builtin) Formal() Cell {
 	return self.formal
 }
 
+func (self *Builtin) Label() Cell {
+	return self.label
+}
+
 func (self *Builtin) Lexical() *Scope {
 	return self.lexical
 }
@@ -1150,12 +1161,13 @@ func (self *Builtin) Lexical() *Scope {
 type Method struct {
 	body	Function
 	code    Cell
-	formal   Cell
+	formal  Cell
+	label	Cell
 	lexical *Scope
 }
 
-func NewMethod(body Function, code, formal Cell, lexical *Scope) *Method {
-	return &Method{body, code, formal, lexical}
+func NewMethod(b Function, c, f, l Cell, s *Scope) *Method {
+	return &Method{b, c, f, l, s}
 }
 
 func (self *Method) Bool() bool {
@@ -1184,6 +1196,10 @@ func (self *Method) Formal() Cell {
 	return self.formal
 }
 
+func (self *Method) Label() Cell {
+	return self.label
+}
+
 func (self *Method) Lexical() *Scope {
 	return self.lexical
 }
@@ -1193,12 +1209,13 @@ func (self *Method) Lexical() *Scope {
 type Syntax struct {
 	body	Function
 	code    Cell
-	formal   Cell
+	formal  Cell
+	label	Cell
 	lexical *Scope
 }
 
-func NewSyntax(body Function, code, formal Cell, lexical *Scope) *Syntax {
-	return &Syntax{body, code, formal, lexical}
+func NewSyntax(b Function, c, f, l Cell, s *Scope) *Syntax {
+	return &Syntax{b, c, f, l, s}
 }
 
 func (self *Syntax) Bool() bool {
@@ -1225,6 +1242,10 @@ func (self *Syntax) Code() Cell {
 
 func (self *Syntax) Formal() Cell {
 	return self.formal
+}
+
+func (self *Syntax) Label() Cell {
+	return self.label
 }
 
 func (self *Syntax) Lexical() *Scope {
@@ -1601,37 +1622,38 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewUnbound(NewBuiltin(f, Null, Null, self)))
+	self.Define(NewSymbol(k),
+		NewUnbound(NewBuiltin(f, Null, Null, Null, self)))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewMethod(f, Null, Null, self), self))
+		NewBound(NewMethod(f, Null, Null, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewMethod(f, Null, Null, self), self))
+		NewBound(NewMethod(f, Null, Null, Null, self), self))
 }
 
 func (self *Scope) DefineState(k string, v int64) {
 	self.Define(NewSymbol(k),
-		NewBound(NewMethod(nil, NewInteger(v), Null, self), self))
+		NewBound(NewMethod(nil, NewInteger(v), Null, Null, self), self))
 }
 
 func (self *Scope) PublicState(k string, v int64) {
 	self.Public(NewSymbol(k),
-		NewBound(NewMethod(nil, NewInteger(v), Null, self), self))
+		NewBound(NewMethod(nil, NewInteger(v), Null, Null, self), self))
 }
 
 func (self *Scope) DefineSyntax(k string, f Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewSyntax(f, f, Null, self), self))
+		NewBound(NewSyntax(f, f, Null, Null, self), self))
 }
 
 func (self *Scope) PublicSyntax(k string, f Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewSyntax(f, f, Null, self), self))
+		NewBound(NewSyntax(f, f, Null, Null, self), self))
 }
 
 /* Bound cell definition. */
