@@ -44,10 +44,8 @@ const (
 	psExecSplice
 
 	/* Commands. */
-	psDynamic
 	psIf
 	psSet
-	psSetenv
 	psSpawn
 	psSplice
 	psWhile
@@ -65,8 +63,6 @@ var irq chan os.Signal
 var next = map[int64]int64{
 	psEvalArguments:   psEvalElement,
 	psEvalArgumentsBC: psEvalElementBC,
-	psDynamic:         psExecDynamic,
-	psSetenv:          psExecSetenv,
 }
 
 func apply(p *Process, args Cell) bool {
@@ -98,10 +94,6 @@ func apply(p *Process, args Cell) bool {
 	return true
 }
 
-func builtin(body Function, code, formal, label Cell, scope *Scope) Binding {
-	return NewUnbound(NewBuiltin(body, code, formal, label, scope))
-}
-
 func channel(p *Process, r, w *os.File, cap int) Context {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
@@ -127,17 +119,69 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 	}
 
 	c.Public(NewSymbol("guts"), ch)
-	c.Public(NewSymbol("reader-close"), method(rclose, rclose, Null, Null, c))
-	c.Public(NewSymbol("read"), method(read, read, Null, Null, c))
-	c.Public(NewSymbol("readline"), method(readline, readline, Null, Null, c))
-	c.Public(NewSymbol("writer-close"), method(wclose, wclose, Null, Null, c))
-	c.Public(NewSymbol("write"), method(write, write, Null, Null, c))
+	c.Public(NewSymbol("reader-close"), method(rclose, c))
+	c.Public(NewSymbol("read"), method(read, c))
+	c.Public(NewSymbol("readline"), method(readline, c))
+	c.Public(NewSymbol("writer-close"), method(wclose, c))
+	c.Public(NewSymbol("write"), method(write, c))
 
 	return NewObject(c)
 }
 
+func combiner(p *Process,
+		n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
+	label := Null
+	formal := Car(p.Code)
+	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
+		label = formal
+		formal = Cadr(p.Code)
+		p.Code = Cdr(p.Code)
+	}
+
+	if p.Code == Null {
+		panic("expected 'as'")
+	}
+
+	block := Cddr(p.Code)
+	scope := p.Lexical.Expose()
+
+	c := n(apply, block, formal, label, scope)
+	if label == Null {
+		SetCar(p.Scratch, NewUnbound(c))
+	} else {
+		SetCar(p.Scratch, NewBound(c, scope))
+	}
+
+	return false
+}
+
 func debug(p *Process, s string) {
 	fmt.Printf("%s: p.Code = %v, p.Scratch = %v\n", s, p.Code, p.Scratch)
+}
+
+func dynamic(p *Process, state int64) bool {
+	k := Car(p.Code)
+
+	r := Raw(k)
+	if strict(p) && number(r) {
+		panic(r + " cannot be used as a variable name")
+	}
+
+	if state == psExecSetenv {
+		if !strings.HasPrefix(r, "$") {
+			// TODO: We should probably panic here.
+			return false
+		}
+	}
+
+	p.ReplaceState(state)
+	p.NewState(SaveCode|SaveDynamic, k)
+	p.NewState(psEvalElement)
+
+	p.Code = Cadr(p.Code)
+	p.Scratch = Cdr(p.Scratch)
+
+	return true
 }
 
 func expand(args Cell) Cell {
@@ -234,33 +278,6 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	return true, ""
 }
 
-func lambda(p *Process,
-		n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
-	label := Null
-	formal := Car(p.Code)
-	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
-		label = formal
-		formal = Cadr(p.Code)
-		p.Code = Cdr(p.Code)
-	}
-
-	if p.Code == Null {
-		panic("expected 'as'")
-	}
-
-	block := Cddr(p.Code)
-	scope := p.Lexical.Expose()
-
-	c := n(apply, block, formal, label, scope)
-	if label == Null {
-		SetCar(p.Scratch, NewUnbound(c))
-	} else {
-		SetCar(p.Scratch, NewBound(c, scope))
-	}
-
-	return false
-}
-
 func lexical(p *Process, state int64) bool {
 	p.RemoveState()
 
@@ -288,8 +305,8 @@ func lexical(p *Process, state int64) bool {
 	return true
 }
 
-func method(body Function, code, formal, label Cell, scope *Scope) Binding {
-	return NewBound(NewMethod(body, code, formal, label, scope), scope)
+func method(body Function, scope *Scope) Binding {
+	return NewBound(NewMethod(body, Null, Null, Null, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -531,35 +548,11 @@ clearing:
 
 			continue
 
-		case psExecDefine, psExecPublic:
-			if state == psExecDefine {
-				p.Lexical.Define(p.Code, Car(p.Scratch))
-			} else {
-				p.Lexical.Public(p.Code, Car(p.Scratch))
-			}
+		case psExecDefine:
+			p.Lexical.Define(p.Code, Car(p.Scratch))
 
-		case psDynamic, psSetenv:
-			k := Car(p.Code)
-
-			r := Raw(k)
-			if strict(p) && number(r) {
-				panic(r + " cannot be used as a variable name")
-			}
-
-			if state == psSetenv {
-				if !strings.HasPrefix(r, "$") {
-					break
-				}
-			}
-
-			p.ReplaceState(next[state])
-			p.NewState(SaveCode|SaveDynamic, k)
-			p.NewState(psEvalElement)
-
-			p.Code = Cadr(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			continue
+		case psExecPublic:
+			p.Lexical.Public(p.Code, Car(p.Scratch))
 
 		case psExecDynamic, psExecSetenv:
 			k := p.Code
@@ -727,10 +720,6 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func syntax(body Function, code, formal, label Cell, scope *Scope) Binding {
-	return NewBound(NewSyntax(body, code, formal, label, scope), scope)
-}
-
 func tinue(p *Process, args Cell) bool {
 	p.Code = Car(p.Code)
 
@@ -812,10 +801,9 @@ func Start(i bool) {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("dynamic", psDynamic)
 	s.DefineState("if", psIf)
 	s.DefineState("set", psSet)
-	s.DefineState("setenv", psSetenv)
+	//s.DefineState("setenv", psSetenv)
 	s.DefineState("spawn", psSpawn)
 	s.DefineState("splice", psSplice)
 	s.DefineState("while", psWhile)
@@ -829,16 +817,22 @@ func Start(i bool) {
 		return true
 	})
 	s.DefineSyntax("builtin", func(p *Process, args Cell) bool {
-		return lambda(p, NewBuiltin)
+		return combiner(p, NewBuiltin)
 	})
 	s.DefineSyntax("define", func(p *Process, args Cell) bool {
 		return lexical(p, psExecDefine)
 	})
+	s.DefineSyntax("dynamic", func(p *Process, args Cell) bool {
+		return dynamic(p, psExecDynamic)
+	})
 	s.DefineSyntax("method", func(p *Process, args Cell) bool {
-		return lambda(p, NewMethod)
+		return combiner(p, NewMethod)
+	})
+	s.DefineSyntax("setenv", func(p *Process, args Cell) bool {
+		return dynamic(p, psExecSetenv)
 	})
 	s.DefineSyntax("syntax", func(p *Process, args Cell) bool {
-		return lambda(p, NewSyntax)
+		return combiner(p, NewSyntax)
 	})
 
 	s.PublicSyntax("public", func(p *Process, args Cell) bool {
