@@ -44,15 +44,10 @@ const (
 	psExecSplice
 
 	/* Commands. */
-	psBuiltin
-	psDefine
 	psDynamic
 	psIf
-	psMethod
-	psPublic
 	psSet
 	psSetenv
-	psSyntax
 	psSpawn
 	psSplice
 	psWhile
@@ -70,9 +65,7 @@ var irq chan os.Signal
 var next = map[int64]int64{
 	psEvalArguments:   psEvalElement,
 	psEvalArgumentsBC: psEvalElementBC,
-	psDefine:          psExecDefine,
 	psDynamic:         psExecDynamic,
-	psPublic:          psExecPublic,
 	psSetenv:          psExecSetenv,
 }
 
@@ -239,6 +232,60 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func lambda(p *Process,
+		n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
+	label := Null
+	formal := Car(p.Code)
+	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
+		label = formal
+		formal = Cadr(p.Code)
+		p.Code = Cdr(p.Code)
+	}
+
+	if p.Code == Null {
+		panic("expected 'as'")
+	}
+
+	block := Cddr(p.Code)
+	scope := p.Lexical.Expose()
+
+	c := n(apply, block, formal, label, scope)
+	if label == Null {
+		SetCar(p.Scratch, NewUnbound(c))
+	} else {
+		SetCar(p.Scratch, NewBound(c, scope))
+	}
+
+	return false
+}
+
+func lexical(p *Process, state int64) bool {
+	p.RemoveState()
+
+	l := Car(p.Scratch).(Binding).Self()
+	if p.Lexical != l {
+		p.NewState(SaveLexical)
+		p.Lexical = l
+	}
+
+	p.NewState(state)
+
+	k := Car(p.Code)
+
+	r := Raw(k)
+	if strict(p) && number(r) {
+		panic(r + " cannot be used as a variable name")
+	}
+
+	p.Code = Cadr(p.Code)
+	p.Scratch = Cdr(p.Scratch)
+
+	p.NewState(SaveCode|SaveLexical, k)
+	p.NewState(psEvalElement)
+
+	return true
 }
 
 func method(body Function, code, formal, label Cell, scope *Scope) Binding {
@@ -482,57 +529,6 @@ clearing:
 
 			p.Code = Car(p.Code)
 
-			continue
-
-		case psBuiltin, psMethod, psSyntax:
-			context := Null
-			formal := Car(p.Code)
-			for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
-				context = formal
-				formal = Cadr(p.Code)
-				p.Code = Cdr(p.Code)
-			}
-
-			if p.Code == Null {
-				panic("expected 'as'")
-			}
-
-			block := Cddr(p.Code)
-			scope := p.Lexical.Expose()
-
-			if state == psBuiltin {
-				SetCar(p.Scratch, builtin(apply, block, formal, context, scope))
-			} else if state == psMethod {
-				SetCar(p.Scratch, method(apply, block, formal, context, scope))
-			} else {
-				SetCar(p.Scratch, syntax(apply, block, formal, context, scope))
-			}
-
-		case psDefine, psPublic:
-			state = next[p.GetState()]
-
-			p.RemoveState()
-
-			l := Car(p.Scratch).(Binding).Self()
-			if p.Lexical != l {
-				p.NewState(SaveLexical)
-				p.Lexical = l
-			}
-
-			p.NewState(state)
-
-			k := Car(p.Code)
-
-			r := Raw(k)
-			if strict(p) && number(r) {
-				panic(r + " cannot be used as a variable name")
-			}
-
-			p.Code = Cadr(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			p.NewState(SaveCode|SaveLexical, k)
-			p.NewState(psEvalElement)
 			continue
 
 		case psExecDefine, psExecPublic:
@@ -816,19 +812,13 @@ func Start(i bool) {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("builtin", psBuiltin)
-	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
 	s.DefineState("if", psIf)
-	s.DefineState("method", psMethod)
 	s.DefineState("set", psSet)
 	s.DefineState("setenv", psSetenv)
 	s.DefineState("spawn", psSpawn)
 	s.DefineState("splice", psSplice)
-	s.DefineState("syntax", psSyntax)
 	s.DefineState("while", psWhile)
-
-	s.PublicState("public", psPublic)
 
 	s.DefineSyntax("block", func(p *Process, args Cell) bool {
 		p.ReplaceState(SaveDynamic | SaveLexical)
@@ -837,6 +827,22 @@ func Start(i bool) {
 		p.NewScope(p.Dynamic, p.Lexical)
 
 		return true
+	})
+	s.DefineSyntax("builtin", func(p *Process, args Cell) bool {
+		return lambda(p, NewBuiltin)
+	})
+	s.DefineSyntax("define", func(p *Process, args Cell) bool {
+		return lexical(p, psExecDefine)
+	})
+	s.DefineSyntax("method", func(p *Process, args Cell) bool {
+		return lambda(p, NewMethod)
+	})
+	s.DefineSyntax("syntax", func(p *Process, args Cell) bool {
+		return lambda(p, NewSyntax)
+	})
+
+	s.PublicSyntax("public", func(p *Process, args Cell) bool {
+		return lexical(p, psExecPublic)
 	})
 
 	/* Builtins. */

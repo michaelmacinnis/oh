@@ -1120,7 +1120,7 @@ type Builtin struct {
 	lexical *Scope
 }
 
-func NewBuiltin(b Function, c, f, l Cell, s *Scope) *Builtin {
+func NewBuiltin(b Function, c, f, l Cell, s *Scope) Closure {
 	return &Builtin{b, c, f, l, s}
 }
 
@@ -1172,7 +1172,7 @@ type Method struct {
 	lexical *Scope
 }
 
-func NewMethod(b Function, c, f, l Cell, s *Scope) *Method {
+func NewMethod(b Function, c, f, l Cell, s *Scope) Closure {
 	return &Method{b, c, f, l, s}
 }
 
@@ -1224,7 +1224,7 @@ type Syntax struct {
 	lexical *Scope
 }
 
-func NewSyntax(b Function, c, f, l Cell, s *Scope) *Syntax {
+func NewSyntax(b Function, c, f, l Cell, s *Scope) Closure {
 	return &Syntax{b, c, f, l, s}
 }
 
