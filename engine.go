@@ -338,12 +338,14 @@ clearing:
 			args := p.Arguments()
 
 			m := Car(p.Scratch).(Binding)
-			if _, ok := m.Ref().(*Builtin); ok {
-				args = expand(args)
+			t := m.Ref().Type()
+
+			if t & ctEvalArgs != ctEvalArgs {
+				args = p.Code
 			}
 
-			if args == Null {
-				args = p.Code
+			if t & ctExpandArgs == ctExpandArgs {
+				args = expand(args)
 			}
 
 			if m.Ref().Body()(p, args) {
@@ -419,8 +421,8 @@ clearing:
 
 				case *Syntax:
 					evalargs = false
-					p.Scratch = Cons(nil, p.Scratch)
 					p.ReplaceState(psExecFunction)
+					p.Scratch = Cons(nil, p.Scratch)
 				}
 
 				if !evalargs {

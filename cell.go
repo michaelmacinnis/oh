@@ -48,6 +48,7 @@ type Closure interface {
 	Formal() Cell
 	Label() Cell
 	Lexical() *Scope
+	Type() int
 }
 
 type Context interface {
@@ -82,6 +83,7 @@ const (
 const (
 	ctEvalArgs = 1 << iota
 	ctExpandArgs
+	ctSimpleArgs
 )
 
 var Null Cell
@@ -1156,6 +1158,10 @@ func (self *Builtin) Lexical() *Scope {
 	return self.lexical
 }
 
+func (self *Builtin) Type() int {
+	return ctEvalArgs | ctExpandArgs | ctSimpleArgs
+}
+
 /* Method cell definition. */
 
 type Method struct {
@@ -1204,6 +1210,10 @@ func (self *Method) Lexical() *Scope {
 	return self.lexical
 }
 
+func (self *Method) Type() int {
+	return ctEvalArgs
+}
+
 /* Syntax cell definition. */
 
 type Syntax struct {
@@ -1250,6 +1260,10 @@ func (self *Syntax) Label() Cell {
 
 func (self *Syntax) Lexical() *Scope {
 	return self.lexical
+}
+
+func (self *Syntax) Type() int {
+	return 0
 }
 
 /* Env cell definition. */
@@ -1648,12 +1662,12 @@ func (self *Scope) PublicState(k string, v int64) {
 
 func (self *Scope) DefineSyntax(k string, f Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewSyntax(f, f, Null, Null, self), self))
+		NewBound(NewSyntax(f, Null, Null, Null, self), self))
 }
 
 func (self *Scope) PublicSyntax(k string, f Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewSyntax(f, f, Null, Null, self), self))
+		NewBound(NewSyntax(f, Null, Null, Null, self), self))
 }
 
 /* Bound cell definition. */
