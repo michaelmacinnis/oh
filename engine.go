@@ -33,13 +33,11 @@ const (
 	psEvalWhileBody
 	psEvalWhileTest
 
-	psExecApplicative
 	psExecCommand
 	psExecDefine
 	psExecDynamic
 	psExecFunction
 	psExecIf
-	psExecOperative
 	psExecPublic
 	psExecSet
 	psExecSetenv
@@ -79,7 +77,7 @@ var next = map[int64]int64{
 	psSetenv:          psExecSetenv,
 }
 
-func applicative(p *Process, args Cell) bool {
+func apply(p *Process, args Cell) bool {
 	m := Car(p.Scratch).(Binding)
 	s := m.Self()
 
@@ -346,41 +344,6 @@ clearing:
 			p.Scratch = Cdr(p.Scratch)
 			continue
 
-		case psExecApplicative:
-			args := p.Arguments()
-
-			m := Car(p.Scratch).(Binding)
-			s := m.Self()
-			if s == nil {
-				args = expand(args)
-				s = p.Lexical.Expose()
-			}
-
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalBlock)
-
-			p.Code = m.Ref().Code()
-			p.NewScope(p.Dynamic, m.Ref().Lexical())
-
-			formal := m.Ref().Formal()
-			if formal != Null {
-				if Car(formal) != Null {
-					p.Lexical.Public(Car(formal), s)
-				}
-				formal = Cdr(formal)
-				for args != Null && formal != Null && IsAtom(Car(formal)) {
-					p.Lexical.Public(Car(formal), Car(args))
-					args, formal = Cdr(args), Cdr(formal)
-				}
-				if IsCons(Car(formal)) {
-					p.Lexical.Public(Caar(formal), args)
-				}
-			}
-			p.Lexical.Public(NewSymbol("return"),
-				p.Continuation(psReturn))
-
-			continue
-
 		case psExecFunction:
 			args := p.Arguments()
 
@@ -393,36 +356,6 @@ clearing:
 				continue
 			}
 
-		case psExecOperative:
-			args := p.Code
-
-			m := Car(p.Scratch).(Binding)
-			s := m.Self()
-
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalBlock)
-
-			p.Code = m.Ref().Code()
-			p.NewScope(p.Dynamic, m.Ref().Lexical())
-
-			formal := m.Ref().Formal()
-			if formal != Null {
-				if Car(formal) != Null {
-					p.Lexical.Public(Car(formal), s)
-				}
-				formal = Cdr(formal)
-				for args != Null && formal != Null && IsAtom(Car(formal)) {
-					p.Lexical.Public(Car(formal), Car(args))
-					args, formal = Cdr(args), Cdr(formal)
-				}
-				if IsCons(Car(formal)) {
-					p.Lexical.Public(Caar(formal), args)
-				}
-			}
-			p.Lexical.Public(NewSymbol("return"),
-				p.Continuation(psReturn))
-
-			fallthrough
 		case psEvalBlock:
 			if p.Code == Null || !IsCons(p.Code) || !IsCons(Car(p.Code)) {
 				break
@@ -492,7 +425,12 @@ clearing:
 
 				case *Syntax:
 					evalargs = false
-					p.ReplaceState(psExecOperative)
+					p.Scratch = Cons(nil, p.Scratch)
+					for p.Code != Null {
+						p.Scratch = Cons(Car(p.Code), p.Scratch)
+						p.Code = Cdr(p.Code)
+					}
+					p.ReplaceState(psExecFunction)
 				}
 
 				if !evalargs {
@@ -572,11 +510,11 @@ clearing:
 			scope := p.Lexical.Expose()
 
 			if state == psBuiltin {
-				SetCar(p.Scratch, builtin(applicative, block, formal, scope))
+				SetCar(p.Scratch, builtin(apply, block, formal, scope))
 			} else if state == psMethod {
-				SetCar(p.Scratch, method(applicative, block, formal, scope))
+				SetCar(p.Scratch, method(apply, block, formal, scope))
 			} else {
-				SetCar(p.Scratch, syntax(nil, block, formal, scope))
+				SetCar(p.Scratch, syntax(apply, block, formal, scope))
 			}
 
 		case psDefine, psPublic:
