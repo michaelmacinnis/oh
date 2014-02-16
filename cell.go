@@ -1415,11 +1415,6 @@ func (self *Process) Arguments() Cell {
 	return l
 }
 
-func (self *Process) Continuation(state int64) Binding {
-	return NewUnbound(NewMethod(nil,
-		NewInteger(state), List(Cdr(self.Scratch), self.Stack), nil))
-}
-
 func (self *Process) GetState() int64 {
 	if self.Stack == Null {
 		return 0
@@ -1606,17 +1601,17 @@ func (self *Scope) Remove(key Cell) bool {
 }
 
 func (self *Scope) DefineFunction(k string, f Function) {
-	self.Define(NewSymbol(k), NewUnbound(NewBuiltin(f, f, Null, self)))
+	self.Define(NewSymbol(k), NewUnbound(NewBuiltin(f, Null, Null, self)))
 }
 
 func (self *Scope) DefineMethod(k string, f Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewMethod(f, f, Null, self), self))
+		NewBound(NewMethod(f, Null, Null, self), self))
 }
 
 func (self *Scope) PublicMethod(k string, f Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewMethod(f, f, Null, self), self))
+		NewBound(NewMethod(f, Null, Null, self), self))
 }
 
 func (self *Scope) DefineState(k string, v int64) {
@@ -1627,6 +1622,16 @@ func (self *Scope) DefineState(k string, v int64) {
 func (self *Scope) PublicState(k string, v int64) {
 	self.Public(NewSymbol(k),
 		NewBound(NewMethod(nil, NewInteger(v), Null, self), self))
+}
+
+func (self *Scope) DefineSyntax(k string, f Function) {
+	self.Define(NewSymbol(k),
+		NewBound(NewSyntax(f, f, Null, self), self))
+}
+
+func (self *Scope) PublicSyntax(k string, f Function) {
+	self.Public(NewSymbol(k),
+		NewBound(NewSyntax(f, f, Null, self), self))
 }
 
 /* Bound cell definition. */

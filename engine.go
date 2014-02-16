@@ -44,14 +44,12 @@ const (
 	psExecSplice
 
 	/* Commands. */
-	psBlock
 	psBuiltin
 	psDefine
 	psDynamic
 	psIf
 	psMethod
 	psPublic
-	psReturn
 	psSet
 	psSetenv
 	psSyntax
@@ -65,6 +63,7 @@ const (
 var block0 Cell
 var proc0 *Process
 
+var con Cell
 var ext Cell
 var interactive bool
 var irq chan os.Signal
@@ -101,7 +100,8 @@ func apply(p *Process, args Cell) bool {
 			p.Lexical.Public(Caar(formal), args)
 		}
 	}
-	p.Lexical.Public(NewSymbol("return"), p.Continuation(psReturn))
+	con := NewUnbound(NewMethod(tinue, Cdr(p.Scratch), p.Stack, nil))
+	p.Lexical.Public(NewSymbol("return"), con)
 
 	return true
 }
@@ -319,14 +319,6 @@ clearing:
 		case psNone:
 			return
 
-		case psBlock:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalBlock)
-
-			p.NewScope(p.Dynamic, p.Lexical)
-
-			continue
-
 		case psChangeScope:
 			p.Dynamic = nil
 			p.Lexical = Car(p.Scratch).(Context)
@@ -348,8 +340,12 @@ clearing:
 			args := p.Arguments()
 
 			m := Car(p.Scratch).(Binding)
-			if m.Self() == nil {
+			if _, ok := m.Ref().(*Builtin); ok {
 				args = expand(args)
+			}
+
+			if args == Null {
+				args = p.Code
 			}
 
 			if m.Ref().Body()(p, args) {
@@ -426,10 +422,6 @@ clearing:
 				case *Syntax:
 					evalargs = false
 					p.Scratch = Cons(nil, p.Scratch)
-					for p.Code != Null {
-						p.Scratch = Cons(Car(p.Code), p.Scratch)
-						p.Code = Cdr(p.Code)
-					}
 					p.ReplaceState(psExecFunction)
 				}
 
@@ -643,16 +635,6 @@ clearing:
 
 			continue
 
-		case psReturn:
-			p.Code = Car(p.Code)
-
-			m := Car(p.Scratch).(Binding)
-			p.Scratch = Car(m.Ref().Formal())
-			p.Stack = Cadr(m.Ref().Formal())
-
-			p.NewState(psEvalElement)
-			continue
-
 		case psSet:
 			p.Scratch = Cdr(p.Scratch)
 
@@ -754,6 +736,18 @@ func syntax(body Function, code, formal Cell, scope *Scope) Binding {
 	return NewBound(NewSyntax(body, code, formal, scope), scope)
 }
 
+func tinue(p *Process, args Cell) bool {
+	p.Code = Car(p.Code)
+
+	m := Car(p.Scratch).(Binding)
+	p.Scratch = m.Ref().Code()
+	p.Stack = m.Ref().Formal()
+
+	p.Scratch = Cons(Car(args), p.Scratch)
+
+	return false
+}
+
 func wpipe(c Cell) *os.File {
 	w := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
 	return w.Get().(*Channel).WriteFd()
@@ -797,7 +791,8 @@ func Start(i bool) {
 	interactive = i
 
 	f := Function(external)
-	ext = NewUnbound(NewBuiltin(f, f, Null, nil))
+
+	ext = NewUnbound(NewBuiltin(f, Null, Null, nil))
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)
@@ -822,7 +817,6 @@ func Start(i bool) {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("block", psBlock)
 	s.DefineState("builtin", psBuiltin)
 	s.DefineState("define", psDefine)
 	s.DefineState("dynamic", psDynamic)
@@ -836,6 +830,15 @@ func Start(i bool) {
 	s.DefineState("while", psWhile)
 
 	s.PublicState("public", psPublic)
+
+	s.DefineSyntax("block", func(p *Process, args Cell) bool {
+		p.ReplaceState(SaveDynamic | SaveLexical)
+		p.NewState(psEvalBlock)
+
+		p.NewScope(p.Dynamic, p.Lexical)
+
+		return true
+	})
 
 	/* Builtins. */
 	s.DefineFunction("cd", func(p *Process, args Cell) bool {
