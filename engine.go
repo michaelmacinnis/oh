@@ -79,6 +79,10 @@ var next = map[int64]int64{
 	psSetenv:          psExecSetenv,
 }
 
+func builtin(body Function, code, formal Cell, scope *Scope) Binding {
+	return NewUnbound(NewBuiltin(body, code, formal, scope))
+}
+
 func channel(p *Process, r, w *os.File, cap int) Context {
 	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
 
@@ -104,11 +108,11 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 	}
 
 	c.Public(NewSymbol("guts"), ch)
-	c.Public(NewSymbol("reader-close"), method(rclose, Null, c))
-	c.Public(NewSymbol("read"), method(read, Null, c))
-	c.Public(NewSymbol("readline"), method(readline, Null, c))
-	c.Public(NewSymbol("writer-close"), method(wclose, Null, c))
-	c.Public(NewSymbol("write"), method(write, Null, c))
+	c.Public(NewSymbol("reader-close"), method(rclose, rclose, Null, c))
+	c.Public(NewSymbol("read"), method(read, read, Null, c))
+	c.Public(NewSymbol("readline"), method(readline, readline, Null, c))
+	c.Public(NewSymbol("writer-close"), method(wclose, wclose, Null, c))
+	c.Public(NewSymbol("write"), method(write, write, Null, c))
 
 	return NewObject(c)
 }
@@ -191,18 +195,18 @@ func external(p *Process, args Cell) bool {
 	return p.Return(NewStatus(status))
 }
 
-func function(body, param Cell, scope *Scope) Binding {
-	return NewUnbound(NewBuiltin(body, param, scope))
-}
-
 func head(p *Process) bool {
 	switch t := Car(p.Scratch).(type) {
 	case Binding:
 		switch r := t.Ref().(type) {
 		case *Builtin, *Method:
-			switch b := r.Body().(type) {
+			switch b := r.Code().(type) {
 			case Function:
 				p.ReplaceState(psExecFunction)
+				if (t.Self() == nil) {
+					p.NewState(psEvalArgumentsBC)
+					return false
+				}
 
 			case *Integer:
 				p.ReplaceState(b.Int())
@@ -248,8 +252,8 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 	return true, ""
 }
 
-func method(body, param Cell, scope *Scope) Binding {
-	return NewBound(NewMethod(body, param, scope), scope)
+func method(body Function, code, formal Cell, scope *Scope) Binding {
+	return NewBound(NewMethod(body, code, formal, scope), scope)
 }
 
 func module(f string) (string, error) {
@@ -362,21 +366,21 @@ clearing:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Ref().Body()
+			p.Code = m.Ref().Code()
 			p.NewScope(p.Dynamic, m.Ref().Lexical())
 
-			param := m.Ref().Formal()
-			if param != Null {
-				if Car(param) != Null {
-					p.Lexical.Public(Car(param), s)
+			formal := m.Ref().Formal()
+			if formal != Null {
+				if Car(formal) != Null {
+					p.Lexical.Public(Car(formal), s)
 				}
-				param = Cdr(param)
-				for args != Null && param != Null && IsAtom(Car(param)) {
-					p.Lexical.Public(Car(param), Car(args))
-					args, param = Cdr(args), Cdr(param)
+				formal = Cdr(formal)
+				for args != Null && formal != Null && IsAtom(Car(formal)) {
+					p.Lexical.Public(Car(formal), Car(args))
+					args, formal = Cdr(args), Cdr(formal)
 				}
-				if IsCons(Car(param)) {
-					p.Lexical.Public(Caar(param), args)
+				if IsCons(Car(formal)) {
+					p.Lexical.Public(Caar(formal), args)
 				}
 			}
 			p.Lexical.Public(NewSymbol("return"),
@@ -392,7 +396,7 @@ clearing:
 				args = expand(args)
 			}
 
-			if m.Ref().Body().(Function)(p, args) {
+			if m.Ref().Body()(p, args) {
 				continue
 			}
 
@@ -405,21 +409,21 @@ clearing:
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psEvalBlock)
 
-			p.Code = m.Ref().Body()
+			p.Code = m.Ref().Code()
 			p.NewScope(p.Dynamic, m.Ref().Lexical())
 
-			param := m.Ref().Formal()
-			if param != Null {
-				if Car(param) != Null {
-					p.Lexical.Public(Car(param), s)
+			formal := m.Ref().Formal()
+			if formal != Null {
+				if Car(formal) != Null {
+					p.Lexical.Public(Car(formal), s)
 				}
-				param = Cdr(param)
-				for args != Null && param != Null && IsAtom(Car(param)) {
-					p.Lexical.Public(Car(param), Car(args))
-					args, param = Cdr(args), Cdr(param)
+				formal = Cdr(formal)
+				for args != Null && formal != Null && IsAtom(Car(formal)) {
+					p.Lexical.Public(Car(formal), Car(args))
+					args, formal = Cdr(args), Cdr(formal)
 				}
-				if IsCons(Car(param)) {
-					p.Lexical.Public(Caar(param), args)
+				if IsCons(Car(formal)) {
+					p.Lexical.Public(Caar(formal), args)
 				}
 			}
 			p.Lexical.Public(NewSymbol("return"),
@@ -528,10 +532,10 @@ clearing:
 
 		case psBuiltin, psMethod, psSyntax:
 			context := Null
-			param := Car(p.Code)
+			formal := Car(p.Code)
 			for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
-				context = param
-				param = Cadr(p.Code)
+				context = formal
+				formal = Cadr(p.Code)
 				p.Code = Cdr(p.Code)
 			}
 
@@ -540,17 +544,15 @@ clearing:
 			}
 
 			block := Cddr(p.Code)
+			formal = Cons(context, formal)
 			scope := p.Lexical.Expose()
 
 			if state == psBuiltin {
-				param = Cons(context, param)
-				SetCar(p.Scratch, function(block, param, scope))
+				SetCar(p.Scratch, builtin(nil, block, formal, scope))
 			} else if state == psMethod {
-				param = Cons(context, param)
-				SetCar(p.Scratch, method(block, param, scope))
+				SetCar(p.Scratch, method(nil, block, formal, scope))
 			} else {
-				param = Cons(context, param)
-				SetCar(p.Scratch, syntax(block, param, scope))
+				SetCar(p.Scratch, syntax(nil, block, formal, scope))
 			}
 
 		case psDefine, psPublic:
@@ -786,8 +788,8 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func syntax(body, param Cell, scope *Scope) Binding {
-	return NewBound(NewSyntax(body, param, scope), scope)
+func syntax(body Function, code, formal Cell, scope *Scope) Binding {
+	return NewBound(NewSyntax(body, code, formal, scope), scope)
 }
 
 func wpipe(c Cell) *os.File {
@@ -832,7 +834,8 @@ func ExitStatus() int {
 func Start(i bool) {
 	interactive = i
 
-	ext = NewUnbound(NewBuiltin(Function(external), Null, nil))
+	f := Function(external)
+	ext = NewUnbound(NewBuiltin(f, f, Null, nil))
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)
