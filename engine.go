@@ -79,6 +79,35 @@ var next = map[int64]int64{
 	psSetenv:          psExecSetenv,
 }
 
+func applicative(p *Process, args Cell) bool {
+	m := Car(p.Scratch).(Binding)
+	s := m.Self()
+
+	p.ReplaceState(SaveDynamic | SaveLexical)
+	p.NewState(psEvalBlock)
+
+	p.Code = m.Ref().Code()
+	p.NewScope(p.Dynamic, m.Ref().Lexical())
+
+	formal := m.Ref().Formal()
+	if formal != Null {
+		if Car(formal) != Null {
+			p.Lexical.Public(Car(formal), s)
+		}
+		formal = Cdr(formal)
+		for args != Null && formal != Null && IsAtom(Car(formal)) {
+			p.Lexical.Public(Car(formal), Car(args))
+			args, formal = Cdr(args), Cdr(formal)
+		}
+		if IsCons(Car(formal)) {
+			p.Lexical.Public(Caar(formal), args)
+		}
+	}
+	p.Lexical.Public(NewSymbol("return"), p.Continuation(psReturn))
+
+	return true
+}
+
 func builtin(body Function, code, formal Cell, scope *Scope) Binding {
 	return NewUnbound(NewBuiltin(body, code, formal, scope))
 }
@@ -193,40 +222,6 @@ func external(p *Process, args Cell) bool {
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
 	return p.Return(NewStatus(status))
-}
-
-func head(p *Process, t Binding) bool {
-	r := false
-	var s int64 = psEvalArguments
-
-	switch c := t.Ref().(type) {
-	case *Builtin, *Method:
-		if _, ok := c.(*Builtin); ok {
-			s = psEvalArgumentsBC
-		}
-
-		if c.Body() != nil {
-			p.ReplaceState(psExecFunction)
-		} else {
-			switch b := c.Code().(type) {
-			case *Integer:
-				r = true
-				p.ReplaceState(b.Int())
-
-			default:
-				p.ReplaceState(psExecApplicative)
-			}
-		}
-
-	case *Syntax:
-		r = true
-		p.ReplaceState(psExecOperative)
-	}
-
-	if !r {
-		p.NewState(s)
-	}
-	return r
 }
 
 func lookup(p *Process, sym *Symbol) (bool, string) {
@@ -473,9 +468,37 @@ clearing:
 				p.NewState(psEvalArgumentsBC)
 
 			case Binding:
-				if head(p, t) {
+				evalargs := true
+				var evalwith int64 = psEvalArguments
+
+				switch c := t.Ref().(type) {
+				case *Builtin, *Method:
+					if _, ok := c.(*Builtin); ok {
+						evalwith = psEvalArgumentsBC
+					}
+
+					if c.Body() != nil {
+						p.ReplaceState(psExecFunction)
+					} else {
+						switch b := c.Code().(type) {
+						case *Integer:
+							evalargs = false
+							p.ReplaceState(b.Int())
+
+						default:
+							panic(fmt.Sprintf("cannot evaluate: %v", t))
+						}
+					}
+
+				case *Syntax:
+					evalargs = false
+					p.ReplaceState(psExecOperative)
+				}
+
+				if !evalargs {
 					continue
 				}
+				p.NewState(evalwith)
 
 			default:
 				panic(fmt.Sprintf("cannot evaluate: %v", t))
@@ -549,9 +572,9 @@ clearing:
 			scope := p.Lexical.Expose()
 
 			if state == psBuiltin {
-				SetCar(p.Scratch, builtin(nil, block, formal, scope))
+				SetCar(p.Scratch, builtin(applicative, block, formal, scope))
 			} else if state == psMethod {
-				SetCar(p.Scratch, method(nil, block, formal, scope))
+				SetCar(p.Scratch, method(applicative, block, formal, scope))
 			} else {
 				SetCar(p.Scratch, syntax(nil, block, formal, scope))
 			}
