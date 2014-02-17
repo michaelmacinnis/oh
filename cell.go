@@ -1635,7 +1635,7 @@ func (self *Scope) Remove(key Cell) bool {
 	return true
 }
 
-func (self *Scope) DefineFunction(k string, f Function) {
+func (self *Scope) DefineBuiltin(k string, f Function) {
 	self.Define(NewSymbol(k),
 		NewUnbound(NewBuiltin(f, Null, Null, Null, self)))
 }
@@ -1648,16 +1648,6 @@ func (self *Scope) DefineMethod(k string, f Function) {
 func (self *Scope) PublicMethod(k string, f Function) {
 	self.Public(NewSymbol(k),
 		NewBound(NewMethod(f, Null, Null, Null, self), self))
-}
-
-func (self *Scope) DefineState(k string, v int64) {
-	self.Define(NewSymbol(k),
-		NewBound(NewMethod(nil, NewInteger(v), Null, Null, self), self))
-}
-
-func (self *Scope) PublicState(k string, v int64) {
-	self.Public(NewSymbol(k),
-		NewBound(NewMethod(nil, NewInteger(v), Null, Null, self), self))
 }
 
 func (self *Scope) DefineSyntax(k string, f Function) {

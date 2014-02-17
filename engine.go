@@ -24,11 +24,11 @@ const (
 
 	psEvalAccess
 	psEvalArguments
-	psEvalArgumentsBC
+	psEvalArgumentsSimple
 	psEvalBlock
 	psEvalCommand
 	psEvalElement
-	psEvalElementBC
+	psEvalElementSimple
 	psEvalTopBlock
 	psEvalWhileBody
 	psEvalWhileTest
@@ -56,7 +56,7 @@ var interactive bool
 var irq chan os.Signal
 var next = map[int64]int64{
 	psEvalArguments:   psEvalElement,
-	psEvalArgumentsBC: psEvalElementBC,
+	psEvalArgumentsSimple: psEvalElementSimple,
 }
 
 func apply(p *Process, args Cell) bool {
@@ -261,7 +261,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		} else {
 			p.Scratch = Cons(sym, p.Scratch)
 		}
-	} else if p.GetState() == psEvalElementBC && !IsSimple(c.Get()) {
+	} else if p.GetState() == psEvalElementSimple && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
         } else if a, ok := c.Get().(Binding); ok {
 		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
@@ -443,60 +443,36 @@ clearing:
 			continue
 
 		case psExecCommand:
-			if Car(p.Scratch) == Null || 
-				Car(p.Scratch) == True ||
-				Car(p.Scratch) == False {
-				break
-			}
-
 			switch t := Car(p.Scratch).(type) {
 			case *String, *Symbol:
 				p.Scratch = Cons(ext, p.Scratch)
 
 				p.ReplaceState(psExecApplicative)
-				p.NewState(psEvalArgumentsBC)
+				p.NewState(psEvalArgumentsSimple)
 
 			case Binding:
-				evalargs := true
-				var evalwith int64 = psEvalArguments
+				switch t.Ref().(type) {
+				case *Builtin:
+					p.ReplaceState(psExecApplicative)
+					p.NewState(psEvalArgumentsSimple)
 
-				switch c := t.Ref().(type) {
-				case *Builtin, *Method:
-					if _, ok := c.(*Builtin); ok {
-						evalwith = psEvalArgumentsBC
-					}
-
-					if c.Body() != nil {
-						p.ReplaceState(psExecApplicative)
-					} else {
-						switch b := c.Code().(type) {
-						case *Integer:
-							evalargs = false
-							p.ReplaceState(b.Int())
-
-						default:
-							panic(fmt.Sprintf("cannot evaluate: %v", t))
-						}
-					}
+				case *Method:
+					p.ReplaceState(psExecApplicative)
+					p.NewState(psEvalArguments)
 
 				case *Syntax:
-					evalargs = false
 					p.ReplaceState(psExecOperative)
-				}
-
-				if !evalargs {
 					continue
 				}
-				p.NewState(evalwith)
 
 			default:
-				panic(fmt.Sprintf("cannot evaluate: %v", t))
+				panic(fmt.Sprintf("can't evaluate: %v", t))
 			}
 
 			p.Scratch = Cons(nil, p.Scratch)
 
 			fallthrough
-		case psEvalArguments, psEvalArgumentsBC:
+		case psEvalArguments, psEvalArgumentsSimple:
 			if p.Code == Null {
 				break
 			}
@@ -509,7 +485,7 @@ clearing:
 			p.Code = Car(p.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementBC:
+		case psEvalElement, psEvalElementSimple:
 			if p.Code == Null {
 				p.Scratch = Cons(p.Code, p.Scratch)
 				break
@@ -709,9 +685,7 @@ func ExitStatus() int {
 func Start(i bool) {
 	interactive = i
 
-	f := Function(external)
-
-	ext = NewUnbound(NewBuiltin(f, Null, Null, Null, nil))
+	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
 	irq = make(chan os.Signal, 1)
 	signal.Notify(irq, syscall.SIGINT)
@@ -831,7 +805,7 @@ func Start(i bool) {
 	})
 
 	/* Builtins. */
-	s.DefineFunction("cd", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("cd", func(p *Process, args Cell) bool {
 		err := os.Chdir(Raw(Car(args)))
 		status := 0
 		if err != nil {
@@ -844,12 +818,12 @@ func Start(i bool) {
 
 		return p.Return(NewStatus(int64(status)))
 	})
-	s.DefineFunction("debug", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("debug", func(p *Process, args Cell) bool {
 		debug(p, "debug")
 
 		return false
 	})
-	s.DefineFunction("exit", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("exit", func(p *Process, args Cell) bool {
 		var status int64 = 0
 
 		a, ok := Car(args).(Atom)
@@ -862,7 +836,7 @@ func Start(i bool) {
 
 		return true
 	})
-	s.DefineFunction("module", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("module", func(p *Process, args Cell) bool {
 		str, err := module(Raw(Car(args)))
 
 		if err != nil {
@@ -880,12 +854,12 @@ func Start(i bool) {
 	})
 
 	s.PublicMethod("child", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(Binding).Self().Expose()
+		o := Car(p.Scratch).(Binding).Self()
 
 		return p.Return(NewObject(NewLexicalScope(o)))
 	})
 	s.PublicMethod("clone", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(Binding).Self().Expose()
+		o := Car(p.Scratch).(Binding).Self()
 
 		return p.Return(NewObject(o.Copy()))
 	})
@@ -929,7 +903,7 @@ func Start(i bool) {
 		return p.Return(Cons(Car(args), Cadr(args)))
 	})
 	s.PublicMethod("eval", func(p *Process, args Cell) bool {
-		scope := Car(p.Scratch).(Binding).Self().Expose()
+		scope := Car(p.Scratch).(Binding).Self()
 		p.RemoveState()
 		if p.Lexical != scope {
 			p.NewState(SaveLexical)
@@ -1035,7 +1009,6 @@ func Start(i bool) {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Builtin)
-			ok = !ok
 		}
 
 		return p.Return(NewBoolean(ok))
@@ -1080,7 +1053,6 @@ func Start(i bool) {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Method)
-			ok = !ok
 		}
 
 		return p.Return(NewBoolean(ok))
