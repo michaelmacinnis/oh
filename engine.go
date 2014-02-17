@@ -44,11 +44,6 @@ const (
 	psExecSetenv
 	psExecSplice
 
-	/* Commands. */
-	psSpawn
-	psSplice
-	psWhile
-
 	psMax
 )
 
@@ -582,11 +577,6 @@ clearing:
 			p.ReplaceState(psEvalBlock)
 			continue
 
-		case psWhile:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalWhileTest)
-
-			fallthrough
 		case psEvalWhileTest:
 			p.ReplaceState(psEvalWhileBody)
 			p.NewState(SaveCode, p.Code)
@@ -618,27 +608,6 @@ clearing:
 			}
 
 			r.Set(Car(p.Scratch))
-
-		case psSpawn:
-			child := NewProcess(psNone, p.Dynamic, p.Lexical)
-
-			child.NewState(psEvalBlock)
-
-			child.Code = p.Code
-			child.Scratch = Cons(Null, child.Scratch)
-
-			SetCar(p.Scratch, True)
-
-			go run(child)
-
-		case psSplice:
-			p.ReplaceState(psExecSplice)
-			p.NewState(psEvalElement)
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			continue
 
 		case psExecSplice:
 			l := Car(p.Scratch)
@@ -767,10 +736,6 @@ func Start(i bool) {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("spawn", psSpawn)
-	s.DefineState("splice", psSplice)
-	s.DefineState("while", psWhile)
-
 	s.DefineSyntax("block", func(p *Process, args Cell) bool {
 		p.ReplaceState(SaveDynamic | SaveLexical)
 		p.NewState(psEvalBlock)
@@ -828,12 +793,41 @@ func Start(i bool) {
 	s.DefineSyntax("setenv", func(p *Process, args Cell) bool {
 		return dynamic(p, psExecSetenv)
 	})
+	s.DefineSyntax("spawn", func(p *Process, args Cell) bool {
+		child := NewProcess(psNone, p.Dynamic, p.Lexical)
+
+		child.NewState(psEvalBlock)
+
+		child.Code = p.Code
+		child.Scratch = Cons(Null, child.Scratch)
+
+		SetCar(p.Scratch, child)
+
+		go run(child)
+
+		return false
+	})
+	s.DefineSyntax("splice", func(p *Process, args Cell) bool {
+		p.ReplaceState(psExecSplice)
+		p.NewState(psEvalElement)
+
+		p.Code = Car(p.Code)
+		p.Scratch = Cdr(p.Scratch)
+
+		return true
+	})
 	s.DefineSyntax("syntax", func(p *Process, args Cell) bool {
 		return combiner(p, NewSyntax)
 	})
 
 	s.PublicSyntax("public", func(p *Process, args Cell) bool {
 		return lexical(p, psExecPublic)
+	})
+	s.PublicSyntax("while", func(p *Process, args Cell) bool {
+		p.ReplaceState(SaveDynamic | SaveLexical)
+		p.NewState(psEvalWhileTest)
+
+		return true
 	})
 
 	/* Builtins. */
