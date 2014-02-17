@@ -45,7 +45,6 @@ const (
 	psExecSplice
 
 	/* Commands. */
-	psSet
 	psSpawn
 	psSplice
 	psWhile
@@ -611,27 +610,6 @@ clearing:
 
 			continue
 
-		case psSet:
-			p.Scratch = Cdr(p.Scratch)
-
-			s := Car(p.Code)
-			if !IsCons(s) {
-				p.ReplaceState(psExecSet)
-				p.NewState(SaveCode, s)
-			} else {
-				p.ReplaceState(SaveDynamic | SaveLexical)
-				p.NewState(psExecSet)
-				p.NewState(SaveCode, Cdr(s))
-				p.NewState(psChangeScope)
-				p.NewState(psEvalElement)
-				p.NewState(SaveCode, Car(s))
-			}
-
-			p.NewState(psEvalElement)
-
-			p.Code = Cadr(p.Code)
-			continue
-
 		case psExecSet:
 			k := p.Code.(*Symbol)
 			r := Resolve(p.Lexical, p.Dynamic, k)
@@ -789,7 +767,6 @@ func Start(i bool) {
 		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineState("set", psSet)
 	s.DefineState("spawn", psSpawn)
 	s.DefineState("splice", psSplice)
 	s.DefineState("while", psWhile)
@@ -826,6 +803,27 @@ func Start(i bool) {
 	})
 	s.DefineSyntax("method", func(p *Process, args Cell) bool {
 		return combiner(p, NewMethod)
+	})
+	s.DefineSyntax("set", func(p *Process, args Cell) bool {
+		p.Scratch = Cdr(p.Scratch)
+
+		s := Car(p.Code)
+		if !IsCons(s) {
+			p.ReplaceState(psExecSet)
+			p.NewState(SaveCode, s)
+		} else {
+			p.ReplaceState(SaveDynamic | SaveLexical)
+			p.NewState(psExecSet)
+			p.NewState(SaveCode, Cdr(s))
+			p.NewState(psChangeScope)
+			p.NewState(psEvalElement)
+			p.NewState(SaveCode, Car(s))
+		}
+
+		p.NewState(psEvalElement)
+
+		p.Code = Cadr(p.Code)
+		return true
 	})
 	s.DefineSyntax("setenv", func(p *Process, args Cell) bool {
 		return dynamic(p, psExecSetenv)
