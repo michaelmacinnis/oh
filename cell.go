@@ -1113,10 +1113,10 @@ func (self *Channel) WriteFd() *os.File {
 /* Builtin cell definition. */
 
 type Builtin struct {
-	body	Function
+	body    Function
 	code    Cell
 	formal  Cell
-	label	Cell
+	label   Cell
 	lexical *Scope
 }
 
@@ -1165,10 +1165,10 @@ func (self *Builtin) Type() int {
 /* Method cell definition. */
 
 type Method struct {
-	body	Function
+	body    Function
 	code    Cell
 	formal  Cell
-	label	Cell
+	label   Cell
 	lexical *Scope
 }
 
@@ -1217,10 +1217,10 @@ func (self *Method) Type() int {
 /* Syntax cell definition. */
 
 type Syntax struct {
-	body	Function
+	body    Function
 	code    Cell
 	formal  Cell
-	label	Cell
+	label   Cell
 	lexical *Scope
 }
 
@@ -1559,7 +1559,6 @@ func (self *Process) Return(rv Cell) bool {
 	return false
 }
 
-
 /*
  * Scope cell definition.
  * (A scope cell allows access to a context's public and private members).
@@ -1628,7 +1627,7 @@ func (self *Scope) Public(key Cell, value Cell) {
 }
 
 func (self *Scope) Remove(key Cell) bool {
-	if (!self.env.prev.Remove(key)) {
+	if !self.env.prev.Remove(key) {
 		return self.env.Remove(key)
 	}
 
@@ -1663,7 +1662,7 @@ func (self *Scope) PublicSyntax(k string, f Function) {
 /* Bound cell definition. */
 
 type Bound struct {
-	ref Closure
+	ref   Closure
 	scope *Scope
 }
 
@@ -1686,7 +1685,7 @@ func (self *Bound) Equal(c Cell) bool {
 
 /* Bound-specific functions */
 
-func (self *Bound) Bind(s* Scope) Binding {
+func (self *Bound) Bind(s *Scope) Binding {
 	if s == self.scope {
 		return self
 	}
@@ -1726,7 +1725,7 @@ func (self *Unbound) Equal(c Cell) bool {
 
 /* Unbound-specific functions */
 
-func (self *Unbound) Bind(s* Scope) Binding {
+func (self *Unbound) Bind(s *Scope) Binding {
 	return self
 }
 

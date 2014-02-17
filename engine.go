@@ -55,7 +55,7 @@ var ext Cell
 var interactive bool
 var irq chan os.Signal
 var next = map[int64]int64{
-	psEvalArguments:   psEvalElement,
+	psEvalArguments:       psEvalElement,
 	psEvalArgumentsSimple: psEvalElementSimple,
 }
 
@@ -123,7 +123,7 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 }
 
 func combiner(p *Process,
-		n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
+	n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
 	label := Null
 	formal := Car(p.Code)
 	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
@@ -263,7 +263,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		}
 	} else if p.GetState() == psEvalElementSimple && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
-        } else if a, ok := c.Get().(Binding); ok {
+	} else if a, ok := c.Get().(Binding); ok {
 		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
 	} else {
 		p.Scratch = Cons(c.Get(), p.Scratch)
@@ -398,7 +398,7 @@ clearing:
 			m := Car(p.Scratch).(Binding)
 			t := m.Ref().Type()
 
-			if t & ctExpandArgs == ctExpandArgs {
+			if t&ctExpandArgs == ctExpandArgs {
 				args = expand(args)
 			}
 
@@ -1263,7 +1263,7 @@ func Start(i bool) {
 
 				if v1.Equal(v2) {
 					return p.Return(False)
-				}	
+				}
 			}
 		}
 
