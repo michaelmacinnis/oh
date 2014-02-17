@@ -24,25 +24,26 @@ const (
 
 	psEvalAccess
 	psEvalArguments
-	psEvalArgumentsSimple
+	psEvalArgumentsBuiltin
 	psEvalBlock
 	psEvalCommand
 	psEvalElement
-	psEvalElementSimple
+	psEvalElementBuiltin
 	psEvalTopBlock
 	psEvalWhileBody
 	psEvalWhileTest
 
-	psExecApplicative
+	psExecBuiltin
 	psExecCommand
 	psExecDefine
 	psExecDynamic
 	psExecIf
-	psExecOperative
+	psExecMethod
 	psExecPublic
 	psExecSet
 	psExecSetenv
 	psExecSplice
+	psExecSyntax
 
 	psMax
 )
@@ -55,8 +56,8 @@ var ext Cell
 var interactive bool
 var irq chan os.Signal
 var next = map[int64]int64{
-	psEvalArguments:       psEvalElement,
-	psEvalArgumentsSimple: psEvalElementSimple,
+	psEvalArguments:        psEvalElement,
+	psEvalArgumentsBuiltin: psEvalElementBuiltin,
 }
 
 func apply(p *Process, args Cell) bool {
@@ -122,8 +123,7 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 	return NewObject(c)
 }
 
-func combiner(p *Process,
-	n func(b Function, c, f, l Cell, s *Scope) Closure) bool {
+func combiner(p *Process, n NewClosure) bool {
 	label := Null
 	formal := Car(p.Code)
 	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
@@ -163,7 +163,7 @@ func dynamic(p *Process, state int64) bool {
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
-			// TODO: We should probably panic here.
+			/* TODO: We should probably panic here. */
 			return false
 		}
 	}
@@ -252,7 +252,7 @@ func external(p *Process, args Cell) bool {
 	return p.Return(NewStatus(status))
 }
 
-func lookup(p *Process, sym *Symbol) (bool, string) {
+func lookup(p *Process, sym *Symbol, simple bool) (bool, string) {
 	c := Resolve(p.Lexical, p.Dynamic, sym)
 	if c == nil {
 		r := Raw(sym)
@@ -261,7 +261,7 @@ func lookup(p *Process, sym *Symbol) (bool, string) {
 		} else {
 			p.Scratch = Cons(sym, p.Scratch)
 		}
-	} else if p.GetState() == psEvalElementSimple && !IsSimple(c.Get()) {
+	} else if simple && !IsSimple(c.Get()) {
 		p.Scratch = Cons(sym, p.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {
 		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
@@ -392,20 +392,17 @@ clearing:
 			p.Scratch = Cdr(p.Scratch)
 			continue
 
-		case psExecApplicative:
+		case psExecBuiltin, psExecMethod:
 			args := p.Arguments()
 
-			m := Car(p.Scratch).(Binding)
-			t := m.Ref().Type()
-
-			if t&ctExpandArgs == ctExpandArgs {
+			if state == psExecBuiltin {
 				args = expand(args)
 			}
 
 			p.Code = args
 
 			fallthrough
-		case psExecOperative:
+		case psExecSyntax:
 			m := Car(p.Scratch).(Binding)
 
 			if m.Ref().Body()(p, p.Code) {
@@ -447,21 +444,21 @@ clearing:
 			case *String, *Symbol:
 				p.Scratch = Cons(ext, p.Scratch)
 
-				p.ReplaceState(psExecApplicative)
-				p.NewState(psEvalArgumentsSimple)
+				p.ReplaceState(psExecBuiltin)
+				p.NewState(psEvalArgumentsBuiltin)
 
 			case Binding:
 				switch t.Ref().(type) {
 				case *Builtin:
-					p.ReplaceState(psExecApplicative)
-					p.NewState(psEvalArgumentsSimple)
+					p.ReplaceState(psExecBuiltin)
+					p.NewState(psEvalArgumentsBuiltin)
 
 				case *Method:
-					p.ReplaceState(psExecApplicative)
+					p.ReplaceState(psExecMethod)
 					p.NewState(psEvalArguments)
 
 				case *Syntax:
-					p.ReplaceState(psExecOperative)
+					p.ReplaceState(psExecSyntax)
 					continue
 				}
 
@@ -472,7 +469,7 @@ clearing:
 			p.Scratch = Cons(nil, p.Scratch)
 
 			fallthrough
-		case psEvalArguments, psEvalArgumentsSimple:
+		case psEvalArguments, psEvalArgumentsBuiltin:
 			if p.Code == Null {
 				break
 			}
@@ -485,7 +482,7 @@ clearing:
 			p.Code = Car(p.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementSimple:
+		case psEvalElement, psEvalElementBuiltin:
 			if p.Code == Null {
 				p.Scratch = Cons(p.Code, p.Scratch)
 				break
@@ -497,7 +494,8 @@ clearing:
 					continue
 				}
 			} else if sym, ok := p.Code.(*Symbol); ok {
-				ok, msg := lookup(p, sym)
+				simple := p.GetState() == psEvalElementBuiltin
+				ok, msg := lookup(p, sym, simple)
 				if !ok {
 					panic(msg)
 				}

@@ -48,7 +48,6 @@ type Closure interface {
 	Formal() Cell
 	Label() Cell
 	Lexical() *Scope
-	Type() int
 }
 
 type Context interface {
@@ -64,6 +63,8 @@ type Context interface {
 	Remove(key Cell) bool
 }
 
+type NewClosure func(b Function, c, f, l Cell, s *Scope) Closure
+
 type Number interface {
 	Atom
 
@@ -78,12 +79,6 @@ const (
 	SaveLexical
 	SaveScratch
 	SaveMax
-)
-
-const (
-	ctEvalArgs = 1 << iota
-	ctExpandArgs
-	ctSimpleArgs
 )
 
 var Null Cell
@@ -1158,10 +1153,6 @@ func (self *Builtin) Lexical() *Scope {
 	return self.lexical
 }
 
-func (self *Builtin) Type() int {
-	return ctEvalArgs | ctExpandArgs | ctSimpleArgs
-}
-
 /* Method cell definition. */
 
 type Method struct {
@@ -1210,10 +1201,6 @@ func (self *Method) Lexical() *Scope {
 	return self.lexical
 }
 
-func (self *Method) Type() int {
-	return ctEvalArgs
-}
-
 /* Syntax cell definition. */
 
 type Syntax struct {
@@ -1260,10 +1247,6 @@ func (self *Syntax) Label() Cell {
 
 func (self *Syntax) Lexical() *Scope {
 	return self.lexical
-}
-
-func (self *Syntax) Type() int {
-	return 0
 }
 
 /* Env cell definition. */
