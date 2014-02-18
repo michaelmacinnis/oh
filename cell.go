@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Atom interface {
@@ -1393,10 +1394,13 @@ type Process struct {
 	Dynamic        *Scope
 	Lexical        Context
 	Scratch, Stack Cell
+	interrupts	int
+	mutex		*sync.Mutex
 }
 
 func NewProcess(state int64, dynamic, lexical Context) *Process {
-	p := &Process{Null, nil, nil, Null, List(NewInteger(state))}
+	p := &Process{Null, nil, nil, Null, List(NewInteger(state)),
+		0, new(sync.Mutex)}
 
 	p.NewScope(dynamic, lexical)
 
@@ -1433,11 +1437,43 @@ func (self *Process) Arguments() Cell {
 	return l
 }
 
+func (self *Process) ClearSignals() {
+	if self.interrupts > 0 {
+		defer self.mutex.Unlock()
+		self.mutex.Lock()
+		self.interrupts = 0
+	}
+}
+
 func (self *Process) GetState() int64 {
 	if self.Stack == Null {
 		return 0
 	}
 	return Car(self.Stack).(Atom).Int()
+}
+
+func (self *Process) HandleSignal(f Function) bool {
+	if self.interrupts > 0 {
+		defer self.mutex.Unlock()
+		self.mutex.Lock()
+		if self.interrupts > 0 {
+			self.interrupts = 0
+			f(self, Null)
+			return true
+		}
+	}
+			
+	return false
+}
+
+func (self *Process) Interrupt() {
+	if self.Stack != Null {
+		defer self.mutex.Unlock()
+		self.mutex.Lock()
+		if self.Stack != Null {
+			self.interrupts++
+		}
+	}
 }
 
 func (self *Process) NewScope(dynamic, lexical Context) {

@@ -22,7 +22,6 @@ const (
 
 	psChangeScope = SaveMax + iota
 
-	psEvalAccess
 	psEvalArguments
 	psEvalArgumentsBuiltin
 	psEvalBlock
@@ -346,27 +345,17 @@ func run(p *Process) (successful bool) {
 		p.RemoveState()
 	}(*p)
 
-clearing:
-	for interactive && p == proc0 {
-		select {
-		case <-irq:
-			continue clearing
-		default:
-			break clearing
-		}
-	}
-
+	p.ClearSignals()
 	for p.Stack != Null {
-		select {
-		case <-irq:
+		if p.HandleSignal(func(p *Process, args Cell) bool {
 			if interactive {
 				panic("interrupted")
-			} else {
-				proc0.Stack = Null
-				return true
 			}
-		default:
 
+			proc0.Stack = Null
+			return true
+		}) {
+			continue
 		}
 
 		state := p.GetState()
@@ -488,11 +477,17 @@ clearing:
 				break
 			} else if IsCons(p.Code) {
 				if IsAtom(Cdr(p.Code)) {
-					p.ReplaceState(psEvalAccess)
+					p.ReplaceState(SaveDynamic | SaveLexical)
+					p.NewState(psEvalElement)
+					p.NewState(psChangeScope)
+					p.NewState(SaveCode, Cdr(p.Code))
+					p.NewState(psEvalElement)
+
+					p.Code = Car(p.Code)
 				} else {
 					p.ReplaceState(psEvalCommand)
-					continue
 				}
+				continue
 			} else if sym, ok := p.Code.(*Symbol); ok {
 				simple := p.GetState() == psEvalElementBuiltin
 				ok, msg := lookup(p, sym, simple)
@@ -504,18 +499,6 @@ clearing:
 				p.Scratch = Cons(p.Code, p.Scratch)
 				break
 			}
-
-			fallthrough
-		case psEvalAccess:
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psEvalElement)
-			p.NewState(psChangeScope)
-			p.NewState(SaveCode, Cdr(p.Code))
-			p.NewState(psEvalElement)
-
-			p.Code = Car(p.Code)
-
-			continue
 
 		case psExecDefine:
 			p.Lexical.Define(p.Code, Car(p.Scratch))
@@ -686,7 +669,15 @@ func Start(i bool) {
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
 	irq = make(chan os.Signal, 1)
-	signal.Notify(irq, syscall.SIGINT)
+	signal.Notify(irq, os.Interrupt)
+	go func() {
+		for {
+			select {
+			case <-irq:
+				proc0.Interrupt()
+			}
+		}
+	}()
 
 	proc0 = NewProcess(psEvalTopBlock, nil, nil)
 
