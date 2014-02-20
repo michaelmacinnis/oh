@@ -28,7 +28,6 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBuiltin
-	psEvalTopBlock
 
 	psExecBuiltin
 	psExecCommand
@@ -371,18 +370,6 @@ func run(p *Process) (successful bool) {
 			p.Lexical = Car(p.Scratch).(Context)
 			p.Scratch = Cdr(p.Scratch)
 
-		case psEvalTopBlock:
-			if p.Code == block0 {
-				return
-			}
-
-			p.NewState(SaveCode, Cdr(p.Code))
-			p.NewState(psEvalCommand)
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-			continue
-
 		case psExecBuiltin, psExecMethod:
 			args := p.Arguments()
 
@@ -425,6 +412,10 @@ func run(p *Process) (successful bool) {
 
 			fallthrough
 		case psEvalBlock:
+			if p.Code == block0 {
+				return
+			}
+
 			if p.Code == Null || !IsCons(p.Code) || !IsCons(Car(p.Code)) {
 				break
 			}
@@ -543,16 +534,6 @@ func run(p *Process) (successful bool) {
 
 			p.Dynamic.Define(k, v)
 
-		case psExecWhileTest:
-			p.ReplaceState(psExecWhileBody)
-			p.NewState(SaveCode, p.Code)
-			p.NewState(psEvalElement)
-
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
-
-			continue
-
 		case psExecSet:
 			k := p.Code.(*Symbol)
 			r := Resolve(p.Lexical, p.Dynamic, k)
@@ -574,6 +555,16 @@ func run(p *Process) (successful bool) {
 				p.Scratch = Cons(Car(l), p.Scratch)
 				l = Cdr(l)
 			}
+
+		case psExecWhileTest:
+			p.ReplaceState(psExecWhileBody)
+			p.NewState(SaveCode, p.Code)
+			p.NewState(psEvalElement)
+
+			p.Code = Car(p.Code)
+			p.Scratch = Cdr(p.Scratch)
+
+			continue
 
 		default:
 			if state >= SaveMax {
@@ -675,7 +666,7 @@ func Start(i bool) {
 		}
 	}()
 
-	proc0 = NewProcess(psEvalTopBlock, nil, nil)
+	proc0 = NewProcess(psEvalBlock, nil, nil)
 
 	block0 = Cons(nil, Null)
 	proc0.Code = block0
