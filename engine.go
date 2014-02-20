@@ -20,7 +20,7 @@ import (
 const (
 	psNone = 0
 
-	psChangeScope = SaveMax + iota
+	psChangeContext = SaveMax + iota
 
 	psEvalArguments
 	psEvalArgumentsBuiltin
@@ -29,8 +29,6 @@ const (
 	psEvalElement
 	psEvalElementBuiltin
 	psEvalTopBlock
-	psEvalWhileBody
-	psEvalWhileTest
 
 	psExecBuiltin
 	psExecCommand
@@ -43,6 +41,8 @@ const (
 	psExecSetenv
 	psExecSplice
 	psExecSyntax
+	psExecWhileBody
+	psExecWhileTest
 
 	psMax
 )
@@ -54,9 +54,11 @@ var con Cell
 var ext Cell
 var interactive bool
 var irq chan os.Signal
-var next = map[int64]int64{
-	psEvalArguments:        psEvalElement,
-	psEvalArgumentsBuiltin: psEvalElementBuiltin,
+var next = map[int64][]int64{
+	psEvalArguments:        {psEvalElement},
+	psEvalArgumentsBuiltin: {psEvalElementBuiltin},
+	psExecIf:		{psEvalBlock},
+	psExecWhileBody:	{psExecWhileTest, SaveCode, psEvalBlock},
 }
 
 func apply(p *Process, args Cell) bool {
@@ -364,7 +366,7 @@ func run(p *Process) (successful bool) {
 		case psNone:
 			return
 
-		case psChangeScope:
+		case psChangeContext:
 			p.Dynamic = nil
 			p.Lexical = Car(p.Scratch).(Context)
 			p.Scratch = Cdr(p.Scratch)
@@ -398,6 +400,30 @@ func run(p *Process) (successful bool) {
 				continue
 			}
 
+		case psExecIf, psExecWhileBody:
+			if !Car(p.Scratch).Bool() {
+				p.Code = Cdr(p.Code)
+
+				for Car(p.Code) != Null &&
+					!IsAtom(Car(p.Code)) {
+					p.Code = Cdr(p.Code)
+				}
+
+				if Car(p.Code) != Null &&
+					Raw(Car(p.Code)) != "else" {
+					panic("expected 'else'")
+				}
+			}
+
+			if Cdr(p.Code) == Null {
+				break
+			}
+
+			p.ReplaceStates(next[state]...)
+
+			p.Code = Cdr(p.Code)
+
+			fallthrough
 		case psEvalBlock:
 			if p.Code == Null || !IsCons(p.Code) || !IsCons(Car(p.Code)) {
 				break
@@ -463,7 +489,7 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			state = next[p.GetState()]
+			state = next[p.GetState()][0]
 
 			p.NewState(SaveCode, Cdr(p.Code))
 			p.NewState(state)
@@ -479,7 +505,7 @@ func run(p *Process) (successful bool) {
 				if IsAtom(Cdr(p.Code)) {
 					p.ReplaceState(SaveDynamic | SaveLexical)
 					p.NewState(psEvalElement)
-					p.NewState(psChangeScope)
+					p.NewState(psChangeContext)
 					p.NewState(SaveCode, Cdr(p.Code))
 					p.NewState(psEvalElement)
 
@@ -517,43 +543,13 @@ func run(p *Process) (successful bool) {
 
 			p.Dynamic.Define(k, v)
 
-		case psExecIf:
-			if !Car(p.Scratch).Bool() {
-				for Car(p.Code) != Null &&
-					!IsAtom(Car(p.Code)) {
-					p.Code = Cdr(p.Code)
-				}
-
-				p.Code = Cdr(p.Code)
-			}
-
-			if p.Code == Null {
-				break
-			}
-
-			p.ReplaceState(psEvalBlock)
-			continue
-
-		case psEvalWhileTest:
-			p.ReplaceState(psEvalWhileBody)
+		case psExecWhileTest:
+			p.ReplaceState(psExecWhileBody)
 			p.NewState(SaveCode, p.Code)
 			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
-
-			continue
-
-		case psEvalWhileBody:
-			if !Car(p.Scratch).Bool() {
-				break
-			}
-
-			p.ReplaceState(psEvalWhileTest)
-			p.NewState(SaveCode, p.Code)
-			p.NewState(psEvalBlock)
-
-			p.Code = Cdr(p.Code)
 
 			continue
 
@@ -719,7 +715,7 @@ func Start(i bool) {
 	s.DefineSyntax("if", func(p *Process, args Cell) bool {
 		p.ReplaceState(SaveDynamic | SaveLexical)
 		p.NewState(psExecIf)
-		p.NewState(SaveCode, Cdr(p.Code))
+		p.NewState(SaveCode, p.Code)
 		p.NewState(psEvalElement)
 
 		p.NewScope(p.Dynamic, p.Lexical)
@@ -743,7 +739,7 @@ func Start(i bool) {
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psExecSet)
 			p.NewState(SaveCode, Cdr(s))
-			p.NewState(psChangeScope)
+			p.NewState(psChangeContext)
 			p.NewState(psEvalElement)
 			p.NewState(SaveCode, Car(s))
 		}
@@ -788,7 +784,7 @@ func Start(i bool) {
 	})
 	s.PublicSyntax("while", func(p *Process, args Cell) bool {
 		p.ReplaceState(SaveDynamic | SaveLexical)
-		p.NewState(psEvalWhileTest)
+		p.NewState(psExecWhileTest)
 
 		return true
 	})

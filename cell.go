@@ -1542,6 +1542,38 @@ func (self *Process) ReplaceState(f int64, c ...Cell) bool {
 	return self.NewState(f, c...)
 }
 
+func (self *Process) ReplaceStates(l ...int64) {
+	self.RemoveState()
+	for _, f := range l {
+		if f >= SaveMax {
+			self.Stack = Cons(NewInteger(f), self.Stack)
+			continue
+		}
+
+		if s := self.GetState(); s < SaveMax && f&s == f {
+			continue
+		}
+
+		if f&SaveCode > 0 {
+			self.Stack = Cons(self.Code, self.Stack)
+		}
+
+		if f&SaveDynamic > 0 {
+			self.Stack = Cons(self.Dynamic, self.Stack)
+		}
+
+		if f&SaveLexical > 0 {
+			self.Stack = Cons(self.Lexical, self.Stack)
+		}
+
+		if f&SaveScratch > 0 {
+			self.Stack = Cons(self.Scratch, self.Stack)
+		}
+
+		self.Stack = Cons(NewInteger(f), self.Stack)
+	}
+}
+
 func (self *Process) RestoreState() {
 	f := self.GetState()
 
