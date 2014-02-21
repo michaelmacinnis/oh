@@ -63,8 +63,7 @@ var next = map[int64][]int64{
 func apply(p *Process, args Cell) bool {
 	m := Car(p.Scratch).(Binding)
 
-	p.ReplaceState(SaveDynamic | SaveLexical)
-	p.NewState(psEvalBlock)
+	p.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
 	p.Code = m.Ref().Code()
 	p.NewScope(p.Dynamic, m.Ref().Lexical())
@@ -166,9 +165,7 @@ func dynamic(p *Process, state int64) bool {
 		}
 	}
 
-	p.ReplaceState(state)
-	p.NewStates(SaveCarCode|SaveDynamic)//, Car(p.Code))
-	p.NewState(psEvalElement)
+	p.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
 
 	p.Code = Cadr(p.Code)
 	p.Scratch = Cdr(p.Scratch)
@@ -194,9 +191,10 @@ func expand(args Cell) Cell {
 					panic("no matches found: " + s)
 				}
 
-				for _, e := range m {
-					if e[0] != '.' || s[0] == '.' {
-						list = AppendTo(list, NewSymbol(e))
+				for _, v := range m {
+					if v[0] != '.' || s[0] == '.' {
+						e := NewSymbol(v)
+						list = AppendTo(list, e)
 					}
 				}
 			} else {
@@ -237,7 +235,8 @@ func external(p *Process, args Cell) bool {
 
 	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
-	proc, err := os.StartProcess(name, argv, &os.ProcAttr{dir, nil, fd, nil})
+	attr := &os.ProcAttr{dir, nil, fd, nil}
+	proc, err := os.StartProcess(name, argv, attr)
 	if err != nil {
 		panic(err)
 	}
@@ -275,19 +274,18 @@ func lexical(p *Process, state int64) bool {
 
 	l := Car(p.Scratch).(Binding).Self()
 	if p.Lexical != l {
-		p.NewState(SaveLexical)
+		p.NewStates(SaveLexical)
 		p.Lexical = l
 	}
 
-	p.NewState(state)
+	p.NewStates(state)
 
 	r := Raw(Car(p.Code))
 	if strict(p) && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
-	p.NewStates(SaveCarCode|SaveLexical)//, Car(p.Code))
-	p.NewState(psEvalElement)
+	p.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
 	p.Code = Cadr(p.Code)
 	p.Scratch = Cdr(p.Scratch)
@@ -412,15 +410,15 @@ func run(p *Process) (successful bool) {
 				return
 			}
 
-			if p.Code == Null || !IsCons(p.Code) || !IsCons(Car(p.Code)) {
+			if p.Code == Null ||
+				!IsCons(p.Code) || !IsCons(Car(p.Code)) {
 				break
 			}
 
 			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
-				p.ReplaceState(psEvalCommand)
+				p.ReplaceStates(psEvalCommand)
 			} else {
-				p.NewStates(SaveCdrCode)//, Cdr(p.Code))
-				p.NewState(psEvalCommand)
+				p.NewStates(SaveCdrCode, psEvalCommand)
 			}
 
 			p.Code = Car(p.Code)
@@ -433,10 +431,9 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			p.ReplaceState(psExecCommand)
-			p.NewStates(SaveCdrCode)//, Cdr(p.Code))
-			p.NewState(psEvalElement)
-
+			p.ReplaceStates(psExecCommand,
+					SaveCdrCode,
+					psEvalElement)
 			p.Code = Car(p.Code)
 
 			continue
@@ -446,21 +443,19 @@ func run(p *Process) (successful bool) {
 			case *String, *Symbol:
 				p.Scratch = Cons(ext, p.Scratch)
 
-				p.ReplaceState(psExecBuiltin)
-				p.NewState(psEvalArgumentsBuiltin)
-
+				p.ReplaceStates(psExecBuiltin,
+						psEvalArgumentsBuiltin)
 			case Binding:
 				switch t.Ref().(type) {
 				case *Builtin:
-					p.ReplaceState(psExecBuiltin)
-					p.NewState(psEvalArgumentsBuiltin)
+					p.ReplaceStates(psExecBuiltin,
+							psEvalArgumentsBuiltin)
 
 				case *Method:
-					p.ReplaceState(psExecMethod)
-					p.NewState(psEvalArguments)
-
+					p.ReplaceStates(psExecMethod,
+							psEvalArguments)
 				case *Syntax:
-					p.ReplaceState(psExecSyntax)
+					p.ReplaceStates(psExecSyntax)
 					continue
 				}
 
@@ -476,7 +471,7 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			p.NewStates(next[p.GetState()]...)//, Cdr(p.Code))
+			p.NewStates(next[p.GetState()]...)
 
 			p.Code = Car(p.Code)
 
@@ -487,15 +482,14 @@ func run(p *Process) (successful bool) {
 				break
 			} else if IsCons(p.Code) {
 				if IsAtom(Cdr(p.Code)) {
-					p.ReplaceState(SaveDynamic | SaveLexical)
-					p.NewState(psEvalElement)
-					p.NewState(psChangeContext)
-					p.NewStates(SaveCdrCode)//, Cdr(p.Code))
-					p.NewState(psEvalElement)
-
+					p.ReplaceStates(SaveDynamic|SaveLexical,
+							psEvalElement,
+							psChangeContext,
+							SaveCdrCode,
+							psEvalElement)
 					p.Code = Car(p.Code)
 				} else {
-					p.ReplaceState(psEvalCommand)
+					p.ReplaceStates(psEvalCommand)
 				}
 				continue
 			} else if sym, ok := p.Code.(*Symbol); ok {
@@ -550,10 +544,9 @@ func run(p *Process) (successful bool) {
 			}
 
 		case psExecWhileTest:
-			p.ReplaceState(psExecWhileBody)
-			p.NewStates(SaveCode)//, p.Code)
-			p.NewState(psEvalElement)
-
+			p.ReplaceStates(psExecWhileBody,
+					SaveCode,
+					psEvalElement)
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -561,7 +554,8 @@ func run(p *Process) (successful bool) {
 
 		default:
 			if state >= SaveMax {
-				panic(fmt.Sprintf("command not found: %s", p.Code))
+				panic(fmt.Sprintf("command not found: %s",
+					p.Code))
 			} else {
 				p.RestoreState()
 				continue
@@ -617,8 +611,7 @@ func Evaluate(c Cell) {
 	SetCdr(block0, Cons(nil, Null))
 	block0 = Cdr(block0)
 
-	proc0.NewStates(SaveCdrCode)//, Cdr(proc0.Code))
-	proc0.NewState(psEvalCommand)
+	proc0.NewStates(SaveCdrCode, psEvalCommand)
 	proc0.Code = Car(proc0.Code)
 
 	if !run(proc0) {
@@ -681,8 +674,7 @@ func Start(i bool) {
 	}
 
 	s.DefineSyntax("block", func(p *Process, args Cell) bool {
-		p.ReplaceState(SaveDynamic | SaveLexical)
-		p.NewState(psEvalBlock)
+		p.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
 		p.NewScope(p.Dynamic, p.Lexical)
 
@@ -698,10 +690,8 @@ func Start(i bool) {
 		return dynamic(p, psExecDynamic)
 	})
 	s.DefineSyntax("if", func(p *Process, args Cell) bool {
-		p.ReplaceState(SaveDynamic | SaveLexical)
-		p.NewState(psExecIf)
-		p.NewStates(SaveCode)//, p.Code)
-		p.NewState(psEvalElement)
+		p.ReplaceStates(SaveDynamic|SaveLexical,
+				psExecIf, SaveCode, psEvalElement)
 
 		p.NewScope(p.Dynamic, p.Lexical)
 
@@ -719,18 +709,15 @@ func Start(i bool) {
 		s := Cadr(p.Code)
 		p.Code = Car(p.Code)
 		if !IsCons(p.Code) {
-			p.ReplaceState(psExecSet)
-			p.NewStates(SaveCode)//, p.Code)
+			p.ReplaceStates(psExecSet, SaveCode)
 		} else {
-			p.ReplaceState(SaveDynamic | SaveLexical)
-			p.NewState(psExecSet)
-			p.NewStates(SaveCdrCode)//, Cdr(p.Code))
-			p.NewState(psChangeContext)
-			p.NewState(psEvalElement)
-			p.NewStates(SaveCarCode)//, Car(p.Code))
+			p.ReplaceStates(SaveDynamic|SaveLexical,
+					psExecSet, SaveCdrCode,
+					psChangeContext, psEvalElement,
+					SaveCarCode)
 		}
 
-		p.NewState(psEvalElement)
+		p.NewStates(psEvalElement)
 
 		p.Code = s
 		return true
@@ -741,7 +728,7 @@ func Start(i bool) {
 	s.DefineSyntax("spawn", func(p *Process, args Cell) bool {
 		child := NewProcess(psNone, p.Dynamic, p.Lexical)
 
-		child.NewState(psEvalBlock)
+		child.NewStates(psEvalBlock)
 
 		child.Code = p.Code
 		child.Scratch = Cons(Null, child.Scratch)
@@ -753,8 +740,7 @@ func Start(i bool) {
 		return false
 	})
 	s.DefineSyntax("splice", func(p *Process, args Cell) bool {
-		p.ReplaceState(psExecSplice)
-		p.NewState(psEvalElement)
+		p.ReplaceStates(psExecSplice, psEvalElement)
 
 		p.Code = Car(p.Code)
 		p.Scratch = Cdr(p.Scratch)
@@ -769,8 +755,7 @@ func Start(i bool) {
 		return lexical(p, psExecPublic)
 	})
 	s.PublicSyntax("while", func(p *Process, args Cell) bool {
-		p.ReplaceState(SaveDynamic | SaveLexical)
-		p.NewState(psExecWhileTest)
+		p.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
 
 		return true
 	})
@@ -877,10 +862,10 @@ func Start(i bool) {
 		scope := Car(p.Scratch).(Binding).Self()
 		p.RemoveState()
 		if p.Lexical != scope {
-			p.NewState(SaveLexical)
+			p.NewStates(SaveLexical)
 			p.Lexical = scope
 		}
-		p.NewState(psEvalElement)
+		p.NewStates(psEvalElement)
 		p.Code = Car(args)
 		p.Scratch = Cdr(p.Scratch)
 
@@ -1617,7 +1602,8 @@ func Start(i bool) {
 		e.Define(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			e.Define(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
+			e.Define(NewSymbol("$"+strconv.Itoa(i+1)),
+				NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {

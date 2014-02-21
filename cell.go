@@ -1485,37 +1485,6 @@ func (self *Process) NewScope(dynamic, lexical Context) {
 	self.Lexical = NewLexicalScope(lexical)
 }
 
-func (self *Process) NewState(f int64, c ...Cell) bool {
-	if f >= SaveMax {
-		self.Stack = Cons(NewInteger(f), self.Stack)
-		return true
-	}
-
-	if s := self.GetState(); s < SaveMax && f&s == f {
-		return false
-	}
-
-	if f&SaveCode > 0 {
-		self.Stack = Cons(c[0], self.Stack)
-	}
-
-	if f&SaveDynamic > 0 {
-		self.Stack = Cons(self.Dynamic, self.Stack)
-	}
-
-	if f&SaveLexical > 0 {
-		self.Stack = Cons(self.Lexical, self.Stack)
-	}
-
-	if f&SaveScratch > 0 {
-		self.Stack = Cons(self.Scratch, self.Stack)
-	}
-
-	self.Stack = Cons(NewInteger(f), self.Stack)
-
-	return true
-}
-
 func (self *Process) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= SaveMax {
@@ -1576,11 +1545,6 @@ func (self *Process) RemoveState() {
 	if f&SaveCode > 0 {
 		self.Stack = Cdr(self.Stack)
 	}
-}
-
-func (self *Process) ReplaceState(f int64, c ...Cell) bool {
-	self.RemoveState()
-	return self.NewState(f, c...)
 }
 
 func (self *Process) ReplaceStates(l ...int64) {
