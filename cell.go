@@ -81,7 +81,7 @@ const (
 	SaveLexical
 	SaveScratch
 	SaveMax
-	SaveCode = SaveCarCode|SaveCdrCode
+	SaveCode = SaveCarCode | SaveCdrCode
 )
 
 var Null Cell
@@ -1396,8 +1396,8 @@ type Process struct {
 	Dynamic        *Scope
 	Lexical        Context
 	Scratch, Stack Cell
-	interrupts	int
-	mutex		*sync.Mutex
+	interrupts     int
+	mutex          *sync.Mutex
 }
 
 func NewProcess(state int64, dynamic, lexical Context) *Process {
@@ -1464,7 +1464,7 @@ func (self *Process) HandleSignal(f Function) bool {
 			return true
 		}
 	}
-			
+
 	return false
 }
 

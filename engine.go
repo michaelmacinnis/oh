@@ -56,8 +56,8 @@ var irq chan os.Signal
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
-	psExecIf:		{psEvalBlock},
-	psExecWhileBody:	{psExecWhileTest, SaveCode, psEvalBlock},
+	psExecIf:               {psEvalBlock},
+	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
 
 func apply(p *Process, args Cell) bool {
@@ -432,8 +432,8 @@ func run(p *Process) (successful bool) {
 			}
 
 			p.ReplaceStates(psExecCommand,
-					SaveCdrCode,
-					psEvalElement)
+				SaveCdrCode,
+				psEvalElement)
 			p.Code = Car(p.Code)
 
 			continue
@@ -444,16 +444,16 @@ func run(p *Process) (successful bool) {
 				p.Scratch = Cons(ext, p.Scratch)
 
 				p.ReplaceStates(psExecBuiltin,
-						psEvalArgumentsBuiltin)
+					psEvalArgumentsBuiltin)
 			case Binding:
 				switch t.Ref().(type) {
 				case *Builtin:
 					p.ReplaceStates(psExecBuiltin,
-							psEvalArgumentsBuiltin)
+						psEvalArgumentsBuiltin)
 
 				case *Method:
 					p.ReplaceStates(psExecMethod,
-							psEvalArguments)
+						psEvalArguments)
 				case *Syntax:
 					p.ReplaceStates(psExecSyntax)
 					continue
@@ -483,10 +483,10 @@ func run(p *Process) (successful bool) {
 			} else if IsCons(p.Code) {
 				if IsAtom(Cdr(p.Code)) {
 					p.ReplaceStates(SaveDynamic|SaveLexical,
-							psEvalElement,
-							psChangeContext,
-							SaveCdrCode,
-							psEvalElement)
+						psEvalElement,
+						psChangeContext,
+						SaveCdrCode,
+						psEvalElement)
 					p.Code = Car(p.Code)
 				} else {
 					p.ReplaceStates(psEvalCommand)
@@ -545,8 +545,8 @@ func run(p *Process) (successful bool) {
 
 		case psExecWhileTest:
 			p.ReplaceStates(psExecWhileBody,
-					SaveCode,
-					psEvalElement)
+				SaveCode,
+				psEvalElement)
 			p.Code = Car(p.Code)
 			p.Scratch = Cdr(p.Scratch)
 
@@ -691,7 +691,7 @@ func Start(i bool) {
 	})
 	s.DefineSyntax("if", func(p *Process, args Cell) bool {
 		p.ReplaceStates(SaveDynamic|SaveLexical,
-				psExecIf, SaveCode, psEvalElement)
+			psExecIf, SaveCode, psEvalElement)
 
 		p.NewScope(p.Dynamic, p.Lexical)
 
@@ -712,9 +712,9 @@ func Start(i bool) {
 			p.ReplaceStates(psExecSet, SaveCode)
 		} else {
 			p.ReplaceStates(SaveDynamic|SaveLexical,
-					psExecSet, SaveCdrCode,
-					psChangeContext, psEvalElement,
-					SaveCarCode)
+				psExecSet, SaveCdrCode,
+				psChangeContext, psEvalElement,
+				SaveCarCode)
 		}
 
 		p.NewStates(psEvalElement)
