@@ -75,11 +75,15 @@ type Number interface {
 }
 
 const (
-	SaveCode = 1 << iota
+	SaveCar = 1 << iota
+	SaveCdr
+	SaveCode
 	SaveDynamic
 	SaveLexical
 	SaveScratch
 	SaveMax
+	SaveCarCode = SaveCode|SaveCar
+	SaveCdrCode = SaveCode|SaveCdr
 )
 
 var Null Cell
@@ -1512,6 +1516,43 @@ func (self *Process) NewState(f int64, c ...Cell) bool {
 	return true
 }
 
+func (self *Process) NewStates(l ...int64) {
+	for _, f := range l {
+		if f >= SaveMax {
+			self.Stack = Cons(NewInteger(f), self.Stack)
+			continue
+		}
+
+		if s := self.GetState(); s < SaveMax && f&s == f {
+			continue
+		}
+
+		if f&SaveCode > 0 {
+			if f&SaveCar > 0 {
+				self.Stack = Cons(Car(self.Code), self.Stack)
+			} else if f&SaveCdr > 0 {
+				self.Stack = Cons(Cdr(self.Code), self.Stack)
+			} else {
+				self.Stack = Cons(self.Code, self.Stack)
+			}
+		}
+
+		if f&SaveDynamic > 0 {
+			self.Stack = Cons(self.Dynamic, self.Stack)
+		}
+
+		if f&SaveLexical > 0 {
+			self.Stack = Cons(self.Lexical, self.Stack)
+		}
+
+		if f&SaveScratch > 0 {
+			self.Stack = Cons(self.Scratch, self.Stack)
+		}
+
+		self.Stack = Cons(NewInteger(f), self.Stack)
+	}
+}
+
 func (self *Process) RemoveState() {
 	f := self.GetState()
 
@@ -1544,34 +1585,7 @@ func (self *Process) ReplaceState(f int64, c ...Cell) bool {
 
 func (self *Process) ReplaceStates(l ...int64) {
 	self.RemoveState()
-	for _, f := range l {
-		if f >= SaveMax {
-			self.Stack = Cons(NewInteger(f), self.Stack)
-			continue
-		}
-
-		if s := self.GetState(); s < SaveMax && f&s == f {
-			continue
-		}
-
-		if f&SaveCode > 0 {
-			self.Stack = Cons(self.Code, self.Stack)
-		}
-
-		if f&SaveDynamic > 0 {
-			self.Stack = Cons(self.Dynamic, self.Stack)
-		}
-
-		if f&SaveLexical > 0 {
-			self.Stack = Cons(self.Lexical, self.Stack)
-		}
-
-		if f&SaveScratch > 0 {
-			self.Stack = Cons(self.Scratch, self.Stack)
-		}
-
-		self.Stack = Cons(NewInteger(f), self.Stack)
-	}
+	self.NewStates(l...)
 }
 
 func (self *Process) RestoreState() {

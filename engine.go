@@ -54,8 +54,8 @@ var ext Cell
 var interactive bool
 var irq chan os.Signal
 var next = map[int64][]int64{
-	psEvalArguments:        {psEvalElement},
-	psEvalArgumentsBuiltin: {psEvalElementBuiltin},
+	psEvalArguments:        {SaveCdrCode, psEvalElement},
+	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
 	psExecIf:		{psEvalBlock},
 	psExecWhileBody:	{psExecWhileTest, SaveCode, psEvalBlock},
 }
@@ -154,9 +154,7 @@ func debug(p *Process, s string) {
 }
 
 func dynamic(p *Process, state int64) bool {
-	k := Car(p.Code)
-
-	r := Raw(k)
+	r := Raw(Car(p.Code))
 	if strict(p) && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
@@ -169,7 +167,7 @@ func dynamic(p *Process, state int64) bool {
 	}
 
 	p.ReplaceState(state)
-	p.NewState(SaveCode|SaveDynamic, k)
+	p.NewStates(SaveCarCode|SaveDynamic)//, Car(p.Code))
 	p.NewState(psEvalElement)
 
 	p.Code = Cadr(p.Code)
@@ -283,18 +281,16 @@ func lexical(p *Process, state int64) bool {
 
 	p.NewState(state)
 
-	k := Car(p.Code)
-
-	r := Raw(k)
+	r := Raw(Car(p.Code))
 	if strict(p) && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
+	p.NewStates(SaveCarCode|SaveLexical)//, Car(p.Code))
+	p.NewState(psEvalElement)
+
 	p.Code = Cadr(p.Code)
 	p.Scratch = Cdr(p.Scratch)
-
-	p.NewState(SaveCode|SaveLexical, k)
-	p.NewState(psEvalElement)
 
 	return true
 }
@@ -406,7 +402,7 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			p.ReplaceStates(next[state]...)
+			p.ReplaceStates(next[p.GetState()]...)
 
 			p.Code = Cdr(p.Code)
 
@@ -423,7 +419,7 @@ func run(p *Process) (successful bool) {
 			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
 				p.ReplaceState(psEvalCommand)
 			} else {
-				p.NewState(SaveCode, Cdr(p.Code))
+				p.NewStates(SaveCdrCode)//, Cdr(p.Code))
 				p.NewState(psEvalCommand)
 			}
 
@@ -438,7 +434,7 @@ func run(p *Process) (successful bool) {
 			}
 
 			p.ReplaceState(psExecCommand)
-			p.NewState(SaveCode, Cdr(p.Code))
+			p.NewStates(SaveCdrCode)//, Cdr(p.Code))
 			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
@@ -480,10 +476,7 @@ func run(p *Process) (successful bool) {
 				break
 			}
 
-			state = next[p.GetState()][0]
-
-			p.NewState(SaveCode, Cdr(p.Code))
-			p.NewState(state)
+			p.NewStates(next[p.GetState()]...)//, Cdr(p.Code))
 
 			p.Code = Car(p.Code)
 
@@ -497,7 +490,7 @@ func run(p *Process) (successful bool) {
 					p.ReplaceState(SaveDynamic | SaveLexical)
 					p.NewState(psEvalElement)
 					p.NewState(psChangeContext)
-					p.NewState(SaveCode, Cdr(p.Code))
+					p.NewStates(SaveCdrCode)//, Cdr(p.Code))
 					p.NewState(psEvalElement)
 
 					p.Code = Car(p.Code)
@@ -558,7 +551,7 @@ func run(p *Process) (successful bool) {
 
 		case psExecWhileTest:
 			p.ReplaceState(psExecWhileBody)
-			p.NewState(SaveCode, p.Code)
+			p.NewStates(SaveCode)//, p.Code)
 			p.NewState(psEvalElement)
 
 			p.Code = Car(p.Code)
@@ -619,13 +612,14 @@ func wpipe(c Cell) *os.File {
 func Evaluate(c Cell) {
 	saved := block0
 
+	proc0.Code = block0
 	SetCar(block0, c)
 	SetCdr(block0, Cons(nil, Null))
 	block0 = Cdr(block0)
 
-	proc0.NewState(SaveCode, block0)
+	proc0.NewStates(SaveCdrCode)//, Cdr(proc0.Code))
 	proc0.NewState(psEvalCommand)
-	proc0.Code = c
+	proc0.Code = Car(proc0.Code)
 
 	if !run(proc0) {
 		block0 = saved
@@ -706,7 +700,7 @@ func Start(i bool) {
 	s.DefineSyntax("if", func(p *Process, args Cell) bool {
 		p.ReplaceState(SaveDynamic | SaveLexical)
 		p.NewState(psExecIf)
-		p.NewState(SaveCode, p.Code)
+		p.NewStates(SaveCode)//, p.Code)
 		p.NewState(psEvalElement)
 
 		p.NewScope(p.Dynamic, p.Lexical)
@@ -722,22 +716,23 @@ func Start(i bool) {
 	s.DefineSyntax("set", func(p *Process, args Cell) bool {
 		p.Scratch = Cdr(p.Scratch)
 
-		s := Car(p.Code)
-		if !IsCons(s) {
+		s := Cadr(p.Code)
+		p.Code = Car(p.Code)
+		if !IsCons(p.Code) {
 			p.ReplaceState(psExecSet)
-			p.NewState(SaveCode, s)
+			p.NewStates(SaveCode)//, p.Code)
 		} else {
 			p.ReplaceState(SaveDynamic | SaveLexical)
 			p.NewState(psExecSet)
-			p.NewState(SaveCode, Cdr(s))
+			p.NewStates(SaveCdrCode)//, Cdr(p.Code))
 			p.NewState(psChangeContext)
 			p.NewState(psEvalElement)
-			p.NewState(SaveCode, Car(s))
+			p.NewStates(SaveCarCode)//, Car(p.Code))
 		}
 
 		p.NewState(psEvalElement)
 
-		p.Code = Cadr(p.Code)
+		p.Code = s
 		return true
 	})
 	s.DefineSyntax("setenv", func(p *Process, args Cell) bool {
