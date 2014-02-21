@@ -75,15 +75,13 @@ type Number interface {
 }
 
 const (
-	SaveCar = 1 << iota
-	SaveCdr
-	SaveCode
+	SaveCarCode = 1 << iota
+	SaveCdrCode
 	SaveDynamic
 	SaveLexical
 	SaveScratch
 	SaveMax
-	SaveCarCode = SaveCode|SaveCar
-	SaveCdrCode = SaveCode|SaveCdr
+	SaveCode = SaveCarCode|SaveCdrCode
 )
 
 var Null Cell
@@ -1497,12 +1495,12 @@ func (self *Process) NewStates(l ...int64) {
 		}
 
 		if f&SaveCode > 0 {
-			if f&SaveCar > 0 {
-				self.Stack = Cons(Car(self.Code), self.Stack)
-			} else if f&SaveCdr > 0 {
-				self.Stack = Cons(Cdr(self.Code), self.Stack)
-			} else {
+			if f&SaveCode == SaveCode {
 				self.Stack = Cons(self.Code, self.Stack)
+			} else if f&SaveCarCode > 0 {
+				self.Stack = Cons(Car(self.Code), self.Stack)
+			} else if f&SaveCdrCode > 0 {
+				self.Stack = Cons(Cdr(self.Code), self.Stack)
 			}
 		}
 

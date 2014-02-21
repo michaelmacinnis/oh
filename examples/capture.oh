@@ -4,7 +4,7 @@ touch "Name With Spaces"
 
 ls Name*
 
-for `(ls Name*): method File {
+for `(ls Name*): method (File) as {
     cat File
 }
 
