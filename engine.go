@@ -52,7 +52,7 @@ var proc0 *Process
 var con Cell
 var ext Cell
 var interactive bool
-var irq chan os.Signal
+var incoming chan os.Signal
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
@@ -235,7 +235,7 @@ func external(p *Process, args Cell) bool {
 
 	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
-	attr := &os.ProcAttr{dir, nil, fd, nil}
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
 	proc, err := os.StartProcess(name, argv, attr)
 	if err != nil {
 		panic(err)
@@ -642,13 +642,15 @@ func Start(i bool) {
 
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
-	irq = make(chan os.Signal, 1)
-	signal.Notify(irq, os.Interrupt)
+	incoming = make(chan os.Signal, 1)
+	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
 	go func() {
-		for {
-			select {
-			case <-irq:
+		for sig := range incoming {
+			switch sig {
+			case syscall.SIGINT:
 				proc0.Interrupt()
+			default:
+				// SIGTSTP - Do nothing.
 			}
 		}
 	}()
