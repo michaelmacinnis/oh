@@ -80,10 +80,12 @@ import (
 	"github.com/michaelmacinnis/tecla"
 	"os"
 	"runtime"
+	"syscall"
 )
 
 func init() {
 	runtime.LockOSThread()
+	syscall.Setsid()
 }
 
 func main() {

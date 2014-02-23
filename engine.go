@@ -645,7 +645,11 @@ func Start(i bool) {
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
 	incoming = make(chan os.Signal, 1)
-	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
+	if interactive {
+		signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
+	} else {
+		signal.Notify(incoming, syscall.SIGINT)
+	}
 	go func() {
 		for sig := range incoming {
 			switch sig {
