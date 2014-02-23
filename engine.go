@@ -246,6 +246,8 @@ func external(p *Process, args Cell) bool {
 	msg, err := proc.Wait()
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
+	p.ClearSignals()
+
 	return p.Return(NewStatus(status))
 }
 
@@ -1662,9 +1664,11 @@ define $connect: syntax (type out close) as {
             if close: p::writer-close
         }
 
-        dynamic $stdin p
-        e::eval right
-        if close: p::reader-close
+	block {
+            dynamic $stdin p
+            e::eval right
+            if close: p::reader-close
+	}
     }
 }
 define $redirect: syntax (chan mode mthd) as {
