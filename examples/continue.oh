@@ -3,9 +3,13 @@
 define label: method () as: return return
 define continue: method (label) as: label label
 
-define loop: label
-
-write "Hello, World!"
-
-continue loop
+define count: integer 0
+block {
+	define loop: label
+	if (lt count (integer 100)) {
+		set count: add count 1
+		echo: Text::sprintf "Hello, World! (%03d)" count
+		continue loop
+	}
+}
 
