@@ -47,11 +47,10 @@ const (
 )
 
 var block0 Cell
-var proc0 *Task
+var task0 *Task
 
 var ext Cell
 var interactive bool
-var incoming chan os.Signal
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
@@ -348,7 +347,7 @@ func run(t *Task) (successful bool) {
 				panic("interrupted")
 			}
 
-			proc0.Stack = Null
+			task0.Stack = Null
 			return true
 		}) {
 			continue
@@ -607,31 +606,31 @@ func wpipe(c Cell) *os.File {
 func Evaluate(c Cell) {
 	saved := block0
 
-	proc0.Code = block0
+	task0.Code = block0
 	SetCar(block0, c)
 	SetCdr(block0, Cons(nil, Null))
 	block0 = Cdr(block0)
 
-	proc0.NewStates(SaveCdrCode, psEvalCommand)
-	proc0.Code = Car(proc0.Code)
+	task0.NewStates(SaveCdrCode, psEvalCommand)
+	task0.Code = Car(task0.Code)
 
-	if !run(proc0) {
+	if !run(task0) {
 		block0 = saved
 		SetCar(block0, nil)
 		SetCdr(block0, Null)
 
-		proc0.Code = block0
-		proc0.RemoveState()
+		task0.Code = block0
+		task0.RemoveState()
 	} else {
-		if proc0.Stack == Null {
+		if task0.Stack == Null {
 			os.Exit(ExitStatus())
 		}
 	}
-	proc0.Scratch = Cdr(proc0.Scratch)
+	task0.Scratch = Cdr(task0.Scratch)
 }
 
 func ExitStatus() int {
-	s, ok := Car(proc0.Scratch).(*Status)
+	s, ok := Car(task0.Scratch).(*Status)
 	if !ok {
 		return 0
 	}
@@ -643,38 +642,37 @@ func Start(i bool) {
 
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
-	incoming = make(chan os.Signal, 1)
-	if interactive {
-		signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
-	} else {
-		signal.Notify(incoming, syscall.SIGINT)
-	}
+	incoming := make(chan os.Signal, 1)
+	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
 	go func() {
+		pid := syscall.Getpid()
 		for sig := range incoming {
 			switch sig {
 			case syscall.SIGINT:
-				proc0.Interrupt()
-			default:
-				// SIGTSTP - Do nothing.
+				task0.Interrupt()
+			case syscall.SIGTSTP:
+				if !interactive {
+					syscall.Kill(pid, syscall.SIGSTOP)
+				}
 			}
 		}
 	}()
 
-	proc0 = NewTask(psEvalBlock, nil, nil)
+	task0 = NewTask(psEvalBlock, nil, nil)
 
 	block0 = Cons(nil, Null)
-	proc0.Code = block0
+	task0.Code = block0
 
-	proc0.Scratch = Cons(NewStatus(0), proc0.Scratch)
+	task0.Scratch = Cons(NewStatus(0), task0.Scratch)
 
-	e, s := proc0.Dynamic, proc0.Lexical.Expose()
+	e, s := task0.Dynamic, task0.Lexical.Expose()
 
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
 
-	e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil, -1))
-	e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout, -1))
-	e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr, -1))
+	e.Add(NewSymbol("$stdin"), channel(task0, os.Stdin, nil, -1))
+	e.Add(NewSymbol("$stdout"), channel(task0, nil, os.Stdout, -1))
+	e.Add(NewSymbol("$stderr"), channel(task0, nil, os.Stderr, -1))
 
 	if wd, err := os.Getwd(); err == nil {
 		e.Add(NewSymbol("$cwd"), NewSymbol(wd))

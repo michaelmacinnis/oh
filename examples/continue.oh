@@ -1,0 +1,11 @@
+#!/usr/bin/env oh
+
+define label: method () as: return return
+define continue: method (label) as: label label
+
+define loop: label
+
+write "Hello, World!"
+
+continue loop
+
