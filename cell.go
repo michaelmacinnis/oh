@@ -378,7 +378,7 @@ func Raw(c Cell) string {
 	return c.String()
 }
 
-func Resolve(s, e Context, k *Symbol) (v *Reference) {
+func Resolve(s Context, e *Env, k *Symbol) (v *Reference) {
 	v = nil
 
 	if v = s.Access(k); v == nil {
@@ -1319,7 +1319,7 @@ func (self *Env) Remove(key Cell) bool {
 
 /* Function cell definition. */
 
-type Function func(p *Process, args Cell) bool
+type Function func(t *Task, args Cell) bool
 
 func (self Function) Bool() bool {
 	return true
@@ -1389,41 +1389,41 @@ func (self *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
 
-/* Process cell definition. */
+/* Task cell definition. */
 
-type Process struct {
+type Task struct {
 	Code           Cell
-	Dynamic        *Scope
+	Dynamic        *Env
 	Lexical        Context
 	Scratch, Stack Cell
 	interrupts     int
 	mutex          *sync.Mutex
 }
 
-func NewProcess(state int64, dynamic, lexical Context) *Process {
-	p := &Process{Null, nil, nil, Null, List(NewInteger(state)),
+func NewTask(state int64, dynamic *Env, lexical Context) *Task {
+	t := &Task{Null, nil, nil, Null, List(NewInteger(state)),
 		0, new(sync.Mutex)}
 
-	p.NewScope(dynamic, lexical)
+	t.NewBlock(dynamic, lexical)
 
-	return p
+	return t
 }
 
-func (self *Process) Bool() bool {
+func (self *Task) Bool() bool {
 	return true
 }
 
-func (self *Process) String() string {
-	return fmt.Sprintf("%%process %p%%", self)
+func (self *Task) String() string {
+	return fmt.Sprintf("%%task %p%%", self)
 }
 
-func (self *Process) Equal(c Cell) bool {
-	return c.(*Process) == self
+func (self *Task) Equal(c Cell) bool {
+	return c.(*Task) == self
 }
 
-/* Process-specific functions. */
+/* Task-specific functions. */
 
-func (self *Process) Arguments() Cell {
+func (self *Task) Arguments() Cell {
 	e := Car(self.Scratch)
 	l := Null
 
@@ -1439,7 +1439,7 @@ func (self *Process) Arguments() Cell {
 	return l
 }
 
-func (self *Process) ClearSignals() {
+func (self *Task) ClearSignals() {
 	if self.interrupts > 0 {
 		defer self.mutex.Unlock()
 		self.mutex.Lock()
@@ -1447,14 +1447,14 @@ func (self *Process) ClearSignals() {
 	}
 }
 
-func (self *Process) GetState() int64 {
+func (self *Task) GetState() int64 {
 	if self.Stack == Null {
 		return 0
 	}
 	return Car(self.Stack).(Atom).Int()
 }
 
-func (self *Process) HandleSignal(f Function) bool {
+func (self *Task) HandleSignal(f Function) bool {
 	if self.interrupts > 0 {
 		defer self.mutex.Unlock()
 		self.mutex.Lock()
@@ -1468,7 +1468,7 @@ func (self *Process) HandleSignal(f Function) bool {
 	return false
 }
 
-func (self *Process) Interrupt() {
+func (self *Task) Interrupt() {
 	if self.Stack != Null {
 		defer self.mutex.Unlock()
 		self.mutex.Lock()
@@ -1478,12 +1478,12 @@ func (self *Process) Interrupt() {
 	}
 }
 
-func (self *Process) NewScope(dynamic, lexical Context) {
-	self.Dynamic = NewDynamicScope(dynamic)
-	self.Lexical = NewLexicalScope(lexical)
+func (self *Task) NewBlock(dynamic *Env, lexical Context) {
+	self.Dynamic = NewEnv(dynamic)
+	self.Lexical = NewScope(lexical)
 }
 
-func (self *Process) NewStates(l ...int64) {
+func (self *Task) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= SaveMax {
 			self.Stack = Cons(NewInteger(f), self.Stack)
@@ -1520,7 +1520,7 @@ func (self *Process) NewStates(l ...int64) {
 	}
 }
 
-func (self *Process) RemoveState() {
+func (self *Task) RemoveState() {
 	f := self.GetState()
 
 	self.Stack = Cdr(self.Stack)
@@ -1545,12 +1545,12 @@ func (self *Process) RemoveState() {
 	}
 }
 
-func (self *Process) ReplaceStates(l ...int64) {
+func (self *Task) ReplaceStates(l ...int64) {
 	self.RemoveState()
 	self.NewStates(l...)
 }
 
-func (self *Process) RestoreState() {
+func (self *Task) RestoreState() {
 	f := self.GetState()
 
 	if f == 0 || f >= SaveMax {
@@ -1569,7 +1569,7 @@ func (self *Process) RestoreState() {
 
 	if f&SaveDynamic > 0 {
 		self.Stack = Cdr(self.Stack)
-		self.Dynamic = Car(self.Stack).(*Scope)
+		self.Dynamic = Car(self.Stack).(*Env)
 	}
 
 	if f&SaveCode > 0 {
@@ -1580,7 +1580,7 @@ func (self *Process) RestoreState() {
 	self.Stack = Cdr(self.Stack)
 }
 
-func (self *Process) Return(rv Cell) bool {
+func (self *Task) Return(rv Cell) bool {
 	SetCar(self.Scratch, rv)
 
 	return false
@@ -1596,11 +1596,7 @@ type Scope struct {
 	prev Context
 }
 
-func NewDynamicScope(prev Context) *Scope {
-	return &Scope{NewEnv(nil), prev}
-}
-
-func NewLexicalScope(prev Context) *Scope {
+func NewScope(prev Context) *Scope {
 	return &Scope{NewEnv(NewEnv(nil)), prev}
 }
 

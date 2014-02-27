@@ -47,9 +47,8 @@ const (
 )
 
 var block0 Cell
-var proc0 *Process
+var proc0 *Task
 
-var con Cell
 var ext Cell
 var interactive bool
 var incoming chan os.Signal
@@ -60,56 +59,56 @@ var next = map[int64][]int64{
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
 
-func apply(p *Process, args Cell) bool {
-	m := Car(p.Scratch).(Binding)
+func apply(t *Task, args Cell) bool {
+	m := Car(t.Scratch).(Binding)
 
-	p.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+	t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
-	p.Code = m.Ref().Code()
-	p.NewScope(p.Dynamic, m.Ref().Lexical())
+	t.Code = m.Ref().Code()
+	t.NewBlock(t.Dynamic, m.Ref().Lexical())
 
 	label := m.Ref().Label()
 	if label != Null {
-		p.Lexical.Public(label, m.Self())
+		t.Lexical.Public(label, m.Self())
 	}
 
 	formal := m.Ref().Formal()
 	for args != Null && formal != Null && IsAtom(Car(formal)) {
-		p.Lexical.Public(Car(formal), Car(args))
+		t.Lexical.Public(Car(formal), Car(args))
 		args, formal = Cdr(args), Cdr(formal)
 	}
 	if IsCons(Car(formal)) {
-		p.Lexical.Public(Caar(formal), args)
+		t.Lexical.Public(Caar(formal), args)
 	}
 
-	con := NewUnbound(NewMethod(tinue, Cdr(p.Scratch), p.Stack, Null, nil))
-	p.Lexical.Public(NewSymbol("return"), con)
+	con := NewUnbound(NewMethod(tinue, Cdr(t.Scratch), t.Stack, Null, nil))
+	t.Lexical.Public(NewSymbol("return"), con)
 
 	return true
 }
 
-func channel(p *Process, r, w *os.File, cap int) Context {
-	c, ch := NewLexicalScope(p.Lexical), NewChannel(r, w, cap)
+func channel(t *Task, r, w *os.File, cap int) Context {
+	c, ch := NewScope(t.Lexical), NewChannel(r, w, cap)
 
-	var rclose Function = func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(ch.ReaderClose()))
+	var rclose Function = func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(ch.ReaderClose()))
 	}
 
-	var read Function = func(p *Process, args Cell) bool {
-		return p.Return(ch.Read())
+	var read Function = func(t *Task, args Cell) bool {
+		return t.Return(ch.Read())
 	}
 
-	var readline Function = func(p *Process, args Cell) bool {
-		return p.Return(ch.ReadLine())
+	var readline Function = func(t *Task, args Cell) bool {
+		return t.Return(ch.ReadLine())
 	}
 
-	var wclose Function = func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(ch.WriterClose()))
+	var wclose Function = func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(ch.WriterClose()))
 	}
 
-	var write Function = func(p *Process, args Cell) bool {
+	var write Function = func(t *Task, args Cell) bool {
 		ch.Write(args)
-		return p.Return(True)
+		return t.Return(True)
 	}
 
 	c.Public(NewSymbol("guts"), ch)
@@ -122,39 +121,39 @@ func channel(p *Process, r, w *os.File, cap int) Context {
 	return NewObject(c)
 }
 
-func combiner(p *Process, n NewClosure) bool {
+func combiner(t *Task, n NewClosure) bool {
 	label := Null
-	formal := Car(p.Code)
-	for p.Code != Null && Raw(Cadr(p.Code)) != "as" {
+	formal := Car(t.Code)
+	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
 		label = formal
-		formal = Cadr(p.Code)
-		p.Code = Cdr(p.Code)
+		formal = Cadr(t.Code)
+		t.Code = Cdr(t.Code)
 	}
 
-	if p.Code == Null {
+	if t.Code == Null {
 		panic("expected 'as'")
 	}
 
-	block := Cddr(p.Code)
-	scope := p.Lexical.Expose()
+	block := Cddr(t.Code)
+	scope := t.Lexical.Expose()
 
 	c := n(apply, block, formal, label, scope)
 	if label == Null {
-		SetCar(p.Scratch, NewUnbound(c))
+		SetCar(t.Scratch, NewUnbound(c))
 	} else {
-		SetCar(p.Scratch, NewBound(c, scope))
+		SetCar(t.Scratch, NewBound(c, scope))
 	}
 
 	return false
 }
 
-func debug(p *Process, s string) {
-	fmt.Printf("%s: p.Code = %v, p.Scratch = %v\n", s, p.Code, p.Scratch)
+func debug(t *Task, s string) {
+	fmt.Printf("%s: t.Code = %v, t.Scratch = %v\n", s, t.Code, t.Scratch)
 }
 
-func dynamic(p *Process, state int64) bool {
-	r := Raw(Car(p.Code))
-	if strict(p) && number(r) {
+func dynamic(t *Task, state int64) bool {
+	r := Raw(Car(t.Code))
+	if strict(t) && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
@@ -165,10 +164,10 @@ func dynamic(p *Process, state int64) bool {
 		}
 	}
 
-	p.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
+	t.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
 
-	p.Code = Cadr(p.Code)
-	p.Scratch = Cdr(p.Scratch)
+	t.Code = Cadr(t.Code)
+	t.Scratch = Cdr(t.Scratch)
 
 	return true
 }
@@ -209,12 +208,12 @@ func expand(args Cell) Cell {
 	return list
 }
 
-func external(p *Process, args Cell) bool {
-	p.Scratch = Cdr(p.Scratch)
+func external(t *Task, args Cell) bool {
+	t.Scratch = Cdr(t.Scratch)
 
-	name, err := exec.LookPath(Raw(Car(p.Scratch)))
+	name, err := exec.LookPath(Raw(Car(t.Scratch)))
 
-	SetCar(p.Scratch, False)
+	SetCar(t.Scratch, False)
 
 	if err != nil {
 		panic(err)
@@ -226,12 +225,12 @@ func external(p *Process, args Cell) bool {
 		argv = append(argv, Car(args).String())
 	}
 
-	c := Resolve(p.Lexical, p.Dynamic, NewSymbol("$cwd"))
+	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	stdin := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdin")).Get()
-	stdout := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stdout")).Get()
-	stderr := Resolve(p.Lexical, p.Dynamic, NewSymbol("$stderr")).Get()
+	stdin := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get()
+	stdout := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get()
+	stderr := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get()
 
 	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
 
@@ -246,51 +245,51 @@ func external(p *Process, args Cell) bool {
 	msg, err := proc.Wait()
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	p.ClearSignals()
+	t.ClearSignals()
 
-	return p.Return(NewStatus(status))
+	return t.Return(NewStatus(status))
 }
 
-func lookup(p *Process, sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(p.Lexical, p.Dynamic, sym)
+func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
+	c := Resolve(t.Lexical, t.Dynamic, sym)
 	if c == nil {
 		r := Raw(sym)
-		if strict(p) && !number(r) {
+		if strict(t) && !number(r) {
 			return false, r + " undefined"
 		} else {
-			p.Scratch = Cons(sym, p.Scratch)
+			t.Scratch = Cons(sym, t.Scratch)
 		}
 	} else if simple && !IsSimple(c.Get()) {
-		p.Scratch = Cons(sym, p.Scratch)
+		t.Scratch = Cons(sym, t.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {
-		p.Scratch = Cons(a.Bind(p.Lexical.Expose()), p.Scratch)
+		t.Scratch = Cons(a.Bind(t.Lexical.Expose()), t.Scratch)
 	} else {
-		p.Scratch = Cons(c.Get(), p.Scratch)
+		t.Scratch = Cons(c.Get(), t.Scratch)
 	}
 
 	return true, ""
 }
 
-func lexical(p *Process, state int64) bool {
-	p.RemoveState()
+func lexical(t *Task, state int64) bool {
+	t.RemoveState()
 
-	l := Car(p.Scratch).(Binding).Self()
-	if p.Lexical != l {
-		p.NewStates(SaveLexical)
-		p.Lexical = l
+	l := Car(t.Scratch).(Binding).Self()
+	if t.Lexical != l {
+		t.NewStates(SaveLexical)
+		t.Lexical = l
 	}
 
-	p.NewStates(state)
+	t.NewStates(state)
 
-	r := Raw(Car(p.Code))
-	if strict(p) && number(r) {
+	r := Raw(Car(t.Code))
+	if strict(t) && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
-	p.NewStates(SaveCarCode|SaveLexical, psEvalElement)
+	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
-	p.Code = Cadr(p.Code)
-	p.Scratch = Cdr(p.Scratch)
+	t.Code = Cadr(t.Code)
+	t.Scratch = Cdr(t.Scratch)
 
 	return true
 }
@@ -322,10 +321,10 @@ func rpipe(c Cell) *os.File {
 	return r.Get().(*Channel).ReadFd()
 }
 
-func run(p *Process) (successful bool) {
+func run(t *Task) (successful bool) {
 	successful = true
 
-	defer func(saved Process) {
+	defer func(saved Task) {
 		r := recover()
 		if r == nil {
 			return
@@ -335,16 +334,16 @@ func run(p *Process) (successful bool) {
 
 		fmt.Printf("oh: %v\n", r)
 
-		*p = saved
+		*t = saved
 
-		p.Code = Null
-		p.Scratch = Cons(False, p.Scratch)
-		p.RemoveState()
-	}(*p)
+		t.Code = Null
+		t.Scratch = Cons(False, t.Scratch)
+		t.RemoveState()
+	}(*t)
 
-	p.ClearSignals()
-	for p.Stack != Null {
-		if p.HandleSignal(func(p *Process, args Cell) bool {
+	t.ClearSignals()
+	for t.Stack != Null {
+		if t.HandleSignal(func(t *Task, args Cell) bool {
 			if interactive {
 				panic("interrupted")
 			}
@@ -355,109 +354,109 @@ func run(p *Process) (successful bool) {
 			continue
 		}
 
-		state := p.GetState()
+		state := t.GetState()
 
 		switch state {
 		case psNone:
 			return
 
 		case psChangeContext:
-			p.Dynamic = nil
-			p.Lexical = Car(p.Scratch).(Context)
-			p.Scratch = Cdr(p.Scratch)
+			t.Dynamic = nil
+			t.Lexical = Car(t.Scratch).(Context)
+			t.Scratch = Cdr(t.Scratch)
 
 		case psExecBuiltin, psExecMethod:
-			args := p.Arguments()
+			args := t.Arguments()
 
 			if state == psExecBuiltin {
 				args = expand(args)
 			}
 
-			p.Code = args
+			t.Code = args
 
 			fallthrough
 		case psExecSyntax:
-			m := Car(p.Scratch).(Binding)
+			m := Car(t.Scratch).(Binding)
 
-			if m.Ref().Body()(p, p.Code) {
+			if m.Ref().Body()(t, t.Code) {
 				continue
 			}
 
 		case psExecIf, psExecWhileBody:
-			if !Car(p.Scratch).Bool() {
-				p.Code = Cdr(p.Code)
+			if !Car(t.Scratch).Bool() {
+				t.Code = Cdr(t.Code)
 
-				for Car(p.Code) != Null &&
-					!IsAtom(Car(p.Code)) {
-					p.Code = Cdr(p.Code)
+				for Car(t.Code) != Null &&
+					!IsAtom(Car(t.Code)) {
+					t.Code = Cdr(t.Code)
 				}
 
-				if Car(p.Code) != Null &&
-					Raw(Car(p.Code)) != "else" {
+				if Car(t.Code) != Null &&
+					Raw(Car(t.Code)) != "else" {
 					panic("expected 'else'")
 				}
 			}
 
-			if Cdr(p.Code) == Null {
+			if Cdr(t.Code) == Null {
 				break
 			}
 
-			p.ReplaceStates(next[p.GetState()]...)
+			t.ReplaceStates(next[t.GetState()]...)
 
-			p.Code = Cdr(p.Code)
+			t.Code = Cdr(t.Code)
 
 			fallthrough
 		case psEvalBlock:
-			if p.Code == block0 {
+			if t.Code == block0 {
 				return
 			}
 
-			if p.Code == Null ||
-				!IsCons(p.Code) || !IsCons(Car(p.Code)) {
+			if t.Code == Null ||
+				!IsCons(t.Code) || !IsCons(Car(t.Code)) {
 				break
 			}
 
-			if Cdr(p.Code) == Null || !IsCons(Cadr(p.Code)) {
-				p.ReplaceStates(psEvalCommand)
+			if Cdr(t.Code) == Null || !IsCons(Cadr(t.Code)) {
+				t.ReplaceStates(psEvalCommand)
 			} else {
-				p.NewStates(SaveCdrCode, psEvalCommand)
+				t.NewStates(SaveCdrCode, psEvalCommand)
 			}
 
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
+			t.Code = Car(t.Code)
+			t.Scratch = Cdr(t.Scratch)
 
 			fallthrough
 		case psEvalCommand:
-			if p.Code == Null {
-				p.Scratch = Cons(p.Code, p.Scratch)
+			if t.Code == Null {
+				t.Scratch = Cons(t.Code, t.Scratch)
 				break
 			}
 
-			p.ReplaceStates(psExecCommand,
+			t.ReplaceStates(psExecCommand,
 				SaveCdrCode,
 				psEvalElement)
-			p.Code = Car(p.Code)
+			t.Code = Car(t.Code)
 
 			continue
 
 		case psExecCommand:
-			switch t := Car(p.Scratch).(type) {
+			switch k := Car(t.Scratch).(type) {
 			case *String, *Symbol:
-				p.Scratch = Cons(ext, p.Scratch)
+				t.Scratch = Cons(ext, t.Scratch)
 
-				p.ReplaceStates(psExecBuiltin,
+				t.ReplaceStates(psExecBuiltin,
 					psEvalArgumentsBuiltin)
 			case Binding:
-				switch t.Ref().(type) {
+				switch k.Ref().(type) {
 				case *Builtin:
-					p.ReplaceStates(psExecBuiltin,
+					t.ReplaceStates(psExecBuiltin,
 						psEvalArgumentsBuiltin)
 
 				case *Method:
-					p.ReplaceStates(psExecMethod,
+					t.ReplaceStates(psExecMethod,
 						psEvalArguments)
 				case *Syntax:
-					p.ReplaceStates(psExecSyntax)
+					t.ReplaceStates(psExecSyntax)
 					continue
 				}
 
@@ -465,112 +464,112 @@ func run(p *Process) (successful bool) {
 				panic(fmt.Sprintf("can't evaluate: %v", t))
 			}
 
-			p.Scratch = Cons(nil, p.Scratch)
+			t.Scratch = Cons(nil, t.Scratch)
 
 			fallthrough
 		case psEvalArguments, psEvalArgumentsBuiltin:
-			if p.Code == Null {
+			if t.Code == Null {
 				break
 			}
 
-			p.NewStates(next[p.GetState()]...)
+			t.NewStates(next[t.GetState()]...)
 
-			p.Code = Car(p.Code)
+			t.Code = Car(t.Code)
 
 			fallthrough
 		case psEvalElement, psEvalElementBuiltin:
-			if p.Code == Null {
-				p.Scratch = Cons(p.Code, p.Scratch)
+			if t.Code == Null {
+				t.Scratch = Cons(t.Code, t.Scratch)
 				break
-			} else if IsCons(p.Code) {
-				if IsAtom(Cdr(p.Code)) {
-					p.ReplaceStates(SaveDynamic|SaveLexical,
+			} else if IsCons(t.Code) {
+				if IsAtom(Cdr(t.Code)) {
+					t.ReplaceStates(SaveDynamic|SaveLexical,
 						psEvalElement,
 						psChangeContext,
 						SaveCdrCode,
 						psEvalElement)
-					p.Code = Car(p.Code)
+					t.Code = Car(t.Code)
 				} else {
-					p.ReplaceStates(psEvalCommand)
+					t.ReplaceStates(psEvalCommand)
 				}
 				continue
-			} else if sym, ok := p.Code.(*Symbol); ok {
-				simple := p.GetState() == psEvalElementBuiltin
-				ok, msg := lookup(p, sym, simple)
+			} else if sym, ok := t.Code.(*Symbol); ok {
+				simple := t.GetState() == psEvalElementBuiltin
+				ok, msg := lookup(t, sym, simple)
 				if !ok {
 					panic(msg)
 				}
 				break
 			} else {
-				p.Scratch = Cons(p.Code, p.Scratch)
+				t.Scratch = Cons(t.Code, t.Scratch)
 				break
 			}
 
 		case psExecDefine:
-			p.Lexical.Define(p.Code, Car(p.Scratch))
+			t.Lexical.Define(t.Code, Car(t.Scratch))
 
 		case psExecPublic:
-			p.Lexical.Public(p.Code, Car(p.Scratch))
+			t.Lexical.Public(t.Code, Car(t.Scratch))
 
 		case psExecDynamic, psExecSetenv:
-			k := p.Code
-			v := Car(p.Scratch)
+			k := t.Code
+			v := Car(t.Scratch)
 
 			if state == psExecSetenv {
 				s := Raw(v)
 				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
 			}
 
-			p.Dynamic.Define(k, v)
+			t.Dynamic.Add(k, v)
 
 		case psExecSet:
-			k := p.Code.(*Symbol)
-			r := Resolve(p.Lexical, p.Dynamic, k)
+			k := t.Code.(*Symbol)
+			r := Resolve(t.Lexical, t.Dynamic, k)
 			if r == nil {
 				panic("'" + k.String() + "' is not defined")
 			}
 
-			r.Set(Car(p.Scratch))
+			r.Set(Car(t.Scratch))
 
 		case psExecSplice:
-			l := Car(p.Scratch)
-			p.Scratch = Cdr(p.Scratch)
+			l := Car(t.Scratch)
+			t.Scratch = Cdr(t.Scratch)
 
 			if !IsCons(l) {
 				break
 			}
 
 			for l != Null {
-				p.Scratch = Cons(Car(l), p.Scratch)
+				t.Scratch = Cons(Car(l), t.Scratch)
 				l = Cdr(l)
 			}
 
 		case psExecWhileTest:
-			p.ReplaceStates(psExecWhileBody,
+			t.ReplaceStates(psExecWhileBody,
 				SaveCode,
 				psEvalElement)
-			p.Code = Car(p.Code)
-			p.Scratch = Cdr(p.Scratch)
+			t.Code = Car(t.Code)
+			t.Scratch = Cdr(t.Scratch)
 
 			continue
 
 		default:
 			if state >= SaveMax {
 				panic(fmt.Sprintf("command not found: %s",
-					p.Code))
+					t.Code))
 			} else {
-				p.RestoreState()
+				t.RestoreState()
 				continue
 			}
 		}
 
-		p.RemoveState()
+		t.RemoveState()
 	}
 
 	return
 }
 
-func strict(p *Process) (ok bool) {
+func strict(t *Task) (ok bool) {
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -580,7 +579,7 @@ func strict(p *Process) (ok bool) {
 		ok = false
 	}()
 
-	c := Resolve(p.Lexical, nil, NewSymbol("strict"))
+	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
 	if c == nil {
 		return false
 	}
@@ -588,14 +587,14 @@ func strict(p *Process) (ok bool) {
 	return c.Get().(Atom).Bool()
 }
 
-func tinue(p *Process, args Cell) bool {
-	p.Code = Car(p.Code)
+func tinue(t *Task, args Cell) bool {
+	t.Code = Car(t.Code)
 
-	m := Car(p.Scratch).(Binding)
-	p.Scratch = m.Ref().Code()
-	p.Stack = m.Ref().Formal()
+	m := Car(t.Scratch).(Binding)
+	t.Scratch = m.Ref().Code()
+	t.Stack = m.Ref().Formal()
 
-	p.Scratch = Cons(Car(args), p.Scratch)
+	t.Scratch = Cons(Car(args), t.Scratch)
 
 	return false
 }
@@ -661,7 +660,7 @@ func Start(i bool) {
 		}
 	}()
 
-	proc0 = NewProcess(psEvalBlock, nil, nil)
+	proc0 = NewTask(psEvalBlock, nil, nil)
 
 	block0 = Cons(nil, Null)
 	proc0.Code = block0
@@ -670,106 +669,106 @@ func Start(i bool) {
 
 	e, s := proc0.Dynamic, proc0.Lexical.Expose()
 
-	e.Define(NewSymbol("False"), False)
-	e.Define(NewSymbol("True"), True)
+	e.Add(NewSymbol("False"), False)
+	e.Add(NewSymbol("True"), True)
 
-	e.Define(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil, -1))
-	e.Define(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout, -1))
-	e.Define(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr, -1))
+	e.Add(NewSymbol("$stdin"), channel(proc0, os.Stdin, nil, -1))
+	e.Add(NewSymbol("$stdout"), channel(proc0, nil, os.Stdout, -1))
+	e.Add(NewSymbol("$stderr"), channel(proc0, nil, os.Stderr, -1))
 
 	if wd, err := os.Getwd(); err == nil {
-		e.Define(NewSymbol("$cwd"), NewSymbol(wd))
+		e.Add(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineSyntax("block", func(p *Process, args Cell) bool {
-		p.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+	s.DefineSyntax("block", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
-		p.NewScope(p.Dynamic, p.Lexical)
+		t.NewBlock(t.Dynamic, t.Lexical)
 
 		return true
 	})
-	s.DefineSyntax("builtin", func(p *Process, args Cell) bool {
-		return combiner(p, NewBuiltin)
+	s.DefineSyntax("builtin", func(t *Task, args Cell) bool {
+		return combiner(t, NewBuiltin)
 	})
-	s.DefineSyntax("define", func(p *Process, args Cell) bool {
-		return lexical(p, psExecDefine)
+	s.DefineSyntax("define", func(t *Task, args Cell) bool {
+		return lexical(t, psExecDefine)
 	})
-	s.DefineSyntax("dynamic", func(p *Process, args Cell) bool {
-		return dynamic(p, psExecDynamic)
+	s.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
+		return dynamic(t, psExecDynamic)
 	})
-	s.DefineSyntax("if", func(p *Process, args Cell) bool {
-		p.ReplaceStates(SaveDynamic|SaveLexical,
+	s.DefineSyntax("if", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
 
-		p.NewScope(p.Dynamic, p.Lexical)
+		t.NewBlock(t.Dynamic, t.Lexical)
 
-		p.Code = Car(p.Code)
-		p.Scratch = Cdr(p.Scratch)
+		t.Code = Car(t.Code)
+		t.Scratch = Cdr(t.Scratch)
 
 		return true
 	})
-	s.DefineSyntax("method", func(p *Process, args Cell) bool {
-		return combiner(p, NewMethod)
+	s.DefineSyntax("method", func(t *Task, args Cell) bool {
+		return combiner(t, NewMethod)
 	})
-	s.DefineSyntax("set", func(p *Process, args Cell) bool {
-		p.Scratch = Cdr(p.Scratch)
+	s.DefineSyntax("set", func(t *Task, args Cell) bool {
+		t.Scratch = Cdr(t.Scratch)
 
-		s := Cadr(p.Code)
-		p.Code = Car(p.Code)
-		if !IsCons(p.Code) {
-			p.ReplaceStates(psExecSet, SaveCode)
+		s := Cadr(t.Code)
+		t.Code = Car(t.Code)
+		if !IsCons(t.Code) {
+			t.ReplaceStates(psExecSet, SaveCode)
 		} else {
-			p.ReplaceStates(SaveDynamic|SaveLexical,
+			t.ReplaceStates(SaveDynamic|SaveLexical,
 				psExecSet, SaveCdrCode,
 				psChangeContext, psEvalElement,
 				SaveCarCode)
 		}
 
-		p.NewStates(psEvalElement)
+		t.NewStates(psEvalElement)
 
-		p.Code = s
+		t.Code = s
 		return true
 	})
-	s.DefineSyntax("setenv", func(p *Process, args Cell) bool {
-		return dynamic(p, psExecSetenv)
+	s.DefineSyntax("setenv", func(t *Task, args Cell) bool {
+		return dynamic(t, psExecSetenv)
 	})
-	s.DefineSyntax("spawn", func(p *Process, args Cell) bool {
-		child := NewProcess(psNone, p.Dynamic, p.Lexical)
+	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
+		child := NewTask(psNone, t.Dynamic, t.Lexical)
 
 		child.NewStates(psEvalBlock)
 
-		child.Code = p.Code
+		child.Code = t.Code
 		child.Scratch = Cons(Null, child.Scratch)
 
-		SetCar(p.Scratch, child)
+		SetCar(t.Scratch, child)
 
 		go run(child)
 
 		return false
 	})
-	s.DefineSyntax("splice", func(p *Process, args Cell) bool {
-		p.ReplaceStates(psExecSplice, psEvalElement)
+	s.DefineSyntax("splice", func(t *Task, args Cell) bool {
+		t.ReplaceStates(psExecSplice, psEvalElement)
 
-		p.Code = Car(p.Code)
-		p.Scratch = Cdr(p.Scratch)
+		t.Code = Car(t.Code)
+		t.Scratch = Cdr(t.Scratch)
+
+		return true
+	})
+	s.DefineSyntax("syntax", func(t *Task, args Cell) bool {
+		return combiner(t, NewSyntax)
+	})
+	s.DefineSyntax("while", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
 
 		return true
 	})
-	s.DefineSyntax("syntax", func(p *Process, args Cell) bool {
-		return combiner(p, NewSyntax)
-	})
 
-	s.PublicSyntax("public", func(p *Process, args Cell) bool {
-		return lexical(p, psExecPublic)
-	})
-	s.PublicSyntax("while", func(p *Process, args Cell) bool {
-		p.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
-
-		return true
+	s.PublicSyntax("public", func(t *Task, args Cell) bool {
+		return lexical(t, psExecPublic)
 	})
 
 	/* Builtins. */
-	s.DefineBuiltin("cd", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("cd", func(t *Task, args Cell) bool {
 		err := os.Chdir(Raw(Car(args)))
 		status := 0
 		if err != nil {
@@ -777,17 +776,17 @@ func Start(i bool) {
 		}
 
 		if wd, err := os.Getwd(); err == nil {
-			p.Dynamic.Define(NewSymbol("$cwd"), NewSymbol(wd))
+			t.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
 		}
 
-		return p.Return(NewStatus(int64(status)))
+		return t.Return(NewStatus(int64(status)))
 	})
-	s.DefineBuiltin("debug", func(p *Process, args Cell) bool {
-		debug(p, "debug")
+	s.DefineBuiltin("debug", func(t *Task, args Cell) bool {
+		debug(t, "debug")
 
 		return false
 	})
-	s.DefineBuiltin("exit", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("exit", func(t *Task, args Cell) bool {
 		var status int64 = 0
 
 		a, ok := Car(args).(Atom)
@@ -795,55 +794,55 @@ func Start(i bool) {
 			status = a.Status()
 		}
 
-		p.Scratch = List(NewStatus(status))
-		p.Stack = Null
+		t.Scratch = List(NewStatus(status))
+		t.Stack = Null
 
 		return true
 	})
-	s.DefineBuiltin("module", func(p *Process, args Cell) bool {
+	s.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(Raw(Car(args)))
 
 		if err != nil {
-			return p.Return(Null)
+			return t.Return(Null)
 		}
 
 		sym := NewSymbol(str)
-		c := Resolve(p.Lexical, p.Dynamic, sym)
+		c := Resolve(t.Lexical, t.Dynamic, sym)
 
 		if c == nil {
-			return p.Return(sym)
+			return t.Return(sym)
 		}
 
-		return p.Return(c.Get())
+		return t.Return(c.Get())
 	})
 
-	s.PublicMethod("child", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(Binding).Self()
+	s.PublicMethod("child", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
 
-		return p.Return(NewObject(NewLexicalScope(o)))
+		return t.Return(NewObject(NewScope(o)))
 	})
-	s.PublicMethod("clone", func(p *Process, args Cell) bool {
-		o := Car(p.Scratch).(Binding).Self()
+	s.PublicMethod("clone", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
 
-		return p.Return(NewObject(o.Copy()))
+		return t.Return(NewObject(o.Copy()))
 	})
-	s.PublicMethod("exists", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(Binding).Self()
-		c := Resolve(l, p.Dynamic, NewSymbol(Raw(Car(args))))
+	s.PublicMethod("exists", func(t *Task, args Cell) bool {
+		l := Car(t.Scratch).(Binding).Self()
+		c := Resolve(l, t.Dynamic, NewSymbol(Raw(Car(args))))
 
-		return p.Return(NewBoolean(c != nil))
+		return t.Return(NewBoolean(c != nil))
 	})
-	s.PublicMethod("unset", func(p *Process, args Cell) bool {
-		l := Car(p.Scratch).(Binding).Self()
+	s.PublicMethod("unset", func(t *Task, args Cell) bool {
+		l := Car(t.Scratch).(Binding).Self()
 		r := l.Remove(NewSymbol(Raw(Car(args))))
 
-		return p.Return(NewBoolean(r))
+		return t.Return(NewBoolean(r))
 	})
 
-	s.DefineMethod("append", func(p *Process, args Cell) bool {
+	s.DefineMethod("append", func(t *Task, args Cell) bool {
 		/*
 		 * NOTE: Our append works differently than Scheme's append.
-		 *       To mimic Scheme's behavior used append l1 @l2 ... @ln
+		 *       To mimic Scheme's behavior use: append l1 @l2 ... @ln
 		 */
 
 		/* TODO: We should just copy this list: ... */
@@ -855,31 +854,31 @@ func Start(i bool) {
 			argv = append(argv, Car(args))
 		}
 
-		return p.Return(Append(l, argv...))
+		return t.Return(Append(l, argv...))
 	})
-	s.DefineMethod("car", func(p *Process, args Cell) bool {
-		return p.Return(Caar(args))
+	s.DefineMethod("car", func(t *Task, args Cell) bool {
+		return t.Return(Caar(args))
 	})
-	s.DefineMethod("cdr", func(p *Process, args Cell) bool {
-		return p.Return(Cdar(args))
+	s.DefineMethod("cdr", func(t *Task, args Cell) bool {
+		return t.Return(Cdar(args))
 	})
-	s.DefineMethod("cons", func(p *Process, args Cell) bool {
-		return p.Return(Cons(Car(args), Cadr(args)))
+	s.DefineMethod("cons", func(t *Task, args Cell) bool {
+		return t.Return(Cons(Car(args), Cadr(args)))
 	})
-	s.PublicMethod("eval", func(p *Process, args Cell) bool {
-		scope := Car(p.Scratch).(Binding).Self()
-		p.RemoveState()
-		if p.Lexical != scope {
-			p.NewStates(SaveLexical)
-			p.Lexical = scope
+	s.PublicMethod("eval", func(t *Task, args Cell) bool {
+		scope := Car(t.Scratch).(Binding).Self()
+		t.RemoveState()
+		if t.Lexical != scope {
+			t.NewStates(SaveLexical)
+			t.Lexical = scope
 		}
-		p.NewStates(psEvalElement)
-		p.Code = Car(args)
-		p.Scratch = Cdr(p.Scratch)
+		t.NewStates(psEvalElement)
+		t.Code = Car(args)
+		t.Scratch = Cdr(t.Scratch)
 
 		return true
 	})
-	s.DefineMethod("length", func(p *Process, args Cell) bool {
+	s.DefineMethod("length", func(t *Task, args Cell) bool {
 		var l int64 = 0
 
 		switch c := Car(args); c.(type) {
@@ -889,12 +888,12 @@ func Start(i bool) {
 			l = Length(c)
 		}
 
-		return p.Return(NewInteger(l))
+		return t.Return(NewInteger(l))
 	})
-	s.DefineMethod("list", func(p *Process, args Cell) bool {
-		return p.Return(args)
+	s.DefineMethod("list", func(t *Task, args Cell) bool {
+		return t.Return(args)
 	})
-	s.DefineMethod("open", func(p *Process, args Cell) bool {
+	s.DefineMethod("open", func(t *Task, args Cell) bool {
 		name := Raw(Car(args))
 		mode := Raw(Cadr(args))
 		flags := 0
@@ -944,175 +943,175 @@ func Start(i bool) {
 			w = nil
 		}
 
-		return p.Return(channel(p, r, w, -1))
+		return t.Return(channel(t, r, w, -1))
 	})
-	s.DefineMethod("reverse", func(p *Process, args Cell) bool {
-		return p.Return(Reverse(Car(args)))
+	s.DefineMethod("reverse", func(t *Task, args Cell) bool {
+		return t.Return(Reverse(Car(args)))
 	})
-	s.DefineMethod("set-car", func(p *Process, args Cell) bool {
+	s.DefineMethod("set-car", func(t *Task, args Cell) bool {
 		SetCar(Car(args), Cadr(args))
 
-		return p.Return(Cadr(args))
+		return t.Return(Cadr(args))
 	})
-	s.DefineMethod("set-cdr", func(p *Process, args Cell) bool {
+	s.DefineMethod("set-cdr", func(t *Task, args Cell) bool {
 		SetCdr(Car(args), Cadr(args))
 
-		return p.Return(Cadr(args))
+		return t.Return(Cadr(args))
 	})
 
 	/* Predicates. */
-	s.DefineMethod("is-atom", func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(IsAtom(Car(args))))
+	s.DefineMethod("is-atom", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(IsAtom(Car(args))))
 	})
-	s.DefineMethod("is-boolean", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-boolean", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Boolean)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-builtin", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-builtin", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Builtin)
 		}
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-channel", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-channel", func(t *Task, args Cell) bool {
 		o, ok := Car(args).(Context)
 		if !ok {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
 		if g == nil {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		c, ok := g.Get().(*Channel)
 		if !ok {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		ok = (c.ReadFd() == nil && c.WriteFd() == nil)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-cons", func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(IsCons(Car(args))))
+	s.DefineMethod("is-cons", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(IsCons(Car(args))))
 	})
-	s.DefineMethod("is-float", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-float", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Float)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-integer", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-integer", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Integer)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-list", func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(IsList(Car(args))))
+	s.DefineMethod("is-list", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(IsList(Car(args))))
 	})
-	s.DefineMethod("is-method", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-method", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Method)
 		}
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-null", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-null", func(t *Task, args Cell) bool {
 		ok := Car(args) == Null
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-number", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-number", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(Number)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-object", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-object", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(Context)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-pipe", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
 		o, ok := Car(args).(Context)
 		if !ok {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
 		if g == nil {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		c, ok := g.Get().(*Channel)
 		if !ok {
-			return p.Return(False)
+			return t.Return(False)
 		}
 
 		ok = (c.ReadFd() != nil || c.WriteFd() != nil)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-status", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-status", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Status)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-string", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-string", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*String)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-symbol", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-symbol", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Symbol)
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-syntax", func(p *Process, args Cell) bool {
+	s.DefineMethod("is-syntax", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Syntax)
 		}
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
 
 	/* Generators. */
-	s.DefineMethod("boolean", func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(Car(args).Bool()))
+	s.DefineMethod("boolean", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(Car(args).Bool()))
 	})
-	s.DefineMethod("channel", func(p *Process, args Cell) bool {
+	s.DefineMethod("channel", func(t *Task, args Cell) bool {
 		c := 0
 		if args != Null {
 			c = int(Car(args).(Atom).Int())
 		}
 
-		return p.Return(channel(p, nil, nil, c))
+		return t.Return(channel(t, nil, nil, c))
 	})
-	s.DefineMethod("float", func(p *Process, args Cell) bool {
-		return p.Return(NewFloat(Car(args).(Atom).Float()))
+	s.DefineMethod("float", func(t *Task, args Cell) bool {
+		return t.Return(NewFloat(Car(args).(Atom).Float()))
 	})
-	s.DefineMethod("integer", func(p *Process, args Cell) bool {
-		return p.Return(NewInteger(Car(args).(Atom).Int()))
+	s.DefineMethod("integer", func(t *Task, args Cell) bool {
+		return t.Return(NewInteger(Car(args).(Atom).Int()))
 	})
-	s.DefineMethod("pipe", func(p *Process, args Cell) bool {
-		return p.Return(channel(p, nil, nil, -1))
+	s.DefineMethod("pipe", func(t *Task, args Cell) bool {
+		return t.Return(channel(t, nil, nil, -1))
 	})
-	s.DefineMethod("status", func(p *Process, args Cell) bool {
-		return p.Return(NewStatus(Car(args).(Atom).Status()))
+	s.DefineMethod("status", func(t *Task, args Cell) bool {
+		return t.Return(NewStatus(Car(args).(Atom).Status()))
 	})
-	s.DefineMethod("string", func(p *Process, args Cell) bool {
-		return p.Return(NewString(Car(args).String()))
+	s.DefineMethod("string", func(t *Task, args Cell) bool {
+		return t.Return(NewString(Car(args).String()))
 	})
-	s.DefineMethod("symbol", func(p *Process, args Cell) bool {
-		return p.Return(NewSymbol(Raw(Car(args))))
+	s.DefineMethod("symbol", func(t *Task, args Cell) bool {
+		return t.Return(NewSymbol(Raw(Car(args))))
 	})
 
 	/* Relational. */
-	s.DefineMethod("eq", func(p *Process, args Cell) bool {
+	s.DefineMethod("eq", func(t *Task, args Cell) bool {
 		prev := Car(args)
 
 		for Cdr(args) != Null {
@@ -1120,15 +1119,15 @@ func Start(i bool) {
 			curr := Car(args)
 
 			if !prev.Equal(curr) {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("ge", func(p *Process, args Cell) bool {
+	s.DefineMethod("ge", func(t *Task, args Cell) bool {
 		prev := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1136,15 +1135,15 @@ func Start(i bool) {
 			curr := Car(args).(Atom)
 
 			if prev.Less(curr) {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("gt", func(p *Process, args Cell) bool {
+	s.DefineMethod("gt", func(t *Task, args Cell) bool {
 		prev := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1152,15 +1151,15 @@ func Start(i bool) {
 			curr := Car(args).(Atom)
 
 			if !prev.Greater(curr) {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("is", func(p *Process, args Cell) bool {
+	s.DefineMethod("is", func(t *Task, args Cell) bool {
 		prev := Car(args)
 
 		for Cdr(args) != Null {
@@ -1168,15 +1167,15 @@ func Start(i bool) {
 			curr := Car(args)
 
 			if prev != curr {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("le", func(p *Process, args Cell) bool {
+	s.DefineMethod("le", func(t *Task, args Cell) bool {
 		prev := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1184,15 +1183,15 @@ func Start(i bool) {
 			curr := Car(args).(Atom)
 
 			if prev.Greater(curr) {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("lt", func(p *Process, args Cell) bool {
+	s.DefineMethod("lt", func(t *Task, args Cell) bool {
 		prev := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1200,15 +1199,15 @@ func Start(i bool) {
 			curr := Car(args).(Atom)
 
 			if !prev.Less(curr) {
-				return p.Return(False)
+				return t.Return(False)
 			}
 
 			prev = curr
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("match", func(p *Process, args Cell) bool {
+	s.DefineMethod("match", func(t *Task, args Cell) bool {
 		pattern := Raw(Car(args))
 		text := Raw(Cadr(args))
 
@@ -1217,28 +1216,28 @@ func Start(i bool) {
 			panic(err)
 		}
 
-		return p.Return(NewBoolean(ok))
+		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("ne", func(p *Process, args Cell) bool {
+	s.DefineMethod("ne", func(t *Task, args Cell) bool {
 		for l1 := args; l1 != Null; l1 = Cdr(l1) {
 			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
 				v1 := Car(l1)
 				v2 := Car(l2)
 
 				if v1.Equal(v2) {
-					return p.Return(False)
+					return t.Return(False)
 				}
 			}
 		}
 
-		return p.Return(True)
+		return t.Return(True)
 	})
-	s.DefineMethod("not", func(p *Process, args Cell) bool {
-		return p.Return(NewBoolean(!Car(args).Bool()))
+	s.DefineMethod("not", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(!Car(args).Bool()))
 	})
 
 	/* Arithmetic. */
-	s.DefineMethod("add", func(p *Process, args Cell) bool {
+	s.DefineMethod("add", func(t *Task, args Cell) bool {
 		acc := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1247,9 +1246,9 @@ func Start(i bool) {
 
 		}
 
-		return p.Return(acc)
+		return t.Return(acc)
 	})
-	s.DefineMethod("sub", func(p *Process, args Cell) bool {
+	s.DefineMethod("sub", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1257,9 +1256,9 @@ func Start(i bool) {
 			acc = acc.Subtract(Car(args))
 		}
 
-		return p.Return(acc)
+		return t.Return(acc)
 	})
-	s.DefineMethod("div", func(p *Process, args Cell) bool {
+	s.DefineMethod("div", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1267,9 +1266,9 @@ func Start(i bool) {
 			acc = acc.Divide(Car(args))
 		}
 
-		return p.Return(acc)
+		return t.Return(acc)
 	})
-	s.DefineMethod("mod", func(p *Process, args Cell) bool {
+	s.DefineMethod("mod", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1277,9 +1276,9 @@ func Start(i bool) {
 			acc = acc.Modulo(Car(args))
 		}
 
-		return p.Return(acc)
+		return t.Return(acc)
 	})
-	s.DefineMethod("mul", func(p *Process, args Cell) bool {
+	s.DefineMethod("mul", func(t *Task, args Cell) bool {
 		acc := Car(args).(Atom)
 
 		for Cdr(args) != Null {
@@ -1287,34 +1286,34 @@ func Start(i bool) {
 			acc = acc.Multiply(Car(args))
 		}
 
-		return p.Return(acc)
+		return t.Return(acc)
 	})
 
 	/* Standard namespaces. */
-	list := NewObject(NewLexicalScope(s))
+	list := NewObject(NewScope(s))
 	s.Define(NewSymbol("List"), list)
 
-	list.PublicMethod("to-string", func(p *Process, args Cell) bool {
+	list.PublicMethod("to-string", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return p.Return(NewString(s))
+		return t.Return(NewString(s))
 	})
-	list.PublicMethod("to-symbol", func(p *Process, args Cell) bool {
+	list.PublicMethod("to-symbol", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return p.Return(NewSymbol(s))
+		return t.Return(NewSymbol(s))
 	})
 
-	text := NewObject(NewLexicalScope(s))
+	text := NewObject(NewScope(s))
 	s.Define(NewSymbol("Text"), text)
 
-	text.PublicMethod("is-control", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-control", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1324,9 +1323,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-digit", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-digit", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1336,9 +1335,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-graphic", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-graphic", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1348,9 +1347,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-letter", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-letter", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1360,9 +1359,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-lower", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-lower", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1372,9 +1371,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-mark", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-mark", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1384,9 +1383,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-print", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-print", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1396,9 +1395,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-punct", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-punct", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1408,9 +1407,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-space", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-space", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1420,9 +1419,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-symbol", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-symbol", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1432,9 +1431,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-title", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-title", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1444,9 +1443,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("is-upper", func(p *Process, args Cell) bool {
+	text.PublicMethod("is-upper", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1456,9 +1455,9 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("join", func(p *Process, args Cell) bool {
+	text.PublicMethod("join", func(t *Task, args Cell) bool {
 		str := false
 		sep := Car(args)
 		list := Cdr(args)
@@ -1474,11 +1473,11 @@ func Start(i bool) {
 		r := strings.Join(arr, string(Raw(sep)))
 
 		if str {
-			return p.Return(NewString(r))
+			return t.Return(NewString(r))
 		}
-		return p.Return(NewSymbol(r))
+		return t.Return(NewSymbol(r))
 	})
-	text.PublicMethod("split", func(p *Process, args Cell) bool {
+	text.PublicMethod("split", func(t *Task, args Cell) bool {
 		var r Cell = Null
 
 		sep := Car(args)
@@ -1495,9 +1494,9 @@ func Start(i bool) {
 			}
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("sprintf", func(p *Process, args Cell) bool {
+	text.PublicMethod("sprintf", func(t *Task, args Cell) bool {
 		f := Raw(Car(args))
 
 		argv := []interface{}{}
@@ -1518,9 +1517,9 @@ func Start(i bool) {
 
 		s := fmt.Sprintf(f, argv...)
 
-		return p.Return(NewString(s))
+		return t.Return(NewString(s))
 	})
-	text.PublicMethod("substring", func(p *Process, args Cell) bool {
+	text.PublicMethod("substring", func(t *Task, args Cell) bool {
 		var r Cell
 
 		s := []rune(Raw(Car(args)))
@@ -1541,17 +1540,17 @@ func Start(i bool) {
 			r = Null
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("to-list", func(p *Process, args Cell) bool {
+	text.PublicMethod("to-list", func(t *Task, args Cell) bool {
 		l := Null
 		for _, char := range Raw(Car(args)) {
 			l = Cons(NewInteger(int64(char)), l)
 		}
 
-		return p.Return(Reverse(l))
+		return t.Return(Reverse(l))
 	})
-	text.PublicMethod("lower", func(p *Process, args Cell) bool {
+	text.PublicMethod("lower", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1565,9 +1564,9 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("title", func(p *Process, args Cell) bool {
+	text.PublicMethod("title", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1581,9 +1580,9 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
-	text.PublicMethod("upper", func(p *Process, args Cell) bool {
+	text.PublicMethod("upper", func(t *Task, args Cell) bool {
 		var r Cell
 
 		switch t := Car(args).(type) {
@@ -1597,35 +1596,34 @@ func Start(i bool) {
 			r = NewInteger(0)
 		}
 
-		return p.Return(r)
+		return t.Return(r)
 	})
 
 	s.Public(NewSymbol("Root"), s)
 
-	e.Define(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 
 	/* Command-line arguments */
 	args := Null
 	if len(os.Args) > 1 {
-		e.Define(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			e.Define(NewSymbol("$"+strconv.Itoa(i+1)),
-				NewSymbol(v))
+			e.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		e.Define(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
 	}
-	e.Define(NewSymbol("$args"), args)
+	e.Add(NewSymbol("$args"), args)
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
-		e.Define(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
 	Parse(bufio.NewReader(strings.NewReader(`

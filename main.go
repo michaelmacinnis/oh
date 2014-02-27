@@ -85,7 +85,7 @@ import (
 
 func init() {
 	runtime.LockOSThread()
-	syscall.Setsid()
+	syscall.Setpgid(0, 0)
 }
 
 func main() {

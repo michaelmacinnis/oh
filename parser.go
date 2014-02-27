@@ -842,14 +842,14 @@ yydefault:
 	        yyVAL.c = (*Method)(unsafe.Pointer(addr))
 	    case kind == "object":
 	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
-	    case kind == "process":
-	        yyVAL.c = (*Process)(unsafe.Pointer(addr))
 	    case kind == "reference":
 	        yyVAL.c = (*Reference)(unsafe.Pointer(addr))
 	    case kind == "scope":
 	        yyVAL.c = (*Scope)(unsafe.Pointer(addr))
 	    case kind == "syntax":
 	        yyVAL.c = (*Syntax)(unsafe.Pointer(addr))
+	    case kind == "task":
+	        yyVAL.c = (*Task)(unsafe.Pointer(addr))
 	    case kind == "unbound":
 	        yyVAL.c = (*Unbound)(unsafe.Pointer(addr))
 	
