@@ -47,6 +47,8 @@ const (
 )
 
 var block0 Cell
+var done0 chan Cell
+var eval0 chan Cell
 var task0 *Task
 
 var ext Cell
@@ -320,7 +322,7 @@ func rpipe(c Cell) *os.File {
 	return r.Get().(*Channel).ReadFd()
 }
 
-func run(t *Task) (successful bool) {
+func run(t *Task, end Cell) (successful bool) {
 	successful = true
 
 	defer func(saved Task) {
@@ -347,7 +349,7 @@ func run(t *Task) (successful bool) {
 				panic("interrupted")
 			}
 
-			task0.Stack = Null
+			t.Stack = Null
 			return true
 		}) {
 			continue
@@ -406,7 +408,7 @@ func run(t *Task) (successful bool) {
 
 			fallthrough
 		case psEvalBlock:
-			if t.Code == block0 {
+			if t.Code == end {
 				return
 			}
 
@@ -604,59 +606,52 @@ func wpipe(c Cell) *os.File {
 }
 
 func Evaluate(c Cell) {
-	saved := block0
-
-	task0.Code = block0
-	SetCar(block0, c)
-	SetCdr(block0, Cons(nil, Null))
-	block0 = Cdr(block0)
-
-	task0.NewStates(SaveCdrCode, psEvalCommand)
-	task0.Code = Car(task0.Code)
-
-	if !run(task0) {
-		block0 = saved
-		SetCar(block0, nil)
-		SetCdr(block0, Null)
-
-		task0.Code = block0
-		task0.RemoveState()
-	} else {
-		if task0.Stack == Null {
-			os.Exit(ExitStatus())
-		}
-	}
-	task0.Scratch = Cdr(task0.Scratch)
+	eval0 <- c
+	<-done0
 }
 
-func ExitStatus() int {
-	s, ok := Car(task0.Scratch).(*Status)
+func ExitStatus(c Cell) int {
+	s, ok := c.(*Status)
 	if !ok {
 		return 0
 	}
 	return int(s.Int())
 }
 
+func listen(block Cell, done, eval chan Cell, task *Task) {
+	for {
+		c := <- eval
+		saved := block
+
+		task.Code = block
+		SetCar(block, c)
+		SetCdr(block, Cons(nil, Null))
+		block = Cdr(block)
+
+		task.NewStates(SaveCdrCode, psEvalCommand)
+		task.Code = Car(task.Code)
+
+		if !run(task, block) {
+			block = saved
+			SetCar(block, nil)
+			SetCdr(block, Null)
+
+			task.Code = block
+			task.RemoveState()
+		} else {
+			if task.Stack == Null {
+				os.Exit(ExitStatus(Car(task.Scratch)))
+			}
+		}
+		task.Scratch = Cdr(task.Scratch)
+		done <- nil
+	}
+}
+
 func Start(i bool) {
 	interactive = i
 
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
-
-	incoming := make(chan os.Signal, 1)
-	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
-	go func() {
-		pid := syscall.Getpid()
-		for sig := range incoming {
-			switch sig {
-			case syscall.SIGINT:
-				task0.Interrupt()
-			case syscall.SIGTSTP:
-				if !interactive {
-					syscall.Kill(pid, syscall.SIGSTOP)
-				}
-			}
-		}
-	}()
 
 	task0 = NewTask(psEvalBlock, nil, nil)
 
@@ -740,7 +735,7 @@ func Start(i bool) {
 
 		SetCar(t.Scratch, child)
 
-		go run(child)
+		go run(child, nil)
 
 		return false
 	})
@@ -1623,6 +1618,27 @@ func Start(i bool) {
 		kv := strings.SplitN(s, "=", 2)
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
+
+	incoming := make(chan os.Signal, 1)
+	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
+	go func() {
+		pid := syscall.Getpid()
+		for sig := range incoming {
+			switch sig {
+			case syscall.SIGINT:
+				task0.Interrupt()
+			case syscall.SIGTSTP:
+				if !interactive {
+					syscall.Kill(pid, syscall.SIGSTOP)
+				}
+			}
+		}
+	}()
+
+	done0 = make(chan Cell)
+	eval0 = make(chan Cell)
+
+	go listen(block0, done0, eval0, task0)
 
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l

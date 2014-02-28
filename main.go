@@ -100,5 +100,5 @@ func main() {
 		}
 	}
 
-	os.Exit(ExitStatus())
+	os.Exit(0)
 }
