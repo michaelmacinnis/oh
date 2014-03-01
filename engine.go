@@ -1619,26 +1619,47 @@ func Start(i bool) {
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-	incoming := make(chan os.Signal, 1)
-	signal.Notify(incoming, syscall.SIGINT, syscall.SIGTSTP)
-	go func() {
-		pid := syscall.Getpid()
-		for sig := range incoming {
-			switch sig {
-			case syscall.SIGINT:
-				task0.Interrupt()
-			case syscall.SIGTSTP:
-				if !interactive {
-					syscall.Kill(pid, syscall.SIGSTOP)
-				}
-			}
-		}
-	}()
-
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-
-	go listen(block0, done0, eval0, task0)
+        signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+        incoming := make(chan os.Signal, len(signals))
+	signal.Notify(incoming, signals...)
+	go func () {
+		var c Cell = nil
+		local_eval := make(chan Cell)
+		local_done := make(chan Cell)
+		go listen(block0, local_done, local_eval, task0)
+		for {
+			for c == nil {
+				select {
+				case <-incoming:
+					// Ignore signals.
+				case c = <-eval0:
+				}
+			}
+			local_eval <- c
+			for c != nil {
+				select {
+				case sig := <-incoming:
+					// Handle signals.
+					pid := syscall.Getpid()
+					switch sig {
+					case syscall.SIGINT:
+						println("SIGINT")
+						task0.Interrupt()
+					case syscall.SIGTSTP:
+						println("SIGTSTP")
+						if interactive {
+							continue
+						}
+						syscall.Kill(pid, syscall.SIGSTOP)	
+					}
+				case c = <-local_done:
+				}
+			}
+			done0 <- c
+		}
+	}()
 
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l
