@@ -46,10 +46,9 @@ const (
 	psMax
 )
 
-var block0 Cell
+var end Cell
 var done0 chan Cell
 var eval0 chan Cell
-var task0 *Task
 
 var ext Cell
 var interactive bool
@@ -322,7 +321,7 @@ func rpipe(c Cell) *os.File {
 	return r.Get().(*Channel).ReadFd()
 }
 
-func run(t *Task, end Cell) (successful bool) {
+func run(t *Task) (successful bool) {
 	successful = true
 
 	defer func() {
@@ -331,9 +330,9 @@ func run(t *Task, end Cell) (successful bool) {
 			return
 		}
 
-		successful = false
-
 		fmt.Printf("oh: %v\n", r)
+
+		successful = false
 	}()
 
 	t.ClearSignals()
@@ -618,7 +617,7 @@ func listen(done, eval chan Cell, task *Task) {
 
 		saved := *task
 
-		end := Cons(nil, Null)
+		end = Cons(nil, Null)
 
 		SetCar(task.Code, c)
 		SetCdr(task.Code, end)
@@ -627,11 +626,12 @@ func listen(done, eval chan Cell, task *Task) {
 		task.NewStates(SaveCode, psEvalCommand)
 
 		task.Code = c
-		if !run(task, end) {
+		if !run(task) {
 			*task = saved
 
 			SetCar(task.Code, nil)
 			SetCdr(task.Code, Null)
+			end = task.Code
 		} else if task.Stack == Null {
 			os.Exit(ExitStatus(Car(task.Scratch)))
 		} else {
@@ -644,23 +644,21 @@ func listen(done, eval chan Cell, task *Task) {
 func Start(i bool) {
 	interactive = i
 
+	end = Cons(nil, Null)
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
-	task0 = NewTask(psEvalBlock, nil, nil)
+	task := NewTask(psEvalBlock, nil, nil)
+	task.Code = end
+	task.Scratch = Cons(NewStatus(0), task.Scratch)
 
-	block0 = Cons(nil, Null)
-	task0.Code = block0
-
-	task0.Scratch = Cons(NewStatus(0), task0.Scratch)
-
-	e, s := task0.Dynamic, task0.Lexical.Expose()
+	e, s := task.Dynamic, task.Lexical.Expose()
 
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
 
-	e.Add(NewSymbol("$stdin"), channel(task0, os.Stdin, nil, -1))
-	e.Add(NewSymbol("$stdout"), channel(task0, nil, os.Stdout, -1))
-	e.Add(NewSymbol("$stderr"), channel(task0, nil, os.Stderr, -1))
+	e.Add(NewSymbol("$stdin"), channel(task, os.Stdin, nil, -1))
+	e.Add(NewSymbol("$stdout"), channel(task, nil, os.Stdout, -1))
+	e.Add(NewSymbol("$stderr"), channel(task, nil, os.Stderr, -1))
 
 	if wd, err := os.Getwd(); err == nil {
 		e.Add(NewSymbol("$cwd"), NewSymbol(wd))
@@ -728,7 +726,7 @@ func Start(i bool) {
 
 		SetCar(t.Scratch, child)
 
-		go run(child, nil)
+		go run(child)
 
 		return false
 	})
@@ -1612,17 +1610,17 @@ func Start(i bool) {
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
+        signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-        signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
         incoming := make(chan os.Signal, len(signals))
 	signal.Notify(incoming, signals...)
 	go func () {
 		var c Cell = nil
 		local_eval := make(chan Cell)
 		local_done := make(chan Cell)
-		go listen(local_done, local_eval, task0)
-		for {
+		go listen(local_done, local_eval, task)
+		for c == nil {
 			for c == nil {
 				select {
 				case <-incoming:
@@ -1639,7 +1637,7 @@ func Start(i bool) {
 					switch sig {
 					case syscall.SIGINT:
 						println("SIGINT")
-						task0.Interrupt()
+						task.Interrupt()
 					case syscall.SIGTSTP:
 						println("SIGTSTP")
 						if interactive {
