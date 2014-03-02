@@ -325,7 +325,7 @@ func rpipe(c Cell) *os.File {
 func run(t *Task, end Cell) (successful bool) {
 	successful = true
 
-	defer func(saved Task) {
+	defer func() {
 		r := recover()
 		if r == nil {
 			return
@@ -334,13 +334,7 @@ func run(t *Task, end Cell) (successful bool) {
 		successful = false
 
 		fmt.Printf("oh: %v\n", r)
-
-		*t = saved
-
-		t.Code = Null
-		t.Scratch = Cons(False, t.Scratch)
-		t.RemoveState()
-	}(*t)
+	}()
 
 	t.ClearSignals()
 	for t.Stack != Null {
@@ -618,32 +612,31 @@ func ExitStatus(c Cell) int {
 	return int(s.Int())
 }
 
-func listen(block Cell, done, eval chan Cell, task *Task) {
+func listen(done, eval chan Cell, task *Task) {
 	for {
 		c := <- eval
-		saved := block
 
-		task.Code = block
-		SetCar(block, c)
-		SetCdr(block, Cons(nil, Null))
-		block = Cdr(block)
+		saved := *task
 
-		task.NewStates(SaveCdrCode, psEvalCommand)
-		task.Code = Car(task.Code)
+		end := Cons(nil, Null)
 
-		if !run(task, block) {
-			block = saved
-			SetCar(block, nil)
-			SetCdr(block, Null)
+		SetCar(task.Code, c)
+		SetCdr(task.Code, end)
 
-			task.Code = block
-			task.RemoveState()
+		task.Code = end
+		task.NewStates(SaveCode, psEvalCommand)
+
+		task.Code = c
+		if !run(task, end) {
+			*task = saved
+
+			SetCar(task.Code, nil)
+			SetCdr(task.Code, Null)
+		} else if task.Stack == Null {
+			os.Exit(ExitStatus(Car(task.Scratch)))
 		} else {
-			if task.Stack == Null {
-				os.Exit(ExitStatus(Car(task.Scratch)))
-			}
+			task.Scratch = Cdr(task.Scratch)
 		}
-		task.Scratch = Cdr(task.Scratch)
 		done <- nil
 	}
 }
@@ -1628,7 +1621,7 @@ func Start(i bool) {
 		var c Cell = nil
 		local_eval := make(chan Cell)
 		local_done := make(chan Cell)
-		go listen(block0, local_done, local_eval, task0)
+		go listen(local_done, local_eval, task0)
 		for {
 			for c == nil {
 				select {
