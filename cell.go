@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type Atom interface {
@@ -1396,13 +1395,11 @@ type Task struct {
 	Dynamic        *Env
 	Lexical        Context
 	Scratch, Stack Cell
-	interrupts     int
-	mutex          *sync.Mutex
+	running		bool
 }
 
 func NewTask(state int64, dynamic *Env, lexical Context) *Task {
-	t := &Task{Null, nil, nil, Null, List(NewInteger(state)),
-		0, new(sync.Mutex)}
+	t := &Task{Null, nil, nil, Null, List(NewInteger(state)), true}
 
 	t.NewBlock(dynamic, lexical)
 
@@ -1439,43 +1436,11 @@ func (self *Task) Arguments() Cell {
 	return l
 }
 
-func (self *Task) ClearSignals() {
-	if self.interrupts > 0 {
-		defer self.mutex.Unlock()
-		self.mutex.Lock()
-		self.interrupts = 0
-	}
-}
-
 func (self *Task) GetState() int64 {
 	if self.Stack == Null {
 		return 0
 	}
 	return Car(self.Stack).(Atom).Int()
-}
-
-func (self *Task) HandleSignal(f Function) bool {
-	if self.interrupts > 0 {
-		defer self.mutex.Unlock()
-		self.mutex.Lock()
-		if self.interrupts > 0 {
-			self.interrupts = 0
-			f(self, Null)
-			return true
-		}
-	}
-
-	return false
-}
-
-func (self *Task) Interrupt() {
-	if self.Stack != Null {
-		defer self.mutex.Unlock()
-		self.mutex.Lock()
-		if self.Stack != Null {
-			self.interrupts++
-		}
-	}
 }
 
 func (self *Task) NewBlock(dynamic *Env, lexical Context) {
@@ -1584,6 +1549,18 @@ func (self *Task) Return(rv Cell) bool {
 	SetCar(self.Scratch, rv)
 
 	return false
+}
+
+func (self *Task) Running() bool {
+	return self.running
+}
+
+func (self *Task) Start() {
+	self.running = true
+}
+
+func (self *Task) Stop() {
+	self.running = false
 }
 
 /*

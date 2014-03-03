@@ -46,7 +46,6 @@ const (
 	psMax
 )
 
-var end Cell
 var done0 chan Cell
 var eval0 chan Cell
 
@@ -245,8 +244,6 @@ func external(t *Task, args Cell) bool {
 	msg, err := proc.Wait()
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	t.ClearSignals()
-
 	return t.Return(NewStatus(status))
 }
 
@@ -321,7 +318,7 @@ func rpipe(c Cell) *os.File {
 	return r.Get().(*Channel).ReadFd()
 }
 
-func run(t *Task) (successful bool) {
+func run(t *Task, end Cell) (successful bool) {
 	successful = true
 
 	defer func() {
@@ -335,19 +332,8 @@ func run(t *Task) (successful bool) {
 		successful = false
 	}()
 
-	t.ClearSignals()
-	for t.Stack != Null {
-		if t.HandleSignal(func(t *Task, args Cell) bool {
-			if interactive {
-				panic("interrupted")
-			}
-
-			t.Stack = Null
-			return true
-		}) {
-			continue
-		}
-
+	t.Start()
+	for t.Running() && t.Stack != Null {
 		state := t.GetState()
 
 		switch state {
@@ -401,6 +387,7 @@ func run(t *Task) (successful bool) {
 
 			fallthrough
 		case psEvalBlock:
+//			if t.Code == end || t.Code.Equal(Cons(nil, Null)) {
 			if t.Code == end {
 				return
 			}
@@ -612,12 +599,21 @@ func ExitStatus(c Cell) int {
 }
 
 func listen(done, eval chan Cell, task *Task) {
+/*
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+	}()
+*/
+
 	for {
 		c := <- eval
 
 		saved := *task
 
-		end = Cons(nil, Null)
+		end := Cons(nil, Null)
 
 		SetCar(task.Code, c)
 		SetCdr(task.Code, end)
@@ -626,14 +622,14 @@ func listen(done, eval chan Cell, task *Task) {
 		task.NewStates(SaveCode, psEvalCommand)
 
 		task.Code = c
-		if !run(task) {
+		if !run(task, end) {
 			*task = saved
 
 			SetCar(task.Code, nil)
 			SetCdr(task.Code, Null)
-			end = task.Code
 		} else if task.Stack == Null {
-			os.Exit(ExitStatus(Car(task.Scratch)))
+			done <- Car(task.Scratch)
+			continue
 		} else {
 			task.Scratch = Cdr(task.Scratch)
 		}
@@ -644,11 +640,10 @@ func listen(done, eval chan Cell, task *Task) {
 func Start(i bool) {
 	interactive = i
 
-	end = Cons(nil, Null)
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
 	task := NewTask(psEvalBlock, nil, nil)
-	task.Code = end
+	task.Code = Cons(nil, Null)
 	task.Scratch = Cons(NewStatus(0), task.Scratch)
 
 	e, s := task.Dynamic, task.Lexical.Expose()
@@ -726,7 +721,7 @@ func Start(i bool) {
 
 		SetCar(t.Scratch, child)
 
-		go run(child)
+		go run(child, nil)
 
 		return false
 	})
@@ -1617,8 +1612,8 @@ func Start(i bool) {
 	signal.Notify(incoming, signals...)
 	go func () {
 		var c Cell = nil
-		local_eval := make(chan Cell)
 		local_done := make(chan Cell)
+		local_eval := make(chan Cell)
 		go listen(local_done, local_eval, task)
 		for c == nil {
 			for c == nil {
@@ -1629,27 +1624,41 @@ func Start(i bool) {
 				}
 			}
 			local_eval <- c
-			for c != nil {
+waiting:
+			for {
 				select {
 				case sig := <-incoming:
 					// Handle signals.
 					pid := syscall.Getpid()
 					switch sig {
-					case syscall.SIGINT:
-						println("SIGINT")
-						task.Interrupt()
 					case syscall.SIGTSTP:
 						println("SIGTSTP")
-						if interactive {
+						if !interactive {
+							syscall.Kill(pid, syscall.SIGSTOP)	
 							continue
 						}
-						syscall.Kill(pid, syscall.SIGSTOP)	
+
+						fallthrough
+					case syscall.SIGINT:
+						task.Stop()
+						//close(local_done)
+						close(local_eval)
+						c = nil
+						local_done = make(chan Cell)
+						local_eval = make(chan Cell)
+						task = NewTask(psEvalBlock, e, s)
+						task.Code = Cons(nil, Null)
+						task.Scratch = Cons(NewStatus(0), task.Scratch)
+						go listen(local_done, local_eval, task)
+						break waiting
 					}
 				case c = <-local_done:
+					break waiting
 				}
 			}
 			done0 <- c
 		}
+		os.Exit(ExitStatus(c))
 	}()
 
 	Parse(bufio.NewReader(strings.NewReader(`
