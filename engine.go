@@ -1624,39 +1624,36 @@ func Start(i bool) {
 				}
 			}
 			local_eval <- c
-waiting:
-			for {
-				select {
-				case sig := <-incoming:
-					// Handle signals.
-					pid := syscall.Getpid()
-					switch sig {
-					case syscall.SIGTSTP:
-						println("SIGTSTP")
-						if !interactive {
-							syscall.Kill(pid, syscall.SIGSTOP)	
-							continue
-						}
-
-						fallthrough
-					case syscall.SIGINT:
-						task.Stop()
-						//close(local_done)
-						close(local_eval)
-						c = nil
-						local_done = make(chan Cell)
-						local_eval = make(chan Cell)
-						task = NewTask(psEvalBlock, e, s)
-						task.Code = Cons(nil, Null)
-						task.Scratch = Cons(NewStatus(0), task.Scratch)
-						go listen(local_done, local_eval, task)
-						break waiting
+			select {
+			case sig := <-incoming:
+				// Handle signals.
+				pid := syscall.Getpid()
+				switch sig {
+				case syscall.SIGTSTP:
+					println("SIGTSTP")
+					if !interactive {
+						syscall.Kill(pid, syscall.SIGSTOP)	
+						continue
 					}
-				case c = <-local_done:
-					break waiting
+
+					fallthrough
+				case syscall.SIGINT:
+					task.Stop()
+					//close(local_done)
+					close(local_eval)
+					c = nil
+					local_done = make(chan Cell)
+					local_eval = make(chan Cell)
+					task = NewTask(psEvalBlock, e, s)
+					task.Code = Cons(nil, Null)
+					task.Scratch = Cons(NewStatus(0), task.Scratch)
+					go listen(local_done, local_eval, task)
 				}
+
+			case c = <-local_done:
 			}
-			done0 <- c
+
+		done0 <- c
 		}
 		os.Exit(ExitStatus(c))
 	}()
