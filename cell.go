@@ -1395,13 +1395,15 @@ type Task struct {
 	Dynamic        *Env
 	Lexical        Context
 	Scratch, Stack Cell
+	Done		chan Cell
+	Eval		chan Cell
 	running		bool
 }
 
-func NewTask(state int64, dynamic *Env, lexical Context) *Task {
-	t := &Task{Null, nil, nil, Null, List(NewInteger(state)), true}
-
-	t.NewBlock(dynamic, lexical)
+func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
+	t := &Task{code, dynamic, lexical,
+		   List(NewStatus(0)), List(NewInteger(state)),
+		   make(chan Cell, 1), make(chan Cell, 1), true}
 
 	return t
 }

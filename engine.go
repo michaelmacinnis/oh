@@ -18,8 +18,6 @@ import (
 )
 
 const (
-	psNone = 0
-
 	psChangeContext = SaveMax + iota
 
 	psEvalArguments
@@ -247,24 +245,37 @@ func external(t *Task, args Cell) bool {
 	return t.Return(NewStatus(status))
 }
 
-func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(t.Lexical, t.Dynamic, sym)
-	if c == nil {
-		r := Raw(sym)
-		if strict(t) && !number(r) {
-			return false, r + " undefined"
-		} else {
-			t.Scratch = Cons(sym, t.Scratch)
-		}
-	} else if simple && !IsSimple(c.Get()) {
-		t.Scratch = Cons(sym, t.Scratch)
-	} else if a, ok := c.Get().(Binding); ok {
-		t.Scratch = Cons(a.Bind(t.Lexical.Expose()), t.Scratch)
-	} else {
-		t.Scratch = Cons(c.Get(), t.Scratch)
-	}
+func launch(task *Task) {
+	run(task, nil)
+	task.Done <- Car(task.Scratch)
+}
 
-	return true, ""
+func listen(task *Task) {
+	for c := range task.Eval {
+		saved := *task
+
+		end := Cons(nil, Null)
+
+		SetCar(task.Code, c)
+		SetCdr(task.Code, end)
+
+		task.Code = end
+		task.NewStates(SaveCode, psEvalCommand)
+
+		task.Code = c
+		if !run(task, end) {
+			*task = saved
+
+			SetCar(task.Code, nil)
+			SetCdr(task.Code, Null)
+		} else if task.Stack == Null {
+			task.Done <- Car(task.Scratch)
+			continue
+		} else {
+			task.Scratch = Cdr(task.Scratch)
+		}
+		task.Done <- nil
+	}
 }
 
 func lexical(t *Task, state int64) bool {
@@ -289,6 +300,26 @@ func lexical(t *Task, state int64) bool {
 	t.Scratch = Cdr(t.Scratch)
 
 	return true
+}
+
+func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
+	c := Resolve(t.Lexical, t.Dynamic, sym)
+	if c == nil {
+		r := Raw(sym)
+		if strict(t) && !number(r) {
+			return false, r + " undefined"
+		} else {
+			t.Scratch = Cons(sym, t.Scratch)
+		}
+	} else if simple && !IsSimple(c.Get()) {
+		t.Scratch = Cons(sym, t.Scratch)
+	} else if a, ok := c.Get().(Binding); ok {
+		t.Scratch = Cons(a.Bind(t.Lexical.Expose()), t.Scratch)
+	} else {
+		t.Scratch = Cons(c.Get(), t.Scratch)
+	}
+
+	return true, ""
 }
 
 func method(body Function, scope *Scope) Binding {
@@ -337,9 +368,6 @@ func run(t *Task, end Cell) (successful bool) {
 		state := t.GetState()
 
 		switch state {
-		case psNone:
-			return
-
 		case psChangeContext:
 			t.Dynamic = nil
 			t.Lexical = Car(t.Scratch).(Context)
@@ -387,7 +415,6 @@ func run(t *Task, end Cell) (successful bool) {
 
 			fallthrough
 		case psEvalBlock:
-//			if t.Code == end || t.Code.Equal(Cons(nil, Null)) {
 			if t.Code == end {
 				return
 			}
@@ -591,50 +618,11 @@ func Evaluate(c Cell) {
 }
 
 func ExitStatus(c Cell) int {
-	s, ok := c.(*Status)
+	a, ok := c.(Atom)
 	if !ok {
 		return 0
 	}
-	return int(s.Int())
-}
-
-func listen(done, eval chan Cell, task *Task) {
-/*
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-	}()
-*/
-
-	for {
-		c := <- eval
-
-		saved := *task
-
-		end := Cons(nil, Null)
-
-		SetCar(task.Code, c)
-		SetCdr(task.Code, end)
-
-		task.Code = end
-		task.NewStates(SaveCode, psEvalCommand)
-
-		task.Code = c
-		if !run(task, end) {
-			*task = saved
-
-			SetCar(task.Code, nil)
-			SetCdr(task.Code, Null)
-		} else if task.Stack == Null {
-			done <- Car(task.Scratch)
-			continue
-		} else {
-			task.Scratch = Cdr(task.Scratch)
-		}
-		done <- nil
-	}
+	return int(a.Status())
 }
 
 func Start(i bool) {
@@ -642,11 +630,9 @@ func Start(i bool) {
 
 	ext = NewUnbound(NewBuiltin(Function(external), Null, Null, Null, nil))
 
-	task := NewTask(psEvalBlock, nil, nil)
-	task.Code = Cons(nil, Null)
-	task.Scratch = Cons(NewStatus(0), task.Scratch)
+	e, s := NewEnv(nil), NewScope(nil)
 
-	e, s := task.Dynamic, task.Lexical.Expose()
+	task := NewTask(psEvalBlock, Cons(nil, Null), e, s)
 
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
@@ -712,16 +698,12 @@ func Start(i bool) {
 		return dynamic(t, psExecSetenv)
 	})
 	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(psNone, t.Dynamic, t.Lexical)
+		child := NewTask(psEvalBlock, t.Code,
+				 NewEnv(t.Dynamic), NewScope(t.Lexical))
 
-		child.NewStates(psEvalBlock)
-
-		child.Code = t.Code
-		child.Scratch = Cons(Null, child.Scratch)
+		go launch(child)
 
 		SetCar(t.Scratch, child)
-
-		go run(child, nil)
 
 		return false
 	})
@@ -766,14 +748,7 @@ func Start(i bool) {
 		return false
 	})
 	s.DefineBuiltin("exit", func(t *Task, args Cell) bool {
-		var status int64 = 0
-
-		a, ok := Car(args).(Atom)
-		if ok {
-			status = a.Status()
-		}
-
-		t.Scratch = List(NewStatus(status))
+		t.Scratch = List(Car(args))
 		t.Stack = Null
 
 		return true
@@ -936,6 +911,9 @@ func Start(i bool) {
 		SetCdr(Car(args), Cadr(args))
 
 		return t.Return(Cadr(args))
+	})
+	s.DefineMethod("wait", func(t *Task, args Cell) bool {
+		return t.Return(<-Car(args).(*Task).Done)
 	})
 
 	/* Predicates. */
@@ -1612,9 +1590,7 @@ func Start(i bool) {
 	signal.Notify(incoming, signals...)
 	go func () {
 		var c Cell = nil
-		local_done := make(chan Cell)
-		local_eval := make(chan Cell)
-		go listen(local_done, local_eval, task)
+		go listen(task)
 		for c == nil {
 			for c == nil {
 				select {
@@ -1623,7 +1599,7 @@ func Start(i bool) {
 				case c = <-eval0:
 				}
 			}
-			local_eval <- c
+			task.Eval <- c
 			select {
 			case sig := <-incoming:
 				// Handle signals.
@@ -1639,18 +1615,13 @@ func Start(i bool) {
 					fallthrough
 				case syscall.SIGINT:
 					task.Stop()
-					//close(local_done)
-					close(local_eval)
+					close(task.Eval)
 					c = nil
-					local_done = make(chan Cell)
-					local_eval = make(chan Cell)
-					task = NewTask(psEvalBlock, e, s)
-					task.Code = Cons(nil, Null)
-					task.Scratch = Cons(NewStatus(0), task.Scratch)
-					go listen(local_done, local_eval, task)
+					task = NewTask(psEvalBlock, Cons(nil, Null), e, s)
+					go listen(task)
 				}
 
-			case c = <-local_done:
+			case c = <-task.Done:
 			}
 
 		done0 <- c
