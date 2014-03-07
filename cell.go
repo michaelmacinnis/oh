@@ -1391,19 +1391,21 @@ func (self *Object) Define(key Cell, value Cell) {
 /* Task cell definition. */
 
 type Task struct {
-	Code           Cell
+	Code           Cell  // or Control
 	Dynamic        *Env
 	Lexical        Context
-	Scratch, Stack Cell
+	Scratch		Cell // or Dump
+	Stack 		Cell
 	Done		chan Cell
 	Eval		chan Cell
 	running		bool
+	Child		[]*Task
 }
 
 func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
 	t := &Task{code, dynamic, lexical,
 		   List(NewStatus(0)), List(NewInteger(state)),
-		   make(chan Cell, 1), make(chan Cell, 1), true}
+		   make(chan Cell, 1), make(chan Cell, 1), true, nil}
 
 	return t
 }

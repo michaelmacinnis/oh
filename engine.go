@@ -698,6 +698,7 @@ func Start(i bool) {
 		child := NewTask(psEvalBlock, t.Code,
 				 NewEnv(t.Dynamic), NewScope(t.Lexical))
 
+		t.Child = append(t.Child, child)
 		go launch(child)
 
 		SetCar(t.Scratch, child)
@@ -910,6 +911,12 @@ func Start(i bool) {
 		return t.Return(Cadr(args))
 	})
 	s.DefineMethod("wait", func(t *Task, args Cell) bool {
+		if args == Null {
+			for _, v := range t.Child {
+				<-v.Done
+			}
+			t.Child = nil
+		}
 		list := args
 		for ; args != Null; args = Cdr(args) {
 			child := Car(args).(*Task)
