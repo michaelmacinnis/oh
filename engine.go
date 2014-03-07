@@ -252,7 +252,7 @@ func launch(task *Task) {
 
 func listen(task *Task) {
 	for c := range task.Eval {
-		saved := *task
+		saved := *(task.Registers)
 
 		end := Cons(nil, Null)
 
@@ -264,7 +264,7 @@ func listen(task *Task) {
 
 		task.Code = c
 		if !run(task, end) {
-			*task = saved
+			*(task.Registers) = saved
 
 			SetCar(task.Code, nil)
 			SetCdr(task.Code, Null)
@@ -696,7 +696,7 @@ func Start(i bool) {
 	})
 	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(psEvalBlock, t.Code,
-				 NewEnv(t.Dynamic), NewScope(t.Lexical))
+			NewEnv(t.Dynamic), NewScope(t.Lexical))
 
 		t.Child = append(t.Child, child)
 		go launch(child)
@@ -1593,15 +1593,15 @@ func Start(i bool) {
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-        signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-        incoming := make(chan os.Signal, len(signals))
+	incoming := make(chan os.Signal, len(signals))
 	signal.Notify(incoming, signals...)
-	go func () {
-		var c Cell = nil
+	go func() {
 		go listen(task)
-		for c == nil {
+		var c Cell = nil
+		for c == nil && task.Stack != Null {
 			for c == nil {
 				select {
 				case <-incoming:
@@ -1610,36 +1610,37 @@ func Start(i bool) {
 				}
 			}
 			task.Eval <- c
-			select {
-			case sig := <-incoming:
-				// Handle signals.
-				pid := syscall.Getpid()
-				switch sig {
-				case syscall.SIGTSTP:
-					println("SIGTSTP")
-					if !interactive {
-						syscall.Kill(pid, syscall.SIGSTOP)	
-						continue
+			for c != nil {
+				select {
+				case sig := <-incoming:
+					// Handle signals.
+					pid := syscall.Getpid()
+					switch sig {
+					case syscall.SIGTSTP:
+						println("SIGTSTP")
+						if !interactive {
+							syscall.Kill(pid, syscall.SIGSTOP)
+							continue
+						}
+
+						fallthrough
+					case syscall.SIGINT:
+						if !interactive {
+							os.Exit(130)
+						}
+						task.Stop()
+						close(task.Eval)
+						task = NewTask(psEvalBlock, Cons(nil, Null), e, s)
+						go listen(task)
+						c = nil
 					}
 
-					fallthrough
-				case syscall.SIGINT:
-					task.Stop()
-					close(task.Eval)
-					c = nil
-					task = NewTask(psEvalBlock, Cons(nil, Null), e, s)
-					go listen(task)
-				}
-
-			case c = <-task.Done:
-				if task.Stack == Null {
-					c = Car(task.Scratch)
+				case c = <-task.Done:
 				}
 			}
-
-		done0 <- c
+			done0 <- c
 		}
-		os.Exit(ExitStatus(c))
+		os.Exit(ExitStatus(Car(task.Scratch)))
 	}()
 
 	Parse(bufio.NewReader(strings.NewReader(`

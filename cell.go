@@ -1391,40 +1391,60 @@ func (self *Object) Define(key Cell, value Cell) {
 /* Task cell definition. */
 
 type Task struct {
-	Code           Cell  // or Control
-	Dynamic        *Env
-	Lexical        Context
-	Scratch		Cell // or Dump
-	Stack 		Cell
-	Done		chan Cell
-	Eval		chan Cell
-	running		bool
-	Child		[]*Task
+	*Registers
+	Done    chan Cell
+	Eval    chan Cell
+	running bool
+	Child   []*Task
 }
 
 func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
-	t := &Task{code, dynamic, lexical,
-		   List(NewStatus(0)), List(NewInteger(state)),
-		   make(chan Cell, 1), make(chan Cell, 1), true, nil}
+	t := &Task{&Registers{code, dynamic, lexical,
+		List(NewStatus(0)), List(NewInteger(state))},
+		make(chan Cell, 1), make(chan Cell, 1), true, nil}
 
 	return t
 }
 
-func (self *Task) Bool() bool {
+/* Task-specific functions. */
+
+func (self *Task) Running() bool {
+	return self.running
+}
+
+func (self *Task) Start() {
+	self.running = true
+}
+
+func (self *Task) Stop() {
+	self.running = false
+}
+
+/* Registers cell definition. */
+
+type Registers struct {
+	Code    Cell // or Control
+	Dynamic *Env
+	Lexical Context
+	Scratch Cell // or Dump
+	Stack   Cell
+}
+
+func (self *Registers) Bool() bool {
 	return true
 }
 
-func (self *Task) String() string {
+func (self *Registers) String() string {
 	return fmt.Sprintf("%%task %p%%", self)
 }
 
-func (self *Task) Equal(c Cell) bool {
-	return c.(*Task) == self
+func (self *Registers) Equal(c Cell) bool {
+	return c.(*Registers) == self
 }
 
-/* Task-specific functions. */
+/* Registers-specific functions. */
 
-func (self *Task) Arguments() Cell {
+func (self *Registers) Arguments() Cell {
 	e := Car(self.Scratch)
 	l := Null
 
@@ -1440,19 +1460,19 @@ func (self *Task) Arguments() Cell {
 	return l
 }
 
-func (self *Task) GetState() int64 {
+func (self *Registers) GetState() int64 {
 	if self.Stack == Null {
 		return 0
 	}
 	return Car(self.Stack).(Atom).Int()
 }
 
-func (self *Task) NewBlock(dynamic *Env, lexical Context) {
+func (self *Registers) NewBlock(dynamic *Env, lexical Context) {
 	self.Dynamic = NewEnv(dynamic)
 	self.Lexical = NewScope(lexical)
 }
 
-func (self *Task) NewStates(l ...int64) {
+func (self *Registers) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= SaveMax {
 			self.Stack = Cons(NewInteger(f), self.Stack)
@@ -1489,7 +1509,7 @@ func (self *Task) NewStates(l ...int64) {
 	}
 }
 
-func (self *Task) RemoveState() {
+func (self *Registers) RemoveState() {
 	f := self.GetState()
 
 	self.Stack = Cdr(self.Stack)
@@ -1514,12 +1534,12 @@ func (self *Task) RemoveState() {
 	}
 }
 
-func (self *Task) ReplaceStates(l ...int64) {
+func (self *Registers) ReplaceStates(l ...int64) {
 	self.RemoveState()
 	self.NewStates(l...)
 }
 
-func (self *Task) RestoreState() {
+func (self *Registers) RestoreState() {
 	f := self.GetState()
 
 	if f == 0 || f >= SaveMax {
@@ -1549,22 +1569,10 @@ func (self *Task) RestoreState() {
 	self.Stack = Cdr(self.Stack)
 }
 
-func (self *Task) Return(rv Cell) bool {
+func (self *Registers) Return(rv Cell) bool {
 	SetCar(self.Scratch, rv)
 
 	return false
-}
-
-func (self *Task) Running() bool {
-	return self.running
-}
-
-func (self *Task) Start() {
-	self.running = true
-}
-
-func (self *Task) Stop() {
-	self.running = false
 }
 
 /*
