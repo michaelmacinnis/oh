@@ -247,7 +247,7 @@ func external(t *Task, args Cell) bool {
 
 func launch(task *Task) {
 	run(task, nil)
-	task.Done <- Car(task.Scratch)
+	close(task.Done)
 }
 
 func listen(task *Task) {
@@ -268,10 +268,7 @@ func listen(task *Task) {
 
 			SetCar(task.Code, nil)
 			SetCdr(task.Code, Null)
-		} else if task.Stack == Null {
-			task.Done <- Car(task.Scratch)
-			continue
-		} else {
+		} else if task.Stack != Null {
 			task.Scratch = Cdr(task.Scratch)
 		}
 		task.Done <- nil
@@ -913,7 +910,13 @@ func Start(i bool) {
 		return t.Return(Cadr(args))
 	})
 	s.DefineMethod("wait", func(t *Task, args Cell) bool {
-		return t.Return(<-Car(args).(*Task).Done)
+		list := args
+		for ; args != Null; args = Cdr(args) {
+			child := Car(args).(*Task)
+			<-child.Done
+			SetCar(args, Car(child.Scratch))
+		}
+		return t.Return(list)
 	})
 
 	/* Predicates. */
@@ -1622,6 +1625,9 @@ func Start(i bool) {
 				}
 
 			case c = <-task.Done:
+				if task.Stack == Null {
+					c = Car(task.Scratch)
+				}
 			}
 
 		done0 <- c
