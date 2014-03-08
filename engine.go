@@ -1802,11 +1802,11 @@ define source: syntax e (name) as {
 		set l: f::read
 	}
 	f::reader-close
-	define eval-list: method (e rval first rest) as {
+	define eval-list: method (rval first rest) as {
 		if (is-null first): return rval
-		eval-list e (e::eval first) (car rest) (cdr rest)
+		eval-list (e::eval first) (car rest) (cdr rest)
 	}
-	eval-list e (status 0) (car commands) (cdr commands)
+	eval-list (status 0) (car commands) (cdr commands)
 }
 define write: method (: args) as: $stdout::write @args
 
