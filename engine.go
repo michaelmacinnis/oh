@@ -268,10 +268,11 @@ func listen(task *Task) {
 
 			SetCar(task.Code, nil)
 			SetCdr(task.Code, Null)
-		} else if task.Stack != Null {
-			task.Scratch = Cdr(task.Scratch)
 		}
-		task.Done <- nil
+
+		if task.Running() {
+			task.Done <- nil
+		}
 	}
 }
 
@@ -413,6 +414,7 @@ func run(t *Task, end Cell) (successful bool) {
 			fallthrough
 		case psEvalBlock:
 			if t.Code == end {
+				t.Scratch = Cdr(t.Scratch)
 				return
 			}
 

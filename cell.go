@@ -1394,14 +1394,13 @@ type Task struct {
 	*Registers
 	Done    chan Cell
 	Eval    chan Cell
-	running bool
 	Child   []*Task
 }
 
 func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
 	t := &Task{&Registers{code, dynamic, lexical,
 		List(NewStatus(0)), List(NewInteger(state))},
-		make(chan Cell, 1), make(chan Cell, 1), true, nil}
+		make(chan Cell, 1), make(chan Cell, 1), nil}
 
 	return t
 }
@@ -1409,15 +1408,22 @@ func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
 /* Task-specific functions. */
 
 func (self *Task) Running() bool {
-	return self.running
+	select {
+	case <- self.Done:
+		return false
+	default:
+	}
+	return true
 }
 
 func (self *Task) Start() {
-	self.running = true
+	if self.Done == nil {
+		self.Done = make(chan Cell, 1)
+	}
 }
 
 func (self *Task) Stop() {
-	self.running = false
+	close(self.Done)
 }
 
 /* Registers cell definition. */
