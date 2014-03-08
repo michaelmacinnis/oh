@@ -1782,9 +1782,10 @@ define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define source: syntax e (name) as {
 	define basename: e::eval name
-	define paths: Text::split ":" $OHPATH
+	define paths '()
 	define name basename
 
+	if (exists $OHPATH): set paths: Text::split ":" $OHPATH
 	while (and (not: is-null paths) (not: test -r name)) {
 		set name: Text::join / (car paths) basename
 		set paths: cdr paths
@@ -1792,13 +1793,19 @@ define source: syntax e (name) as {
 
 	if (not: test -r name): set name basename
 
+	define commands '()
 	define f: open name "r-"
 	define l: f::read
 	while l {
-		e::eval l
+		set commands: append commands l
 		set l: f::read
 	}
 	f::reader-close
+	define eval-list: method (e rval first rest) as {
+		if (is-null first): return rval
+		eval-list e (e::eval first) (car rest) (cdr rest)
+	}
+	eval-list e (status 0) (car commands) (cdr commands)
 }
 define write: method (: args) as: $stdout::write @args
 
