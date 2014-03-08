@@ -749,6 +749,7 @@ func Start(i bool) {
 	})
 	s.DefineBuiltin("exit", func(t *Task, args Cell) bool {
 		t.Scratch = List(Car(args))
+		t.Stop()
 		t.Stack = Null
 
 		return true

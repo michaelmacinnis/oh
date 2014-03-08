@@ -94,10 +94,7 @@ func main() {
 	if len(os.Args) <= 1 {
 		Parse(tecla.New("> "), Evaluate)
 	} else {
-		f, err := os.OpenFile(os.Args[1], os.O_RDONLY, 0666)
-		if err == nil {
-			ParseFile(f, Evaluate)
-		}
+		Evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
 	}
 
 	os.Exit(0)

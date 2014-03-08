@@ -15,9 +15,7 @@
 package main
 
 import (
-    "bufio"
     "fmt"
-    "os"
     "strconv"
     "unsafe"
 )
@@ -437,10 +435,6 @@ main:
 
 func (s *scanner) Error (msg string) {
     println(msg)
-}
-
-func ParseFile(r *os.File, p func(Cell)) {
-    Parse(bufio.NewReader(r), p)
 }
 
 func Parse(r ReadStringer, p func(Cell)) {
