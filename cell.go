@@ -29,9 +29,8 @@ type Binding interface {
 
 type Cell interface {
 	Bool() bool
-	String() string
-
 	Equal(c Cell) bool
+	String() string
 }
 
 type Closure interface {
@@ -42,6 +41,17 @@ type Closure interface {
 	Context() Cell
 	Formal() Cell
 	Lexical() *Scope
+}
+
+type Conduit interface {
+	Cell
+
+	Close()
+	ReaderClose()
+	Read() Cell
+	ReadLine() Cell
+	WriterClose()
+	Write(c Cell)
 }
 
 type Context interface {
@@ -917,7 +927,54 @@ func (self *Pair) Equal(c Cell) bool {
 
 /* Channel cell definition. */
 
-type Channel struct {
+type Channel chan Cell
+
+func NewChannel(cap int) Channel {
+	return make(chan Cell, cap)
+}
+
+func (self Channel) Bool() bool {
+	return true
+}
+
+func (self Channel) String() string {
+	return fmt.Sprintf("%%channel %p%%", self)
+}
+
+func (self Channel) Equal(c Cell) bool {
+	return c.(Channel) == self
+}
+
+func (self Channel) Close() {
+	self.WriterClose()
+}
+
+func (self Channel) ReaderClose() {
+	return
+}
+
+func (self Channel) Read() Cell {
+	return <-self
+}
+
+func (self Channel) ReadLine() Cell {
+	return NewString((<-self).String())
+}
+
+func (self Channel) WriterClose() {
+	close(self)
+}
+
+func (self Channel) Write(c Cell) {
+	if c == Null {
+		return
+	}
+	self <- c
+}
+
+/* Pipe cell definition. */
+
+type Pipe struct {
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
@@ -925,13 +982,8 @@ type Channel struct {
 	w *os.File
 }
 
-func NewChannel(r *os.File, w *os.File, cap int) *Channel {
-	ch := &Channel{b: nil, c: nil, d: nil, r: r, w: w}
-
-	if cap >= 0 {
-		ch.c = make(chan Cell, cap)
-		return ch
-	}
+func NewPipe(r *os.File, w *os.File) *Pipe {
+	ch := &Pipe{b: nil, c: nil, d: nil, r: r, w: w}
 
 	if r == nil && w == nil {
 		var err error
@@ -941,38 +993,34 @@ func NewChannel(r *os.File, w *os.File, cap int) *Channel {
 		}
 	}
 
-	runtime.SetFinalizer(ch, (*Channel).Close)
+	runtime.SetFinalizer(ch, (*Pipe).Close)
 
 	return ch
 }
 
-func (self *Channel) Bool() bool {
+func (self *Pipe) Bool() bool {
 	return true
 }
 
-func (self *Channel) String() string {
-	return fmt.Sprintf("%%channel %p%%", self)
+func (self *Pipe) String() string {
+	return fmt.Sprintf("%%pipe %p%%", self)
 }
 
-func (self *Channel) Equal(c Cell) bool {
-	return c.(*Channel) == self
+func (self *Pipe) Equal(c Cell) bool {
+	return c.(*Pipe) == self
 }
 
-/* Channel-specific functions */
-
-func (self *Channel) Close() {
-	if self.r != nil && len(self.r.Name()) > 0 {
+func (self *Pipe) Close() {
+	if len(self.r.Name()) > 0 {
 		self.ReaderClose()
 	}
 
-	if self.w != nil && len(self.w.Name()) > 0 {
+	if len(self.w.Name()) > 0 {
 		self.WriterClose()
 	}
-
-	return
 }
 
-func (self *Channel) reader() *bufio.Reader {
+func (self *Pipe) reader() *bufio.Reader {
 	if self.b == nil {
 		self.b = bufio.NewReader(self.r)
 	}
@@ -980,20 +1028,14 @@ func (self *Channel) reader() *bufio.Reader {
 	return self.b
 }
 
-func (self *Channel) ReaderClose() bool {
+func (self *Pipe) ReaderClose() {
 	if self.r != nil {
 		self.r.Close()
 		self.r = nil
 	}
-
-	return true
 }
 
-func (self *Channel) Read() Cell {
-	if self.r == nil {
-		return <-self.c
-	}
-
+func (self *Pipe) Read() Cell {
 	if self.c == nil {
 		self.c = make(chan Cell)
 		self.d = make(chan bool)
@@ -1011,11 +1053,7 @@ func (self *Channel) Read() Cell {
 	return <-self.c
 }
 
-func (self *Channel) ReadLine() Cell {
-	if self.r == nil {
-		return NewString((<-self.c).String())
-	}
-
+func (self *Pipe) ReadLine() Cell {
 	s, err := self.reader().ReadString('\n')
 	if err != nil && len(s) == 0 {
 		self.b = nil
@@ -1025,32 +1063,28 @@ func (self *Channel) ReadLine() Cell {
 	return NewString(strings.TrimRight(s, "\n"))
 }
 
-func (self *Channel) ReadFd() *os.File {
-	return self.r
-}
-
-func (self *Channel) WriterClose() bool {
+func (self *Pipe) WriterClose() {
 	if self.w != nil {
 		self.w.Close()
 		self.w = nil
 	}
-
-	return true
 }
 
-func (self *Channel) Write(c Cell) {
+func (self *Pipe) Write(c Cell) {
 	if c == Null {
 		return
-	}
-
-	if self.w == nil {
-		self.c <- c
 	}
 
 	fmt.Fprintln(self.w, c)
 }
 
-func (self *Channel) WriteFd() *os.File {
+/* Pipe-specific functions */
+
+func (self *Pipe) ReadFd() *os.File {
+	return self.r
+}
+
+func (self *Pipe) WriteFd() *os.File {
 	return self.w
 }
 

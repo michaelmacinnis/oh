@@ -179,8 +179,6 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Bound)(unsafe.Pointer(addr))
     case kind == "builtin":
         $$.c = (*Builtin)(unsafe.Pointer(addr))
-    case kind == "channel":
-        $$.c = (*Channel)(unsafe.Pointer(addr))
     case kind == "env":
         $$.c = (*Env)(unsafe.Pointer(addr))
     case kind == "function":
@@ -189,6 +187,8 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Method)(unsafe.Pointer(addr))
     case kind == "object":
         $$.c = (*Object)(unsafe.Pointer(addr))
+    case kind == "pipe":
+        $$.c = (*Pipe)(unsafe.Pointer(addr))
     case kind == "reference":
         $$.c = (*Reference)(unsafe.Pointer(addr))
     case kind == "scope":

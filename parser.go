@@ -826,8 +826,6 @@ yydefault:
 	        yyVAL.c = (*Bound)(unsafe.Pointer(addr))
 	    case kind == "builtin":
 	        yyVAL.c = (*Builtin)(unsafe.Pointer(addr))
-	    case kind == "channel":
-	        yyVAL.c = (*Channel)(unsafe.Pointer(addr))
 	    case kind == "env":
 	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
 	    case kind == "function":
@@ -836,6 +834,8 @@ yydefault:
 	        yyVAL.c = (*Method)(unsafe.Pointer(addr))
 	    case kind == "object":
 	        yyVAL.c = (*Object)(unsafe.Pointer(addr))
+	    case kind == "pipe":
+	        yyVAL.c = (*Pipe)(unsafe.Pointer(addr))
 	    case kind == "reference":
 	        yyVAL.c = (*Reference)(unsafe.Pointer(addr))
 	    case kind == "scope":
