@@ -17,12 +17,6 @@ type Atom interface {
 	Float() float64
 	Int() int64
 	Status() int64
-
-	Greater(c Cell) bool
-	Less(c Cell) bool
-
-	Add(c Cell) Atom
-	Multiply(c Cell) Atom
 }
 
 type Binding interface {
@@ -45,8 +39,8 @@ type Closure interface {
 
 	Body() Function
 	Code() Cell
+	Context() Cell
 	Formal() Cell
-	Label() Cell
 	Lexical() *Scope
 }
 
@@ -63,13 +57,18 @@ type Context interface {
 	Remove(key Cell) bool
 }
 
-type NewClosure func(b Function, c, f, l Cell, s *Scope) Closure
+type NewClosure func(b Function, c, e, f Cell, s *Scope) Closure
 
 type Number interface {
 	Atom
 
+	Greater(c Cell) bool
+	Less(c Cell) bool
+
+	Add(c Cell) Number
 	Divide(c Cell) Number
 	Modulo(c Cell) Number
+	Multiply(c Cell) Number
 	Subtract(c Cell) Number
 }
 
@@ -464,28 +463,6 @@ func (self *Boolean) Equal(c Cell) bool {
 	return bool(*self) == c.(Atom).Bool()
 }
 
-func (self *Boolean) Greater(c Cell) bool {
-	return bool(*self) && !c.(Atom).Bool()
-}
-
-func (self *Boolean) Less(c Cell) bool {
-	return !bool(*self) && c.(Atom).Bool()
-}
-
-func (self *Boolean) Add(c Cell) Atom {
-	if bool(*self) || c.(Atom).Bool() {
-		return True
-	}
-	return False
-}
-
-func (self *Boolean) Multiply(c Cell) Atom {
-	if bool(*self) && c.(Atom).Bool() {
-		return True
-	}
-	return False
-}
-
 /* Integer cell definition. */
 
 type Integer int64
@@ -541,7 +518,7 @@ func (self *Integer) Less(c Cell) bool {
 	return int64(*self) < c.(Atom).Int()
 }
 
-func (self *Integer) Add(c Cell) Atom {
+func (self *Integer) Add(c Cell) Number {
 	return NewInteger(int64(*self) + c.(Atom).Int())
 }
 
@@ -553,7 +530,7 @@ func (self *Integer) Modulo(c Cell) Number {
 	return NewInteger(int64(*self) % c.(Atom).Int())
 }
 
-func (self *Integer) Multiply(c Cell) Atom {
+func (self *Integer) Multiply(c Cell) Number {
 	return NewInteger(int64(*self) * c.(Atom).Int())
 }
 
@@ -615,7 +592,7 @@ func (self *Status) Less(c Cell) bool {
 	return int64(*self) < c.(Atom).Status()
 }
 
-func (self *Status) Add(c Cell) Atom {
+func (self *Status) Add(c Cell) Number {
 	return NewStatus(int64(*self) + c.(Atom).Status())
 }
 
@@ -627,7 +604,7 @@ func (self *Status) Modulo(c Cell) Number {
 	return NewStatus(int64(*self) % c.(Atom).Status())
 }
 
-func (self *Status) Multiply(c Cell) Atom {
+func (self *Status) Multiply(c Cell) Number {
 	return NewStatus(int64(*self) * c.(Atom).Status())
 }
 
@@ -676,7 +653,7 @@ func (self *Float) Less(c Cell) bool {
 	return float64(*self) < c.(Atom).Float()
 }
 
-func (self *Float) Add(c Cell) Atom {
+func (self *Float) Add(c Cell) Number {
 	return NewFloat(float64(*self) + c.(Atom).Float())
 }
 
@@ -688,7 +665,7 @@ func (self *Float) Modulo(c Cell) Number {
 	panic("Type 'float' does not implement 'modulo'.")
 }
 
-func (self *Float) Multiply(c Cell) Atom {
+func (self *Float) Multiply(c Cell) Number {
 	return NewFloat(float64(*self) * c.(Atom).Float())
 }
 
@@ -775,14 +752,14 @@ func (self *Symbol) isInt() bool {
 	return err == nil
 }
 
-func (self *Symbol) Add(c Cell) Atom {
+func (self *Symbol) Add(c Cell) Number {
 	if self.isInt() {
 		return NewInteger(self.Int() + c.(Atom).Int())
 	} else if self.isFloat() {
 		return NewFloat(self.Float() + c.(Atom).Float())
 	}
 
-	return NewSymbol(string(*self) + Raw(c))
+	panic("Type 'symbol' does not implement 'add'.")
 }
 
 func (self *Symbol) Divide(c Cell) Number {
@@ -803,21 +780,14 @@ func (self *Symbol) Modulo(c Cell) Number {
 	panic("Type 'symbol' does not implement 'modulo'.")
 }
 
-func (self *Symbol) Multiply(c Cell) Atom {
+func (self *Symbol) Multiply(c Cell) Number {
 	if self.isInt() {
 		return NewInteger(self.Int() * c.(Atom).Int())
 	} else if self.isFloat() {
 		return NewFloat(self.Float() * c.(Atom).Float())
 	}
 
-	var i int64
-	var r string
-
-	for r, i = string(*self), c.(Atom).Int(); i > 0; i-- {
-		r += string(*self)
-	}
-
-	return NewSymbol(r)
+	panic("Type 'symbol' does not implement 'multiply'.")
 }
 
 func (self *Symbol) Subtract(c Cell) Number {
@@ -893,29 +863,6 @@ func (self *String) Equal(c Cell) bool {
 	return string(*self) == c.(Atom).String()
 }
 
-func (self *String) Greater(c Cell) bool {
-	return string(*self) > c.(Atom).String()
-}
-
-func (self *String) Less(c Cell) bool {
-	return string(*self) < c.(Atom).String()
-}
-
-func (self *String) Add(c Cell) Atom {
-	return NewString(string(*self) + Raw(c))
-}
-
-func (self *String) Multiply(c Cell) Atom {
-	var i int64
-	var r string
-
-	for r, i = string(*self), c.(Atom).Int(); i > 0; i-- {
-		r += string(*self)
-	}
-
-	return NewSymbol(r)
-}
-
 /* Pair cell definition. */
 
 type Pair struct {
@@ -924,7 +871,7 @@ type Pair struct {
 }
 
 func Cons(h, t Cell) Cell {
-	return &Pair{h, t}
+	return &Pair{car: h, cdr: t}
 }
 
 func (self *Pair) Bool() bool {
@@ -979,7 +926,7 @@ type Channel struct {
 }
 
 func NewChannel(r *os.File, w *os.File, cap int) *Channel {
-	ch := &Channel{nil, nil, nil, r, w}
+	ch := &Channel{b: nil, c: nil, d: nil, r: r, w: w}
 
 	if cap >= 0 {
 		ch.c = make(chan Cell, cap)
@@ -1112,13 +1059,13 @@ func (self *Channel) WriteFd() *os.File {
 type Builtin struct {
 	body    Function
 	code    Cell
+	context Cell
 	formal  Cell
-	label   Cell
 	lexical *Scope
 }
 
-func NewBuiltin(b Function, c, f, l Cell, s *Scope) Closure {
-	return &Builtin{b, c, f, l, s}
+func NewBuiltin(b Function, c, e, f Cell, s *Scope) Closure {
+	return &Builtin{body: b, code: c, context: e, formal: f, lexical: s}
 }
 
 func (self *Builtin) Bool() bool {
@@ -1143,12 +1090,12 @@ func (self *Builtin) Code() Cell {
 	return self.code
 }
 
-func (self *Builtin) Formal() Cell {
-	return self.formal
+func (self *Builtin) Context() Cell {
+	return self.context
 }
 
-func (self *Builtin) Label() Cell {
-	return self.label
+func (self *Builtin) Formal() Cell {
+	return self.formal
 }
 
 func (self *Builtin) Lexical() *Scope {
@@ -1160,13 +1107,13 @@ func (self *Builtin) Lexical() *Scope {
 type Method struct {
 	body    Function
 	code    Cell
+	context Cell
 	formal  Cell
-	label   Cell
 	lexical *Scope
 }
 
-func NewMethod(b Function, c, f, l Cell, s *Scope) Closure {
-	return &Method{b, c, f, l, s}
+func NewMethod(b Function, c, e, f Cell, s *Scope) Closure {
+	return &Method{b, c, e, f, s}
 }
 
 func (self *Method) Bool() bool {
@@ -1191,12 +1138,12 @@ func (self *Method) Code() Cell {
 	return self.code
 }
 
-func (self *Method) Formal() Cell {
-	return self.formal
+func (self *Method) Context() Cell {
+	return self.context
 }
 
-func (self *Method) Label() Cell {
-	return self.label
+func (self *Method) Formal() Cell {
+	return self.formal
 }
 
 func (self *Method) Lexical() *Scope {
@@ -1208,13 +1155,13 @@ func (self *Method) Lexical() *Scope {
 type Syntax struct {
 	body    Function
 	code    Cell
+	context Cell
 	formal  Cell
-	label   Cell
 	lexical *Scope
 }
 
-func NewSyntax(b Function, c, f, l Cell, s *Scope) Closure {
-	return &Syntax{b, c, f, l, s}
+func NewSyntax(b Function, c, e, f Cell, s *Scope) Closure {
+	return &Syntax{b, c, e, f, s}
 }
 
 func (self *Syntax) Bool() bool {
@@ -1239,12 +1186,12 @@ func (self *Syntax) Code() Cell {
 	return self.code
 }
 
-func (self *Syntax) Formal() Cell {
-	return self.formal
+func (self *Syntax) Context() Cell {
+	return self.context
 }
 
-func (self *Syntax) Label() Cell {
-	return self.label
+func (self *Syntax) Formal() Cell {
+	return self.formal
 }
 
 func (self *Syntax) Lexical() *Scope {
@@ -1388,44 +1335,6 @@ func (self *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
 
-/* Task cell definition. */
-
-type Task struct {
-	*Registers
-	Done    chan Cell
-	Eval    chan Cell
-	Child   []*Task
-}
-
-func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
-	t := &Task{&Registers{code, dynamic, lexical,
-		List(NewStatus(0)), List(NewInteger(state))},
-		make(chan Cell, 1), make(chan Cell, 1), nil}
-
-	return t
-}
-
-/* Task-specific functions. */
-
-func (self *Task) Running() bool {
-	select {
-	case <- self.Done:
-		return false
-	default:
-	}
-	return true
-}
-
-func (self *Task) Start() {
-	if self.Done == nil {
-		self.Done = make(chan Cell, 1)
-	}
-}
-
-func (self *Task) Stop() {
-	close(self.Done)
-}
-
 /* Registers cell definition. */
 
 type Registers struct {
@@ -1434,18 +1343,6 @@ type Registers struct {
 	Lexical Context
 	Scratch Cell // or Dump
 	Stack   Cell
-}
-
-func (self *Registers) Bool() bool {
-	return true
-}
-
-func (self *Registers) String() string {
-	return fmt.Sprintf("%%task %p%%", self)
-}
-
-func (self *Registers) Equal(c Cell) bool {
-	return c.(*Registers) == self
 }
 
 /* Registers-specific functions. */
@@ -1579,6 +1476,65 @@ func (self *Registers) Return(rv Cell) bool {
 	SetCar(self.Scratch, rv)
 
 	return false
+}
+
+/* Task cell definition. */
+
+type Task struct {
+	*Registers
+	Done  chan Cell
+	Eval  chan Cell
+	Child []*Task
+}
+
+func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
+	t := &Task{
+		Registers: &Registers{
+			Code:    code,
+			Dynamic: dynamic,
+			Lexical: lexical,
+			Scratch: List(NewStatus(0)),
+			Stack:   List(NewInteger(state)),
+		},
+		Done:  make(chan Cell, 1),
+		Eval:  make(chan Cell, 1),
+		Child: nil,
+	}
+
+	return t
+}
+
+func (self *Task) Bool() bool {
+	return true
+}
+
+func (self *Task) String() string {
+	return fmt.Sprintf("%%task %p%%", self)
+}
+
+func (self *Task) Equal(c Cell) bool {
+	return c.(*Task) == self
+}
+
+/* Task-specific functions. */
+
+func (self *Task) Running() bool {
+	select {
+	case <-self.Done:
+		return false
+	default:
+	}
+	return true
+}
+
+func (self *Task) Start() {
+	if self.Done == nil {
+		self.Done = make(chan Cell, 1)
+	}
+}
+
+func (self *Task) Stop() {
+	close(self.Done)
 }
 
 /*

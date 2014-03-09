@@ -64,9 +64,9 @@ func apply(t *Task, args Cell) bool {
 	t.Code = m.Ref().Code()
 	t.NewBlock(t.Dynamic, m.Ref().Lexical())
 
-	label := m.Ref().Label()
-	if label != Null {
-		t.Lexical.Public(label, m.Self())
+	context := m.Ref().Context()
+	if context != Null {
+		t.Lexical.Public(context, m.Self())
 	}
 
 	formal := m.Ref().Formal()
@@ -78,7 +78,7 @@ func apply(t *Task, args Cell) bool {
 		t.Lexical.Public(Caar(formal), args)
 	}
 
-	con := NewUnbound(NewMethod(tinue, Cdr(t.Scratch), t.Stack, Null, nil))
+	con := NewUnbound(NewMethod(tinue, Cdr(t.Scratch), Null, t.Stack, nil))
 	t.Lexical.Public(NewSymbol("return"), con)
 
 	return true
@@ -119,10 +119,10 @@ func channel(t *Task, r, w *os.File, cap int) Context {
 }
 
 func combiner(t *Task, n NewClosure) bool {
-	label := Null
+	context := Null
 	formal := Car(t.Code)
 	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
-		label = formal
+		context = formal
 		formal = Cadr(t.Code)
 		t.Code = Cdr(t.Code)
 	}
@@ -134,8 +134,8 @@ func combiner(t *Task, n NewClosure) bool {
 	block := Cddr(t.Code)
 	scope := t.Lexical.Expose()
 
-	c := n(apply, block, formal, label, scope)
-	if label == Null {
+	c := n(apply, block, context, formal, scope)
+	if context == Null {
 		SetCar(t.Scratch, NewUnbound(c))
 	} else {
 		SetCar(t.Scratch, NewBound(c, scope))
@@ -591,7 +591,7 @@ func strict(t *Task) (ok bool) {
 		return false
 	}
 
-	return c.Get().(Atom).Bool()
+	return c.Get().(Cell).Bool()
 }
 
 func tinue(t *Task, args Cell) bool {
@@ -1098,11 +1098,11 @@ func Start(i bool) {
 		return t.Return(True)
 	})
 	s.DefineMethod("ge", func(t *Task, args Cell) bool {
-		prev := Car(args).(Atom)
+		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
-			curr := Car(args).(Atom)
+			curr := Car(args).(Number)
 
 			if prev.Less(curr) {
 				return t.Return(False)
@@ -1114,11 +1114,11 @@ func Start(i bool) {
 		return t.Return(True)
 	})
 	s.DefineMethod("gt", func(t *Task, args Cell) bool {
-		prev := Car(args).(Atom)
+		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
-			curr := Car(args).(Atom)
+			curr := Car(args).(Number)
 
 			if !prev.Greater(curr) {
 				return t.Return(False)
@@ -1146,11 +1146,11 @@ func Start(i bool) {
 		return t.Return(True)
 	})
 	s.DefineMethod("le", func(t *Task, args Cell) bool {
-		prev := Car(args).(Atom)
+		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
-			curr := Car(args).(Atom)
+			curr := Car(args).(Number)
 
 			if prev.Greater(curr) {
 				return t.Return(False)
@@ -1162,11 +1162,11 @@ func Start(i bool) {
 		return t.Return(True)
 	})
 	s.DefineMethod("lt", func(t *Task, args Cell) bool {
-		prev := Car(args).(Atom)
+		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
-			curr := Car(args).(Atom)
+			curr := Car(args).(Number)
 
 			if !prev.Less(curr) {
 				return t.Return(False)
@@ -1208,7 +1208,7 @@ func Start(i bool) {
 
 	/* Arithmetic. */
 	s.DefineMethod("add", func(t *Task, args Cell) bool {
-		acc := Car(args).(Atom)
+		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
@@ -1249,7 +1249,7 @@ func Start(i bool) {
 		return t.Return(acc)
 	})
 	s.DefineMethod("mul", func(t *Task, args Cell) bool {
-		acc := Car(args).(Atom)
+		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
 			args = Cdr(args)
