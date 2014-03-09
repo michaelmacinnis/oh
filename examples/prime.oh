@@ -33,11 +33,17 @@ counter 2 |+ block {
     }
 } > prime-numbers &
 
-define count: integer 250
+define count 1000
 printf "The first %d prime numbers" count
 
+define line ""
 while count {
-    write: read-car
+    define p: read-car
+    set line: Text::join "" line: Text::sprintf "%7d" p
     set count: sub count 1
+    if (not: mod count 10) {
+        echo line
+	set line ""
+    }
 } <prime-numbers
 
