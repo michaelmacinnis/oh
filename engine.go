@@ -118,7 +118,7 @@ func channel(t *Task, r, w *os.File, cap int) Context {
 	return NewObject(c)
 }
 
-func combiner(t *Task, n NewClosure) bool {
+func combiner(t *Task, n NewCombiner) bool {
 	context := Null
 	formal := Car(t.Code)
 	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {

@@ -57,7 +57,7 @@ type Context interface {
 	Remove(key Cell) bool
 }
 
-type NewClosure func(b Function, c, e, f Cell, s *Scope) Closure
+type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
 
 type Number interface {
 	Atom
@@ -1054,9 +1054,9 @@ func (self *Channel) WriteFd() *os.File {
 	return self.w
 }
 
-/* Builtin cell definition. */
+/* Combiner cell definition. */
 
-type Builtin struct {
+type Combiner struct {
 	body    Function
 	code    Cell
 	context Cell
@@ -1064,12 +1064,40 @@ type Builtin struct {
 	lexical *Scope
 }
 
-func NewBuiltin(b Function, c, e, f Cell, s *Scope) Closure {
-	return &Builtin{body: b, code: c, context: e, formal: f, lexical: s}
+func (self *Combiner) Bool() bool {
+	return true
 }
 
-func (self *Builtin) Bool() bool {
-	return true
+func (self *Combiner) Body() Function {
+	return self.body
+}
+
+func (self *Combiner) Code() Cell {
+	return self.code
+}
+
+func (self *Combiner) Context() Cell {
+	return self.context
+}
+
+func (self *Combiner) Formal() Cell {
+	return self.formal
+}
+
+func (self *Combiner) Lexical() *Scope {
+	return self.lexical
+}
+
+/* Builtin cell definition. */
+
+type Builtin struct {
+	Combiner
+}
+
+func NewBuiltin(b Function, c, e, f Cell, s *Scope) Closure {
+	return &Builtin{
+		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+	}
 }
 
 func (self *Builtin) String() string {
@@ -1080,44 +1108,16 @@ func (self *Builtin) Equal(c Cell) bool {
 	return c.(*Builtin) == self
 }
 
-/* Builtin-specific functions */
-
-func (self *Builtin) Body() Function {
-	return self.body
-}
-
-func (self *Builtin) Code() Cell {
-	return self.code
-}
-
-func (self *Builtin) Context() Cell {
-	return self.context
-}
-
-func (self *Builtin) Formal() Cell {
-	return self.formal
-}
-
-func (self *Builtin) Lexical() *Scope {
-	return self.lexical
-}
-
 /* Method cell definition. */
 
 type Method struct {
-	body    Function
-	code    Cell
-	context Cell
-	formal  Cell
-	lexical *Scope
+	Combiner
 }
 
 func NewMethod(b Function, c, e, f Cell, s *Scope) Closure {
-	return &Method{b, c, e, f, s}
-}
-
-func (self *Method) Bool() bool {
-	return true
+	return &Method{
+		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+	}
 }
 
 func (self *Method) String() string {
@@ -1128,44 +1128,16 @@ func (self *Method) Equal(c Cell) bool {
 	return c.(*Method) == self
 }
 
-/* Method-specific functions */
-
-func (self *Method) Body() Function {
-	return self.body
-}
-
-func (self *Method) Code() Cell {
-	return self.code
-}
-
-func (self *Method) Context() Cell {
-	return self.context
-}
-
-func (self *Method) Formal() Cell {
-	return self.formal
-}
-
-func (self *Method) Lexical() *Scope {
-	return self.lexical
-}
-
 /* Syntax cell definition. */
 
 type Syntax struct {
-	body    Function
-	code    Cell
-	context Cell
-	formal  Cell
-	lexical *Scope
+	Combiner
 }
 
 func NewSyntax(b Function, c, e, f Cell, s *Scope) Closure {
-	return &Syntax{b, c, e, f, s}
-}
-
-func (self *Syntax) Bool() bool {
-	return true
+	return &Syntax{
+		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+	}
 }
 
 func (self *Syntax) String() string {
@@ -1174,28 +1146,6 @@ func (self *Syntax) String() string {
 
 func (self *Syntax) Equal(c Cell) bool {
 	return c.(*Syntax) == self
-}
-
-/* Syntax-specific functions */
-
-func (self *Syntax) Body() Function {
-	return self.body
-}
-
-func (self *Syntax) Code() Cell {
-	return self.code
-}
-
-func (self *Syntax) Context() Cell {
-	return self.context
-}
-
-func (self *Syntax) Formal() Cell {
-	return self.formal
-}
-
-func (self *Syntax) Lexical() *Scope {
-	return self.lexical
 }
 
 /* Env cell definition. */
