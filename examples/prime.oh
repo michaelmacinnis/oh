@@ -33,7 +33,7 @@ counter 2 |+ block {
     }
 } > prime-numbers &
 
-define count 1000
+define count: integer 1000
 printf "The first %d prime numbers" count
 
 define line ""
