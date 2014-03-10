@@ -1710,19 +1710,21 @@ define append-stdout: $redirect $stdout "a" writer-close
 define apply: method (f: args) as: f @args
 define backtick: syntax e (cmd) as {
     define p: pipe
-    define r '()
     spawn {
         dynamic $stdout p
         e::eval cmd
         p::writer-close
     }
+    define r: cons '() '()
+    define c r
     define l: p::readline
     while l {
-        set r: append r l
+	set-cdr c: cons l '()
+	set c: cdr c
         set l: p::readline
     }
     p::reader-close
-    return r
+    return: cdr r
 }
 define channel-stderr: $connect channel $stderr True
 define channel-stdout: $connect channel $stdout True
@@ -1784,19 +1786,22 @@ define source: syntax e (name) as {
 
 	if (not: test -r name): set name basename
 
-	define commands '()
+        define r: cons '() '()
+        define c r
 	define f: open name "r-"
 	define l: f::read
 	while l {
-		set commands: append commands l
+		set-cdr c: cons l '()
+		set c: cdr c
 		set l: f::read
 	}
+	set c: cdr r
 	f::reader-close
 	define eval-list: method (rval first rest) as {
 		if (is-null first): return rval
 		eval-list (e::eval first) (car rest) (cdr rest)
 	}
-	eval-list (status 0) (car commands) (cdr commands)
+	eval-list (status 0) (car c) (cdr c)
 }
 define write: method (: args) as: $stdout::write @args
 
