@@ -954,11 +954,19 @@ func (self Channel) ReaderClose() {
 }
 
 func (self Channel) Read() Cell {
-	return <-self
+	v := <-self
+	if v == nil {
+		return Null
+	}
+	return v
 }
 
 func (self Channel) ReadLine() Cell {
-	return NewString((<-self).String())
+	v := <-self
+	if v == nil {
+		return False
+	}
+	return NewString(v.String())
 }
 
 func (self Channel) WriterClose() {
@@ -966,9 +974,6 @@ func (self Channel) WriterClose() {
 }
 
 func (self Channel) Write(c Cell) {
-	if c == Null {
-		return
-	}
 	self <- c
 }
 
@@ -1011,11 +1016,11 @@ func (self *Pipe) Equal(c Cell) bool {
 }
 
 func (self *Pipe) Close() {
-	if len(self.r.Name()) > 0 {
+	if self.r != nil && len(self.r.Name()) > 0 {
 		self.ReaderClose()
 	}
 
-	if len(self.w.Name()) > 0 {
+	if self.w != nil && len(self.w.Name()) > 0 {
 		self.WriterClose()
 	}
 }
@@ -1036,6 +1041,10 @@ func (self *Pipe) ReaderClose() {
 }
 
 func (self *Pipe) Read() Cell {
+	if self.r == nil {
+		return Null
+	}
+
 	if self.c == nil {
 		self.c = make(chan Cell)
 		self.d = make(chan bool)
@@ -1071,8 +1080,8 @@ func (self *Pipe) WriterClose() {
 }
 
 func (self *Pipe) Write(c Cell) {
-	if c == Null {
-		return
+	if self.w == nil {
+		panic("write to closed pipe")
 	}
 
 	fmt.Fprintln(self.w, c)

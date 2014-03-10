@@ -87,6 +87,11 @@ func apply(t *Task, args Cell) bool {
 func conduit(t *Task, ch Conduit) Context {
 	c := NewScope(t.Lexical)
 
+	var close Function = func(t *Task, args Cell) bool {
+		ch.Close()
+		return t.Return(True)
+	}
+
 	var rclose Function = func(t *Task, args Cell) bool {
 		ch.ReaderClose()
 		return t.Return(True)
@@ -110,6 +115,7 @@ func conduit(t *Task, ch Conduit) Context {
 		return t.Return(True)
 	}
 
+	c.Public(NewSymbol("close"), method(close, c))
 	c.Public(NewSymbol("guts"), ch)
 	c.Public(NewSymbol("reader-close"), method(rclose, c))
 	c.Public(NewSymbol("read"), method(read, c))
@@ -1675,7 +1681,6 @@ define $connect: syntax (type out close) as {
             e::eval left
             if close: p::writer-close
         }
-
 	block {
             dynamic $stdin p
             e::eval right
@@ -1796,7 +1801,7 @@ define source: syntax e (name) as {
 		set l: f::read
 	}
 	set c: cdr r
-	f::reader-close
+	f::close
 	define eval-list: method (rval first rest) as {
 		if (is-null first): return rval
 		eval-list (e::eval first) (car rest) (cdr rest)
