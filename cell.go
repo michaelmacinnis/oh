@@ -118,7 +118,14 @@ func init() {
 	sym = make(map[string]*Symbol)
 
 	for _, v := range [...]string{
+		"$redirect",
+		"append-stderr",
+		"append-stdout",
+		"channel-stderr",
+		"channel-stdout",
+		"eval-list",
 		"is-boolean",
+		"is-builtin",
 		"is-channel",
 		"is-integer",
 		"is-method",
@@ -127,23 +134,20 @@ func init() {
 		"is-status",
 		"is-string",
 		"is-symbol",
-
-		"append-stdout",
-		"append-stderr",
-		"channel-stdout",
-		"channel-stderr",
-		"pipe-stdout",
+		"is-syntax",
 		"pipe-stderr",
+		"pipe-stdout",
+		"reader-close",
+		"redirect-stderr",
 		"redirect-stdin",
 		"redirect-stdout",
-		"redirect-stderr",
-
+		"substring",
+		"to-string",
+		"to-symbol",
+		"writer-close",
 		"is-control",
 		"is-graphic",
 		"is-letter",
-		"to-string",
-		"to-symbol",
-		"substring",
 	} {
 		sym[v] = NewSymbol(v)
 	}
@@ -286,13 +290,6 @@ func IsCons(c Cell) bool {
 	return false
 }
 
-func IsList(c Cell) bool {
-	if c == Null {
-		return true
-	}
-	return IsList(Cdr(c))
-}
-
 func IsSimple(c Cell) bool {
 	return IsAtom(c) || IsCons(c)
 }
@@ -416,14 +413,6 @@ func SetCar(c, value Cell) {
 
 func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
-}
-
-func Tail(list Cell, index int64) Cell {
-	for ; index > 0 && IsCons(list); index++ {
-		list = Cdr(list)
-	}
-
-	return list
 }
 
 /* Boolean cell definition. */

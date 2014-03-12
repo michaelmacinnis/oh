@@ -981,9 +981,6 @@ func Start(i bool) {
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-list", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(IsList(Car(args))))
-	})
 	s.DefineMethod("is-method", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
@@ -1755,6 +1752,12 @@ define import: syntax e (name) as {
     set l: cons 'object: cons l '()
     set l: list 'Root::define m l
     e::eval l
+}
+define is-list: method (l) as {
+    if (is-null l): return False
+    if (not: is-cons l): return False
+    if (is-null: cdr l): return True
+    is-list: cdr l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
 define object: syntax e (: body) as {
