@@ -43,15 +43,20 @@ type Closure interface {
 	Lexical() *Scope
 }
 
+/* This is not a Cell ... */
 type Conduit interface {
-	Cell
-
 	Close()
 	ReaderClose()
 	Read() Cell
 	ReadLine() Cell
 	WriterClose()
 	Write(c Cell)
+}
+
+/* ... this is a Cell. */
+type ConduitContext interface {
+	Conduit
+	Context
 }
 
 type Context interface {
@@ -67,8 +72,6 @@ type Context interface {
 	Remove(key Cell) bool
 }
 
-type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
-
 type Number interface {
 	Atom
 
@@ -81,6 +84,8 @@ type Number interface {
 	Multiply(c Cell) Number
 	Subtract(c Cell) Number
 }
+
+type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
 
 const (
 	SaveCarCode = 1 << iota
@@ -914,61 +919,121 @@ func (self *Pair) Equal(c Cell) bool {
 	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
 }
 
+/* Conduit helper functions */
+
+func conduit_close(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        r.Get().(Conduit).Close()
+        return t.Return(True)
+}
+
+func conduit_rclose(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        r.Get().(Conduit).ReaderClose()
+        return t.Return(True)
+}
+
+func conduit_read(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        return t.Return(r.Get().(Conduit).Read())
+}
+
+func conduit_readline(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        return t.Return(r.Get().(Conduit).ReadLine())
+}
+
+func conduit_wclose(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        r.Get().(Conduit).WriterClose()
+        return t.Return(True)
+}
+
+func conduit_write(t *Task, args Cell) bool {
+        self := Car(t.Scratch).(Binding).Self()
+        r := Resolve(self, nil, NewSymbol("guts"))
+        r.Get().(Conduit).Write(args)
+        return t.Return(True)
+}
+
+func conduit_object(cc ConduitContext) Context {
+        cs := cc.Expose()
+
+        cs.Define(NewSymbol("guts"), cc)
+
+        cs.Public(NewSymbol("close"), method(conduit_close, cs))
+        cs.Public(NewSymbol("reader-close"), method(conduit_rclose, cs))
+        cs.Public(NewSymbol("read"), method(conduit_read, cs))
+        cs.Public(NewSymbol("readline"), method(conduit_readline, cs))
+        cs.Public(NewSymbol("writer-close"), method(conduit_wclose, cs))
+        cs.Public(NewSymbol("write"), method(conduit_write, cs))
+
+        return cc.(Context)
+}
+
 /* Channel cell definition. */
 
-type Channel chan Cell
-
-func NewChannel(cap int) Channel {
-	return make(chan Cell, cap)
+type Channel struct {
+	*Object
+	v chan Cell
 }
 
-func (self Channel) Bool() bool {
-	return true
+func NewChannel(t *Task, cap int) Context {
+	return conduit_object(&Channel{
+		NewObject(NewScope(t.Lexical.Expose())),
+		make(chan Cell, cap),
+	})
 }
 
-func (self Channel) String() string {
+func (self *Channel) String() string {
 	return fmt.Sprintf("%%channel %p%%", self)
 }
 
-func (self Channel) Equal(c Cell) bool {
-	return c.(Channel) == self
+func (self *Channel) Equal(c Cell) bool {
+	return self == c
 }
 
-func (self Channel) Close() {
+func (self *Channel) Close() {
 	self.WriterClose()
 }
 
-func (self Channel) ReaderClose() {
+func (self *Channel) ReaderClose() {
 	return
 }
 
-func (self Channel) Read() Cell {
-	v := <-self
+func (self *Channel) Read() Cell {
+	v := <-self.v
 	if v == nil {
 		return Null
 	}
 	return v
 }
 
-func (self Channel) ReadLine() Cell {
-	v := <-self
+func (self *Channel) ReadLine() Cell {
+	v := <-self.v
 	if v == nil {
 		return False
 	}
 	return NewString(v.String())
 }
 
-func (self Channel) WriterClose() {
-	close(self)
+func (self *Channel) WriterClose() {
+	close(self.v)
 }
 
-func (self Channel) Write(c Cell) {
-	self <- c
+func (self *Channel) Write(c Cell) {
+	self.v <- c
 }
 
 /* Pipe cell definition. */
 
 type Pipe struct {
+	*Object
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
@@ -976,24 +1041,23 @@ type Pipe struct {
 	w *os.File
 }
 
-func NewPipe(r *os.File, w *os.File) *Pipe {
-	ch := &Pipe{b: nil, c: nil, d: nil, r: r, w: w}
+func NewPipe(t *Task, r *os.File, w *os.File) Context {
+	p := &Pipe{
+		Object: NewObject(NewScope(t.Lexical.Expose())),
+		b: nil, c: nil, d: nil, r: r, w: w,
+	}
 
 	if r == nil && w == nil {
 		var err error
 
-		if ch.r, ch.w, err = os.Pipe(); err != nil {
-			ch.r, ch.w = nil, nil
+		if p.r, p.w, err = os.Pipe(); err != nil {
+			p.r, p.w = nil, nil
 		}
 	}
 
-	runtime.SetFinalizer(ch, (*Pipe).Close)
+	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return ch
-}
-
-func (self *Pipe) Bool() bool {
-	return true
+	return conduit_object(p)
 }
 
 func (self *Pipe) String() string {

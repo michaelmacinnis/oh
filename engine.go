@@ -84,48 +84,6 @@ func apply(t *Task, args Cell) bool {
 	return true
 }
 
-func conduit(t *Task, ch Conduit) Context {
-	c := NewScope(t.Lexical)
-
-	var close Function = func(t *Task, args Cell) bool {
-		ch.Close()
-		return t.Return(True)
-	}
-
-	var rclose Function = func(t *Task, args Cell) bool {
-		ch.ReaderClose()
-		return t.Return(True)
-	}
-
-	var read Function = func(t *Task, args Cell) bool {
-		return t.Return(ch.Read())
-	}
-
-	var readline Function = func(t *Task, args Cell) bool {
-		return t.Return(ch.ReadLine())
-	}
-
-	var wclose Function = func(t *Task, args Cell) bool {
-		ch.WriterClose()
-		return t.Return(True)
-	}
-
-	var write Function = func(t *Task, args Cell) bool {
-		ch.Write(args)
-		return t.Return(True)
-	}
-
-	c.Public(NewSymbol("close"), method(close, c))
-	c.Public(NewSymbol("guts"), ch)
-	c.Public(NewSymbol("reader-close"), method(rclose, c))
-	c.Public(NewSymbol("read"), method(read, c))
-	c.Public(NewSymbol("readline"), method(readline, c))
-	c.Public(NewSymbol("writer-close"), method(wclose, c))
-	c.Public(NewSymbol("write"), method(write, c))
-
-	return NewObject(c)
-}
-
 func combiner(t *Task, n NewCombiner) bool {
 	context := Null
 	formal := Car(t.Code)
@@ -644,9 +602,9 @@ func Start(i bool) {
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
 
-	e.Add(NewSymbol("$stdin"), conduit(task, NewPipe(os.Stdin, nil)))
-	e.Add(NewSymbol("$stdout"), conduit(task, NewPipe(nil, os.Stdout)))
-	e.Add(NewSymbol("$stderr"), conduit(task, NewPipe(nil, os.Stderr)))
+	e.Add(NewSymbol("$stdin"), NewPipe(task, os.Stdin, nil))
+	e.Add(NewSymbol("$stdout"), NewPipe(task, nil, os.Stdout))
+	e.Add(NewSymbol("$stderr"), NewPipe(task, nil, os.Stderr))
 
 	if wd, err := os.Getwd(); err == nil {
 		e.Add(NewSymbol("$cwd"), NewSymbol(wd))
@@ -906,7 +864,7 @@ func Start(i bool) {
 			w = nil
 		}
 
-		return t.Return(conduit(t, NewPipe(r, w)))
+		return t.Return(NewPipe(t, r, w))
 	})
 	s.DefineMethod("reverse", func(t *Task, args Cell) bool {
 		return t.Return(Reverse(Car(args)))
@@ -965,7 +923,7 @@ func Start(i bool) {
 			return t.Return(False)
 		}
 
-		_, ok = g.Get().(Channel)
+		_, ok = g.Get().(*Channel)
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-cons", func(t *Task, args Cell) bool {
@@ -1052,7 +1010,7 @@ func Start(i bool) {
 			cap = int(Car(args).(Atom).Int())
 		}
 
-		return t.Return(conduit(t, NewChannel(cap)))
+		return t.Return(NewChannel(t, cap))
 	})
 	s.DefineMethod("float", func(t *Task, args Cell) bool {
 		return t.Return(NewFloat(Car(args).(Atom).Float()))
@@ -1061,7 +1019,7 @@ func Start(i bool) {
 		return t.Return(NewInteger(Car(args).(Atom).Int()))
 	})
 	s.DefineMethod("pipe", func(t *Task, args Cell) bool {
-		return t.Return(conduit(t, NewPipe(nil, nil)))
+		return t.Return(NewPipe(t, nil, nil))
 	})
 	s.DefineMethod("status", func(t *Task, args Cell) bool {
 		return t.Return(NewStatus(Car(args).(Atom).Status()))
