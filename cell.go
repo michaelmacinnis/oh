@@ -432,39 +432,42 @@ func NewBoolean(v bool) *Boolean {
 }
 
 func (self *Boolean) Bool() bool {
-	return bool(self == True)
+	return self == True
 }
 
 func (self *Boolean) Float() float64 {
-	if bool(self == True) {
+	if self == True {
 		return 1.0
 	}
 	return 0.0
 }
 
 func (self *Boolean) Int() int64 {
-	if bool(self == True) {
+	if self == True {
 		return 1
 	}
 	return 0
 }
 
 func (self *Boolean) Status() int64 {
-	if bool(self == True) {
+	if self == True {
 		return 0
 	}
 	return 1
 }
 
 func (self *Boolean) String() string {
-	if bool(self == True) {
+	if self == True {
 		return "True"
 	}
 	return "False"
 }
 
 func (self *Boolean) Equal(c Cell) bool {
-	return bool(*self) == c.(Atom).Bool()
+	if a, ok := c.(Atom); ok {
+		return bool(*self) == a.Bool()
+	}
+	return false
 }
 
 /* Integer cell definition. */
@@ -511,7 +514,10 @@ func (self *Integer) String() string {
 }
 
 func (self *Integer) Equal(c Cell) bool {
-	return int64(*self) == c.(Atom).Int()
+	if a, ok := c.(Atom); ok {
+		return int64(*self) == a.Int()
+	}
+	return false
 }
 
 func (self *Integer) Greater(c Cell) bool {
@@ -568,6 +574,13 @@ func (self *Status) Bool() bool {
 	return int64(*self) == 0
 }
 
+func (self *Status) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return int64(*self) == a.Status()
+	}
+	return false
+}
+
 func (self *Status) Float() float64 {
 	return float64(*self)
 }
@@ -582,10 +595,6 @@ func (self *Status) Status() int64 {
 
 func (self *Status) String() string {
 	return strconv.FormatInt(int64(*self), 10)
-}
-
-func (self *Status) Equal(c Cell) bool {
-	return int64(*self) == c.(Atom).Status()
 }
 
 func (self *Status) Greater(c Cell) bool {
@@ -629,6 +638,13 @@ func (self *Float) Bool() bool {
 	return *self != 0
 }
 
+func (self *Float) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return float64(*self) == a.Float()
+	}
+	return false
+}
+
 func (self *Float) Float() float64 {
 	return float64(*self)
 }
@@ -643,10 +659,6 @@ func (self *Float) Status() int64 {
 
 func (self *Float) String() string {
 	return strconv.FormatFloat(float64(*self), 'g', -1, 64)
-}
-
-func (self *Float) Equal(c Cell) bool {
-	return float64(*self) == c.(Atom).Float()
 }
 
 func (self *Float) Greater(c Cell) bool {
@@ -706,6 +718,13 @@ func (self *Symbol) Bool() bool {
 	return true
 }
 
+func (self *Symbol) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return string(*self) == a.String()
+	}
+	return false
+}
+
 func (self *Symbol) Float() (f float64) {
 	var err error
 	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
@@ -732,10 +751,6 @@ func (self *Symbol) Status() (i int64) {
 
 func (self *Symbol) String() string {
 	return string(*self)
-}
-
-func (self *Symbol) Equal(c Cell) bool {
-	return string(*self) == c.(Atom).String()
 }
 
 func (self *Symbol) Greater(c Cell) bool {
@@ -831,6 +846,13 @@ func (self *String) Bool() bool {
 	return true
 }
 
+func (self *String) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return string(*self) == a.String()
+	}
+	return false
+}
+
 func (self *String) Float() (f float64) {
 	var err error
 	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
@@ -861,10 +883,6 @@ func (self *String) Status() (i int64) {
 
 func (self *String) String() string {
 	return strconv.Quote(string(*self))
-}
-
-func (self *String) Equal(c Cell) bool {
-	return string(*self) == c.(Atom).String()
 }
 
 /* Pair cell definition. */
@@ -1065,7 +1083,7 @@ func (self *Pipe) String() string {
 }
 
 func (self *Pipe) Equal(c Cell) bool {
-	return c.(*Pipe) == self
+	return self == c
 }
 
 func (self *Pipe) Close() {
@@ -1201,7 +1219,7 @@ func (self *Builtin) String() string {
 }
 
 func (self *Builtin) Equal(c Cell) bool {
-	return c.(*Builtin) == self
+	return self == c
 }
 
 /* Method cell definition. */
@@ -1221,7 +1239,7 @@ func (self *Method) String() string {
 }
 
 func (self *Method) Equal(c Cell) bool {
-	return c.(*Method) == self
+	return self == c
 }
 
 /* Syntax cell definition. */
@@ -1241,7 +1259,7 @@ func (self *Syntax) String() string {
 }
 
 func (self *Syntax) Equal(c Cell) bool {
-	return c.(*Syntax) == self
+	return self == c
 }
 
 /* Env cell definition. */
@@ -1264,7 +1282,7 @@ func (self *Env) String() string {
 }
 
 func (self *Env) Equal(c Cell) bool {
-	return c.(*Env) == self
+	return self == c
 }
 
 /* Env-specific functions */
@@ -1345,7 +1363,13 @@ func (self *Object) String() string {
 }
 
 func (self *Object) Equal(c Cell) bool {
-	return c.(*Object) == self || c.(*Scope) == self.Scope
+	if self == c {
+		return true
+	}
+	if o, ok := c.(*Object); ok {
+		return self.Scope == o.Expose()
+	}
+	return false
 }
 
 /* Object-specific functions */
@@ -1559,7 +1583,7 @@ func (self *Task) String() string {
 }
 
 func (self *Task) Equal(c Cell) bool {
-	return c.(*Task) == self
+	return self == c
 }
 
 /* Task-specific functions. */
@@ -1606,7 +1630,7 @@ func (self *Scope) String() string {
 }
 
 func (self *Scope) Equal(c Cell) bool {
-	return c.(*Scope) == self
+	return self == c
 }
 
 /* Scope-specific functions */
@@ -1699,8 +1723,10 @@ func (self *Bound) String() string {
 }
 
 func (self *Bound) Equal(c Cell) bool {
-	m := c.(*Bound)
-	return m.Ref() == self.ref && m.Self() == self.scope
+	if m, ok := c.(*Bound); ok {
+		return self.ref == m.Ref() && self.scope == m.Self()
+	}
+	return false
 }
 
 /* Bound-specific functions */
@@ -1739,8 +1765,10 @@ func (self *Unbound) String() string {
 }
 
 func (self *Unbound) Equal(c Cell) bool {
-	m := c.(*Unbound)
-	return m.Ref() == self.ref
+	if u, ok := c.(*Unbound); ok {
+		return self.ref == u.Ref()
+	}
+	return false
 }
 
 /* Unbound-specific functions */
