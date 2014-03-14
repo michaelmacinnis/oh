@@ -47,7 +47,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:219
+//line parser.y:217
 
 
 type ReadStringer interface {
@@ -828,8 +828,6 @@ yydefault:
 	        yyVAL.c = (*Builtin)(unsafe.Pointer(addr))
 	    case kind == "env":
 	        yyVAL.c = (*Env)(unsafe.Pointer(addr))
-	    case kind == "function":
-	        yyVAL.c = (*Function)(unsafe.Pointer(addr))
 	    case kind == "method":
 	        yyVAL.c = (*Method)(unsafe.Pointer(addr))
 	    case kind == "object":
@@ -853,19 +851,19 @@ yydefault:
 	
 	}
 	case 42:
-		//line parser.y:209
+		//line parser.y:207
 		{ yyVAL = yyS[yypt-1] }
 	case 43:
-		//line parser.y:211
+		//line parser.y:209
 		{ yyVAL.c = Null }
 	case 44:
-		//line parser.y:213
+		//line parser.y:211
 		{ yyVAL = yyS[yypt-0] }
 	case 45:
-		//line parser.y:215
+		//line parser.y:213
 		{ yyVAL.c = NewString(yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1]) }
 	case 46:
-		//line parser.y:217
+		//line parser.y:215
 		{ yyVAL.c = NewSymbol(yyS[yypt-0].s) }
 	}
 	goto yystack /* stack new state and value */

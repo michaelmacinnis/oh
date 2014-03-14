@@ -11,6 +11,19 @@ import (
 	"strings"
 )
 
+type Conduit interface {
+	Close()
+	ReaderClose()
+	Read() Cell
+	ReadLine() Cell
+	WriterClose()
+	Write(c Cell)
+}
+
+type Function func(t *Task, args Cell) bool
+
+type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
+
 type Atom interface {
 	Cell
 
@@ -43,17 +56,6 @@ type Closure interface {
 	Lexical() *Scope
 }
 
-/* This is not a Cell ... */
-type Conduit interface {
-	Close()
-	ReaderClose()
-	Read() Cell
-	ReadLine() Cell
-	WriterClose()
-	Write(c Cell)
-}
-
-/* ... this is a Cell. */
 type ConduitContext interface {
 	Conduit
 	Context
@@ -84,8 +86,6 @@ type Number interface {
 	Multiply(c Cell) Number
 	Subtract(c Cell) Number
 }
-
-type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
 
 const (
 	SaveCarCode = 1 << iota
@@ -1325,24 +1325,6 @@ func (self *Env) Remove(key Cell) bool {
 	delete(self.hash, key.String())
 
 	return ok
-}
-
-/* Function cell definition. */
-
-type Function func(t *Task, args Cell) bool
-
-func (self Function) Bool() bool {
-	return true
-}
-
-func (self Function) String() string {
-	return fmt.Sprintf("%%function %p%%", self)
-}
-
-func (self Function) Equal(c Cell) bool {
-	// Functions can only be compared to nil. 
-	// return c.(Function) == self
-	return false
 }
 
 /*
