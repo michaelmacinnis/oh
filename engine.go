@@ -305,8 +305,7 @@ func number(s string) bool {
 }
 
 func rpipe(c Cell) *os.File {
-	r := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
-	return r.Get().(*Pipe).ReadFd()
+	return c.(*Pipe).ReadFd()
 }
 
 func run(t *Task, end Cell) (successful bool) {
@@ -569,8 +568,7 @@ func tinue(t *Task, args Cell) bool {
 }
 
 func wpipe(c Cell) *os.File {
-	w := Resolve(c.(Context).Expose(), nil, NewSymbol("guts"))
-	return w.Get().(*Pipe).WriteFd()
+	return c.(*Pipe).WriteFd()
 }
 
 func Evaluate(c Cell) {
@@ -909,17 +907,8 @@ func Start(i bool) {
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-channel", func(t *Task, args Cell) bool {
-		o, ok := Car(args).(Context)
-		if !ok {
-			return t.Return(False)
-		}
+		_, ok := Car(args).(*Channel)
 
-		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
-		if g == nil {
-			return t.Return(False)
-		}
-
-		_, ok = g.Get().(*Channel)
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-cons", func(t *Task, args Cell) bool {
@@ -959,17 +948,8 @@ func Start(i bool) {
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
-		o, ok := Car(args).(Context)
-		if !ok {
-			return t.Return(False)
-		}
+		_, ok := Car(args).(*Pipe)
 
-		g := Resolve(o.Expose(), nil, NewSymbol("guts"))
-		if g == nil {
-			return t.Return(False)
-		}
-
-		_, ok = g.Get().(*Pipe)
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-status", func(t *Task, args Cell) bool {

@@ -981,10 +981,6 @@ func conduit_write(t *Task, args Cell) bool {
 }
 
 func NewConduit(c Conduit) Context {
-	s := c.Expose()
-
-	s.Define(NewSymbol("guts"), c)
-
         c.Public(NewSymbol("close"), conduit_method(conduit_close, c))
         c.Public(NewSymbol("reader-close"), conduit_method(conduit_rclose, c))
         c.Public(NewSymbol("read"), conduit_method(conduit_read, c))
