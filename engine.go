@@ -64,9 +64,9 @@ func apply(t *Task, args Cell) bool {
 	t.Code = m.Ref().Code()
 	t.NewBlock(t.Dynamic, m.Ref().Lexical())
 
-	context := m.Ref().Context()
-	if context != Null {
-		t.Lexical.Public(context, m.Self())
+	label := m.Ref().Label()
+	if label != Null {
+		t.Lexical.Public(label, m.Self())
 	}
 
 	formal := m.Ref().Formal()
@@ -85,10 +85,10 @@ func apply(t *Task, args Cell) bool {
 }
 
 func combiner(t *Task, n NewCombiner) bool {
-	context := Null
+	label := Null
 	formal := Car(t.Code)
 	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
-		context = formal
+		label = formal
 		formal = Cadr(t.Code)
 		t.Code = Cdr(t.Code)
 	}
@@ -100,8 +100,8 @@ func combiner(t *Task, n NewCombiner) bool {
 	block := Cddr(t.Code)
 	scope := t.Lexical.Expose()
 
-	c := n(apply, block, context, formal, scope)
-	if context == Null {
+	c := n(apply, block, label, formal, scope)
+	if label == Null {
 		SetCar(t.Scratch, NewUnbound(c))
 	} else {
 		SetCar(t.Scratch, NewBound(c, scope))
@@ -284,10 +284,6 @@ func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
 	}
 
 	return true, ""
-}
-
-func method(body Function, scope *Scope) Binding {
-	return NewBound(NewMethod(body, Null, Null, Null, scope), scope)
 }
 
 func module(f string) (string, error) {

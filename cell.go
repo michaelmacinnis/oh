@@ -22,7 +22,7 @@ type Conduit interface {
 
 type Function func(t *Task, args Cell) bool
 
-type NewCombiner func(b Function, c, e, f Cell, s *Scope) Closure
+type NewCombiner func(b Function, c, e, f Cell, l Context) Closure
 
 type Atom interface {
 	Cell
@@ -51,9 +51,9 @@ type Closure interface {
 
 	Body() Function
 	Code() Cell
-	Context() Cell
 	Formal() Cell
-	Lexical() *Scope
+	Label() Cell
+	Lexical() Context
 }
 
 type ConduitContext interface {
@@ -72,6 +72,12 @@ type Context interface {
 	Prev() Context
 	Public(key, value Cell)
 	Remove(key Cell) bool
+
+	DefineBuiltin(k string, f Function)
+	DefineMethod(k string, f Function)
+	DefineSyntax(k string, f Function)
+	PublicMethod(k string, f Function)
+	PublicSyntax(k string, f Function)
 }
 
 type Number interface {
@@ -939,6 +945,10 @@ func (self *Pair) Equal(c Cell) bool {
 
 /* Conduit helper functions */
 
+func method(body Function, lexical Context, self *Scope) Binding {
+        return NewBound(NewMethod(body, Null, Null, Null, lexical), self)
+}
+
 func conduit_close(t *Task, args Cell) bool {
         self := Car(t.Scratch).(Binding).Self()
         r := Resolve(self, nil, NewSymbol("guts"))
@@ -976,6 +986,7 @@ func conduit_write(t *Task, args Cell) bool {
         self := Car(t.Scratch).(Binding).Self()
         r := Resolve(self, nil, NewSymbol("guts"))
         r.Get().(Conduit).Write(args)
+
         return t.Return(True)
 }
 
@@ -984,12 +995,12 @@ func conduit_object(cc ConduitContext) Context {
 
         cs.Define(NewSymbol("guts"), cc)
 
-        cs.Public(NewSymbol("close"), method(conduit_close, cs))
-        cs.Public(NewSymbol("reader-close"), method(conduit_rclose, cs))
-        cs.Public(NewSymbol("read"), method(conduit_read, cs))
-        cs.Public(NewSymbol("readline"), method(conduit_readline, cs))
-        cs.Public(NewSymbol("writer-close"), method(conduit_wclose, cs))
-        cs.Public(NewSymbol("write"), method(conduit_write, cs))
+        cs.Public(NewSymbol("close"), method(conduit_close, cc, cs))
+        cs.Public(NewSymbol("reader-close"), method(conduit_rclose, cc, cs))
+        cs.Public(NewSymbol("read"), method(conduit_read, cc, cs))
+        cs.Public(NewSymbol("readline"), method(conduit_readline, cc, cs))
+        cs.Public(NewSymbol("writer-close"), method(conduit_wclose, cc, cs))
+        cs.Public(NewSymbol("write"), method(conduit_write, cc, cs))
 
         return cc.(Context)
 }
@@ -1173,9 +1184,9 @@ func (self *Pipe) WriteFd() *os.File {
 type Combiner struct {
 	body    Function
 	code    Cell
-	context Cell
 	formal  Cell
-	lexical *Scope
+	label   Cell
+	lexical Context
 }
 
 func (self *Combiner) Bool() bool {
@@ -1190,15 +1201,15 @@ func (self *Combiner) Code() Cell {
 	return self.code
 }
 
-func (self *Combiner) Context() Cell {
-	return self.context
-}
-
 func (self *Combiner) Formal() Cell {
 	return self.formal
 }
 
-func (self *Combiner) Lexical() *Scope {
+func (self *Combiner) Label() Cell {
+	return self.label
+}
+
+func (self *Combiner) Lexical() Context {
 	return self.lexical
 }
 
@@ -1208,9 +1219,9 @@ type Builtin struct {
 	Combiner
 }
 
-func NewBuiltin(b Function, c, e, f Cell, s *Scope) Closure {
+func NewBuiltin(b Function, c, s, f Cell, l Context) Closure {
 	return &Builtin{
-		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
 	}
 }
 
@@ -1228,9 +1239,9 @@ type Method struct {
 	Combiner
 }
 
-func NewMethod(b Function, c, e, f Cell, s *Scope) Closure {
+func NewMethod(b Function, c, s, f Cell, l Context) Closure {
 	return &Method{
-		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
 	}
 }
 
@@ -1248,9 +1259,9 @@ type Syntax struct {
 	Combiner
 }
 
-func NewSyntax(b Function, c, e, f Cell, s *Scope) Closure {
+func NewSyntax(b Function, c, s, f Cell, l Context) Closure {
 	return &Syntax{
-		Combiner{body: b, code: c, context: e, formal: f, lexical: s},
+		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
 	}
 }
 
