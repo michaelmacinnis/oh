@@ -11,15 +11,6 @@ import (
 	"strings"
 )
 
-type Conduit interface {
-	Close()
-	ReaderClose()
-	Read() Cell
-	ReadLine() Cell
-	WriterClose()
-	Write(c Cell)
-}
-
 type Function func(t *Task, args Cell) bool
 
 type NewCombiner func(b Function, c, e, f Cell, l Context) Closure
@@ -35,9 +26,9 @@ type Atom interface {
 type Binding interface {
 	Cell
 
-	Bind(s *Scope) Binding
+	Bind(c Context) Binding
 	Ref() Closure
-	Self() *Scope
+	Self() Context
 }
 
 type Cell interface {
@@ -56,9 +47,15 @@ type Closure interface {
 	Lexical() Context
 }
 
-type ConduitContext interface {
-	Conduit
+type Conduit interface {
 	Context
+
+	Close()
+	ReaderClose()
+	Read() Cell
+	ReadLine() Cell
+	WriterClose()
+	Write(c Cell)
 }
 
 type Context interface {
@@ -945,64 +942,57 @@ func (self *Pair) Equal(c Cell) bool {
 
 /* Conduit helper functions */
 
-func method(body Function, lexical Context, self *Scope) Binding {
-        return NewBound(NewMethod(body, Null, Null, Null, lexical), self)
-}
-
 func conduit_close(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        r.Get().(Conduit).Close()
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+        c.Close()
         return t.Return(True)
 }
 
+func conduit_method(body Function, context Context) Binding {
+        return NewUnbound(NewMethod(body, context, Null, Null, nil))
+}
+
 func conduit_rclose(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        r.Get().(Conduit).ReaderClose()
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+        c.ReaderClose()
         return t.Return(True)
 }
 
 func conduit_read(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        return t.Return(r.Get().(Conduit).Read())
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+        return t.Return(c.Read())
 }
 
 func conduit_readline(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        return t.Return(r.Get().(Conduit).ReadLine())
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+        return t.Return(c.ReadLine())
 }
 
 func conduit_wclose(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        r.Get().(Conduit).WriterClose()
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+        c.WriterClose()
         return t.Return(True)
 }
 
 func conduit_write(t *Task, args Cell) bool {
-        self := Car(t.Scratch).(Binding).Self()
-        r := Resolve(self, nil, NewSymbol("guts"))
-        r.Get().(Conduit).Write(args)
-
+	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c.Write(args)
         return t.Return(True)
 }
 
-func conduit_object(cc ConduitContext) Context {
-        cs := cc.Expose()
+func NewConduit(c Conduit) Context {
+	s := c.Expose()
 
-        cs.Define(NewSymbol("guts"), cc)
+	s.Define(NewSymbol("guts"), c)
 
-        cs.Public(NewSymbol("close"), method(conduit_close, cc, cs))
-        cs.Public(NewSymbol("reader-close"), method(conduit_rclose, cc, cs))
-        cs.Public(NewSymbol("read"), method(conduit_read, cc, cs))
-        cs.Public(NewSymbol("readline"), method(conduit_readline, cc, cs))
-        cs.Public(NewSymbol("writer-close"), method(conduit_wclose, cc, cs))
-        cs.Public(NewSymbol("write"), method(conduit_write, cc, cs))
+        c.Public(NewSymbol("close"), conduit_method(conduit_close, c))
+        c.Public(NewSymbol("reader-close"), conduit_method(conduit_rclose, c))
+        c.Public(NewSymbol("read"), conduit_method(conduit_read, c))
+        c.Public(NewSymbol("readline"), conduit_method(conduit_readline, c))
+        c.Public(NewSymbol("writer-close"), conduit_method(conduit_wclose, c))
+        c.Public(NewSymbol("write"), conduit_method(conduit_write, c))
 
-        return cc.(Context)
+        return c
 }
 
 /* Channel cell definition. */
@@ -1013,7 +1003,7 @@ type Channel struct {
 }
 
 func NewChannel(t *Task, cap int) Context {
-	return conduit_object(&Channel{
+	return NewConduit(&Channel{
 		NewObject(NewScope(t.Lexical.Expose())),
 		make(chan Cell, cap),
 	})
@@ -1086,7 +1076,7 @@ func NewPipe(t *Task, r *os.File, w *os.File) Context {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return conduit_object(p)
+	return NewConduit(p)
 }
 
 func (self *Pipe) String() string {
@@ -1700,11 +1690,11 @@ func (self *Scope) PublicSyntax(k string, f Function) {
 
 type Bound struct {
 	ref   Closure
-	scope *Scope
+	context Context
 }
 
-func NewBound(ref Closure, scope *Scope) *Bound {
-	return &Bound{ref, scope}
+func NewBound(ref Closure, context Context) *Bound {
+	return &Bound{ref, context}
 }
 
 func (self *Bound) Bool() bool {
@@ -1717,26 +1707,26 @@ func (self *Bound) String() string {
 
 func (self *Bound) Equal(c Cell) bool {
 	if m, ok := c.(*Bound); ok {
-		return self.ref == m.Ref() && self.scope == m.Self()
+		return self.ref == m.Ref() && self.context == m.Self()
 	}
 	return false
 }
 
 /* Bound-specific functions */
 
-func (self *Bound) Bind(s *Scope) Binding {
-	if s == self.scope {
+func (self *Bound) Bind(c Context) Binding {
+	if c == self.context {
 		return self
 	}
-	return NewBound(self.ref, s)
+	return NewBound(self.ref, c)
 }
 
 func (self *Bound) Ref() Closure {
 	return self.ref
 }
 
-func (self *Bound) Self() *Scope {
-	return self.scope
+func (self *Bound) Self() Context {
+	return self.context
 }
 
 /* Unbound cell definition. */
@@ -1766,7 +1756,7 @@ func (self *Unbound) Equal(c Cell) bool {
 
 /* Unbound-specific functions */
 
-func (self *Unbound) Bind(s *Scope) Binding {
+func (self *Unbound) Bind(c Context) Binding {
 	return self
 }
 
@@ -1774,7 +1764,7 @@ func (self *Unbound) Ref() Closure {
 	return self.ref
 }
 
-func (self *Unbound) Self() *Scope {
+func (self *Unbound) Self() Context {
 	return nil
 }
 
