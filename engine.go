@@ -101,7 +101,7 @@ func combiner(t *Task, n NewCombiner) bool {
 	body := Cddr(t.Code)
 	scope := t.Lexical
 
-	c := n(body, label, params, scope, apply)
+	c := n(apply, body, label, params, scope)
 	if label == Null {
 		SetCar(t.Scratch, NewUnbound(c))
 	} else {
@@ -587,7 +587,7 @@ func ExitStatus(c Cell) int {
 func Start(i bool) {
 	interactive = i
 
-	ext = NewUnbound(NewBuiltin(Null, Null, Null, nil, external))
+	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
 
 	e, s := NewEnv(nil), NewScope(nil)
 

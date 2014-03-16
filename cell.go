@@ -13,7 +13,7 @@ import (
 
 type Function func(t *Task, args Cell) bool
 
-type NewCombiner func(b, l, p Cell, s Context, a Function) Closure
+type NewCombiner func(a Function, b, l, p Cell, s Context) Closure
 
 type Atom interface {
 	Cell
@@ -104,10 +104,58 @@ var Null Cell
 var False *Boolean
 var True *Boolean
 
+var conduit_close Closure
+var conduit_rclose Closure
+var conduit_read Closure
+var conduit_readline Closure
+var conduit_wclose Closure
+var conduit_write Closure
+
 var num [512]*Integer
 var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
+
+/* Conduit functions */
+
+func conduit(t *Task) Conduit {
+	for s := Car(t.Scratch).(Binding).Self(); s != nil; s = s.Prev() {
+		if c, ok := s.(Conduit); ok {
+			return c
+		}
+	}
+
+	panic("Not a conduit")
+	return nil
+}
+
+func conduit_close_f(t *Task, args Cell) bool {
+	conduit(t).Close()
+	return t.Return(True)
+}
+
+func conduit_rclose_f(t *Task, args Cell) bool {
+	conduit(t).ReaderClose()
+	return t.Return(True)
+}
+
+func conduit_read_f(t *Task, args Cell) bool {
+	return t.Return(conduit(t).Read())
+}
+
+func conduit_readline_f(t *Task, args Cell) bool {
+	return t.Return(conduit(t).ReadLine())
+}
+
+func conduit_wclose_f(t *Task, args Cell) bool {
+	conduit(t).WriterClose()
+	return t.Return(True)
+}
+
+func conduit_write_f(t *Task, args Cell) bool {
+	conduit(t).Write(args)
+	return t.Return(True)
+}
 
 func init() {
 	pair := new(Pair)
@@ -121,6 +169,13 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
+
+	conduit_close = NewMethod(conduit_close_f, Null, Null, Null, nil)
+	conduit_rclose = NewMethod(conduit_rclose_f, Null, Null, Null, nil)
+	conduit_read = NewMethod(conduit_read_f, Null, Null, Null, nil)
+	conduit_readline = NewMethod(conduit_readline_f, Null, Null, Null, nil)
+	conduit_wclose = NewMethod(conduit_wclose_f, Null, Null, Null, nil)
+	conduit_write = NewMethod(conduit_write_f, Null, Null, Null, nil)
 
 	str = make(map[string]*String)
 	sym = make(map[string]*Symbol)
@@ -940,77 +995,15 @@ func (self *Pair) Equal(c Cell) bool {
 	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
 }
 
-/* Conduit helper functions */
+func bind_conduit_methods(c Conduit) Conduit {
+	c.Public(NewSymbol("close"), NewBound(conduit_close, c))
+	c.Public(NewSymbol("reader-close"), NewBound(conduit_rclose, c))
+	c.Public(NewSymbol("read"), NewBound(conduit_read, c))
+	c.Public(NewSymbol("readline"), NewBound(conduit_readline, c))
+	c.Public(NewSymbol("writer-close"), NewBound(conduit_wclose, c))
+	c.Public(NewSymbol("write"), NewBound(conduit_write, c))
 
-func conduit_close(t *Task, args Cell) bool {
-        conduit_self(t).Close()
-        return t.Return(True)
-}
-
-func conduit_method(a Function, context Context) Binding {
-        return NewBound(NewMethod(context, Null, Null, nil, a), context)
-}
-
-func conduit_rclose(t *Task, args Cell) bool {
-        conduit_self(t).ReaderClose()
-        return t.Return(True)
-}
-
-func conduit_read(t *Task, args Cell) bool {
-        return t.Return(conduit_self(t).Read())
-}
-
-func conduit_readline(t *Task, args Cell) bool {
-        return t.Return(conduit_self(t).ReadLine())
-}
-
-func conduit_self(t *Task) Conduit {
-	for s := Car(t.Scratch).(Binding).Self(); s != nil; s = s.Prev() {
-		if c, ok := s.(Conduit); ok {
-			return c
-		}
-	}
-
-	panic("Not a conduit")
-	return nil
-}
-		 
-
-func conduit_wclose(t *Task, args Cell) bool {
-        conduit_self(t).WriterClose()
-        return t.Return(True)
-}
-
-func conduit_write(t *Task, args Cell) bool {
-	conduit_self(t).Write(args)
-        return t.Return(True)
-}
-
-var conduit_close_method Closure = nil
-var conduit_rclose_method Closure = nil
-var conduit_read_method Closure = nil
-var conduit_readline_method Closure = nil
-var conduit_wclose_method Closure = nil
-var conduit_write_method Closure = nil
-
-func BindConduitMethods(c Conduit) Conduit {
-	if conduit_close_method == nil {
-		conduit_close_method = NewMethod(Null, Null, Null, nil, conduit_close)
-		conduit_rclose_method = NewMethod(Null, Null, Null, nil, conduit_rclose)
-		conduit_read_method = NewMethod(Null, Null, Null, nil, conduit_read)
-		conduit_readline_method = NewMethod(Null, Null, Null, nil, conduit_readline)
-		conduit_wclose_method = NewMethod(Null, Null, Null, nil, conduit_wclose)
-		conduit_write_method = NewMethod(Null, Null, Null, nil, conduit_write)
-	}
-
-        c.Public(NewSymbol("close"), NewBound(conduit_close_method, c))
-        c.Public(NewSymbol("reader-close"), NewBound(conduit_rclose_method, c))
-        c.Public(NewSymbol("read"), NewBound(conduit_read_method, c))
-        c.Public(NewSymbol("readline"), NewBound(conduit_readline_method, c))
-        c.Public(NewSymbol("writer-close"), NewBound(conduit_wclose_method, c))
-        c.Public(NewSymbol("write"), NewBound(conduit_write_method, c))
-
-        return c
+	return c
 }
 
 /* Channel cell definition. */
@@ -1021,7 +1014,7 @@ type Channel struct {
 }
 
 func NewChannel(t *Task, cap int) Conduit {
-	return BindConduitMethods(&Channel{
+	return bind_conduit_methods(&Channel{
 		NewObject(NewScope(t.Lexical.Expose())),
 		make(chan Cell, cap),
 	})
@@ -1085,7 +1078,7 @@ type Pipe struct {
 func NewPipe(t *Task, r *os.File, w *os.File) Conduit {
 	p := &Pipe{
 		Object: NewObject(NewScope(t.Lexical.Expose())),
-		b: nil, c: nil, d: nil, r: r, w: w,
+		b:      nil, c: nil, d: nil, r: r, w: w,
 	}
 
 	if r == nil && w == nil {
@@ -1098,7 +1091,7 @@ func NewPipe(t *Task, r *os.File, w *os.File) Conduit {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return BindConduitMethods(p)
+	return bind_conduit_methods(p)
 }
 
 func (self *Pipe) String() string {
@@ -1198,11 +1191,11 @@ func (self *Pipe) WriteFd() *os.File {
 /* Combiner cell definition. */
 
 type Combiner struct {
-	applier    Function
+	applier Function
 	body    Cell
 	label   Cell
 	params  Cell
-	scope Context
+	scope   Context
 }
 
 func (self *Combiner) Bool() bool {
@@ -1235,7 +1228,7 @@ type Builtin struct {
 	Combiner
 }
 
-func NewBuiltin(b, l, p Cell, s Context, a Function) Closure {
+func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
 	return &Builtin{
 		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
@@ -1255,7 +1248,7 @@ type Method struct {
 	Combiner
 }
 
-func NewMethod(b, l, p Cell, s Context, a Function) Closure {
+func NewMethod(a Function, b, l, p Cell, s Context) Closure {
 	return &Method{
 		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
@@ -1275,7 +1268,7 @@ type Syntax struct {
 	Combiner
 }
 
-func NewSyntax(b, l, p Cell, s Context, a Function) Closure {
+func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
 	return &Syntax{
 		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
@@ -1416,7 +1409,7 @@ func (self *Object) Define(key Cell, value Cell) {
 
 type Continuation struct {
 	Scratch Cell // or Dump.
-	Stack Cell
+	Stack   Cell
 }
 
 func NewContinuation(scratch Cell, stack Cell) *Continuation {
@@ -1590,7 +1583,7 @@ type Task struct {
 func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
 	t := &Task{
 		Registers: &Registers{
-			Continuation: Continuation {
+			Continuation: Continuation{
 				Scratch: List(NewStatus(0)),
 				Stack:   List(NewInteger(state)),
 			},
@@ -1710,35 +1703,35 @@ func (self *Scope) Remove(key Cell) bool {
 	return true
 }
 
-func (self *Scope) DefineBuiltin(k string, f Function) {
+func (self *Scope) DefineBuiltin(k string, a Function) {
 	self.Define(NewSymbol(k),
-		NewUnbound(NewBuiltin(Null, Null, Null, self, f)))
+		NewUnbound(NewBuiltin(a, Null, Null, Null, self)))
 }
 
-func (self *Scope) DefineMethod(k string, f Function) {
+func (self *Scope) DefineMethod(k string, a Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewMethod(Null, Null, Null, self, f), self))
+		NewBound(NewMethod(a, Null, Null, Null, self), self))
 }
 
-func (self *Scope) PublicMethod(k string, f Function) {
+func (self *Scope) PublicMethod(k string, a Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewMethod(Null, Null, Null, self, f), self))
+		NewBound(NewMethod(a, Null, Null, Null, self), self))
 }
 
-func (self *Scope) DefineSyntax(k string, f Function) {
+func (self *Scope) DefineSyntax(k string, a Function) {
 	self.Define(NewSymbol(k),
-		NewBound(NewSyntax(Null, Null, Null, self, f), self))
+		NewBound(NewSyntax(a, Null, Null, Null, self), self))
 }
 
-func (self *Scope) PublicSyntax(k string, f Function) {
+func (self *Scope) PublicSyntax(k string, a Function) {
 	self.Public(NewSymbol(k),
-		NewBound(NewSyntax(Null, Null, Null, self, f), self))
+		NewBound(NewSyntax(a, Null, Null, Null, self), self))
 }
 
 /* Bound cell definition. */
 
 type Bound struct {
-	ref   Closure
+	ref     Closure
 	context Context
 }
 
