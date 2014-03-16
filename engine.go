@@ -67,7 +67,7 @@ func apply(t *Task, args Cell) bool {
 
 	label := m.Ref().Label()
 	if label != Null {
-		t.Lexical.Public(label, m.Self())
+		t.Lexical.Public(label, m.Self().Expose())
 	}
 
 	params := m.Ref().Params()
@@ -99,7 +99,7 @@ func combiner(t *Task, n NewCombiner) bool {
 	}
 
 	body := Cddr(t.Code)
-	scope := t.Lexical.Expose()
+	scope := t.Lexical
 
 	c := n(apply, body, label, params, scope)
 	if label == Null {
@@ -246,7 +246,7 @@ func listen(task *Task) {
 func lexical(t *Task, state int64) bool {
 	t.RemoveState()
 
-	l := Car(t.Scratch).(Binding).Self()
+	l := Car(t.Scratch).(Binding).Self().Expose()
 	if t.Lexical != l {
 		t.NewStates(SaveLexical)
 		t.Lexical = l
@@ -279,7 +279,7 @@ func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
 	} else if simple && !IsSimple(c.Get()) {
 		t.Scratch = Cons(sym, t.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {
-		t.Scratch = Cons(a.Bind(t.Lexical.Expose()), t.Scratch)
+		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
 	} else {
 		t.Scratch = Cons(c.Get(), t.Scratch)
 	}
@@ -732,12 +732,12 @@ func Start(i bool) {
 	})
 
 	s.PublicMethod("child", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
+		o := Car(t.Scratch).(Binding).Self().Expose()
 
 		return t.Return(NewObject(NewScope(o)))
 	})
 	s.PublicMethod("clone", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
+		o := Car(t.Scratch).(Binding).Self().Expose()
 
 		return t.Return(NewObject(o.Copy()))
 	})
@@ -781,7 +781,7 @@ func Start(i bool) {
 		return t.Return(Cons(Car(args), Cadr(args)))
 	})
 	s.PublicMethod("eval", func(t *Task, args Cell) bool {
-		scope := Car(t.Scratch).(Binding).Self()
+		scope := Car(t.Scratch).(Binding).Self().Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
 			t.NewStates(SaveLexical)
