@@ -40,11 +40,11 @@ type Cell interface {
 type Closure interface {
 	Cell
 
-	Body() Function
-	Code() Cell
-	Formal() Cell
+	Applier() Function
+	Body() Cell
 	Label() Cell
-	Lexical() Context
+	Params() Cell
+	Scope() Context
 }
 
 type Conduit interface {
@@ -943,39 +943,39 @@ func (self *Pair) Equal(c Cell) bool {
 /* Conduit helper functions */
 
 func conduit_close(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
         c.Close()
         return t.Return(True)
 }
 
-func conduit_method(body Function, context Context) Binding {
-        return NewUnbound(NewMethod(body, context, Null, Null, nil))
+func conduit_method(a Function, context Context) Binding {
+        return NewUnbound(NewMethod(a, context, Null, Null, nil))
 }
 
 func conduit_rclose(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
         c.ReaderClose()
         return t.Return(True)
 }
 
 func conduit_read(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
         return t.Return(c.Read())
 }
 
 func conduit_readline(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
         return t.Return(c.ReadLine())
 }
 
 func conduit_wclose(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
         c.WriterClose()
         return t.Return(True)
 }
 
 func conduit_write(t *Task, args Cell) bool {
-	c := Car(t.Scratch).(Binding).Ref().Code().(Conduit)
+	c := Car(t.Scratch).(Binding).Ref().Body().(Conduit)
 	c.Write(args)
         return t.Return(True)
 }
@@ -1168,35 +1168,35 @@ func (self *Pipe) WriteFd() *os.File {
 /* Combiner cell definition. */
 
 type Combiner struct {
-	body    Function
-	code    Cell
-	formal  Cell
+	applier    Function
+	body    Cell
 	label   Cell
-	lexical Context
+	params  Cell
+	scope Context
 }
 
 func (self *Combiner) Bool() bool {
 	return true
 }
 
-func (self *Combiner) Body() Function {
+func (self *Combiner) Applier() Function {
+	return self.applier
+}
+
+func (self *Combiner) Body() Cell {
 	return self.body
 }
 
-func (self *Combiner) Code() Cell {
-	return self.code
-}
-
-func (self *Combiner) Formal() Cell {
-	return self.formal
+func (self *Combiner) Params() Cell {
+	return self.params
 }
 
 func (self *Combiner) Label() Cell {
 	return self.label
 }
 
-func (self *Combiner) Lexical() Context {
-	return self.lexical
+func (self *Combiner) Scope() Context {
+	return self.scope
 }
 
 /* Builtin cell definition. */
@@ -1205,9 +1205,9 @@ type Builtin struct {
 	Combiner
 }
 
-func NewBuiltin(b Function, c, s, f Cell, l Context) Closure {
+func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
 	return &Builtin{
-		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
+		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 
@@ -1225,9 +1225,9 @@ type Method struct {
 	Combiner
 }
 
-func NewMethod(b Function, c, s, f Cell, l Context) Closure {
+func NewMethod(a Function, b, l, p Cell, s Context) Closure {
 	return &Method{
-		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
+		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 
@@ -1245,9 +1245,9 @@ type Syntax struct {
 	Combiner
 }
 
-func NewSyntax(b Function, c, s, f Cell, l Context) Closure {
+func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
 	return &Syntax{
-		Combiner{body: b, code: c, formal: f, label: s, lexical: l},
+		Combiner{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 

@@ -62,21 +62,21 @@ func apply(t *Task, args Cell) bool {
 
 	t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
-	t.Code = m.Ref().Code()
-	t.NewBlock(t.Dynamic, m.Ref().Lexical())
+	t.Code = m.Ref().Body()
+	t.NewBlock(t.Dynamic, m.Ref().Scope())
 
 	label := m.Ref().Label()
 	if label != Null {
 		t.Lexical.Public(label, m.Self())
 	}
 
-	formal := m.Ref().Formal()
-	for args != Null && formal != Null && IsAtom(Car(formal)) {
-		t.Lexical.Public(Car(formal), Car(args))
-		args, formal = Cdr(args), Cdr(formal)
+	params := m.Ref().Params()
+	for args != Null && params != Null && IsAtom(Car(params)) {
+		t.Lexical.Public(Car(params), Car(args))
+		args, params = Cdr(args), Cdr(params)
 	}
-	if IsCons(Car(formal)) {
-		t.Lexical.Public(Caar(formal), args)
+	if IsCons(Car(params)) {
+		t.Lexical.Public(Caar(params), args)
 	}
 
 	cc := NewContinuation(Cdr(t.Scratch), t.Stack)
@@ -87,10 +87,10 @@ func apply(t *Task, args Cell) bool {
 
 func combiner(t *Task, n NewCombiner) bool {
 	label := Null
-	formal := Car(t.Code)
+	params := Car(t.Code)
 	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
-		label = formal
-		formal = Cadr(t.Code)
+		label = params
+		params = Cadr(t.Code)
 		t.Code = Cdr(t.Code)
 	}
 
@@ -98,10 +98,10 @@ func combiner(t *Task, n NewCombiner) bool {
 		panic("expected 'as'")
 	}
 
-	block := Cddr(t.Code)
+	body := Cddr(t.Code)
 	scope := t.Lexical.Expose()
 
-	c := n(apply, block, label, formal, scope)
+	c := n(apply, body, label, params, scope)
 	if label == Null {
 		SetCar(t.Scratch, NewUnbound(c))
 	} else {
@@ -346,7 +346,7 @@ func run(t *Task, end Cell) (successful bool) {
 		case psExecSyntax:
 			m := Car(t.Scratch).(Binding)
 
-			if m.Ref().Body()(t, t.Code) {
+			if m.Ref().Applier()(t, t.Code) {
 				continue
 			}
 
@@ -565,18 +565,6 @@ func strict(t *Task) (ok bool) {
 	}
 
 	return c.Get().(Cell).Bool()
-}
-
-func tinue(t *Task, args Cell) bool {
-	t.Code = Car(t.Code)
-
-	m := Car(t.Scratch).(Binding)
-	t.Scratch = m.Ref().Code()
-	t.Stack = m.Ref().Formal()
-
-	t.Scratch = Cons(Car(args), t.Scratch)
-
-	return false
 }
 
 func wpipe(c Cell) *os.File {
