@@ -179,6 +179,8 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Bound)(unsafe.Pointer(addr))
     case kind == "builtin":
         $$.c = (*Builtin)(unsafe.Pointer(addr))
+    case kind == "continuation":
+        $$.c = (*Continuation)(unsafe.Pointer(addr))
     case kind == "env":
         $$.c = (*Env)(unsafe.Pointer(addr))
     case kind == "method":

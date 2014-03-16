@@ -1274,12 +1274,12 @@ func (self *Env) Bool() bool {
 	return true
 }
 
-func (self *Env) String() string {
-	return fmt.Sprintf("%%env %p%%", self)
-}
-
 func (self *Env) Equal(c Cell) bool {
 	return self == c
+}
+
+func (self *Env) String() string {
+	return fmt.Sprintf("%%env %p%%", self)
 }
 
 /* Env-specific functions */
@@ -1337,10 +1337,6 @@ func NewObject(v Context) *Object {
 	return &Object{v.Expose()}
 }
 
-func (self *Object) String() string {
-	return fmt.Sprintf("%%object %p%%", self)
-}
-
 func (self *Object) Equal(c Cell) bool {
 	if self == c {
 		return true
@@ -1349,6 +1345,10 @@ func (self *Object) Equal(c Cell) bool {
 		return self.Scope == o.Expose()
 	}
 	return false
+}
+
+func (self *Object) String() string {
+	return fmt.Sprintf("%%object %p%%", self)
 }
 
 /* Object-specific functions */
@@ -1384,14 +1384,37 @@ func (self *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
 
+/* Continuation cell definition. */
+
+type Continuation struct {
+	Scratch Cell // or Dump.
+	Stack Cell
+}
+
+func NewContinuation(scratch Cell, stack Cell) *Continuation {
+	return &Continuation{Scratch: scratch, Stack: stack}
+}
+
+func (self *Continuation) Bool() bool {
+	return true
+}
+
+func (self *Continuation) Equal(c Cell) bool {
+	return self == c
+}
+
+func (self *Continuation) String() string {
+	return fmt.Sprintf("%%continuation %p%%", self)
+}
+
 /* Registers cell definition. */
 
 type Registers struct {
-	Code    Cell // or Control
+	Continuation
+
+	Code    Cell // or Control.
 	Dynamic *Env
 	Lexical Context
-	Scratch Cell // or Dump
-	Stack   Cell
 }
 
 /* Registers-specific functions. */
@@ -1539,11 +1562,13 @@ type Task struct {
 func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
 	t := &Task{
 		Registers: &Registers{
+			Continuation: Continuation {
+				Scratch: List(NewStatus(0)),
+				Stack:   List(NewInteger(state)),
+			},
 			Code:    code,
 			Dynamic: dynamic,
 			Lexical: lexical,
-			Scratch: List(NewStatus(0)),
-			Stack:   List(NewInteger(state)),
 		},
 		Done:  make(chan Cell, 1),
 		Eval:  make(chan Cell, 1),

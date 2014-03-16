@@ -40,6 +40,7 @@ const (
 	psExecSyntax
 	psExecWhileBody
 	psExecWhileTest
+	psReturn
 
 	psMax
 )
@@ -78,8 +79,8 @@ func apply(t *Task, args Cell) bool {
 		t.Lexical.Public(Caar(formal), args)
 	}
 
-	con := NewUnbound(NewMethod(tinue, Cdr(t.Scratch), Null, t.Stack, nil))
-	t.Lexical.Public(NewSymbol("return"), con)
+	cc := NewContinuation(Cdr(t.Scratch), t.Stack)
+	t.Lexical.Public(NewSymbol("return"), cc)
 
 	return true
 }
@@ -428,6 +429,9 @@ func run(t *Task, end Cell) (successful bool) {
 					continue
 				}
 
+			case *Continuation:
+				t.ReplaceStates(psReturn, psEvalArguments)
+
 			default:
 				panic(fmt.Sprintf("can't evaluate: %v", t))
 			}
@@ -520,6 +524,14 @@ func run(t *Task, end Cell) (successful bool) {
 			t.Scratch = Cdr(t.Scratch)
 
 			continue
+
+		case psReturn:
+			args := t.Arguments()
+
+			t.Continuation = *Car(t.Scratch).(*Continuation)
+			t.Scratch = Cons(Car(args), t.Scratch)
+
+			break
 
 		default:
 			if state >= SaveMax {
