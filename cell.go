@@ -986,13 +986,29 @@ func conduit_write(t *Task, args Cell) bool {
         return t.Return(True)
 }
 
-func NewConduit(c Conduit) Conduit {
-        c.Public(NewSymbol("close"), conduit_method(conduit_close, c))
-        c.Public(NewSymbol("reader-close"), conduit_method(conduit_rclose, c))
-        c.Public(NewSymbol("read"), conduit_method(conduit_read, c))
-        c.Public(NewSymbol("readline"), conduit_method(conduit_readline, c))
-        c.Public(NewSymbol("writer-close"), conduit_method(conduit_wclose, c))
-        c.Public(NewSymbol("write"), conduit_method(conduit_write, c))
+var conduit_close_method Closure = nil
+var conduit_rclose_method Closure = nil
+var conduit_read_method Closure = nil
+var conduit_readline_method Closure = nil
+var conduit_wclose_method Closure = nil
+var conduit_write_method Closure = nil
+
+func BindConduitMethods(c Conduit) Conduit {
+	if conduit_close_method == nil {
+		conduit_close_method = NewMethod(Null, Null, Null, nil, conduit_close)
+		conduit_rclose_method = NewMethod(Null, Null, Null, nil, conduit_rclose)
+		conduit_read_method = NewMethod(Null, Null, Null, nil, conduit_read)
+		conduit_readline_method = NewMethod(Null, Null, Null, nil, conduit_readline)
+		conduit_wclose_method = NewMethod(Null, Null, Null, nil, conduit_wclose)
+		conduit_write_method = NewMethod(Null, Null, Null, nil, conduit_write)
+	}
+
+        c.Public(NewSymbol("close"), NewBound(conduit_close_method, c))
+        c.Public(NewSymbol("reader-close"), NewBound(conduit_rclose_method, c))
+        c.Public(NewSymbol("read"), NewBound(conduit_read_method, c))
+        c.Public(NewSymbol("readline"), NewBound(conduit_readline_method, c))
+        c.Public(NewSymbol("writer-close"), NewBound(conduit_wclose_method, c))
+        c.Public(NewSymbol("write"), NewBound(conduit_write_method, c))
 
         return c
 }
@@ -1005,7 +1021,7 @@ type Channel struct {
 }
 
 func NewChannel(t *Task, cap int) Conduit {
-	return NewConduit(&Channel{
+	return BindConduitMethods(&Channel{
 		NewObject(NewScope(t.Lexical.Expose())),
 		make(chan Cell, cap),
 	})
@@ -1082,7 +1098,7 @@ func NewPipe(t *Task, r *os.File, w *os.File) Conduit {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return NewConduit(p)
+	return BindConduitMethods(p)
 }
 
 func (self *Pipe) String() string {
