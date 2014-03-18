@@ -306,7 +306,7 @@ func number(s string) bool {
 }
 
 func rpipe(c Cell) *os.File {
-	return c.(*Pipe).ReadFd()
+	return GetConduit(c.(Context)).(*Pipe).ReadFd()
 }
 
 func run(t *Task, end Cell) (successful bool) {
@@ -568,7 +568,7 @@ func strict(t *Task) (ok bool) {
 }
 
 func wpipe(c Cell) *os.File {
-	return c.(*Pipe).WriteFd()
+	return GetConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
 func Evaluate(c Cell) {
@@ -907,7 +907,7 @@ func Start(i bool) {
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-channel", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Channel)
+		_, ok := GetConduit(Car(args).(Context)).(*Channel)
 
 		return t.Return(NewBoolean(ok))
 	})
@@ -948,7 +948,7 @@ func Start(i bool) {
 		return t.Return(NewBoolean(ok))
 	})
 	s.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Pipe)
+		_, ok := GetConduit(Car(args).(Context)).(*Pipe)
 
 		return t.Return(NewBoolean(ok))
 	})

@@ -118,11 +118,12 @@ var sym map[string]*Symbol
 
 /* Conduit functions */
 
-func conduit(t *Task) Conduit {
-	for s := Car(t.Scratch).(Binding).Self(); s != nil; s = s.Prev() {
-		if c, ok := s.(Conduit); ok {
+func GetConduit(o Context) Conduit {
+	for o != nil {
+		if c, ok := o.Expose().(Conduit); ok {
 			return c
 		}
+		o = o.Prev()
 	}
 
 	panic("Not a conduit")
@@ -130,30 +131,30 @@ func conduit(t *Task) Conduit {
 }
 
 func conduit_close_f(t *Task, args Cell) bool {
-	conduit(t).Close()
+	GetConduit(Car(t.Scratch).(Binding).Self()).Close()
 	return t.Return(True)
 }
 
 func conduit_rclose_f(t *Task, args Cell) bool {
-	conduit(t).ReaderClose()
+	GetConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
 	return t.Return(True)
 }
 
 func conduit_read_f(t *Task, args Cell) bool {
-	return t.Return(conduit(t).Read())
+	return t.Return(GetConduit(Car(t.Scratch).(Binding).Self()).Read())
 }
 
 func conduit_readline_f(t *Task, args Cell) bool {
-	return t.Return(conduit(t).ReadLine())
+	return t.Return(GetConduit(Car(t.Scratch).(Binding).Self()).ReadLine())
 }
 
 func conduit_wclose_f(t *Task, args Cell) bool {
-	conduit(t).WriterClose()
+	GetConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
 	return t.Return(True)
 }
 
 func conduit_write_f(t *Task, args Cell) bool {
-	conduit(t).Write(args)
+	GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
 	return t.Return(True)
 }
 
@@ -995,7 +996,7 @@ func (self *Pair) Equal(c Cell) bool {
 	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
 }
 
-func bind_conduit_methods(c Conduit) Conduit {
+func conduit_object(c Conduit) Context {
 	c.Public(NewSymbol("close"), NewBound(conduit_close, c))
 	c.Public(NewSymbol("reader-close"), NewBound(conduit_rclose, c))
 	c.Public(NewSymbol("read"), NewBound(conduit_read, c))
@@ -1003,19 +1004,19 @@ func bind_conduit_methods(c Conduit) Conduit {
 	c.Public(NewSymbol("writer-close"), NewBound(conduit_wclose, c))
 	c.Public(NewSymbol("write"), NewBound(conduit_write, c))
 
-	return c
+	return NewObject(c)
 }
 
 /* Channel cell definition. */
 
 type Channel struct {
-	*Object
+	*Scope
 	v chan Cell
 }
 
-func NewChannel(t *Task, cap int) Conduit {
-	return bind_conduit_methods(&Channel{
-		NewObject(NewScope(t.Lexical.Expose())),
+func NewChannel(t *Task, cap int) Context {
+	return conduit_object(&Channel{
+		NewScope(t.Lexical.Expose()),
 		make(chan Cell, cap),
 	})
 }
@@ -1067,7 +1068,7 @@ func (self *Channel) Write(c Cell) {
 /* Pipe cell definition. */
 
 type Pipe struct {
-	*Object
+	*Scope
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
@@ -1075,10 +1076,10 @@ type Pipe struct {
 	w *os.File
 }
 
-func NewPipe(t *Task, r *os.File, w *os.File) Conduit {
+func NewPipe(t *Task, r *os.File, w *os.File) Context {
 	p := &Pipe{
-		Object: NewObject(NewScope(t.Lexical.Expose())),
-		b:      nil, c: nil, d: nil, r: r, w: w,
+		Scope: NewScope(t.Lexical.Expose()),
+		b:     nil, c: nil, d: nil, r: r, w: w,
 	}
 
 	if r == nil && w == nil {
@@ -1091,7 +1092,7 @@ func NewPipe(t *Task, r *os.File, w *os.File) Conduit {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return bind_conduit_methods(p)
+	return conduit_object(p)
 }
 
 func (self *Pipe) String() string {
@@ -1379,7 +1380,7 @@ func (self *Object) String() string {
 func (self *Object) Access(key Cell) *Reference {
 	var obj Context
 	for obj = self; obj != nil; obj = obj.Prev() {
-		if value := obj.Faces().Access(key); value != nil {
+		if value := obj.Faces().prev.Access(key); value != nil {
 			return value
 		}
 	}
@@ -1397,10 +1398,6 @@ func (self *Object) Expose() Context {
 	return self.Context
 }
 
-func (self *Object) Faces() *Env {
-	return self.Context.Faces().prev
-}
-
 func (self *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
@@ -1408,7 +1405,7 @@ func (self *Object) Define(key Cell, value Cell) {
 /* Continuation cell definition. */
 
 type Continuation struct {
-	Scratch Cell // or Dump.
+	Scratch Cell
 	Stack   Cell
 }
 
@@ -1431,9 +1428,9 @@ func (self *Continuation) String() string {
 /* Registers cell definition. */
 
 type Registers struct {
-	Continuation
+	Continuation // Stack and Dump
 
-	Code    Cell // or Control.
+	Code    Cell // Control
 	Dynamic *Env
 	Lexical Context
 }
