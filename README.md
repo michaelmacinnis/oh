@@ -128,7 +128,7 @@ So similar that others have combined the two by embedding the Unix
 shell in Lisp. The problem with embedding the Unix shell in Lisp, or
 another existing language is that the result is either "an uglier, and
 confusing, language" or a language that is more combersome when used
-as an interactive shell. [13](#13))
+as an interactive shell.([13](#13))
 
 Attempts to improve the Unix shell without embedding it in an existing
 language have been more successful. These shells share a strong family
@@ -136,7 +136,7 @@ resemblance, retaining the look and feel established by the Bourne
 shell. The most successful shells in this family (bash, ksh, zsh) are
 actually backward compatible with the Bourne shell. Unfortunately, this
 backward compatibility results in shells are "inconsistent and confusing
-command languages." [10](#10)
+command languages."([10](#10))
 
 Like csh, es, fish and rc, oh asks the question, "What would a shell
 look like if it retained the look and feel of the Unix shell but
