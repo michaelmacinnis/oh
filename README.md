@@ -2,7 +2,6 @@
 ==
 
 Oh is a Unix shell written in Go and released under an MIT-style license.
-It is similar in spirit but different in detail from other Unix shells.
 
 Oh is properly tail recursive and exposes continuations as first-class
 values:
