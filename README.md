@@ -1,8 +1,8 @@
 ﻿oh
 ==
 
-Oh is a Unix shell.  It is similar in spirit but different in detail from
-other Unix shells.
+Oh is a Unix shell written in Go.  It is similar in spirit but different in
+detail from other Unix shells.
 
 Oh is properly tail recursive and exposes continuations as first-class
 values:
@@ -61,8 +61,7 @@ extended:
         return r
     }
 
-Oh is a concurrent language and it exposes pipes, which are implicit in
-other shells, as first-class values:
+Oh exposes pipes, which are implicit in other shells, as first-class values:
 
     define p: pipe
 
