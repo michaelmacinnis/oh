@@ -1,8 +1,8 @@
 ﻿oh
 ==
 
-Oh is a Unix shell written in Go.  It is similar in spirit but different in
-detail from other Unix shells.
+Oh is a Unix shell written in Go and released under an MIT-style license.
+It is similar in spirit but different in detail from other Unix shells.
 
 Oh is properly tail recursive and exposes continuations as first-class
 values:
@@ -114,14 +114,13 @@ Then go get oh:
 
     go get github.com/michaelmacinnis/oh
 
-Oh is released under an MIT-style license.
 
 Background
 ==========
 
-Despite multiple, sometimes radical efforts to improve the Unix shell,
-its essential character has remained largely unchanged since the release
-of the Bourne shell.
+Despite multiple attempts to improve the Unix shell, its essential
+character has remained largely unchanged since the release of the
+Bourne shell.
 
 If you squint hard enough, the Unix shell and Lisp look very similar.
 So similar that others have combined the two by embedding the Unix
@@ -147,6 +146,7 @@ shell with the Scheme dialect of Lisp but, rather than attempting to
 embed a Unix shell in scheme, oh was designed from scratch and
 incorporates features from both languages.
 
+
 References
 ==========
 
@@ -159,8 +159,8 @@ Shell History
 
 <a name="3">3. [The Bourne Shell](http://partmaps.org/era/unix/shell.html)</a>
 
-Radical Attempts to Improve the Unix Shell
-------------------------------------------
+Attempts to Improve the Unix Shell
+----------------------------------
 
 <a name="4">1. [A High-Level Programming and Command Language](http://www.researchgate.net/publication/234805805_A_high-level_programming_and_command_language/file/60b7d51645d5d1022a.pdf)</a> 
 
