@@ -19,7 +19,7 @@ values:
         continue loop
     }
 
-Oh exposes environments as first-class values and uses them as the basis
+Oh also exposes environments as first-class values and uses them as the basis
 for its prototype-based object system:
 
     # Create a point prototype.
@@ -42,11 +42,6 @@ for its prototype-based object system:
     # Create a new point by cloning the point prototype:
     define o: point::clone
 
-Modules, in oh, are objects:
-
-    # Import file creating an object called m.
-    define m: import file
- 
 Oh uses the same syntax for code and data.  This enables oh to be easily
 extended:
 
@@ -61,7 +56,8 @@ extended:
         return r
     }
 
-Oh exposes pipes, which are implicit in other shells, as first-class values:
+Oh is a concurrent language. It exposes pipes, which are implicit in other
+shells, as first-class values:
 
     define p: pipe
 
