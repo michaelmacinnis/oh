@@ -3,6 +3,7 @@
 
 Oh is a Unix shell written in Go.  It is "similar in spirit but different in
 detail from" other Unix shells.[[21](#21)]
+
 The following commands behave as expected:
 
 ```
@@ -21,7 +22,7 @@ rm -r junk || echo "rm failed!"
 ```
 
 Oh uses the same syntax for code and data.  It can be easily extended with the
-syntax command:[[24](#24)]
+syntax command:
 
 ```
 # The short-circuit and operator is defined using the syntax command.
@@ -87,8 +88,8 @@ while2 (lt count (integer 100)) {
 }
 ```
 
-Oh's environments are first-class[[25](#25)] and form the basis for its
-prototype-based object system:
+Oh's environments are first-class and form the basis for its prototype-based
+object system:
 
 ```
 # Create a point prototype.
