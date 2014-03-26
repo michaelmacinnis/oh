@@ -158,8 +158,6 @@ and incorporates features from both languages.
 References
 ----------
 
-<br>
-
 Shell History:
 
 <a name="1">1. [Shell History](http://www.in-ulm.de/~mascheck/bourne/n.u-w.mashey.html)</a>
