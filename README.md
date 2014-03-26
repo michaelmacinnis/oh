@@ -2,9 +2,8 @@
 ==
 
 Oh is a Unix shell written in Go.  It is "similar in spirit but different in
-detail from" other Unix shells.[[21](#21)]
-<br>
-The following commands behave as expected:
+detail from" other Unix shells.[[21](#21)]  The following commands behave as
+expected:
 
 ```
 date
@@ -37,8 +36,7 @@ define and: syntax e (: lst) as {
 }
 ```
 
-Oh is also properly tail recursive and exposes continuations as first-class
-values:
+Oh is properly tail recursive and exposes continuations as first-class values:
 
 ```
 define label: method () as: return return
