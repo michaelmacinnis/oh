@@ -2,7 +2,7 @@
 ==
 
 Oh is a Unix shell written in Go.  It is "similar in spirit but different in
-detail from" other Unix shells.([21](#21))  The following commands behave as
+detail from" other Unix shells.[[21](#21)]  The following commands behave as
 expected:
 
     date
@@ -19,7 +19,7 @@ expected:
     rm -r junk || echo "rm failed!"
 
 Oh uses the same syntax for code and data.  It can be easily extended with the
-syntax command (which creates a fexpr - [24](#24))
+syntax command (which creates a fexpr [[24](#24)])
 
     # The short-circuit and operator is defined using the syntax command.
     define and: syntax e (: lst) as {
@@ -114,7 +114,7 @@ Then go get oh:
 Oh is released under an MIT-style license.
 
 Background
-==========
+----------
 
 Despite multiple attempts to improve the Unix shell, its essential character
 has remained largely unchanged since the release of the Bourne shell nearly
@@ -124,8 +124,8 @@ If you squint hard enough, the Unix shell and Lisp look very similar.  So
 similar that others have combined the two by embedding the Unix shell in
 Lisp.  The problem with embedding the Unix shell in Lisp, or any other
 existing language is that the result is either "an uglier, and confusing,
-language"([11](#11)) or a language that is more cumbersome when used as an
-interactive shell.([5](#5))
+language"[[11](#11)] or a language that is more cumbersome when used as an
+interactive shell.[[5](#5)]
 
 Attempts to improve the Unix shell without embedding it in an existing
 language have been more successful. Most of these shells retain the look
@@ -133,7 +133,7 @@ and feel established by the Bourne shell and so share a strong family
 resemblance.  The most successful shells in this family (bash, ksh, zsh)
 are actually backward compatible with the Bourne shell. Unfortunately, this
 backward compatibility results in shells are "inconsistent and confusing
-command languages."([8](#8))
+command languages."[[8](#8)]
 
 Like es, fish and rc, oh asks the question, "What would a shell look like
 if it retained the look and feel of the Unix shell but without aiming for
@@ -145,22 +145,22 @@ and incorporates features from both languages.
 
 
 References
-==========
+----------
 
 Shell History
--------------
 
 <a name="1">1. [Shell History](http://www.in-ulm.de/~mascheck/bourne/n.u-w.mashey.html)</a>
 
 <a name="2">2. [The Thompson Shell](http://v6shell.org/)</a>
 
 Embedding the Unix Shell in an Existing Language
-------------------------------------------------
 
 <p name="3">3. J. R. Ellis. A Lisp Shell. SIGPLAN Notices, 15(5):24-34, 1980</p>
 
 <a name="4">4. [esh, the easy shell](http://web.mit.edu/jhawk/mnt/ss.b/esh-0.5/doc/esh.html)</a>
-<a name="5">5. [The Scheme Shell](http://scsh.net/)</a><br>
+
+<a name="5">5. [The Scheme Shell](http://scsh.net/)</a>
+
 <p name="6">6. L. M. Campbell and M. D. Campbell. An Overview of the Ada Shell. In USENIX Winter: 302-313, 1986</p>
 
 <a name="7">7. [Hell: A Haskell Shell](https://github.com/chrisdone/hell)</a>
@@ -176,7 +176,6 @@ Embedding the Unix Shell in an Existing Language
 <a name="12">12. [Rush](https://github.com/adamwiggins/rush)</a>
 
 Unix Shells (Bourne Shell Compatible)
--------------------------------------
 
 <a name="13">13. [The Bourne Shell](http://partmaps.org/era/unix/shell.html)</a>
 
@@ -187,14 +186,12 @@ Unix Shells (Bourne Shell Compatible)
 <a name="16">16. [Zsh](http://www.zsh.org/)</a>
 
 Unix Shells (C Shell Compatible)
---------------------------------
 
 <a name="17">17. [An Introduction to the C shell](http://www.kitebird.com/csh-tcsh-book/csh-intro.pdf)</a>
 
 <a name="18">18. [Tcsh](http://www.tcsh.org/Welcome)</a>
 
 Unix Shells (Other)
---------------------------------
 
 <a name="19">19. [Es: A shell with higher-order functions](http://stuff.mit.edu/afs/sipb/user/yandros/doc/es-usenix-winter93.html)</a>
 
@@ -203,18 +200,15 @@ Unix Shells (Other)
 <a name="21">21. [Rc - The Plan 9 Shell](http://plan9.bell-labs.com/sys/doc/rc.html)</a>
 
 Alternative Shells
-------------------
 
 <a name="22">22. [A High-Level Programming and Command Language](http://www.researchgate.net/publication/234805805_A_high-level_programming_and_command_language/file/60b7d51645d5d1022a.pdf)</a> 
 
 <p name="23">23. Chris S. McDonald. fsh - A Functional UNIX Command Interpreter. Software - Practice & Experience 17(10): 685-700, 1987</p>
 
 Fexprs
-------
 
 <a name="24">24. [Fexprs as the Basis of Lisp Function Application or $vau : The Ultimate Abstraction](https://www.wpi.edu/Pubs/ETD/Available/etd-090110-124904/unrestricted/jshutt.pdf)</a>
 
 First-class Environments
-------------------------
 
 <a name="25">25. [First-class environments. Discuss.  ;)](http://lambda-the-ultimate.org/node/3861)</a>
