@@ -5,7 +5,7 @@ Oh is a Unix shell written in Go.  It is "similar in spirit but different in
 detail from" other Unix shells.[[21](#21)]
 The following commands behave as expected:
 
-'''
+```
 date
 cat /usr/share/dict/words
 who >user.names
@@ -18,12 +18,12 @@ cc *.c &
 mkdir junk && cd junk
 cd ..
 rm -r junk || echo "rm failed!"
-'''
+```
 
 Oh uses the same syntax for code and data.  It can be easily extended with the
 syntax command:[[24](#24)]
 
-'''
+```
 # The short-circuit and operator is defined using the syntax command.
 define and: syntax e (: lst) as {
     define r False
@@ -34,12 +34,12 @@ define and: syntax e (: lst) as {
     }
     return r
 }
-'''
+```
 
 Oh is also properly tail recursive and exposes continuations as first-class
 values:
 
-'''
+```
 define label: method () as: return return
 define continue: method (label) as: label label
 
@@ -51,12 +51,12 @@ if (lt count (integer 100)) {
     write count
     continue loop
 }
-'''
+```
 
 Oh exposes pipes, which are implicit in other shells, as first-class
 values:
 
-'''
+```
 define p: pipe
 
 spawn {
@@ -85,12 +85,12 @@ while2 (lt count (integer 100)) {
     set count: add count 1
     write count
 }
-'''
+```
 
 Oh's environments are first-class[[25](#25)] and form the basis for its
 prototype-based object system:
 
-'''
+```
 # Create a point prototype.
 define point: object {
     # Private members are created with the define command.
@@ -110,7 +110,7 @@ define point: object {
 
 # Create a new point by cloning the point prototype:
 define o: point::clone
-'''
+```
 
 To compile and run oh you will need to install the C libraries ncurses and
 libtecla. On Ubuntu 12.10, for example, do:
