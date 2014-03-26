@@ -2,8 +2,8 @@
 ==
 
 Oh is a Unix shell written in Go.  It is "similar in spirit but different in
-detail from" other Unix shells.[[21](#21)]  The following commands behave as
-expected:
+detail from" other Unix shells.[[21](#21)]
+The following commands behave as expected:
 
 '''
 date
@@ -21,7 +21,7 @@ rm -r junk || echo "rm failed!"
 '''
 
 Oh uses the same syntax for code and data.  It can be easily extended with the
-syntax command (which creates a fexpr[[24](#24)]):
+syntax command:[[24](#24)]
 
 '''
 # The short-circuit and operator is defined using the syntax command.
@@ -191,7 +191,7 @@ Embedding the Unix Shell in an Existing Language
 
 <br>
 
-Unix Shells (Bourne Shell Compatible)
+Unix Shells (Bourne Shell Family)
 
 <a name="13">13. [The Bourne Shell](http://partmaps.org/era/unix/shell.html)</a>
 
@@ -203,7 +203,7 @@ Unix Shells (Bourne Shell Compatible)
 
 <br>
 
-Unix Shells (C Shell Compatible)
+Unix Shells (C Shell Family)
 
 <a name="17">17. [An Introduction to the C shell](http://www.kitebird.com/csh-tcsh-book/csh-intro.pdf)</a>
 
