@@ -158,7 +158,9 @@ and incorporates features from both languages.
 References
 ----------
 
-Shell History
+<br>
+
+Shell History:
 
 <a name="1">1. [Shell History](http://www.in-ulm.de/~mascheck/bourne/n.u-w.mashey.html)</a>
 
@@ -166,7 +168,7 @@ Shell History
 
 <br>
 
-Embedding the Unix Shell in an Existing Language
+Embedding the Unix Shell in an Existing Language:
 
 <p name="3">3. J. R. Ellis. A Lisp Shell. SIGPLAN Notices, 15(5):24-34, 1980</p>
 
@@ -190,7 +192,7 @@ Embedding the Unix Shell in an Existing Language
 
 <br>
 
-Unix Shells (Bourne Shell Family)
+Unix Shells (Bourne Shell Family):
 
 <a name="13">13. [The Bourne Shell](http://partmaps.org/era/unix/shell.html)</a>
 
@@ -202,7 +204,7 @@ Unix Shells (Bourne Shell Family)
 
 <br>
 
-Unix Shells (C Shell Family)
+Unix Shells (C Shell Family):
 
 <a name="17">17. [An Introduction to the C shell](http://www.kitebird.com/csh-tcsh-book/csh-intro.pdf)</a>
 
@@ -210,7 +212,7 @@ Unix Shells (C Shell Family)
 
 <br>
 
-Unix Shells (Other)
+Unix Shells (Other):
 
 <a name="19">19. [Es: A shell with higher-order functions](http://stuff.mit.edu/afs/sipb/user/yandros/doc/es-usenix-winter93.html)</a>
 
@@ -220,7 +222,7 @@ Unix Shells (Other)
 
 <br>
 
-Alternative Shells
+Alternative Shells:
 
 <a name="22">22. [A High-Level Programming and Command Language](http://www.researchgate.net/publication/234805805_A_high-level_programming_and_command_language/file/60b7d51645d5d1022a.pdf)</a> 
 
@@ -228,13 +230,13 @@ Alternative Shells
 
 <br>
 
-Fexprs
+Fexprs:
 
 <a name="24">24. [Fexprs as the Basis of Lisp Function Application or $vau : The Ultimate Abstraction](https://www.wpi.edu/Pubs/ETD/Available/etd-090110-124904/unrestricted/jshutt.pdf)</a>
 
 <br>
 
-First-class Environments
+First-class Environments:
 
 <a name="25">25. [First-class environments. Discuss.  ;)](http://lambda-the-ultimate.org/node/3861)</a>
 
