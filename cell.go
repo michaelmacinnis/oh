@@ -61,7 +61,7 @@ type Conduit interface {
 type Context interface {
 	Cell
 
-	Access(key Cell) *Reference
+	Access(key Cell) Reference
 	Copy() Context
 	Define(key, value Cell)
 	Expose() Context
@@ -88,6 +88,14 @@ type Number interface {
 	Modulo(c Cell) Number
 	Multiply(c Cell) Number
 	Subtract(c Cell) Number
+}
+
+type Reference interface {
+	Cell
+
+	Copy() Reference
+	Get() Cell
+	Set(c Cell)
 }
 
 const (
@@ -447,7 +455,7 @@ func Raw(c Cell) string {
 	return c.String()
 }
 
-func Resolve(s Context, e *Env, k *Symbol) (v *Reference) {
+func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
 	v = nil
 
 	if v = s.Access(k); v == nil {
@@ -1286,12 +1294,12 @@ func (self *Syntax) Equal(c Cell) bool {
 /* Env cell definition. */
 
 type Env struct {
-	hash map[string]*Reference
+	hash map[string]Reference
 	prev *Env
 }
 
 func NewEnv(prev *Env) *Env {
-	return &Env{make(map[string]*Reference), prev}
+	return &Env{make(map[string]Reference), prev}
 }
 
 func (self *Env) Bool() bool {
@@ -1308,7 +1316,7 @@ func (self *Env) String() string {
 
 /* Env-specific functions */
 
-func (self *Env) Access(key Cell) *Reference {
+func (self *Env) Access(key Cell) Reference {
 	for env := self; env != nil; env = env.prev {
 		if value, ok := env.hash[key.String()]; ok {
 			return value
@@ -1319,7 +1327,7 @@ func (self *Env) Access(key Cell) *Reference {
 }
 
 func (self *Env) Add(key Cell, value Cell) {
-	self.hash[key.String()] = NewReference(value)
+	self.hash[key.String()] = NewVariable(value)
 }
 
 func (self *Env) Copy() *Env {
@@ -1377,7 +1385,7 @@ func (self *Object) String() string {
 
 /* Object-specific functions */
 
-func (self *Object) Access(key Cell) *Reference {
+func (self *Object) Access(key Cell) Reference {
 	var obj Context
 	for obj = self; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().prev.Access(key); value != nil {
@@ -1657,7 +1665,7 @@ func (self *Scope) Equal(c Cell) bool {
 
 /* Scope-specific functions */
 
-func (self *Scope) Access(key Cell) *Reference {
+func (self *Scope) Access(key Cell) Reference {
 	var obj Context
 	for obj = self; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
@@ -1807,38 +1815,57 @@ func (self *Unbound) Self() Context {
 	return nil
 }
 
-/* Reference cell definition. */
+/* Variable cell definition. */
 
-type Reference struct {
+type Variable struct {
 	v Cell
 }
 
-func NewReference(v Cell) *Reference {
-	return &Reference{v}
+func NewVariable(v Cell) Reference {
+	return &Variable{v}
 }
 
-func (self *Reference) Bool() bool {
+func (self *Variable) Bool() bool {
 	return true
 }
 
-func (self *Reference) String() string {
-	return fmt.Sprintf("%%reference %p%%", self)
+func (self *Variable) String() string {
+	return fmt.Sprintf("%%variable %p%%", self)
 }
 
-func (self *Reference) Equal(c Cell) bool {
+func (self *Variable) Equal(c Cell) bool {
 	return self.v.Equal(c)
 }
 
-/* Reference-specific functions */
+/* Variable-specific functions */
 
-func (self *Reference) Copy() *Reference {
-	return NewReference(self.v)
+func (self *Variable) Copy() Reference {
+	return NewVariable(self.v)
 }
 
-func (self *Reference) Get() Cell {
+func (self *Variable) Get() Cell {
 	return self.v
 }
 
-func (self *Reference) Set(c Cell) {
+func (self *Variable) Set(c Cell) {
 	self.v = c
 }
+
+/* Constant cell definition. */
+
+type Constant struct {
+	Variable
+}
+
+func NewConstant(v Cell) *Constant {
+	return &Constant{Variable{v}}
+}
+
+func (self *Constant) String() string {
+	return fmt.Sprintf("%%constant %p%%", self)
+}
+
+func (self *Constant) Set(c Cell) {
+	panic("constant cannot be set")
+}
+
