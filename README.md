@@ -20,7 +20,8 @@ cd ..
 rm -r junk || echo "rm failed!"
 ```
 
-Oh uses the same syntax for code and data and can be easily extended:
+Oh uses the same syntax for code and data. This enables it to be easily
+extended:
 
 ```
 # The short-circuit and operator is defined using the syntax command.
@@ -127,12 +128,12 @@ Background
 ----------
 
 Despite multiple attempts to improve the Unix shell, its essential character
-has remained largely unchanged since the release of the Bourne shell, nearly
-40 years ago.  Popular Unix shells have retained this look and feel and so
-share a strong family resemblance.  The most successful shells in this family
-(bash, ksh, zsh) are backward compatible with the Bourne shell.
-Unfortunately, this backward compatibility results in shells that are
-"inconsistent and confusing command languages."[[18](#18)]
+has remained largely unchanged.  Popular Unix shells have retained the look
+and feel established by the Bourne shell and so share a strong family
+resemblance.  The most successful shells in this family (bash, ksh, zsh) are
+backward compatible with the Bourne shell.  Unfortunately, this backward
+compatibility results in shells that are "inconsistent and confusing command
+languages."[[18](#18)]
 
 If you squint hard enough, the Unix shell looks very similar to other existing
 languages.  So similar that many have attempted embedding the Unix shell in
@@ -140,12 +141,11 @@ an existing language.  The problem with this approach is that the result is
 either "an uglier, and confusing, language"[[21](#21)] or a language that is
 more cumbersome when used as an interactive shell.[[23](#23)]
 
-Like other alternative shells, oh retains the look and feel of the Unix shell
-but does not aim for strict backward compatibility.  Oh makes substantial
-improvements to the programming language features of the Unix shell by
-combining the Unix shell with the Scheme dialect of Lisp. But, rather than
-attempting to embed a Unix shell in scheme, oh was designed from scratch and
-incorporates features from both languages.
+Like es, fish and rc, oh retains the look and feel of the Unix shell but does
+not aim for strict backward compatibility.  Oh makes substantial improvements
+to the programming language features of the Unix shell by borrowing heavily
+from the Scheme dialect of Lisp. Rather than attempting to embed a Unix shell
+in scheme, oh was designed from scratch.
 
 
 References
