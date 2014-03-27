@@ -1,9 +1,7 @@
 ﻿oh
 ==
 
-Oh is a Unix shell written in Go.  It is "similar in spirit but different in
-detail from" other Unix shells.[[11](#11)]  The following commands behave as
-expected:
+Oh is a Unix shell written in Go.  The following commands behave as expected:
 
 ```
 date
