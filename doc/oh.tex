@@ -323,7 +323,7 @@ empty list is an exception to this rule as it evaluates to itself.
 The define and method commands allow the creation of named methods.
 
 \begin{lstlisting}
-	define hello: method {
+	define hello: method () as {
 		write "Hello, World!"
 	}
 \end{lstlisting}
@@ -337,7 +337,7 @@ Once defined a method can be called in the same way as other commands.
 Methods can take arguments.
 
 \begin{lstlisting}
-	define sum3: method a b c {
+	define sum3: method (a b c) as {
 		add a b c
 	}
 	sum3 1 2 3
@@ -350,7 +350,7 @@ Methods can be saved in a file and then imported. If the function hello
 was defined in the file hello.oh as shown below
 
 \begin{lstlisting}
-	public hello: method {
+	public hello: method () as {
 		write "Hello, World!"
 	}
 \end{lstlisting}
@@ -476,19 +476,21 @@ number is found a process is spawned to filter out multiples of that
 prime number. These processes are strung together like beads on a string.
 
 \begin{lstlisting}
-define strict true
 
-public read-car: method self () as: car: self::read
+#!/usr/bin/env oh
+define strict True
 
-define counter: method n {
-    while true {
+Root::public read-car: method self () as: car: self::read
+
+define counter: method (n) as {
+    while True {
         write: set n: add n 1
     }
 }
 
-define filter: method base {
-    while true {
-define n: read-car
+define filter: method (base) as {
+    while True {
+	define n: read-car
         if (mod n base): write n
     }
 }
@@ -498,7 +500,7 @@ define prime-numbers: channel
 counter 2 |+ block {
     define in $stdin
 
-    while true {
+    while True {
         define prime: in::read-car
         write prime
 
@@ -509,12 +511,18 @@ counter 2 |+ block {
     }
 } > prime-numbers &
 
-define count: integer 250
+define count: integer 1000
 printf "The first %d prime numbers" count
 
+define line ""
 while count {
-    write: read-car
+    define p: read-car
+    set line: Text::join "" line: Text::sprintf "%7d" p
     set count: sub count 1
+    if (not: mod count 10) {
+        echo line
+	set line ""
+    }
 } <prime-numbers
 \end{lstlisting}
 
