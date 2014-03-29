@@ -15,6 +15,8 @@ other Unix shells. The following commands behave as expected:
     cd ..
     rm -r junk || echo "rm failed!"
 
+For more detail, see: https://github.com/michaelmacinnis/oh
+
 Oh is released under an MIT-style license.
 */
 package main
@@ -22,18 +24,18 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/michaelmacinnis/tecla"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
-	"runtime"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
 	"unicode"
-	"github.com/michaelmacinnis/tecla"
 )
 
 const (
@@ -237,8 +239,8 @@ func external(t *Task, args Cell) bool {
 }
 
 func init() {
-        runtime.LockOSThread()
-        syscall.Setpgid(0, 0)
+	runtime.LockOSThread()
+	syscall.Setpgid(0, 0)
 }
 
 func launch(task *Task) {
@@ -321,7 +323,7 @@ func main() {
 
 	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
 
-	e, s := NewEnv(nil), NewScope(nil)
+	e, s := NewEnv(nil), NewScope(nil, nil)
 
 	task := NewTask(psEvalBlock, Cons(nil, Null), e, s)
 
@@ -390,7 +392,7 @@ func main() {
 	})
 	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(psEvalBlock, t.Code,
-			NewEnv(t.Dynamic), NewScope(t.Lexical))
+			NewEnv(t.Dynamic), NewScope(t.Lexical, nil))
 
 		t.Child = append(t.Child, child)
 		go launch(child)
@@ -466,7 +468,7 @@ func main() {
 	s.PublicMethod("child", func(t *Task, args Cell) bool {
 		o := Car(t.Scratch).(Binding).Self().Expose()
 
-		return t.Return(NewObject(NewScope(o)))
+		return t.Return(NewObject(NewScope(o, nil)))
 	})
 	s.PublicMethod("clone", func(t *Task, args Cell) bool {
 		o := Car(t.Scratch).(Binding).Self().Expose()
@@ -919,7 +921,7 @@ func main() {
 	})
 
 	/* Standard namespaces. */
-	list := NewObject(NewScope(s))
+	list := NewObject(NewScope(s, nil))
 	s.Define(NewSymbol("List"), list)
 
 	list.PublicMethod("to-string", func(t *Task, args Cell) bool {
@@ -939,7 +941,7 @@ func main() {
 		return t.Return(NewSymbol(s))
 	})
 
-	text := NewObject(NewScope(s))
+	text := NewObject(NewScope(s, nil))
 	s.Define(NewSymbol("Text"), text)
 
 	text.PublicMethod("is-control", func(t *Task, args Cell) bool {
@@ -1491,13 +1493,13 @@ List::public tail: method (k x) as {
 test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), evaluate)
 
-        if len(os.Args) <= 1 {
-                Parse(tecla.New("> "), evaluate)
-        } else {
-                evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
-        }
+	if len(os.Args) <= 1 {
+		Parse(tecla.New("> "), evaluate)
+	} else {
+		evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
+	}
 
-        os.Exit(0)
+	os.Exit(0)
 }
 
 func module(f string) (string, error) {

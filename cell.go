@@ -112,59 +112,12 @@ var Null Cell
 var False *Boolean
 var True *Boolean
 
-var conduit_close Closure
-var conduit_rclose Closure
-var conduit_read Closure
-var conduit_readline Closure
-var conduit_wclose Closure
-var conduit_write Closure
+var conduit_env *Env
 
 var num [512]*Integer
 var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
-
-/* Conduit functions */
-
-func GetConduit(o Context) Conduit {
-	for o != nil {
-		if c, ok := o.Expose().(Conduit); ok {
-			return c
-		}
-		o = o.Prev()
-	}
-
-	panic("Not a conduit")
-	return nil
-}
-
-func conduit_close_f(t *Task, args Cell) bool {
-	GetConduit(Car(t.Scratch).(Binding).Self()).Close()
-	return t.Return(True)
-}
-
-func conduit_rclose_f(t *Task, args Cell) bool {
-	GetConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
-	return t.Return(True)
-}
-
-func conduit_read_f(t *Task, args Cell) bool {
-	return t.Return(GetConduit(Car(t.Scratch).(Binding).Self()).Read())
-}
-
-func conduit_readline_f(t *Task, args Cell) bool {
-	return t.Return(GetConduit(Car(t.Scratch).(Binding).Self()).ReadLine())
-}
-
-func conduit_wclose_f(t *Task, args Cell) bool {
-	GetConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
-	return t.Return(True)
-}
-
-func conduit_write_f(t *Task, args Cell) bool {
-	GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
-	return t.Return(True)
-}
 
 func init() {
 	pair := new(Pair)
@@ -178,13 +131,6 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
-
-	conduit_close = NewMethod(conduit_close_f, Null, Null, Null, nil)
-	conduit_rclose = NewMethod(conduit_rclose_f, Null, Null, Null, nil)
-	conduit_read = NewMethod(conduit_read_f, Null, Null, Null, nil)
-	conduit_readline = NewMethod(conduit_readline_f, Null, Null, Null, nil)
-	conduit_wclose = NewMethod(conduit_wclose_f, Null, Null, Null, nil)
-	conduit_write = NewMethod(conduit_write_f, Null, Null, Null, nil)
 
 	str = make(map[string]*String)
 	sym = make(map[string]*Symbol)
@@ -223,6 +169,32 @@ func init() {
 	} {
 		sym[v] = NewSymbol(v)
 	}
+
+	conduit_env = NewEnv(nil)
+	conduit_env.Method("close", func(t *Task, args Cell) bool {
+		GetConduit(Car(t.Scratch).(Binding).Self()).Close()
+		return t.Return(True)
+	})
+	conduit_env.Method("reader-close", func(t *Task, args Cell) bool {
+		GetConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
+		return t.Return(True)
+	})
+	conduit_env.Method("read", func(t *Task, args Cell) bool {
+		r := GetConduit(Car(t.Scratch).(Binding).Self()).Read()
+		return t.Return(r)
+	})
+	conduit_env.Method("readline", func(t *Task, args Cell) bool {
+		r := GetConduit(Car(t.Scratch).(Binding).Self()).ReadLine()
+		return t.Return(r)
+	})
+	conduit_env.Method("writer-close", func(t *Task, args Cell) bool {
+		GetConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
+		return t.Return(True)
+	})
+	conduit_env.Method("write", func(t *Task, args Cell) bool {
+		GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
+		return t.Return(True)
+	})
 }
 
 func Append(list Cell, elements ...Cell) Cell {
@@ -1004,15 +976,18 @@ func (self *Pair) Equal(c Cell) bool {
 	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
 }
 
-func conduit_object(c Conduit) Context {
-	c.Public(NewSymbol("close"), NewBound(conduit_close, c))
-	c.Public(NewSymbol("reader-close"), NewBound(conduit_rclose, c))
-	c.Public(NewSymbol("read"), NewBound(conduit_read, c))
-	c.Public(NewSymbol("readline"), NewBound(conduit_readline, c))
-	c.Public(NewSymbol("writer-close"), NewBound(conduit_wclose, c))
-	c.Public(NewSymbol("write"), NewBound(conduit_write, c))
+/* Convert Channel/Pipe Context (or child Context) into a Conduit. */
 
-	return NewObject(c)
+func GetConduit(o Context) Conduit {
+	for o != nil {
+		if c, ok := o.Expose().(Conduit); ok {
+			return c
+		}
+		o = o.Prev()
+	}
+
+	panic("Not a conduit")
+	return nil
 }
 
 /* Channel cell definition. */
@@ -1023,8 +998,8 @@ type Channel struct {
 }
 
 func NewChannel(t *Task, cap int) Context {
-	return conduit_object(&Channel{
-		NewScope(t.Lexical.Expose()),
+	return NewObject(&Channel{
+		NewScope(t.Lexical.Expose(), conduit_env),
 		make(chan Cell, cap),
 	})
 }
@@ -1086,7 +1061,7 @@ type Pipe struct {
 
 func NewPipe(t *Task, r *os.File, w *os.File) Context {
 	p := &Pipe{
-		Scope: NewScope(t.Lexical.Expose()),
+		Scope: NewScope(t.Lexical.Expose(), conduit_env),
 		b:     nil, c: nil, d: nil, r: r, w: w,
 	}
 
@@ -1100,7 +1075,7 @@ func NewPipe(t *Task, r *os.File, w *os.File) Context {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return conduit_object(p)
+	return NewObject(p)
 }
 
 func (self *Pipe) String() string {
@@ -1344,6 +1319,11 @@ func (self *Env) Copy() *Env {
 	return fresh
 }
 
+func (self *Env) Method(name string, m Function) {
+	self.hash[name] =
+		NewConstant(NewBound(NewMethod(m, Null, Null, Null, nil), nil))
+}
+
 func (self *Env) Prev() *Env {
 	return self.prev
 }
@@ -1470,7 +1450,7 @@ func (self *Registers) GetState() int64 {
 
 func (self *Registers) NewBlock(dynamic *Env, lexical Context) {
 	self.Dynamic = NewEnv(dynamic)
-	self.Lexical = NewScope(lexical)
+	self.Lexical = NewScope(lexical, nil)
 }
 
 func (self *Registers) NewStates(l ...int64) {
@@ -1647,8 +1627,8 @@ type Scope struct {
 	prev Context
 }
 
-func NewScope(prev Context) *Scope {
-	return &Scope{NewEnv(NewEnv(nil)), prev}
+func NewScope(prev Context, fixed *Env) *Scope {
+	return &Scope{NewEnv(NewEnv(fixed)), prev}
 }
 
 func (self *Scope) Bool() bool {
@@ -1868,4 +1848,3 @@ func (self *Constant) String() string {
 func (self *Constant) Set(c Cell) {
 	panic("constant cannot be set")
 }
-
