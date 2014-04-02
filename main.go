@@ -24,7 +24,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/tecla"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -36,6 +35,7 @@ import (
 	"strings"
 	"syscall"
 	"unicode"
+	"github.com/peterh/liner"
 )
 
 const (
@@ -65,6 +65,18 @@ const (
 
 	psMax
 )
+
+type Liner struct {
+	*liner.State
+}
+
+func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	if line, err = cli.State.Prompt("> "); err == nil {
+		cli.AppendHistory(line)
+		line += "\n"
+	}
+	return
+}
 
 var done0 chan Cell
 var eval0 chan Cell
@@ -1494,7 +1506,12 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), evaluate)
 
 	if len(os.Args) <= 1 {
-		Parse(tecla.New("> "), evaluate)
+		cli := &Liner{liner.NewLiner()}
+
+		Parse(cli, evaluate)
+
+		cli.Close()
+		fmt.Printf("\n")
 	} else {
 		evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
 	}
