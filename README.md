@@ -109,13 +109,7 @@ define point: object {
 define o: point::clone
 ```
 
-To compile and run oh you will need to install the C libraries ncurses and
-libtecla. On Ubuntu 12.10, for example, do:
-
-    sudo apt-get install libncurses5-dev
-    sudo apt-get install libtecla1-dev
-
-Then go get oh:
+To go get oh:
 
     go get github.com/michaelmacinnis/oh
 
