@@ -1115,6 +1115,12 @@ func (self *Pipe) ReaderClose() {
 	}
 }
 
+/*
+ * TODO: Rather than using cli to set and reset the terminal mode when the
+ * reading from stdin, Read and ReadLine should save the previous terminal
+ * mode set it to cooked and then reset it when they are done.
+ */
+
 func (self *Pipe) Read() Cell {
 	if self.r == nil {
 		return Null
@@ -1124,9 +1130,18 @@ func (self *Pipe) Read() Cell {
 		self.c = make(chan Cell)
 		self.d = make(chan bool)
 		go func() {
+			if cli != nil && self.r == os.Stdin {
+				cli.Reset()
+			}
 			Parse(self.reader(), func(c Cell) {
 				self.c <- c
+				if cli != nil && self.r == os.Stdin {
+					cli.Set()
+				}
 				<-self.d
+				if cli != nil && self.r == os.Stdin {
+					cli.Reset()
+				}
 			})
 			self.c <- Null
 		}()
@@ -1138,7 +1153,13 @@ func (self *Pipe) Read() Cell {
 }
 
 func (self *Pipe) ReadLine() Cell {
+	if cli != nil && self.r == os.Stdin {
+		cli.Reset()
+	}
 	s, err := self.reader().ReadString('\n')
+	if cli != nil && self.r == os.Stdin {
+		cli.Set()
+	}
 	if err != nil && len(s) == 0 {
 		self.b = nil
 		return Null

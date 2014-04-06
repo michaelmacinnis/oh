@@ -243,7 +243,7 @@ func external(t *Task, args Cell) bool {
 	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
-	if in == os.Stdin {
+	if cli != nil && in == os.Stdin {
 		cli.Reset()
 	}
 
@@ -263,7 +263,7 @@ func external(t *Task, args Cell) bool {
 
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	if in == os.Stdin {
+	if cli != nil && in == os.Stdin {
 		cli.Set()
 	}
 
