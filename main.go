@@ -85,6 +85,8 @@ func complete(line string) []string {
 	return []string{line}
 }
 
+var cli *Liner
+
 var done0 chan Cell
 var eval0 chan Cell
 
@@ -220,12 +222,12 @@ func expand(args Cell) Cell {
 func external(t *Task, args Cell) bool {
 	t.Scratch = Cdr(t.Scratch)
 
-	name, err := exec.LookPath(Raw(Car(t.Scratch)))
+	name, problem := exec.LookPath(Raw(Car(t.Scratch)))
 
 	SetCar(t.Scratch, False)
 
-	if err != nil {
-		panic(err)
+	if problem != nil {
+		panic(problem)
 	}
 
 	argv := []string{name}
@@ -237,22 +239,33 @@ func external(t *Task, args Cell) bool {
 	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	stdin := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get()
-	stdout := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get()
-	stderr := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get()
+	in := rpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get())
+	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
+	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
-	fd := []*os.File{rpipe(stdin), wpipe(stdout), wpipe(stderr)}
+	if in == os.Stdin {
+		cli.Reset()
+	}
 
+	fd := []*os.File{in, out, err}
 	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
-	proc, err := os.StartProcess(name, argv, attr)
-	if err != nil {
-		panic(err)
+	proc, problem := os.StartProcess(name, argv, attr)
+	if problem != nil {
+		panic(problem)
 	}
 
 	var status int64 = 0
 
-	msg, err := proc.Wait()
+	msg, problem := proc.Wait()
+	if problem != nil {
+		panic(problem)
+	}
+
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
+
+	if in == os.Stdin {
+		cli.Set()
+	}
 
 	return t.Return(NewStatus(status))
 }
@@ -1513,7 +1526,7 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), evaluate)
 
 	if len(os.Args) <= 1 {
-		cli := &Liner{liner.NewLiner()}
+		cli = &Liner{liner.NewLiner()}
 		cli.SetCompleter(complete)
 
 		Parse(cli, evaluate)
