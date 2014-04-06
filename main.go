@@ -35,7 +35,7 @@ import (
 	"strings"
 	"syscall"
 	"unicode"
-	"github.com/peterh/liner"
+	"github.com/michaelmacinnis/liner"
 )
 
 const (
@@ -76,6 +76,13 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 		line += "\n"
 	}
 	return
+}
+
+func complete(line string) []string {
+	if strings.Trim(line, " \t") == "" {
+		return []string{"    " + line}
+	}
+	return []string{line}
 }
 
 var done0 chan Cell
@@ -1507,6 +1514,7 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 
 	if len(os.Args) <= 1 {
 		cli := &Liner{liner.NewLiner()}
+		cli.SetCompleter(complete)
 
 		Parse(cli, evaluate)
 
