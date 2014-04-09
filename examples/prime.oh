@@ -2,8 +2,6 @@
 
 define strict True
 
-Root::public read-car: method self () as: car: self::read
-
 define counter: method (n) as {
     while True {
         write: set n: add n 1
@@ -12,7 +10,7 @@ define counter: method (n) as {
 
 define filter: method (base) as {
     while True {
-	define n: read-car
+	define n: car: read
         if (mod n base): write n
     }
 }
@@ -23,7 +21,7 @@ counter 2 |+ block {
     define in $stdin
 
     while True {
-        define prime: in::read-car
+        define prime: car: in::read
         write prime
 
         define out: channel
@@ -31,14 +29,14 @@ counter 2 |+ block {
 
         set in out
     }
-} > prime-numbers &
+} >prime-numbers &
 
 define count: integer 1000
 printf "The first %d prime numbers" count
 
 define line ""
 while count {
-    define p: read-car
+    define p: car: read
     set line: Text::join "" line: Text::sprintf "%7d" p
     set count: sub count 1
     if (not: mod count 10) {
