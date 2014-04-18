@@ -71,10 +71,12 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	cli.Set()
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
 		line += "\n"
 	}
+	cli.Reset()
 	return
 }
 
@@ -92,12 +94,17 @@ var eval0 chan Cell
 
 var ext Cell
 var interactive bool
+var jobs []*Task
+var pids = map[int]bool{}
+
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
 	psExecIf:               {psEvalBlock},
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
+
+var task0 *Task
 
 func apply(t *Task, args Cell) bool {
 	m := Car(t.Scratch).(Binding)
@@ -243,10 +250,6 @@ func external(t *Task, args Cell) bool {
 	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
-	if cli != nil && in == os.Stdin {
-		cli.Reset()
-	}
-
 	fd := []*os.File{in, out, err}
 	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
 	proc, problem := os.StartProcess(name, argv, attr)
@@ -254,6 +257,7 @@ func external(t *Task, args Cell) bool {
 		panic(problem)
 	}
 
+	pids[proc.Pid] = true
 	var status int64 = 0
 
 	msg, problem := proc.Wait()
@@ -263,9 +267,7 @@ func external(t *Task, args Cell) bool {
 
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	if cli != nil && in == os.Stdin {
-		cli.Set()
-	}
+	delete(pids, proc.Pid)
 
 	return t.Return(NewStatus(status))
 }
@@ -304,6 +306,7 @@ func listen(task *Task) {
 			task.Done <- nil
 		}
 	}
+	println("Done listening for task", task)
 }
 
 func lexical(t *Task, state int64) bool {
@@ -357,14 +360,14 @@ func main() {
 
 	e, s := NewEnv(nil), NewScope(nil, nil)
 
-	task := NewTask(psEvalBlock, Cons(nil, Null), e, s)
+	task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s)
 
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
 
-	e.Add(NewSymbol("$stdin"), NewPipe(task, os.Stdin, nil))
-	e.Add(NewSymbol("$stdout"), NewPipe(task, nil, os.Stdout))
-	e.Add(NewSymbol("$stderr"), NewPipe(task, nil, os.Stderr))
+	e.Add(NewSymbol("$stdin"), NewPipe(task0, os.Stdin, nil))
+	e.Add(NewSymbol("$stdout"), NewPipe(task0, nil, os.Stdout))
+	e.Add(NewSymbol("$stderr"), NewPipe(task0, nil, os.Stderr))
 
 	if wd, err := os.Getwd(); err == nil {
 		e.Add(NewSymbol("$cwd"), NewSymbol(wd))
@@ -477,6 +480,18 @@ func main() {
 		t.Scratch = List(Car(args))
 		t.Stop()
 		t.Stack = Null
+
+		return true
+	})
+	s.DefineBuiltin("fg", func(t *Task, args Cell) bool {
+		task0 = jobs[0]
+
+		t.Stop()
+		t.Stack = Null
+		close(t.Eval)
+		for k, _ := range pids {
+			syscall.Kill(k, syscall.SIGCONT)
+		}
 
 		return true
 	})
@@ -1289,15 +1304,17 @@ func main() {
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
+	jobs = nil
+
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
 	incoming := make(chan os.Signal, len(signals))
 	signal.Notify(incoming, signals...)
 	go func() {
-		go listen(task)
+		go listen(task0)
 		var c Cell = nil
-		for c == nil && task.Stack != Null {
+		for c == nil && task0.Stack != Null {
 			for c == nil {
 				select {
 				case <-incoming:
@@ -1305,38 +1322,49 @@ func main() {
 				case c = <-eval0:
 				}
 			}
-			task.Eval <- c
+			task0.Eval <- c
 			for c != nil {
+				prev := task0
 				select {
 				case sig := <-incoming:
 					// Handle signals.
 					pid := syscall.Getpid()
 					switch sig {
 					case syscall.SIGTSTP:
-						println("SIGTSTP")
 						if !interactive {
 							syscall.Kill(pid, syscall.SIGSTOP)
 							continue
 						}
+						for k, _ := range pids {
+							syscall.Kill(k, syscall.SIGSTOP)
+						}
+						jobs = append(jobs, task0)
 
 						fallthrough
 					case syscall.SIGINT:
 						if !interactive {
 							os.Exit(130)
 						}
-						task.Stop()
-						close(task.Eval)
-						task = NewTask(psEvalBlock, Cons(nil, Null), e, s)
-						go listen(task)
+						if sig == syscall.SIGINT {
+							task0.Stop()
+							task0.Stack = Null
+							close(task0.Eval)
+						}
+						task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s)
+						go listen(task0)
 						c = nil
 					}
 
-				case c = <-task.Done:
+				case c = <-task0.Done:
+					if task0 != prev {
+						c = Null
+						continue
+					}
 				}
 			}
 			done0 <- c
 		}
-		os.Exit(status(Car(task.Scratch)))
+		os.Exit(status(Car(task0.Scratch)))
 	}()
 
 	Parse(bufio.NewReader(strings.NewReader(`
