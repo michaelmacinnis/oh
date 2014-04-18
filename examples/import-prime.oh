@@ -5,7 +5,7 @@
 
 define prime: import "./another-prime.oh"
 
-define count: integer 100
+define count: integer 1000
 while count {
 	  write @(prime::next-prime::read)
 	  set count: sub count 1

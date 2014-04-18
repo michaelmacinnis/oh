@@ -4,11 +4,10 @@
 
 public next-prime: channel
 
-define count: integer 1000
 define number: integer 2
 define list-of-primes '(1)
 
-spawn: while count {
+spawn: while True {
     define previous list-of-primes
     define prime: boolean True
 
@@ -19,7 +18,6 @@ spawn: while count {
     }
 
     if prime {
-        set count: sub count 1
         set-cdr previous: cons number '()
 
         echo number

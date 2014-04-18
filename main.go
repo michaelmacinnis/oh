@@ -24,6 +24,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/michaelmacinnis/liner"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -35,7 +36,6 @@ import (
 	"strings"
 	"syscall"
 	"unicode"
-	"github.com/michaelmacinnis/liner"
 )
 
 const (
@@ -165,8 +165,7 @@ func dynamic(t *Task, state int64) bool {
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
-			/* TODO: We should probably panic here. */
-			return false
+			panic("environment variable names must begin with '$'")
 		}
 	}
 
@@ -186,34 +185,35 @@ func evaluate(c Cell) {
 func expand(args Cell) Cell {
 	list := Null
 
-	for args != Null {
+	for ; args != Null; args = Cdr(args) {
 		c := Car(args)
 
 		s := Raw(c)
-		if _, ok := c.(*Symbol); ok {
-			if s[:1] == "~" {
-				s = filepath.Join(os.Getenv("HOME"), s[1:])
-			}
-
-			if strings.IndexAny(s, "*?[") != -1 {
-				m, err := filepath.Glob(s)
-				if err != nil || len(m) == 0 {
-					panic("no matches found: " + s)
-				}
-
-				for _, v := range m {
-					if v[0] != '.' || s[0] == '.' {
-						e := NewSymbol(v)
-						list = AppendTo(list, e)
-					}
-				}
-			} else {
-				list = AppendTo(list, NewSymbol(s))
-			}
-		} else {
+		if _, ok := c.(*Symbol); !ok {
 			list = AppendTo(list, NewSymbol(s))
+			continue
 		}
-		args = Cdr(args)
+
+		if s[:1] == "~" {
+			s = filepath.Join(os.Getenv("HOME"), s[1:])
+		}
+
+		if strings.IndexAny(s, "*?[") == -1 {
+			list = AppendTo(list, NewSymbol(s))
+			continue
+		}
+
+		m, err := filepath.Glob(s)
+		if err != nil || len(m) == 0 {
+			panic("no matches found: " + s)
+		}
+
+		for _, v := range m {
+			if v[0] != '.' || s[0] == '.' {
+				e := NewSymbol(v)
+				list = AppendTo(list, e)
+			}
+		}
 	}
 
 	return list
@@ -526,16 +526,16 @@ func main() {
 		 *       To mimic Scheme's behavior use: append l1 @l2 ... @ln
 		 */
 
-		/* TODO: We should just copy this list: ... */
 		l := Car(args)
-
-		/* TODO: ... and then set it's cdr to cdr(args). */
-		argv := make([]Cell, 0)
-		for args = Cdr(args); args != Null; args = Cdr(args) {
-			argv = append(argv, Car(args))
+		n := Cons(Car(l), Null)
+		s := n
+		for l = Cdr(l); l != Null; l = Cdr(l) {
+			SetCdr(n, Cons(Car(l), Null))
+			n = Cdr(n)
 		}
+		SetCdr(n, Cdr(args))
 
-		return t.Return(Append(l, argv...))
+		return t.Return(s)
 	})
 	s.DefineMethod("car", func(t *Task, args Cell) bool {
 		return t.Return(Caar(args))

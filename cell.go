@@ -197,37 +197,6 @@ func init() {
 	})
 }
 
-func Append(list Cell, elements ...Cell) Cell {
-	var pair, prev, start Cell
-
-	index := 0
-
-	start = Null
-
-	if list != nil && list != Null {
-		start = Cons(Car(list), Null)
-		prev = start
-
-		for list = Cdr(list); list != Null; list = Cdr(list) {
-			pair = Cons(Car(list), Null)
-			SetCdr(prev, pair)
-			prev = pair
-		}
-	} else if len(elements) > 0 {
-		start = Cons(elements[index], Null)
-		prev = start
-		index++
-	}
-
-	for ; index < len(elements); index++ {
-		pair = Cons(elements[index], Null)
-		SetCdr(prev, pair)
-		prev = pair
-	}
-
-	return start
-}
-
 func AppendTo(list Cell, elements ...Cell) Cell {
 	var pair, prev, start Cell
 
