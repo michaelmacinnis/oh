@@ -71,12 +71,10 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
-	cli.Set()
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
 		line += "\n"
 	}
-	cli.Reset()
 	return
 }
 
