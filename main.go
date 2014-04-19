@@ -32,6 +32,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -73,6 +74,9 @@ type Liner struct {
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
+		if command == "" {
+			command = line
+		}
 		line += "\n"
 	}
 	return
@@ -90,10 +94,11 @@ var cli *Liner
 var done0 chan Cell
 var eval0 chan Cell
 
+var command = ""
 var ext Cell
 var interactive bool
-var jobs []*Task
-var pids = map[int]bool{}
+var jobs = map[*Task]int{}
+var lines = map[*Task]string{}
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -185,6 +190,7 @@ func dynamic(t *Task, state int64) bool {
 func evaluate(c Cell) {
 	eval0 <- c
 	<-done0
+	command = ""
 }
 
 func expand(args Cell) Cell {
@@ -255,9 +261,9 @@ func external(t *Task, args Cell) bool {
 		panic(problem)
 	}
 
-	pids[proc.Pid] = true
-	var status int64 = 0
+	t.Pid(proc.Pid)
 
+	var status int64 = 0
 	msg, problem := proc.Wait()
 	if problem != nil {
 		panic(problem)
@@ -265,7 +271,7 @@ func external(t *Task, args Cell) bool {
 
 	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
 
-	delete(pids, proc.Pid)
+	t.Pid(0)
 
 	return t.Return(NewStatus(status))
 }
@@ -302,7 +308,6 @@ func listen(task *Task) {
 
 		task.Done <- nil
 	}
-	println("Done listening for task", task)
 }
 
 func lexical(t *Task, state int64) bool {
@@ -472,14 +477,64 @@ func main() {
 		return false
 	})
 	s.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		task0 = jobs[0]
-
-		t.Stop()
-		for k, _ := range pids {
-			syscall.Kill(k, syscall.SIGCONT)
+		if !interactive || t != task0 {
+			return false
 		}
 
+		index := 0 
+		if args != Null {
+			if a, ok := Car(args).(Atom); ok {
+				index = int(a.Int())
+			}
+		}
+
+		found := task0
+		for k, v := range jobs {
+			if args == Null {
+				if v > index {
+					index = v
+				}
+
+			}
+			if v == index {
+				found = k
+			}
+		}
+
+		if found == task0 {
+			return false
+		}
+
+		delete(jobs, found)
+		delete(lines, found)
+	
+		task0 = found
+
+		t.Stop()
+		task0.Continue()
+
 		return true
+	})
+	s.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
+		if !interactive || t != task0 {
+			return false
+		}
+
+		m := make(map[int]*Task)
+		i := make([]int, 0, len(jobs))
+		for k, v := range jobs {
+			i = append(i, v)
+			m[v] = k
+		}
+		sort.Ints(i)
+		for k, v := range i {
+			if k != len(jobs) - 1 {
+				fmt.Printf("[%d] \t%s\n", v, lines[m[v]])
+			} else {
+				fmt.Printf("[%d]+\t%s\n", v, lines[m[v]])
+			}
+		}
+		return false
 	})
 	s.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(Raw(Car(args)))
@@ -1269,7 +1324,8 @@ func main() {
 
 	s.Public(NewSymbol("Root"), s)
 
-	e.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	pid := os.Getpid()
+	e.Add(NewSymbol("$$"), NewInteger(int64(pid)))
 
 	/* Command-line arguments */
 	args := Null
@@ -1294,8 +1350,6 @@ func main() {
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-	jobs = nil
-
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
@@ -1318,17 +1372,22 @@ func main() {
 				select {
 				case sig := <-incoming:
 					// Handle signals.
-					pid := syscall.Getpid()
 					switch sig {
 					case syscall.SIGTSTP:
 						if !interactive {
 							syscall.Kill(pid, syscall.SIGSTOP)
 							continue
 						}
-						for k, _ := range pids {
-							syscall.Kill(k, syscall.SIGSTOP)
+						task0.Suspend()
+						last := 0
+						for _, v := range jobs {
+							if v > last {
+								last = v
+							}
 						}
-						jobs = append(jobs, task0)
+						last++
+						jobs[task0] = last
+						lines[task0] = command
 
 						fallthrough
 					case syscall.SIGINT:
@@ -1338,6 +1397,7 @@ func main() {
 						if sig == syscall.SIGINT {
 							task0.Stop()
 						}
+						fmt.Printf("\n")
 						task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
 						go listen(task0)
 						c = nil
@@ -1592,7 +1652,7 @@ func run(t *Task, end Cell) (successful bool) {
 		successful = false
 	}()
 
-	for t.Stack != Null {
+	for t.Runnable() && t.Stack != Null {
 		state := t.GetState()
 
 		switch state {

@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 type Function func(t *Task, args Cell) bool
@@ -119,6 +120,8 @@ var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
 
+var runnable chan bool
+
 func init() {
 	pair := new(Pair)
 	pair.car = pair
@@ -195,6 +198,9 @@ func init() {
 		GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
+
+	runnable = make(chan bool)
+	close(runnable)
 }
 
 func AppendTo(list Cell, elements ...Cell) Cell {
@@ -1540,7 +1546,8 @@ type Task struct {
 	Eval  chan Cell
 	child []*Task
 	Parent *Task
-	Pids map[int]bool
+	pid int
+	suspended chan bool
 }
 
 func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
@@ -1559,7 +1566,8 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 		Eval:  make(chan Cell, 1),
 		child: nil,
 		Parent: p,
-		Pids: make(map[int]bool),
+		pid: 0,
+		suspended: runnable,
 	}
 
 	if p != nil {
@@ -1584,9 +1592,61 @@ func (self *Task) Equal(c Cell) bool {
 
 /* Task-specific functions. */
 
+func (self *Task) Continue() {
+	if self.pid > 0 {
+		syscall.Kill(self.pid, syscall.SIGCONT)
+	}
+
+	for k, v := range self.Children {
+		if v {
+			k.Continue()
+		}
+	}
+
+	close(self.suspended)
+}
+
+func (self *Task) Pid(pid int) {
+	self.pid = pid
+}
+
+func (self *Task) Runnable() bool {
+	return !<-self.suspended
+}
+
 func (self *Task) Stop() {
 	self.Stack = Null
 	close(self.Eval)
+
+	select {
+	case <-self.suspended:
+	default:
+		close(self.suspended)
+	}
+
+	if self.pid > 0 {
+		syscall.Kill(self.pid, syscall.SIGTERM)
+	}
+
+	for k, v := range self.Children {
+		if v {
+			k.Stop()
+		}
+	}
+}
+
+func (self *Task) Suspend() {
+	if self.pid > 0 {
+		syscall.Kill(self.pid, syscall.SIGSTOP)
+	}
+
+	for k, v := range self.Children {
+		if v {
+			k.Suspend()
+		}
+	}
+
+	self.suspended = make(chan bool)
 }
 
 func (self *Task) Wait() {
