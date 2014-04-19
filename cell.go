@@ -1535,25 +1535,36 @@ func (self *Registers) Return(rv Cell) bool {
 
 type Task struct {
 	*Registers
+	Children map[*Task]bool
 	Done  chan Cell
 	Eval  chan Cell
-	Child []*Task
+	child []*Task
+	Parent *Task
+	Pids map[int]bool
 }
 
-func NewTask(state int64, code Cell, dynamic *Env, lexical Context) *Task {
+func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 	t := &Task{
 		Registers: &Registers{
 			Continuation: Continuation{
 				Scratch: List(NewStatus(0)),
-				Stack:   List(NewInteger(state)),
+				Stack:   List(NewInteger(s)),
 			},
-			Code:    code,
-			Dynamic: dynamic,
-			Lexical: lexical,
+			Code:    c,
+			Dynamic: d,
+			Lexical: l,
 		},
+		Children: make(map[*Task]bool),
 		Done:  make(chan Cell, 1),
 		Eval:  make(chan Cell, 1),
-		Child: nil,
+		child: nil,
+		Parent: p,
+		Pids: make(map[int]bool),
+	}
+
+	if p != nil {
+		p.Children[t] = true
+		p.child = append(p.child, t)
 	}
 
 	return t
@@ -1573,23 +1584,16 @@ func (self *Task) Equal(c Cell) bool {
 
 /* Task-specific functions. */
 
-func (self *Task) Running() bool {
-	select {
-	case <-self.Done:
-		return false
-	default:
-	}
-	return true
-}
-
-func (self *Task) Start() {
-	if self.Done == nil {
-		self.Done = make(chan Cell, 1)
-	}
-}
-
 func (self *Task) Stop() {
-	close(self.Done)
+	self.Stack = Null
+	close(self.Eval)
+}
+
+func (self *Task) Wait() {
+	for _, v := range self.child {
+		<-v.Done
+	}
+        self.child = nil
 }
 
 /*

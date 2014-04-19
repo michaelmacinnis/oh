@@ -300,9 +300,7 @@ func listen(task *Task) {
 			SetCdr(task.Code, Null)
 		}
 
-		if task.Running() {
-			task.Done <- nil
-		}
+		task.Done <- nil
 	}
 	println("Done listening for task", task)
 }
@@ -358,7 +356,7 @@ func main() {
 
 	e, s := NewEnv(nil), NewScope(nil, nil)
 
-	task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s)
+	task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
 
 	e.Add(NewSymbol("False"), False)
 	e.Add(NewSymbol("True"), True)
@@ -424,10 +422,9 @@ func main() {
 		return dynamic(t, psExecSetenv)
 	})
 	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(psEvalBlock, t.Code,
-			NewEnv(t.Dynamic), NewScope(t.Lexical, nil))
+		child := NewTask(psEvalBlock, t.Code, NewEnv(t.Dynamic),
+			NewScope(t.Lexical, nil), t)
 
-		t.Child = append(t.Child, child)
 		go launch(child)
 
 		SetCar(t.Scratch, child)
@@ -474,19 +471,10 @@ func main() {
 
 		return false
 	})
-	s.DefineBuiltin("exit", func(t *Task, args Cell) bool {
-		t.Scratch = List(Car(args))
-		t.Stop()
-		t.Stack = Null
-
-		return true
-	})
 	s.DefineBuiltin("fg", func(t *Task, args Cell) bool {
 		task0 = jobs[0]
 
 		t.Stop()
-		t.Stack = Null
-		close(t.Eval)
 		for k, _ := range pids {
 			syscall.Kill(k, syscall.SIGCONT)
 		}
@@ -525,6 +513,13 @@ func main() {
 		c := Resolve(l, t.Dynamic, NewSymbol(Raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
+	})
+	s.DefineMethod("exit", func(t *Task, args Cell) bool {
+		t.Scratch = List(Car(args))
+
+		t.Stop()
+
+		return true
 	})
 	s.PublicMethod("unset", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
@@ -654,10 +649,7 @@ func main() {
 	})
 	s.DefineMethod("wait", func(t *Task, args Cell) bool {
 		if args == Null {
-			for _, v := range t.Child {
-				<-v.Done
-			}
-			t.Child = nil
+			t.Wait()
 		}
 		list := args
 		for ; args != Null; args = Cdr(args) {
@@ -1345,10 +1337,8 @@ func main() {
 						}
 						if sig == syscall.SIGINT {
 							task0.Stop()
-							task0.Stack = Null
-							close(task0.Eval)
 						}
-						task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s)
+						task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
 						go listen(task0)
 						c = nil
 					}
@@ -1602,8 +1592,7 @@ func run(t *Task, end Cell) (successful bool) {
 		successful = false
 	}()
 
-	t.Start()
-	for t.Running() && t.Stack != Null {
+	for t.Stack != Null {
 		state := t.GetState()
 
 		switch state {
