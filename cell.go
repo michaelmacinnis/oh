@@ -1541,12 +1541,12 @@ func (self *Registers) Return(rv Cell) bool {
 
 type Task struct {
 	*Registers
-	Children map[*Task]bool
-	Done  chan Cell
-	Eval  chan Cell
-	child []*Task
-	Parent *Task
-	pid int
+	Children  map[*Task]bool
+	Done      chan Cell
+	Eval      chan Cell
+	child     []*Task
+	Parent    *Task
+	pid       int
 	suspended chan bool
 }
 
@@ -1561,12 +1561,12 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 			Dynamic: d,
 			Lexical: l,
 		},
-		Children: make(map[*Task]bool),
-		Done:  make(chan Cell, 1),
-		Eval:  make(chan Cell, 1),
-		child: nil,
-		Parent: p,
-		pid: 0,
+		Children:  make(map[*Task]bool),
+		Done:      make(chan Cell, 1),
+		Eval:      make(chan Cell, 1),
+		child:     nil,
+		Parent:    p,
+		pid:       0,
 		suspended: runnable,
 	}
 
@@ -1653,7 +1653,7 @@ func (self *Task) Wait() {
 	for _, v := range self.child {
 		<-v.Done
 	}
-        self.child = nil
+	self.child = nil
 }
 
 /*

@@ -24,7 +24,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/liner"
+	"github.com/peterh/liner"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -481,7 +481,7 @@ func main() {
 			return false
 		}
 
-		index := 0 
+		index := 0
 		if args != Null {
 			if a, ok := Car(args).(Atom); ok {
 				index = int(a.Int())
@@ -507,7 +507,7 @@ func main() {
 
 		delete(jobs, found)
 		delete(lines, found)
-	
+
 		task0 = found
 
 		t.Stop()
@@ -528,7 +528,7 @@ func main() {
 		}
 		sort.Ints(i)
 		for k, v := range i {
-			if k != len(jobs) - 1 {
+			if k != len(jobs)-1 {
 				fmt.Printf("[%d] \t%s\n", v, lines[m[v]])
 			} else {
 				fmt.Printf("[%d]+\t%s\n", v, lines[m[v]])
