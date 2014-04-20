@@ -92,17 +92,62 @@ func complete(line string) []string {
 		return []string{"    " + line}
 	}
 
-	prefix := fields[len(fields) - 1]
+	prefix := fields[len(fields)-1]
 	if !strings.HasSuffix(line, prefix) {
 		return []string{line}
 	}
 
-	trimmed := line[0:len(line)-len(prefix)]
-	completions := task0.Complete(trimmed, prefix)
+	trimmed := line[0 : len(line)-len(prefix)]
+
+	completions := files(trimmed, prefix)
+	completions = append(completions, task0.Complete(trimmed, prefix)...)
 
 	if len(completions) == 0 {
 		return []string{line}
 	}
+
+	return completions
+}
+
+func files(line, prefix string) []string {
+	completions := []string{}
+
+	prfx := path.Clean(prefix)
+	if !path.IsAbs(prfx) {
+		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
+		cwd := ref.Get().String()
+
+		prfx = path.Join(cwd, prfx)
+	}
+
+	root, prfx := filepath.Split(prfx)
+	if strings.HasSuffix(prefix, "/") {
+		root, prfx = path.Join(root, prfx)+"/", ""
+	}
+	max := strings.Count(root, "/")
+
+	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
+		depth := strings.Count(p, "/")
+		if depth > max {
+			if i.IsDir() {
+				return filepath.SkipDir
+			} else {
+				return nil
+			}
+		} else if depth == max {
+			full := path.Join(root, prfx)
+			if len(prfx) == 0 {
+				full += "/"
+			} else if !strings.HasPrefix(p, full) {
+				return nil
+			}
+
+			completion := line + prefix + p[len(full):]
+			completions = append(completions, completion)
+		}
+
+		return nil
+	})
 
 	return completions
 }

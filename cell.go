@@ -1292,7 +1292,7 @@ func (self *Env) Complete(line, prefix string) []string {
 
 	for k, _ := range self.hash {
 		if strings.HasPrefix(k, prefix) {
-			cl = append(cl, line + k)
+			cl = append(cl, line+k)
 		}
 	}
 
