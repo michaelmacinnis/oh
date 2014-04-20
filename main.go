@@ -568,6 +568,8 @@ func main() {
 			return false
 		}
 
+		command = lines[found]
+
 		delete(jobs, found)
 		delete(lines, found)
 
