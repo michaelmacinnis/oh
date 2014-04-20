@@ -24,7 +24,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/peterh/liner"
+	"github.com/michaelmacinnis/liner"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -72,6 +72,9 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	cli.LineEditingMode()
+	defer cli.OriginalTerminalMode()
+
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
 		if command == "" {
@@ -83,10 +86,25 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 }
 
 func complete(line string) []string {
-	if strings.Trim(line, " \t") == "" {
+	fields := strings.Fields(line)
+
+	if len(fields) == 0 {
 		return []string{"    " + line}
 	}
-	return []string{line}
+
+	prefix := fields[len(fields) - 1]
+	if !strings.HasSuffix(line, prefix) {
+		return []string{line}
+	}
+
+	trimmed := line[0:len(line)-len(prefix)]
+	completions := task0.Complete(trimmed, prefix)
+
+	if len(completions) == 0 {
+		return []string{line}
+	}
+
+	return completions
 }
 
 var cli *Liner

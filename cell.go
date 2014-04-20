@@ -64,6 +64,7 @@ type Context interface {
 
 	Access(key Cell) Reference
 	Copy() Context
+	Complete(line, prefix string) []string
 	Define(key, value Cell)
 	Expose() Context
 	Faces() *Env
@@ -1286,6 +1287,22 @@ func (self *Env) Add(key Cell, value Cell) {
 	self.hash[key.String()] = NewVariable(value)
 }
 
+func (self *Env) Complete(line, prefix string) []string {
+	cl := []string{}
+
+	for k, _ := range self.hash {
+		if strings.HasPrefix(k, prefix) {
+			cl = append(cl, line + k)
+		}
+	}
+
+	if self.prev != nil {
+		cl = append(cl, self.prev.Complete(line, prefix)...)
+	}
+
+	return cl
+}
+
 func (self *Env) Copy() *Env {
 	if self == nil {
 		return nil
@@ -1420,6 +1437,11 @@ func (self *Registers) Arguments() Cell {
 	self.Scratch = Cdr(self.Scratch)
 
 	return l
+}
+
+func (self *Registers) Complete(line, prefix string) []string {
+	completions := self.Lexical.Complete(line, prefix)
+	return append(completions, self.Dynamic.Complete(line, prefix)...)
 }
 
 func (self *Registers) GetState() int64 {
@@ -1693,6 +1715,17 @@ func (self *Scope) Access(key Cell) Reference {
 	}
 
 	return nil
+}
+
+func (self *Scope) Complete(line, prefix string) []string {
+	cl := []string{}
+
+	var obj Context
+	for obj = self; obj != nil; obj = obj.Prev() {
+		cl = append(cl, obj.Faces().Complete(line, prefix)...)
+	}
+
+	return cl
 }
 
 func (self *Scope) Copy() Context {
