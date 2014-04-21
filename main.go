@@ -31,7 +31,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -318,7 +317,8 @@ func external(t *Task, args Cell) bool {
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
 	fd := []*os.File{in, out, err}
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
+	sys := &syscall.SysProcAttr{Setsid: true}
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd, Sys: sys}
 	proc, problem := os.StartProcess(name, argv, attr)
 	if problem != nil {
 		panic(problem)
@@ -340,7 +340,6 @@ func external(t *Task, args Cell) bool {
 }
 
 func init() {
-	runtime.LockOSThread()
 	syscall.Setpgid(0, 0)
 }
 
