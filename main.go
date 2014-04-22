@@ -317,8 +317,7 @@ func external(t *Task, args Cell) bool {
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
 	fd := []*os.File{in, out, err}
-	sys := &syscall.SysProcAttr{Setsid: true}
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd, Sys: sys}
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
 	proc, problem := os.StartProcess(name, argv, attr)
 	if problem != nil {
 		panic(problem)
@@ -340,7 +339,7 @@ func external(t *Task, args Cell) bool {
 }
 
 func init() {
-	syscall.Setpgid(0, 0)
+//	syscall.Setpgid(0, 0)
 }
 
 func launch(task *Task) {
