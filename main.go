@@ -339,7 +339,7 @@ func external(t *Task, args Cell) bool {
 }
 
 func init() {
-//	syscall.Setpgid(0, 0)
+	//	syscall.Setpgid(0, 0)
 }
 
 func launch(task *Task) {
@@ -614,6 +614,20 @@ func main() {
 		}
 
 		return t.Return(c.Get())
+	})
+	s.DefineBuiltin("run", func(t *Task, args Cell) bool {
+		if args == Null {
+			SetCar(t.Scratch, False)
+			return false
+		}
+		SetCar(t.Scratch, Car(args))
+		t.Scratch = Cons(ext, t.Scratch)
+		t.Scratch = Cons(nil, t.Scratch)
+		for args = Cdr(args); args != Null; args = Cdr(args) {
+			t.Scratch = Cons(Car(args), t.Scratch)
+		}
+		t.ReplaceStates(psExecBuiltin)
+		return true
 	})
 
 	s.PublicMethod("child", func(t *Task, args Cell) bool {
