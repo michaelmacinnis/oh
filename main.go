@@ -21,6 +21,13 @@ Oh is released under an MIT-style license.
 */
 package main
 
+//#include <signal.h>
+//void ignore(void) {
+//	signal(SIGTTOU, SIG_IGN);
+//	signal(SIGTTIN, SIG_IGN);
+//}
+import "C"
+
 import (
 	"bufio"
 	"fmt"
@@ -36,6 +43,7 @@ import (
 	"strings"
 	"syscall"
 	"unicode"
+	"unsafe"
 )
 
 const (
@@ -71,6 +79,8 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
 	cli.LineEditingMode()
 	defer cli.OriginalTerminalMode()
 
@@ -158,6 +168,8 @@ var eval0 chan Cell
 
 var command = ""
 var ext Cell
+var foreground int
+var group int
 var interactive bool
 var jobs = map[*Task]int{}
 var lines = map[*Task]string{}
@@ -250,6 +262,7 @@ func dynamic(t *Task, state int64) bool {
 }
 
 func evaluate(c Cell) {
+	foreground = 0
 	eval0 <- c
 	<-done0
 	command = ""
@@ -317,11 +330,25 @@ func external(t *Task, args Cell) bool {
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
 	fd := []*os.File{in, out, err}
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd}
+
+	// TODO: We should have a lock around testing/setting of foreground.
+ 	sys := &syscall.SysProcAttr{
+		Default: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
+	}
+	if foreground == 0 {
+		sys.Setpgid = true
+		sys.Foreground = true
+	} else {
+		sys.Jobpgid = foreground
+	}
+	
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd, Sys: sys}
 	proc, problem := os.StartProcess(name, argv, attr)
 	if problem != nil {
 		panic(problem)
 	}
+
+	foreground = proc.Pid
 
 	t.Pid(proc.Pid)
 
@@ -339,7 +366,13 @@ func external(t *Task, args Cell) bool {
 }
 
 func init() {
-	//	syscall.Setpgid(0, 0)
+	pid := syscall.Getpid()
+	pgrp := syscall.Getpgrp()
+	if pid != pgrp {
+		syscall.Setpgid(0, 0)
+	}
+	group = pid
+	C.ignore()
 }
 
 func launch(task *Task) {

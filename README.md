@@ -140,8 +140,19 @@ from the Scheme dialect of Lisp. Rather than attempting to embed a Unix shell
 in scheme, oh was designed from scratch.
 
 
-References
+Motivation
 ----------
+
+Oh was motivated by the belief that many of the flaws in current Unix shells
+are not inherent but rather historical.  Design choices that are clearly
+unfortunate in retrospect have been carried forward in the name of backward
+compatibility.  As a re-imagining of the Unix shell, oh revisits these design
+choices while adding support for concurrent, functional and object-based
+programming.
+
+
+References and Other Shells
+---------------------------
 
 Fexprs:
 
