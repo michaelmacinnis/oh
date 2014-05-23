@@ -31,7 +31,7 @@ import "C"
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/liner"
+	"github.com/peterh/liner"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -81,8 +81,8 @@ type Liner struct {
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
 			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-	cli.LineEditingMode()
-	defer cli.OriginalTerminalMode()
+	raw.ApplyMode()
+	defer cooked.ApplyMode()
 
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
@@ -173,6 +173,8 @@ var group int
 var interactive bool
 var jobs = map[*Task]int{}
 var lines = map[*Task]string{}
+var cooked liner.ModeApplier
+var raw liner.ModeApplier
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -1712,7 +1714,13 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), evaluate)
 
 	if len(os.Args) <= 1 {
+		// We assume the terminal starts in cooked mode.
+		cooked, _ = liner.TerminalMode()
+
 		cli = &Liner{liner.NewLiner()}
+
+		raw, _ = liner.TerminalMode()
+
 		cli.SetCompleter(complete)
 
 		Parse(cli, evaluate)
