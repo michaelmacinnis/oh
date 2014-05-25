@@ -74,6 +74,17 @@ const (
 	psMax
 )
 
+type Notification struct {
+	pid int
+	status syscall.WaitStatus
+}
+
+type Registration struct {
+	pid int
+	cb chan Notification
+	jc bool
+}
+
 type Liner struct {
 	*liner.State
 }
@@ -167,14 +178,16 @@ var done0 chan Cell
 var eval0 chan Cell
 
 var command = ""
+var cooked liner.ModeApplier
 var ext Cell
 var foreground int
 var group int
 var interactive bool
 var jobs = map[*Task]int{}
 var lines = map[*Task]string{}
-var cooked liner.ModeApplier
+var notification chan Notification
 var raw liner.ModeApplier
+var registration chan Registration
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -354,17 +367,13 @@ func external(t *Task, args Cell) bool {
 
 	t.Pid(proc.Pid)
 
-	var status int64 = 0
-	msg, problem := proc.Wait()
-	if problem != nil {
-		panic(problem)
-	}
-
-	status = int64(msg.Sys().(syscall.WaitStatus).ExitStatus())
+	cb := make(chan Notification)
+	registration <- Registration{proc.Pid, cb, false}
+	n := <-cb
 
 	t.Pid(0)
 
-	return t.Return(NewStatus(status))
+	return t.Return(NewStatus(int64(n.status.ExitStatus())))
 }
 
 func init() {
@@ -1461,6 +1470,39 @@ func main() {
 		kv := strings.SplitN(s, "=", 2)
 		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
+
+	notification = make(chan Notification)
+	registration = make(chan Registration)
+
+	go func() {
+		for {
+			var rusage syscall.Rusage
+			var status syscall.WaitStatus
+			options := 0 // syscall.WUNTRACED | syscall.WCONTINUED
+			pid, e := syscall.Wait4(-1, &status, options, &rusage)
+			if e == nil && pid > 0 {
+				notification <- Notification{pid, status}
+			}
+		}
+	}()
+
+	go func() {
+		listeners := make(map[int]Registration)
+		for {
+			select {
+			case r := <-registration:
+				listeners[r.pid] = r
+			case n := <-notification:
+				r, ok := listeners[n.pid]
+				if ok {
+					if n.status.Exited() {
+						r.cb <- n
+						delete(listeners, n.pid)
+					}
+				}
+			}
+		}
+	}()
 
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
