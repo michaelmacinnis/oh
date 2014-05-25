@@ -1474,16 +1474,27 @@ func main() {
 	notification = make(chan Notification)
 	registration = make(chan Registration)
 
+	monitor := make(chan bool)
+
 	go func() {
-		for {
-			var rusage syscall.Rusage
-			var status syscall.WaitStatus
-			options := 0 // syscall.WUNTRACED | syscall.WCONTINUED
-			pid, e := syscall.Wait4(-1, &status, options, &rusage)
-			if e == nil && pid > 0 {
-				notification <- Notification{pid, status}
+		for <-monitor {
+			for {
+				var rusage syscall.Rusage
+				var status syscall.WaitStatus
+				options := syscall.WUNTRACED |
+						syscall.WCONTINUED
+				pid, e := syscall.Wait4(-1, &status,
+							options, &rusage)
+				if e == nil && pid > 0 {
+					n := Notification{pid, status}
+					notification <- n
+					if ! <-monitor {
+						break
+					}
+				}
 			}
 		}
+		panic("This should never happen.")
 	}()
 
 	go func() {
@@ -1492,6 +1503,9 @@ func main() {
 			select {
 			case r := <-registration:
 				listeners[r.pid] = r
+				if len(listeners) == 1 {
+					monitor <- true
+				}
 			case n := <-notification:
 				r, ok := listeners[n.pid]
 				if ok {
@@ -1500,6 +1514,7 @@ func main() {
 						delete(listeners, n.pid)
 					}
 				}
+				monitor <- len(listeners) != 0
 			}
 		}
 	}()
