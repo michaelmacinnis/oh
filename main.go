@@ -75,14 +75,13 @@ const (
 )
 
 type Notification struct {
-	pid int
+	pid    int
 	status syscall.WaitStatus
 }
 
 type Registration struct {
 	pid int
-	cb chan Notification
-	jc bool
+	cb  chan Notification
 }
 
 type Liner struct {
@@ -91,14 +90,14 @@ type Liner struct {
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
 	raw.ApplyMode()
 	defer cooked.ApplyMode()
 
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
-		if command == "" {
-			command = line
+		if task0.Job.command == "" {
+			task0.Job.command = line
 		}
 		line += "\n"
 	}
@@ -177,17 +176,16 @@ var cli *Liner
 var done0 chan Cell
 var eval0 chan Cell
 
-var command = ""
 var cooked liner.ModeApplier
 var ext Cell
-var foreground int
 var group int
+var incoming chan os.Signal
 var interactive bool
-var jobs = map[*Task]int{}
-var lines = map[*Task]string{}
 var notification chan Notification
 var raw liner.ModeApplier
 var registration chan Registration
+
+var jobs = map[int]*Task{}
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -277,10 +275,10 @@ func dynamic(t *Task, state int64) bool {
 }
 
 func evaluate(c Cell) {
-	foreground = 0
 	eval0 <- c
 	<-done0
-	command = ""
+	task0.Job.command = ""
+	task0.Job.group = 0
 }
 
 func expand(args Cell) Cell {
@@ -323,7 +321,7 @@ func expand(args Cell) Cell {
 func external(t *Task, args Cell) bool {
 	t.Scratch = Cdr(t.Scratch)
 
-	name, problem := exec.LookPath(Raw(Car(t.Scratch)))
+	arg0, problem := exec.LookPath(Raw(Car(t.Scratch)))
 
 	SetCar(t.Scratch, False)
 
@@ -331,7 +329,7 @@ func external(t *Task, args Cell) bool {
 		panic(problem)
 	}
 
-	argv := []string{name}
+	argv := []string{arg0}
 
 	for ; args != Null; args = Cdr(args) {
 		argv = append(argv, Car(args).String())
@@ -344,31 +342,19 @@ func external(t *Task, args Cell) bool {
 	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
 	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
 
-	fd := []*os.File{in, out, err}
+	files := []*os.File{in, out, err}
 
-	// TODO: We should have a lock around testing/setting of foreground.
- 	sys := &syscall.SysProcAttr{
-		Default: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
-	}
-	if foreground == 0 {
-		sys.Setpgid = true
-		sys.Foreground = true
-	} else {
-		sys.Jobpgid = foreground
-	}
-	
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: fd, Sys: sys}
-	proc, problem := os.StartProcess(name, argv, attr)
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
+
+	proc, problem := t.Launch(arg0, argv, attr)
 	if problem != nil {
 		panic(problem)
 	}
 
-	foreground = proc.Pid
-
 	t.Pid(proc.Pid)
 
 	cb := make(chan Notification)
-	registration <- Registration{proc.Pid, cb, false}
+	registration <- Registration{proc.Pid, cb}
 	n := <-cb
 
 	t.Pid(0)
@@ -591,34 +577,35 @@ func main() {
 			if a, ok := Car(args).(Atom); ok {
 				index = int(a.Int())
 			}
-		}
-
-		found := task0
-		for k, v := range jobs {
-			if args == Null {
-				if v > index {
-					index = v
+		} else {
+			for k, _ := range jobs {
+				if k > index {
+					index = k
 				}
-
-			}
-			if v == index {
-				found = k
 			}
 		}
 
-		if found == task0 {
+		found, ok := jobs[index]
+
+		if !ok {
 			return false
 		}
 
-		command = lines[found]
+		t.Stop()
 
-		delete(jobs, found)
-		delete(lines, found)
+		if found.Job.group != 0 {
+			foreground := found.Job.group
+			syscall.Syscall(syscall.SYS_IOCTL,
+				uintptr(syscall.Stdin),
+				syscall.TIOCSPGRP,
+				uintptr(unsafe.Pointer(&foreground)))
+			found.Job.mode.ApplyMode()
+		}
 
 		task0 = found
-
-		t.Stop()
 		task0.Continue()
+
+		delete(jobs, index)
 
 		return true
 	})
@@ -627,18 +614,16 @@ func main() {
 			return false
 		}
 
-		m := make(map[int]*Task)
 		i := make([]int, 0, len(jobs))
-		for k, v := range jobs {
-			i = append(i, v)
-			m[v] = k
+		for k, _ := range jobs {
+			i = append(i, k)
 		}
 		sort.Ints(i)
 		for k, v := range i {
 			if k != len(jobs)-1 {
-				fmt.Printf("[%d] \t%s\n", v, lines[m[v]])
+				fmt.Printf("[%d] \t%s\n", v, jobs[v].Job.command)
 			} else {
-				fmt.Printf("[%d]+\t%s\n", v, lines[m[v]])
+				fmt.Printf("[%d]+\t%s\n", v, jobs[v].Job.command)
 			}
 		}
 		return false
@@ -1481,15 +1466,24 @@ func main() {
 			for {
 				var rusage syscall.Rusage
 				var status syscall.WaitStatus
-				options := syscall.WUNTRACED |
-						syscall.WCONTINUED
+				options := syscall.WUNTRACED
 				pid, e := syscall.Wait4(-1, &status,
-							options, &rusage)
+					options, &rusage)
 				if e == nil && pid > 0 {
-					n := Notification{pid, status}
-					notification <- n
-					if ! <-monitor {
-						break
+					if status.Stopped() {
+						if pid == task0.Job.group {
+							incoming <- syscall.SIGTSTP
+						}
+					} else if status.Signaled() && status.Signal() == syscall.SIGINT {
+						if pid == task0.Job.group {
+							incoming <- syscall.SIGINT
+						}
+					} else {
+						n := Notification{pid, status}
+						notification <- n
+						if !<-monitor {
+							break
+						}
 					}
 				}
 			}
@@ -1522,7 +1516,7 @@ func main() {
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-	incoming := make(chan os.Signal, len(signals))
+	incoming = make(chan os.Signal, len(signals))
 	signal.Notify(incoming, signals...)
 	go func() {
 		go listen(task0)
@@ -1549,14 +1543,14 @@ func main() {
 						}
 						task0.Suspend()
 						last := 0
-						for _, v := range jobs {
-							if v > last {
-								last = v
+						for k, _ := range jobs {
+							if k > last {
+								last = k
 							}
 						}
 						last++
-						jobs[task0] = last
-						lines[task0] = command
+
+						jobs[last] = task0
 
 						fallthrough
 					case syscall.SIGINT:

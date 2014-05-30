@@ -5,10 +5,12 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/peterh/liner"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -1559,21 +1561,70 @@ func (self *Registers) Return(rv Cell) bool {
 	return false
 }
 
+/* Job definition. */
+
+type Job struct {
+	command string
+	group   int
+	lock    *sync.Mutex
+	mode    liner.ModeApplier
+}
+
+func NewJob() *Job {
+	mode, _ := liner.TerminalMode()
+	return &Job{"", 0, &sync.Mutex{}, mode}
+}
+
+func (self *Job) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*os.Process, error) {
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	attr.Sys = &syscall.SysProcAttr{
+		Default: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
+	}
+	if self.group == 0 {
+		attr.Sys.Setpgid = true
+		attr.Sys.Foreground = true
+	} else {
+		attr.Sys.Jobpgid = self.group
+	}
+
+	proc, err := os.StartProcess(arg0, argv, attr)
+	if err != nil {
+		return nil, err
+	}
+
+	if self.group == 0 {
+		self.group = proc.Pid
+	}
+
+	return proc, err
+}
+
 /* Task cell definition. */
 
 type Task struct {
+	*Job
 	*Registers
-	Children  map[*Task]bool
 	Done      chan Cell
 	Eval      chan Cell
-	child     []*Task
-	Parent    *Task
+	children  map[*Task]bool
+	parent    *Task
 	pid       int
 	suspended chan bool
 }
 
 func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
+	var j *Job
+	if p == nil {
+		j = NewJob()
+	} else {
+		j = p.Job
+	}
+
 	t := &Task{
+		Job: j,
 		Registers: &Registers{
 			Continuation: Continuation{
 				Scratch: List(NewStatus(0)),
@@ -1583,18 +1634,16 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 			Dynamic: d,
 			Lexical: l,
 		},
-		Children:  make(map[*Task]bool),
 		Done:      make(chan Cell, 1),
 		Eval:      make(chan Cell, 1),
-		child:     nil,
-		Parent:    p,
+		children:  make(map[*Task]bool),
+		parent:    p,
 		pid:       0,
 		suspended: runnable,
 	}
 
 	if p != nil {
-		p.Children[t] = true
-		p.child = append(p.child, t)
+		p.children[t] = true
 	}
 
 	return t
@@ -1619,7 +1668,7 @@ func (self *Task) Continue() {
 		syscall.Kill(self.pid, syscall.SIGCONT)
 	}
 
-	for k, v := range self.Children {
+	for k, v := range self.children {
 		if v {
 			k.Continue()
 		}
@@ -1650,7 +1699,7 @@ func (self *Task) Stop() {
 		syscall.Kill(self.pid, syscall.SIGTERM)
 	}
 
-	for k, v := range self.Children {
+	for k, v := range self.children {
 		if v {
 			k.Stop()
 		}
@@ -1658,11 +1707,11 @@ func (self *Task) Stop() {
 }
 
 func (self *Task) Suspend() {
-	if self.pid > 0 {
-		syscall.Kill(self.pid, syscall.SIGSTOP)
-	}
+	//	if self.pid > 0 {
+	//		syscall.Kill(self.pid, syscall.SIGSTOP)
+	//	}
 
-	for k, v := range self.Children {
+	for k, v := range self.children {
 		if v {
 			k.Suspend()
 		}
@@ -1672,10 +1721,12 @@ func (self *Task) Suspend() {
 }
 
 func (self *Task) Wait() {
-	for _, v := range self.child {
-		<-v.Done
+	for k, v := range self.children {
+		if v {
+			<-k.Done
+		}
+		delete(self.children, k)
 	}
-	self.child = nil
 }
 
 /*
