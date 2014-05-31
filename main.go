@@ -173,9 +173,6 @@ func files(line, prefix string) []string {
 
 var cli *Liner
 
-var done0 chan Cell
-var eval0 chan Cell
-
 var cooked liner.ModeApplier
 var ext Cell
 var group int
@@ -194,6 +191,10 @@ var next = map[int64][]int64{
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
 
+var done0 chan Cell
+var eval0 chan Cell
+var env0 *Env
+var scope0 *Scope
 var task0 *Task
 
 func apply(t *Task, args Cell) bool {
@@ -377,28 +378,34 @@ func launch(task *Task) {
 	close(task.Done)
 }
 
-func listen(task *Task) {
-	for c := range task.Eval {
-		saved := *(task.Registers)
+func listen() *Task {
+	task := NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
 
-		end := Cons(nil, Null)
+	go func() {
+		for c := range task.Eval {
+			saved := *(task.Registers)
 
-		SetCar(task.Code, c)
-		SetCdr(task.Code, end)
+			end := Cons(nil, Null)
 
-		task.Code = end
-		task.NewStates(SaveCode, psEvalCommand)
+			SetCar(task.Code, c)
+			SetCdr(task.Code, end)
 
-		task.Code = c
-		if !run(task, end) {
-			*(task.Registers) = saved
+			task.Code = end
+			task.NewStates(SaveCode, psEvalCommand)
 
-			SetCar(task.Code, nil)
-			SetCdr(task.Code, Null)
+			task.Code = c
+			if !run(task, end) {
+				*(task.Registers) = saved
+
+				SetCar(task.Code, nil)
+				SetCdr(task.Code, Null)
+			}
+
+			task.Done <- nil
 		}
+	}()
 
-		task.Done <- nil
-	}
+	return task
 }
 
 func lexical(t *Task, state int64) bool {
@@ -450,38 +457,38 @@ func main() {
 
 	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
 
-	e, s := NewEnv(nil), NewScope(nil, nil)
+	env0, scope0 = NewEnv(nil), NewScope(nil, nil)
 
-	task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
+	task0 = listen()
 
-	e.Add(NewSymbol("False"), False)
-	e.Add(NewSymbol("True"), True)
+	env0.Add(NewSymbol("False"), False)
+	env0.Add(NewSymbol("True"), True)
 
-	e.Add(NewSymbol("$stdin"), NewPipe(task0, os.Stdin, nil))
-	e.Add(NewSymbol("$stdout"), NewPipe(task0, nil, os.Stdout))
-	e.Add(NewSymbol("$stderr"), NewPipe(task0, nil, os.Stderr))
+	env0.Add(NewSymbol("$stdin"), NewPipe(task0, os.Stdin, nil))
+	env0.Add(NewSymbol("$stdout"), NewPipe(task0, nil, os.Stdout))
+	env0.Add(NewSymbol("$stderr"), NewPipe(task0, nil, os.Stderr))
 
 	if wd, err := os.Getwd(); err == nil {
-		e.Add(NewSymbol("$cwd"), NewSymbol(wd))
+		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	s.DefineSyntax("block", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 
 		t.NewBlock(t.Dynamic, t.Lexical)
 
 		return true
 	})
-	s.DefineSyntax("builtin", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("builtin", func(t *Task, args Cell) bool {
 		return combiner(t, NewBuiltin)
 	})
-	s.DefineSyntax("define", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("define", func(t *Task, args Cell) bool {
 		return lexical(t, psExecDefine)
 	})
-	s.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
 		return dynamic(t, psExecDynamic)
 	})
-	s.DefineSyntax("if", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
 
@@ -492,10 +499,10 @@ func main() {
 
 		return true
 	})
-	s.DefineSyntax("method", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("method", func(t *Task, args Cell) bool {
 		return combiner(t, NewMethod)
 	})
-	s.DefineSyntax("set", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
 
 		s := Cadr(t.Code)
@@ -514,10 +521,10 @@ func main() {
 		t.Code = s
 		return true
 	})
-	s.DefineSyntax("setenv", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("setenv", func(t *Task, args Cell) bool {
 		return dynamic(t, psExecSetenv)
 	})
-	s.DefineSyntax("spawn", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(psEvalBlock, t.Code, NewEnv(t.Dynamic),
 			NewScope(t.Lexical, nil), t)
 
@@ -527,7 +534,7 @@ func main() {
 
 		return false
 	})
-	s.DefineSyntax("splice", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("splice", func(t *Task, args Cell) bool {
 		t.ReplaceStates(psExecSplice, psEvalElement)
 
 		t.Code = Car(t.Code)
@@ -535,21 +542,21 @@ func main() {
 
 		return true
 	})
-	s.DefineSyntax("syntax", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("syntax", func(t *Task, args Cell) bool {
 		return combiner(t, NewSyntax)
 	})
-	s.DefineSyntax("while", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
 
 		return true
 	})
 
-	s.PublicSyntax("public", func(t *Task, args Cell) bool {
+	scope0.PublicSyntax("public", func(t *Task, args Cell) bool {
 		return lexical(t, psExecPublic)
 	})
 
 	/* Builtins. */
-	s.DefineBuiltin("cd", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
 		err := os.Chdir(Raw(Car(args)))
 		status := 0
 		if err != nil {
@@ -562,12 +569,12 @@ func main() {
 
 		return t.Return(NewStatus(int64(status)))
 	})
-	s.DefineBuiltin("debug", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
 		debug(t, "debug")
 
 		return false
 	})
-	s.DefineBuiltin("fg", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
 		if !interactive || t != task0 {
 			return false
 		}
@@ -609,7 +616,7 @@ func main() {
 
 		return true
 	})
-	s.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
 		if !interactive || t != task0 {
 			return false
 		}
@@ -628,7 +635,7 @@ func main() {
 		}
 		return false
 	})
-	s.DefineBuiltin("module", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(Raw(Car(args)))
 
 		if err != nil {
@@ -644,7 +651,7 @@ func main() {
 
 		return t.Return(c.Get())
 	})
-	s.DefineBuiltin("run", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("run", func(t *Task, args Cell) bool {
 		if args == Null {
 			SetCar(t.Scratch, False)
 			return false
@@ -659,37 +666,37 @@ func main() {
 		return true
 	})
 
-	s.PublicMethod("child", func(t *Task, args Cell) bool {
+	scope0.PublicMethod("child", func(t *Task, args Cell) bool {
 		o := Car(t.Scratch).(Binding).Self().Expose()
 
 		return t.Return(NewObject(NewScope(o, nil)))
 	})
-	s.PublicMethod("clone", func(t *Task, args Cell) bool {
+	scope0.PublicMethod("clone", func(t *Task, args Cell) bool {
 		o := Car(t.Scratch).(Binding).Self().Expose()
 
 		return t.Return(NewObject(o.Copy()))
 	})
-	s.PublicMethod("exists", func(t *Task, args Cell) bool {
+	scope0.PublicMethod("exists", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
 		c := Resolve(l, t.Dynamic, NewSymbol(Raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
-	s.DefineMethod("exit", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
 		t.Scratch = List(Car(args))
 
 		t.Stop()
 
 		return true
 	})
-	s.PublicMethod("unset", func(t *Task, args Cell) bool {
+	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
 		r := l.Remove(NewSymbol(Raw(Car(args))))
 
 		return t.Return(NewBoolean(r))
 	})
 
-	s.DefineMethod("append", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("append", func(t *Task, args Cell) bool {
 		/*
 		 * NOTE: Our append works differently than Scheme's append.
 		 *       To mimic Scheme's behavior use: append l1 @l2 ... @ln
@@ -706,16 +713,16 @@ func main() {
 
 		return t.Return(s)
 	})
-	s.DefineMethod("car", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("car", func(t *Task, args Cell) bool {
 		return t.Return(Caar(args))
 	})
-	s.DefineMethod("cdr", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("cdr", func(t *Task, args Cell) bool {
 		return t.Return(Cdar(args))
 	})
-	s.DefineMethod("cons", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("cons", func(t *Task, args Cell) bool {
 		return t.Return(Cons(Car(args), Cadr(args)))
 	})
-	s.PublicMethod("eval", func(t *Task, args Cell) bool {
+	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
 		scope := Car(t.Scratch).(Binding).Self().Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
@@ -728,7 +735,7 @@ func main() {
 
 		return true
 	})
-	s.DefineMethod("length", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("length", func(t *Task, args Cell) bool {
 		var l int64 = 0
 
 		switch c := Car(args); c.(type) {
@@ -740,10 +747,10 @@ func main() {
 
 		return t.Return(NewInteger(l))
 	})
-	s.DefineMethod("list", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("list", func(t *Task, args Cell) bool {
 		return t.Return(args)
 	})
-	s.DefineMethod("open", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		name := Raw(Car(args))
 		mode := Raw(Cadr(args))
 		flags := 0
@@ -795,20 +802,20 @@ func main() {
 
 		return t.Return(NewPipe(t, r, w))
 	})
-	s.DefineMethod("reverse", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("reverse", func(t *Task, args Cell) bool {
 		return t.Return(Reverse(Car(args)))
 	})
-	s.DefineMethod("set-car", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("set-car", func(t *Task, args Cell) bool {
 		SetCar(Car(args), Cadr(args))
 
 		return t.Return(Cadr(args))
 	})
-	s.DefineMethod("set-cdr", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("set-cdr", func(t *Task, args Cell) bool {
 		SetCdr(Car(args), Cadr(args))
 
 		return t.Return(Cadr(args))
 	})
-	s.DefineMethod("wait", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("wait", func(t *Task, args Cell) bool {
 		if args == Null {
 			t.Wait()
 		}
@@ -822,15 +829,15 @@ func main() {
 	})
 
 	/* Predicates. */
-	s.DefineMethod("is-atom", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-atom", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsAtom(Car(args))))
 	})
-	s.DefineMethod("is-boolean", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-boolean", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Boolean)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-builtin", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-builtin", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Builtin)
@@ -838,25 +845,25 @@ func main() {
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-channel", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-channel", func(t *Task, args Cell) bool {
 		_, ok := GetConduit(Car(args).(Context)).(*Channel)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-cons", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-cons", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsCons(Car(args))))
 	})
-	s.DefineMethod("is-float", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-float", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Float)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-integer", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-integer", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Integer)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-method", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-method", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Method)
@@ -864,42 +871,42 @@ func main() {
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-null", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-null", func(t *Task, args Cell) bool {
 		ok := Car(args) == Null
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-number", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-number", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(Number)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-object", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-object", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(Context)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
 		_, ok := GetConduit(Car(args).(Context)).(*Pipe)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-status", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-status", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Status)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-string", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-string", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*String)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-symbol", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-symbol", func(t *Task, args Cell) bool {
 		_, ok := Car(args).(*Symbol)
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("is-syntax", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is-syntax", func(t *Task, args Cell) bool {
 		b, ok := Car(args).(Binding)
 		if ok {
 			_, ok = b.Ref().(*Syntax)
@@ -909,10 +916,10 @@ func main() {
 	})
 
 	/* Generators. */
-	s.DefineMethod("boolean", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("boolean", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(Car(args).Bool()))
 	})
-	s.DefineMethod("channel", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
 		cap := 0
 		if args != Null {
 			cap = int(Car(args).(Atom).Int())
@@ -920,27 +927,27 @@ func main() {
 
 		return t.Return(NewChannel(t, cap))
 	})
-	s.DefineMethod("float", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("float", func(t *Task, args Cell) bool {
 		return t.Return(NewFloat(Car(args).(Atom).Float()))
 	})
-	s.DefineMethod("integer", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("integer", func(t *Task, args Cell) bool {
 		return t.Return(NewInteger(Car(args).(Atom).Int()))
 	})
-	s.DefineMethod("pipe", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("pipe", func(t *Task, args Cell) bool {
 		return t.Return(NewPipe(t, nil, nil))
 	})
-	s.DefineMethod("status", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("status", func(t *Task, args Cell) bool {
 		return t.Return(NewStatus(Car(args).(Atom).Status()))
 	})
-	s.DefineMethod("string", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("string", func(t *Task, args Cell) bool {
 		return t.Return(NewString(Car(args).String()))
 	})
-	s.DefineMethod("symbol", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("symbol", func(t *Task, args Cell) bool {
 		return t.Return(NewSymbol(Raw(Car(args))))
 	})
 
 	/* Relational. */
-	s.DefineMethod("eq", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("eq", func(t *Task, args Cell) bool {
 		prev := Car(args)
 
 		for Cdr(args) != Null {
@@ -956,7 +963,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("ge", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("ge", func(t *Task, args Cell) bool {
 		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -972,7 +979,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("gt", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("gt", func(t *Task, args Cell) bool {
 		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -988,7 +995,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("is", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("is", func(t *Task, args Cell) bool {
 		prev := Car(args)
 
 		for Cdr(args) != Null {
@@ -1004,7 +1011,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("le", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("le", func(t *Task, args Cell) bool {
 		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1020,7 +1027,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("lt", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("lt", func(t *Task, args Cell) bool {
 		prev := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1036,7 +1043,7 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("match", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
 		pattern := Raw(Car(args))
 		text := Raw(Cadr(args))
 
@@ -1047,7 +1054,7 @@ func main() {
 
 		return t.Return(NewBoolean(ok))
 	})
-	s.DefineMethod("ne", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("ne", func(t *Task, args Cell) bool {
 		for l1 := args; l1 != Null; l1 = Cdr(l1) {
 			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
 				v1 := Car(l1)
@@ -1061,12 +1068,12 @@ func main() {
 
 		return t.Return(True)
 	})
-	s.DefineMethod("not", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("not", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(!Car(args).Bool()))
 	})
 
 	/* Arithmetic. */
-	s.DefineMethod("add", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("add", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1077,7 +1084,7 @@ func main() {
 
 		return t.Return(acc)
 	})
-	s.DefineMethod("sub", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("sub", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1087,7 +1094,7 @@ func main() {
 
 		return t.Return(acc)
 	})
-	s.DefineMethod("div", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("div", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1097,7 +1104,7 @@ func main() {
 
 		return t.Return(acc)
 	})
-	s.DefineMethod("mod", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("mod", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1107,7 +1114,7 @@ func main() {
 
 		return t.Return(acc)
 	})
-	s.DefineMethod("mul", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("mul", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
 		for Cdr(args) != Null {
@@ -1119,8 +1126,8 @@ func main() {
 	})
 
 	/* Standard namespaces. */
-	list := NewObject(NewScope(s, nil))
-	s.Define(NewSymbol("List"), list)
+	list := NewObject(NewScope(scope0, nil))
+	scope0.Define(NewSymbol("List"), list)
 
 	list.PublicMethod("to-string", func(t *Task, args Cell) bool {
 		s := ""
@@ -1139,8 +1146,8 @@ func main() {
 		return t.Return(NewSymbol(s))
 	})
 
-	text := NewObject(NewScope(s, nil))
-	s.Define(NewSymbol("Text"), text)
+	text := NewObject(NewScope(scope0, nil))
+	scope0.Define(NewSymbol("Text"), text)
 
 	text.PublicMethod("is-control", func(t *Task, args Cell) bool {
 		var r Cell
@@ -1428,32 +1435,32 @@ func main() {
 		return t.Return(r)
 	})
 
-	s.Public(NewSymbol("Root"), s)
+	scope0.Public(NewSymbol("Root"), scope0)
 
 	pid := os.Getpid()
-	e.Add(NewSymbol("$$"), NewInteger(int64(pid)))
+	env0.Add(NewSymbol("$$"), NewInteger(int64(pid)))
 
 	/* Command-line arguments */
 	args := Null
 	if len(os.Args) > 1 {
-		e.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			e.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
+			env0.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		e.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
 	}
-	e.Add(NewSymbol("$args"), args)
+	env0.Add(NewSymbol("$args"), args)
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
-		e.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
 	notification = make(chan Notification)
@@ -1519,7 +1526,6 @@ func main() {
 	incoming = make(chan os.Signal, len(signals))
 	signal.Notify(incoming, signals...)
 	go func() {
-		go listen(task0)
 		var c Cell = nil
 		for c == nil && task0.Stack != Null {
 			for c == nil {
@@ -1561,8 +1567,8 @@ func main() {
 							task0.Stop()
 						}
 						fmt.Printf("\n")
-						task0 = NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
-						go listen(task0)
+
+						task0 = listen()
 						c = nil
 					}
 

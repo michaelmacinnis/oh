@@ -1581,13 +1581,13 @@ func (self *Job) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*os.Proc
 	defer self.lock.Unlock()
 
 	attr.Sys = &syscall.SysProcAttr{
-		Default: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
+		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
 	}
 	if self.group == 0 {
 		attr.Sys.Setpgid = true
 		attr.Sys.Foreground = true
 	} else {
-		attr.Sys.Jobpgid = self.group
+		attr.Sys.Joinpgrp = self.group
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)

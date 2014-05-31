@@ -21,9 +21,9 @@ type SysProcAttr struct {
 	Ctty       int         // Controlling TTY fd (Linux only)
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 	Cloneflags uintptr     // Flags for clone calls (Linux only)
-	Jobpgid    int         // If != 0, set process group ID of new process to this.
-	Foreground bool	       // If true, set as foreground process group. (Only meaningful if Setpgid is set. Stdin should be a TTY).
-	Default	   []Signal    // Set default signal handler for these signals in child.
+	Foreground bool        // If true, set as foreground process group. (Only meaningful if Setpgid is set. Stdin should be a TTY).
+	Joinpgrp   int         // If != 0, set process group ID of new process to this.
+	Sigdfl     []Signal    // Set default signal handler for these signals in child.
 }
 
 // TODO: Thanks to John Southworth for mailing me this:
@@ -91,16 +91,16 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 		pid = int(r1)
 
-		if sys.Jobpgid != 0 {
+		if sys.Joinpgrp != 0 {
 			// Place the child in the specified process group.
-			RawSyscall(SYS_SETPGID, r1, uintptr(sys.Jobpgid), 0)
+			RawSyscall(SYS_SETPGID, r1, uintptr(sys.Joinpgrp), 0)
 		} else if sys.Setpgid {
 			// Place the child in a new process group.
 			RawSyscall(SYS_SETPGID, 0, 0, 0)
 
 			if sys.Foreground {
 				// Set new foreground process group. (Stdin should be a TTY).
-				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid))) // TODO: Is it safe to take the address of 'pid' at this point?
+				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid)))
 			}
 		}
 
@@ -145,9 +145,9 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Set process group
-	if sys.Jobpgid != 0 {
+	if sys.Joinpgrp != 0 {
 		// Place the child in the specified process group.
-		_, _, err1 = RawSyscall(SYS_SETPGID, r1, uintptr(sys.Jobpgid), 0)
+		_, _, err1 = RawSyscall(SYS_SETPGID, r1, uintptr(sys.Joinpgrp), 0)
 		if err1 != 0 {
 			goto childerror
 		}
@@ -158,9 +158,9 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 			goto childerror
 		}
 
-                r1, _, _ = RawSyscall(SYS_GETPID, 0, 0, 0)
+		r1, _, _ = RawSyscall(SYS_GETPID, 0, 0, 0)
 
-                pid = int(r1)
+		pid = int(r1)
 
 		if sys.Foreground {
 			// Set new foreground process group. (Stdin should be a TTY).
@@ -172,14 +172,14 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Reset default signal handlers for specified signals.
-	if sys.Default != nil {
+	if sys.Sigdfl != nil {
 		// TODO: I'm paranoid. Is it OK to use range here?
-        	for _, sig = range sys.Default {
+		for _, sig = range sys.Sigdfl {
 			_, _, err1 = RawSyscall6(SYS_RT_SIGACTION, uintptr(sig), uintptr(unsafe.Pointer(sa)), 0, unsafe.Sizeof(sa.sa_mask), 0, 0)
 			if err1 != 0 {
 				goto childerror
 			}
-        	}
+		}
 	}
 
 	// Chroot
