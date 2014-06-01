@@ -16,7 +16,17 @@ import (
 
 type Function func(t *Task, args Cell) bool
 
-type NewCombiner func(a Function, b, l, p Cell, s Context) Closure
+type NewClosure func(a Function, b, l, p Cell, s Context) Closure
+
+type Notification struct {
+	pid    int
+	status syscall.WaitStatus
+}
+
+type Registration struct {
+	pid int
+	cb  chan Notification
+}
 
 type Atom interface {
 	Cell
@@ -123,6 +133,7 @@ var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
 
+var registration chan Registration
 var runnable chan bool
 
 func init() {
@@ -201,6 +212,8 @@ func init() {
 		GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
+
+	registration = make(chan Registration)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -403,6 +416,10 @@ func Raw(c Cell) string {
 	}
 
 	return c.String()
+}
+
+func RegistrationChannel() chan Registration {
+	return registration
 }
 
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
@@ -1564,42 +1581,15 @@ func (self *Registers) Return(rv Cell) bool {
 /* Job definition. */
 
 type Job struct {
+	*sync.Mutex
 	command string
 	group   int
-	lock    *sync.Mutex
 	mode    liner.ModeApplier
 }
 
 func NewJob() *Job {
 	mode, _ := liner.TerminalMode()
-	return &Job{"", 0, &sync.Mutex{}, mode}
-}
-
-func (self *Job) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*os.Process, error) {
-
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	attr.Sys = &syscall.SysProcAttr{
-		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
-	}
-	if self.group == 0 {
-		attr.Sys.Setpgid = true
-		attr.Sys.Foreground = true
-	} else {
-		attr.Sys.Joinpgrp = self.group
-	}
-
-	proc, err := os.StartProcess(arg0, argv, attr)
-	if err != nil {
-		return nil, err
-	}
-
-	if self.group == 0 {
-		self.group = proc.Pid
-	}
-
-	return proc, err
+	return &Job{&sync.Mutex{}, "", 0, mode}
 }
 
 /* Task cell definition. */
@@ -1677,8 +1667,39 @@ func (self *Task) Continue() {
 	close(self.suspended)
 }
 
-func (self *Task) Pid(pid int) {
-	self.pid = pid
+func (self *Task) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
+
+	self.Lock()
+	defer self.Unlock()
+
+	attr.Sys = &syscall.SysProcAttr{
+		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
+	}
+	if self.group == 0 {
+		attr.Sys.Setpgid = true
+		attr.Sys.Foreground = true
+	} else {
+		attr.Sys.Joinpgrp = self.group
+	}
+
+	proc, err := os.StartProcess(arg0, argv, attr)
+	if err != nil {
+		return nil, err
+	}
+
+	if self.group == 0 {
+		self.group = proc.Pid
+	}
+
+	self.pid = proc.Pid
+
+	cb := make(chan Notification)
+	RegistrationChannel() <- Registration{proc.Pid, cb}
+	n := <-cb
+
+	self.pid = 0
+
+	return NewStatus(int64(n.status.ExitStatus())), err
 }
 
 func (self *Task) Runnable() bool {

@@ -74,16 +74,6 @@ const (
 	psMax
 )
 
-type Notification struct {
-	pid    int
-	status syscall.WaitStatus
-}
-
-type Registration struct {
-	pid int
-	cb  chan Notification
-}
-
 type Liner struct {
 	*liner.State
 }
@@ -172,15 +162,12 @@ func files(line, prefix string) []string {
 }
 
 var cli *Liner
-
 var cooked liner.ModeApplier
 var ext Cell
 var group int
 var incoming chan os.Signal
 var interactive bool
-var notification chan Notification
 var raw liner.ModeApplier
-var registration chan Registration
 
 var jobs = map[int]*Task{}
 
@@ -225,7 +212,7 @@ func apply(t *Task, args Cell) bool {
 	return true
 }
 
-func combiner(t *Task, n NewCombiner) bool {
+func closure(t *Task, n NewClosure) bool {
 	label := Null
 	params := Car(t.Code)
 	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
@@ -347,20 +334,12 @@ func external(t *Task, args Cell) bool {
 
 	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
 
-	proc, problem := t.Launch(arg0, argv, attr)
+	status, problem := t.Launch(arg0, argv, attr)
 	if problem != nil {
 		panic(problem)
 	}
 
-	t.Pid(proc.Pid)
-
-	cb := make(chan Notification)
-	registration <- Registration{proc.Pid, cb}
-	n := <-cb
-
-	t.Pid(0)
-
-	return t.Return(NewStatus(int64(n.status.ExitStatus())))
+	return t.Return(status)
 }
 
 func init() {
@@ -480,7 +459,7 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("builtin", func(t *Task, args Cell) bool {
-		return combiner(t, NewBuiltin)
+		return closure(t, NewBuiltin)
 	})
 	scope0.DefineSyntax("define", func(t *Task, args Cell) bool {
 		return lexical(t, psExecDefine)
@@ -500,7 +479,7 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("method", func(t *Task, args Cell) bool {
-		return combiner(t, NewMethod)
+		return closure(t, NewMethod)
 	})
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
@@ -543,7 +522,7 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("syntax", func(t *Task, args Cell) bool {
-		return combiner(t, NewSyntax)
+		return closure(t, NewSyntax)
 	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
@@ -1463,62 +1442,11 @@ func main() {
 		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-	notification = make(chan Notification)
-	registration = make(chan Registration)
+	active := make(chan bool)
+	notify := make(chan Notification)
 
-	monitor := make(chan bool)
-
-	go func() {
-		for <-monitor {
-			for {
-				var rusage syscall.Rusage
-				var status syscall.WaitStatus
-				options := syscall.WUNTRACED
-				pid, e := syscall.Wait4(-1, &status,
-					options, &rusage)
-				if e == nil && pid > 0 {
-					if status.Stopped() {
-						if pid == task0.Job.group {
-							incoming <- syscall.SIGTSTP
-						}
-					} else if status.Signaled() && status.Signal() == syscall.SIGINT {
-						if pid == task0.Job.group {
-							incoming <- syscall.SIGINT
-						}
-					} else {
-						n := Notification{pid, status}
-						notification <- n
-						if !<-monitor {
-							break
-						}
-					}
-				}
-			}
-		}
-		panic("This should never happen.")
-	}()
-
-	go func() {
-		listeners := make(map[int]Registration)
-		for {
-			select {
-			case r := <-registration:
-				listeners[r.pid] = r
-				if len(listeners) == 1 {
-					monitor <- true
-				}
-			case n := <-notification:
-				r, ok := listeners[n.pid]
-				if ok {
-					if n.status.Exited() {
-						r.cb <- n
-						delete(listeners, n.pid)
-					}
-				}
-				monitor <- len(listeners) != 0
-			}
-		}
-	}()
+	go monitor(active, notify)
+	go registrar(active, notify)
 
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
@@ -1804,9 +1732,62 @@ func module(f string) (string, error) {
 	return m, nil
 }
 
+func monitor(active chan bool, notify chan Notification) {
+	for <-active {
+		for {
+			var rusage syscall.Rusage
+			var status syscall.WaitStatus
+			options := syscall.WUNTRACED
+			pid, e := syscall.Wait4(-1, &status, options, &rusage)
+			if e != nil || pid <= 0 {
+				continue
+			}
+
+			if status.Stopped() {
+				if pid == task0.Job.group {
+					incoming <- syscall.SIGTSTP
+				}
+			} else if status.Signaled() &&
+				status.Signal() == syscall.SIGINT {
+				if pid == task0.Job.group {
+					incoming <- syscall.SIGINT
+				}
+			} else {
+				notify <- Notification{pid, status}
+				if !<-active {
+					break
+				}
+			}
+		}
+	}
+	panic("This should never happen.")
+}
+
 func number(s string) bool {
 	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
 	return err == nil && m
+}
+
+func registrar(active chan bool, notify chan Notification) {
+	registered := make(map[int]Registration)
+	for {
+		select {
+		case n := <-notify:
+			r, ok := registered[n.pid]
+			if ok {
+				if n.status.Exited() {
+					r.cb <- n
+					delete(registered, n.pid)
+				}
+			}
+			active <- len(registered) != 0
+		case r := <-RegistrationChannel():
+			registered[r.pid] = r
+			if len(registered) == 1 {
+				active <- true
+			}
+		}
+	}
 }
 
 func rpipe(c Cell) *os.File {
