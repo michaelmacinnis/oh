@@ -18,16 +18,6 @@ type Function func(t *Task, args Cell) bool
 
 type NewClosure func(a Function, b, l, p Cell, s Context) Closure
 
-type Notification struct {
-	pid    int
-	status syscall.WaitStatus
-}
-
-type Registration struct {
-	pid int
-	cb  chan Notification
-}
-
 type Atom interface {
 	Cell
 
@@ -133,7 +123,6 @@ var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
 
-var registration chan Registration
 var runnable chan bool
 
 func init() {
@@ -212,8 +201,6 @@ func init() {
 		GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
-
-	registration = make(chan Registration)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -416,10 +403,6 @@ func Raw(c Cell) string {
 	}
 
 	return c.String()
-}
-
-func RegistrationChannel() chan Registration {
-	return registration
 }
 
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
@@ -1693,13 +1676,11 @@ func (self *Task) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*Status
 
 	self.pid = proc.Pid
 
-	cb := make(chan Notification)
-	RegistrationChannel() <- Registration{proc.Pid, cb}
-	n := <-cb
+	status := JoinProcess(proc.Pid)
 
 	self.pid = 0
 
-	return NewStatus(int64(n.status.ExitStatus())), err
+	return NewStatus(int64(status.ExitStatus())), err
 }
 
 func (self *Task) Runnable() bool {

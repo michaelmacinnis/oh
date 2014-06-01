@@ -1442,12 +1442,6 @@ func main() {
 		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-	active := make(chan bool)
-	notify := make(chan Notification)
-
-	go monitor(active, notify)
-	go registrar(active, notify)
-
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
@@ -1732,62 +1726,9 @@ func module(f string) (string, error) {
 	return m, nil
 }
 
-func monitor(active chan bool, notify chan Notification) {
-	for <-active {
-		for {
-			var rusage syscall.Rusage
-			var status syscall.WaitStatus
-			options := syscall.WUNTRACED
-			pid, e := syscall.Wait4(-1, &status, options, &rusage)
-			if e != nil || pid <= 0 {
-				continue
-			}
-
-			if status.Stopped() {
-				if pid == task0.Job.group {
-					incoming <- syscall.SIGTSTP
-				}
-			} else if status.Signaled() &&
-				status.Signal() == syscall.SIGINT {
-				if pid == task0.Job.group {
-					incoming <- syscall.SIGINT
-				}
-			} else {
-				notify <- Notification{pid, status}
-				if !<-active {
-					break
-				}
-			}
-		}
-	}
-	panic("This should never happen.")
-}
-
 func number(s string) bool {
 	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
 	return err == nil && m
-}
-
-func registrar(active chan bool, notify chan Notification) {
-	registered := make(map[int]Registration)
-	for {
-		select {
-		case n := <-notify:
-			r, ok := registered[n.pid]
-			if ok {
-				if n.status.Exited() {
-					r.cb <- n
-					delete(registered, n.pid)
-				}
-			}
-			active <- len(registered) != 0
-		case r := <-RegistrationChannel():
-			registered[r.pid] = r
-			if len(registered) == 1 {
-				active <- true
-			}
-		}
-	}
 }
 
 func rpipe(c Cell) *os.File {
