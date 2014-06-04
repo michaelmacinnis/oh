@@ -1114,7 +1114,7 @@ func main() {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return t.Return(NewString(s))
+		return t.Return(NewRawString(s))
 	})
 	list.PublicMethod("to-symbol", func(t *Task, args Cell) bool {
 		s := ""

@@ -15,7 +15,6 @@
 package main
 
 import (
-    "fmt"
     "strconv"
     "unsafe"
 )
@@ -300,8 +299,8 @@ main:
                 s.cursor -= s.start
             } else {
                 s.cursor = 0
+            	s.line = []rune(line)
             }
-            s.line = []rune(line)
             s.start = 0
             s.token = 0
         }
@@ -400,13 +399,15 @@ main:
             }
 
         case ssString:
-            for s.line[s.cursor] != '"' ||
-                s.line[s.cursor - 1] == '\\' {
+            for s.cursor < len(s.line) && s.line[s.cursor] != '"' ||
+                s.cursor > 0 && s.line[s.cursor - 1] == '\\' {
                 s.cursor++
-
-                if s.cursor >= len(s.line) {
-                    continue main
-                }
+            }
+            if s.cursor >= len(s.line) {
+		if s.line[s.cursor - 1] == '\n' {
+                    s.line = append(s.line[0:s.cursor - 1], []rune("\\n")...)
+		}
+                continue main
             }
             s.token = STRING
 

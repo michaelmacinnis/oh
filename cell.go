@@ -840,9 +840,7 @@ func (self *Symbol) Subtract(c Cell) Number {
 
 type String string
 
-func NewString(q string) *String {
-	v, _ := strconv.Unquote("\"" + q + "\"")
-
+func NewRawString(v string) *String {
 	p, ok := str[v]
 
 	if ok {
@@ -857,6 +855,12 @@ func NewString(q string) *String {
 	}
 
 	return p
+}
+
+func NewString(q string) *String {
+	v, _ := strconv.Unquote("\"" + q + "\"")
+
+	return NewRawString(v)
 }
 
 func (self *String) Bool() bool {
