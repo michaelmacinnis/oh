@@ -34,7 +34,6 @@ import (
 	"github.com/peterh/liner"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -165,7 +164,6 @@ var cli *Liner
 var cooked liner.ModeApplier
 var ext Cell
 var group int
-var incoming chan os.Signal
 var interactive bool
 var raw liner.ModeApplier
 
@@ -177,12 +175,6 @@ var next = map[int64][]int64{
 	psExecIf:               {psEvalBlock},
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
-
-var done0 chan Cell
-var eval0 chan Cell
-var env0 *Env
-var scope0 *Scope
-var task0 *Task
 
 func apply(t *Task, args Cell) bool {
 	m := Car(t.Scratch).(Binding)
@@ -260,13 +252,6 @@ func dynamic(t *Task, state int64) bool {
 	t.Scratch = Cdr(t.Scratch)
 
 	return true
-}
-
-func evaluate(c Cell) {
-	eval0 <- c
-	<-done0
-	task0.Job.command = ""
-	task0.Job.group = 0
 }
 
 func expand(args Cell) Cell {
@@ -350,6 +335,8 @@ func init() {
 	}
 	group = pid
 	C.ignore()
+
+	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
 }
 
 func launch(task *Task) {
@@ -357,8 +344,8 @@ func launch(task *Task) {
 	close(task.Done)
 }
 
-func listen() *Task {
-	task := NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
+func listen(e *Env, s *Scope) *Task {
+	task := NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
 
 	go func() {
 		for c := range task.Eval {
@@ -434,21 +421,46 @@ func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
 func main() {
 	interactive = (len(os.Args) <= 1)
 
-	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
+	pid := os.Getpid()
 
-	env0, scope0 = NewEnv(nil), NewScope(nil, nil)
+	env0, scope0 := NewEnv(nil), NewScope(nil, nil)
 
-	task0 = listen()
+	StartBroker(pid, env0, scope0)
 
 	env0.Add(NewSymbol("False"), False)
 	env0.Add(NewSymbol("True"), True)
+
+	/* Command-line arguments */
+	args := Null
+	if len(os.Args) > 1 {
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
+
+		for i, v := range os.Args[2:] {
+			env0.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
+		}
+
+		for i := len(os.Args) - 1; i > 1; i-- {
+			args = Cons(NewSymbol(os.Args[i]), args)
+		}
+	} else {
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+	}
+	env0.Add(NewSymbol("$args"), args)
+
+	env0.Add(NewSymbol("$$"), NewInteger(int64(pid)))
+
+	if wd, err := os.Getwd(); err == nil {
+		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
+	}
 
 	env0.Add(NewSymbol("$stdin"), NewPipe(task0, os.Stdin, nil))
 	env0.Add(NewSymbol("$stdout"), NewPipe(task0, nil, os.Stdout))
 	env0.Add(NewSymbol("$stderr"), NewPipe(task0, nil, os.Stderr))
 
-	if wd, err := os.Getwd(); err == nil {
-		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
+	/* Environment variables. */
+	for _, s := range os.Environ() {
+		kv := strings.SplitN(s, "=", 2)
+		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
@@ -1416,96 +1428,6 @@ func main() {
 
 	scope0.Public(NewSymbol("Root"), scope0)
 
-	pid := os.Getpid()
-	env0.Add(NewSymbol("$$"), NewInteger(int64(pid)))
-
-	/* Command-line arguments */
-	args := Null
-	if len(os.Args) > 1 {
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
-
-		for i, v := range os.Args[2:] {
-			env0.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
-		}
-
-		for i := len(os.Args) - 1; i > 1; i-- {
-			args = Cons(NewSymbol(os.Args[i]), args)
-		}
-	} else {
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
-	}
-	env0.Add(NewSymbol("$args"), args)
-
-	/* Environment variables. */
-	for _, s := range os.Environ() {
-		kv := strings.SplitN(s, "=", 2)
-		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
-	}
-
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
-	done0 = make(chan Cell)
-	eval0 = make(chan Cell)
-	incoming = make(chan os.Signal, len(signals))
-	signal.Notify(incoming, signals...)
-	go func() {
-		var c Cell = nil
-		for c == nil && task0.Stack != Null {
-			for c == nil {
-				select {
-				case <-incoming:
-					// Ignore signals.
-				case c = <-eval0:
-				}
-			}
-			task0.Eval <- c
-			for c != nil {
-				prev := task0
-				select {
-				case sig := <-incoming:
-					// Handle signals.
-					switch sig {
-					case syscall.SIGTSTP:
-						if !interactive {
-							syscall.Kill(pid, syscall.SIGSTOP)
-							continue
-						}
-						task0.Suspend()
-						last := 0
-						for k, _ := range jobs {
-							if k > last {
-								last = k
-							}
-						}
-						last++
-
-						jobs[last] = task0
-
-						fallthrough
-					case syscall.SIGINT:
-						if !interactive {
-							os.Exit(130)
-						}
-						if sig == syscall.SIGINT {
-							task0.Stop()
-						}
-						fmt.Printf("\n")
-
-						task0 = listen()
-						c = nil
-					}
-
-				case c = <-task0.Done:
-					if task0 != prev {
-						c = Null
-						continue
-					}
-				}
-			}
-			done0 <- c
-		}
-		os.Exit(status(Car(task0.Scratch)))
-	}()
-
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l
 define cadr: method (l) as: car: cdr l
@@ -1690,7 +1612,7 @@ List::public tail: method (k x) as {
 }
 
 test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
-`)), evaluate)
+`)), Evaluate)
 
 	if len(os.Args) <= 1 {
 		// We assume the terminal starts in cooked mode.
@@ -1702,12 +1624,12 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 
 		cli.SetCompleter(complete)
 
-		Parse(cli, evaluate)
+		Parse(cli, Evaluate)
 
 		cli.Close()
 		fmt.Printf("\n")
 	} else {
-		evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
+		Evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
 	}
 
 	os.Exit(0)

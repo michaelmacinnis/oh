@@ -40,12 +40,12 @@ func monitor(active chan bool, notify chan Notification) {
 
 			if status.Stopped() {
 				if pid == task0.Job.group {
-					incoming <- syscall.SIGTSTP
+					InjectSignal(syscall.SIGTSTP)
 				}
 			} else if status.Signaled() &&
 				status.Signal() == syscall.SIGINT {
 				if pid == task0.Job.group {
-					incoming <- syscall.SIGINT
+					InjectSignal(syscall.SIGINT)
 				}
 			} else {
 				notify <- Notification{pid, status}
