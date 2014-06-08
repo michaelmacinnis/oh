@@ -125,6 +125,36 @@ func init() {
 	signal.Notify(incoming, signals...)
 }
 
+func listen(e *Env, s *Scope) *Task {
+	task := NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
+
+	go func() {
+		for c := range task.Eval {
+			saved := *(task.Registers)
+
+			end := Cons(nil, Null)
+
+			SetCar(task.Code, c)
+			SetCdr(task.Code, end)
+
+			task.Code = end
+			task.NewStates(SaveCode, psEvalCommand)
+
+			task.Code = c
+			if !run(task, end) {
+				*(task.Registers) = saved
+
+				SetCar(task.Code, nil)
+				SetCdr(task.Code, Null)
+			}
+
+			task.Done <- nil
+		}
+	}()
+
+	return task
+}
+
 func Complete(line string) []string {
 	fields := strings.Fields(line)
 
