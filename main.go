@@ -31,7 +31,6 @@ import "C"
 import (
 	"bufio"
 	"fmt"
-	"github.com/peterh/liner"
 	"os"
 	"os/exec"
 	"path"
@@ -73,30 +72,9 @@ const (
 	psMax
 )
 
-type Liner struct {
-	*liner.State
-}
-
-func (cli *Liner) ReadString(delim byte) (line string, err error) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-	raw.ApplyMode()
-	defer cooked.ApplyMode()
-
-	if line, err = cli.State.Prompt("> "); err == nil {
-		cli.AppendHistory(line)
-		SetCommand(line)
-		line += "\n"
-	}
-	return
-}
-
-var cli *Liner
-var cooked liner.ModeApplier
 var ext Cell
 var group int
 var interactive bool
-var raw liner.ModeApplier
 
 var jobs = map[int]*Task{}
 
@@ -333,7 +311,7 @@ func main() {
 
 	/* Command-line arguments */
 	args := Null
-	if len(os.Args) > 1 {
+	if !interactive {
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
@@ -1515,25 +1493,7 @@ List::public tail: method (k x) as {
 test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 `)), Evaluate)
 
-	if len(os.Args) <= 1 {
-		// We assume the terminal starts in cooked mode.
-		cooked, _ = liner.TerminalMode()
-
-		cli = &Liner{liner.NewLiner()}
-
-		raw, _ = liner.TerminalMode()
-
-		cli.SetCompleter(Complete)
-
-		Parse(cli, Evaluate)
-
-		cli.Close()
-		fmt.Printf("\n")
-	} else {
-		Evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
-	}
-
-	os.Exit(0)
+	StartInterface()
 }
 
 func module(f string) (string, error) {

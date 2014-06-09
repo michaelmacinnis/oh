@@ -2,17 +2,40 @@ package main
 
 import (
 	"fmt"
+	"github.com/peterh/liner"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
+	"unsafe"
 )
 
+type Liner struct {
+	*liner.State
+}
+
+func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+	raw.ApplyMode()
+	defer cooked.ApplyMode()
+
+	if line, err = cli.State.Prompt("> "); err == nil {
+		cli.AppendHistory(line)
+		SetCommand(line)
+		line += "\n"
+	}
+	return
+}
+
+var cli *Liner
+var cooked liner.ModeApplier
 var done0 chan Cell
 var eval0 chan Cell
 var incoming chan os.Signal
+var raw liner.ModeApplier
 var task0 *Task
 
 func broker(pid int, env0 *Env, scope0 *Scope) {
@@ -208,5 +231,27 @@ func SetForegroundTask(t *Task) {
 func StartBroker(pid int, env0 *Env, scope0 *Scope) {
 	task0 = listen(env0, scope0)
 	go broker(pid, env0, scope0)
+}
+
+func StartInterface() {
+	if interactive {
+		// We assume the terminal starts in cooked mode.
+		cooked, _ = liner.TerminalMode()
+
+		cli = &Liner{liner.NewLiner()}
+
+		raw, _ = liner.TerminalMode()
+
+		cli.SetCompleter(Complete)
+
+		Parse(cli, Evaluate)
+
+		cli.Close()
+		fmt.Printf("\n")
+	} else {
+		Evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
+	}
+
+	os.Exit(0)
 }
 
