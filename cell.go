@@ -2123,48 +2123,48 @@ func NewChannel(t *Task, cap int) Context {
 	})
 }
 
-func (self *Channel) String() string {
-	return fmt.Sprintf("%%channel %p%%", self)
+func (ch *Channel) String() string {
+	return fmt.Sprintf("%%channel %p%%", ch)
 }
 
-func (self *Channel) Equal(c Cell) bool {
-	return self == c
+func (ch *Channel) Equal(c Cell) bool {
+	return ch == c
 }
 
-func (self *Channel) Close() {
-	self.WriterClose()
+func (ch *Channel) Close() {
+	ch.WriterClose()
 }
 
-func (self *Channel) Expose() Context {
-	return self
+func (ch *Channel) Expose() Context {
+	return ch
 }
 
-func (self *Channel) ReaderClose() {
+func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (self *Channel) Read() Cell {
-	v := <-self.v
+func (ch *Channel) Read() Cell {
+	v := <-ch.v
 	if v == nil {
 		return Null
 	}
 	return v
 }
 
-func (self *Channel) ReadLine() Cell {
-	v := <-self.v
+func (ch *Channel) ReadLine() Cell {
+	v := <-ch.v
 	if v == nil {
 		return False
 	}
 	return NewString(v.String())
 }
 
-func (self *Channel) WriterClose() {
-	close(self.v)
+func (ch *Channel) WriterClose() {
+	close(ch.v)
 }
 
-func (self *Channel) Write(c Cell) {
-	self.v <- c
+func (ch *Channel) Write(c Cell) {
+	ch.v <- c
 }
 
 /* Pipe cell definition. */
@@ -2197,104 +2197,98 @@ func NewPipe(t *Task, r *os.File, w *os.File) Context {
 	return NewObject(p)
 }
 
-func (self *Pipe) String() string {
-	return fmt.Sprintf("%%pipe %p%%", self)
+func (p *Pipe) String() string {
+	return fmt.Sprintf("%%pipe %p%%", p)
 }
 
-func (self *Pipe) Equal(c Cell) bool {
-	return self == c
+func (p *Pipe) Equal(c Cell) bool {
+	return p == c
 }
 
-func (self *Pipe) Close() {
-	if self.r != nil && len(self.r.Name()) > 0 {
-		self.ReaderClose()
+func (p *Pipe) Close() {
+	if p.r != nil && len(p.r.Name()) > 0 {
+		p.ReaderClose()
 	}
 
-	if self.w != nil && len(self.w.Name()) > 0 {
-		self.WriterClose()
-	}
-}
-
-func (self *Pipe) Expose() Context {
-	return self
-}
-
-func (self *Pipe) reader() *bufio.Reader {
-	if self.b == nil {
-		self.b = bufio.NewReader(self.r)
-	}
-
-	return self.b
-}
-
-func (self *Pipe) ReaderClose() {
-	if self.r != nil {
-		self.r.Close()
-		self.r = nil
+	if p.w != nil && len(p.w.Name()) > 0 {
+		p.WriterClose()
 	}
 }
 
-/*
- * TODO: Rather than using cli to set and reset the terminal mode when the
- * reading from stdin, Read and ReadLine should save the previous terminal
- * mode set it to cooked and then reset it when they are done.
- */
+func (p *Pipe) Expose() Context {
+	return p
+}
 
-func (self *Pipe) Read() Cell {
-	if self.r == nil {
+func (p *Pipe) reader() *bufio.Reader {
+	if p.b == nil {
+		p.b = bufio.NewReader(p.r)
+	}
+
+	return p.b
+}
+
+func (p *Pipe) ReaderClose() {
+	if p.r != nil {
+		p.r.Close()
+		p.r = nil
+	}
+}
+
+func (p *Pipe) Read() Cell {
+	if p.r == nil {
 		return Null
 	}
 
-	if self.c == nil {
-		self.c = make(chan Cell)
-		self.d = make(chan bool)
+	if p.c == nil {
+		p.c = make(chan Cell)
+		p.d = make(chan bool)
 		go func() {
-			Parse(self.reader(), func(c Cell) {
-				self.c <- c
-				<-self.d
+			Parse(p.reader(), func(c Cell) {
+				p.c <- c
+				<-p.d
 			})
-			self.c <- Null
+			p.c <- Null
 		}()
 	} else {
-		self.d <- true
+		p.d <- true
 	}
 
-	return <-self.c
+	return <-p.c
 }
 
-func (self *Pipe) ReadLine() Cell {
-	s, err := self.reader().ReadString('\n')
+func (p *Pipe) ReadLine() Cell {
+	s, err := p.reader().ReadString('\n')
 	if err != nil && len(s) == 0 {
-		self.b = nil
+		p.b = nil
 		return Null
 	}
 
 	return NewString(strings.TrimRight(s, "\n"))
 }
 
-func (self *Pipe) WriterClose() {
-	if self.w != nil {
-		self.w.Close()
-		self.w = nil
+func (p *Pipe) WriterClose() {
+	if p.w != nil {
+		p.w.Close()
+		p.w = nil
 	}
 }
 
-func (self *Pipe) Write(c Cell) {
-	if self.w == nil {
+func (p *Pipe) Write(c Cell) {
+	if p.w == nil {
 		panic("write to closed pipe")
 	}
 
-	fmt.Fprintln(self.w, c)
+	fmt.Fprintln(p.w, c)
 }
 
 /* Pipe-specific functions */
 
-func (self *Pipe) ReadFd() *os.File {
-	return self.r
+func (p *Pipe) ReadFd() *os.File {
+	return p.r
 }
 
-func (self *Pipe) WriteFd() *os.File {
-	return self.w
+func (p *Pipe) WriteFd() *os.File {
+	return p.w
 }
 
 /* Combiner cell definition. */
@@ -2307,28 +2301,28 @@ type Combiner struct {
 	scope   Context
 }
 
-func (self *Combiner) Bool() bool {
+func (c *Combiner) Bool() bool {
 	return true
 }
 
-func (self *Combiner) Applier() Function {
-	return self.applier
+func (c *Combiner) Applier() Function {
+	return c.applier
 }
 
-func (self *Combiner) Body() Cell {
-	return self.body
+func (c *Combiner) Body() Cell {
+	return c.body
 }
 
-func (self *Combiner) Params() Cell {
-	return self.params
+func (c *Combiner) Params() Cell {
+	return c.params
 }
 
-func (self *Combiner) Label() Cell {
-	return self.label
+func (c *Combiner) Label() Cell {
+	return c.label
 }
 
-func (self *Combiner) Scope() Context {
-	return self.scope
+func (c *Combiner) Scope() Context {
+	return c.scope
 }
 
 /* Builtin cell definition. */
@@ -2343,12 +2337,12 @@ func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
 	}
 }
 
-func (self *Builtin) String() string {
-	return fmt.Sprintf("%%builtin %p%%", self)
+func (b *Builtin) String() string {
+	return fmt.Sprintf("%%builtin %p%%", b)
 }
 
-func (self *Builtin) Equal(c Cell) bool {
-	return self == c
+func (b *Builtin) Equal(c Cell) bool {
+	return b == c
 }
 
 /* Method cell definition. */
@@ -2363,12 +2357,12 @@ func NewMethod(a Function, b, l, p Cell, s Context) Closure {
 	}
 }
 
-func (self *Method) String() string {
-	return fmt.Sprintf("%%method %p%%", self)
+func (m *Method) String() string {
+	return fmt.Sprintf("%%method %p%%", m)
 }
 
-func (self *Method) Equal(c Cell) bool {
-	return self == c
+func (m *Method) Equal(c Cell) bool {
+	return m == c
 }
 
 /* Syntax cell definition. */
@@ -2383,12 +2377,12 @@ func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
 	}
 }
 
-func (self *Syntax) String() string {
-	return fmt.Sprintf("%%syntax %p%%", self)
+func (m *Syntax) String() string {
+	return fmt.Sprintf("%%syntax %p%%", m)
 }
 
-func (self *Syntax) Equal(c Cell) bool {
-	return self == c
+func (m *Syntax) Equal(c Cell) bool {
+	return m == c
 }
 
 /* Env cell definition. */
@@ -2402,22 +2396,22 @@ func NewEnv(prev *Env) *Env {
 	return &Env{make(map[string]Reference), prev}
 }
 
-func (self *Env) Bool() bool {
+func (e *Env) Bool() bool {
 	return true
 }
 
-func (self *Env) Equal(c Cell) bool {
-	return self == c
+func (e *Env) Equal(c Cell) bool {
+	return e == c
 }
 
-func (self *Env) String() string {
-	return fmt.Sprintf("%%env %p%%", self)
+func (e *Env) String() string {
+	return fmt.Sprintf("%%env %p%%", e)
 }
 
 /* Env-specific functions */
 
-func (self *Env) Access(key Cell) Reference {
-	for env := self; env != nil; env = env.prev {
+func (e *Env) Access(key Cell) Reference {
+	for env := e; env != nil; env = env.prev {
 		if value, ok := env.hash[key.String()]; ok {
 			return value
 		}
@@ -2426,53 +2420,53 @@ func (self *Env) Access(key Cell) Reference {
 	return nil
 }
 
-func (self *Env) Add(key Cell, value Cell) {
-	self.hash[key.String()] = NewVariable(value)
+func (e *Env) Add(key Cell, value Cell) {
+	e.hash[key.String()] = NewVariable(value)
 }
 
-func (self *Env) Complete(line, prefix string) []string {
+func (e *Env) Complete(line, prefix string) []string {
 	cl := []string{}
 
-	for k, _ := range self.hash {
+	for k, _ := range e.hash {
 		if strings.HasPrefix(k, prefix) {
 			cl = append(cl, line+k)
 		}
 	}
 
-	if self.prev != nil {
-		cl = append(cl, self.prev.Complete(line, prefix)...)
+	if e.prev != nil {
+		cl = append(cl, e.prev.Complete(line, prefix)...)
 	}
 
 	return cl
 }
 
-func (self *Env) Copy() *Env {
-	if self == nil {
+func (e *Env) Copy() *Env {
+	if e == nil {
 		return nil
 	}
 
-	fresh := NewEnv(self.prev.Copy())
+	fresh := NewEnv(e.prev.Copy())
 
-	for k, v := range self.hash {
+	for k, v := range e.hash {
 		fresh.hash[k] = v.Copy()
 	}
 
 	return fresh
 }
 
-func (self *Env) Method(name string, m Function) {
-	self.hash[name] =
+func (e *Env) Method(name string, m Function) {
+	e.hash[name] =
 		NewConstant(NewBound(NewMethod(m, Null, Null, Null, nil), nil))
 }
 
-func (self *Env) Prev() *Env {
-	return self.prev
+func (e *Env) Prev() *Env {
+	return e.prev
 }
 
-func (self *Env) Remove(key Cell) bool {
-	_, ok := self.hash[key.String()]
+func (e *Env) Remove(key Cell) bool {
+	_, ok := e.hash[key.String()]
 
-	delete(self.hash, key.String())
+	delete(e.hash, key.String())
 
 	return ok
 }
@@ -2490,25 +2484,25 @@ func NewObject(v Context) *Object {
 	return &Object{v.Expose()}
 }
 
-func (self *Object) Equal(c Cell) bool {
-	if self == c {
+func (o *Object) Equal(c Cell) bool {
+	if o == c {
 		return true
 	}
 	if o, ok := c.(*Object); ok {
-		return self.Context == o.Expose()
+		return o.Context == o.Expose()
 	}
 	return false
 }
 
-func (self *Object) String() string {
-	return fmt.Sprintf("%%object %p%%", self)
+func (o *Object) String() string {
+	return fmt.Sprintf("%%object %p%%", o)
 }
 
 /* Object-specific functions */
 
-func (self *Object) Access(key Cell) Reference {
+func (o *Object) Access(key Cell) Reference {
 	var obj Context
-	for obj = self; obj != nil; obj = obj.Prev() {
+	for obj = o; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().prev.Access(key); value != nil {
 			return value
 		}
@@ -2517,17 +2511,17 @@ func (self *Object) Access(key Cell) Reference {
 	return nil
 }
 
-func (self *Object) Copy() Context {
+func (o *Object) Copy() Context {
 	return &Object{
-		&Scope{self.Expose().Faces().Copy(), self.Context.Prev()},
+		&Scope{o.Expose().Faces().Copy(), o.Context.Prev()},
 	}
 }
 
-func (self *Object) Expose() Context {
-	return self.Context
+func (o *Object) Expose() Context {
+	return o.Context
 }
 
-func (self *Object) Define(key Cell, value Cell) {
+func (o *Object) Define(key Cell, value Cell) {
 	panic("Private members cannot be added to an object.")
 }
 
@@ -2542,16 +2536,16 @@ func NewContinuation(scratch Cell, stack Cell) *Continuation {
 	return &Continuation{Scratch: scratch, Stack: stack}
 }
 
-func (self *Continuation) Bool() bool {
+func (ct *Continuation) Bool() bool {
 	return true
 }
 
-func (self *Continuation) Equal(c Cell) bool {
-	return self == c
+func (ct *Continuation) Equal(c Cell) bool {
+	return ct == c
 }
 
-func (self *Continuation) String() string {
-	return fmt.Sprintf("%%continuation %p%%", self)
+func (ct *Continuation) String() string {
+	return fmt.Sprintf("%%continuation %p%%", ct)
 }
 
 /* Registers cell definition. */
@@ -2566,138 +2560,138 @@ type Registers struct {
 
 /* Registers-specific functions. */
 
-func (self *Registers) Arguments() Cell {
-	e := Car(self.Scratch)
+func (r *Registers) Arguments() Cell {
+	e := Car(r.Scratch)
 	l := Null
 
 	for e != nil {
 		l = Cons(e, l)
 
-		self.Scratch = Cdr(self.Scratch)
-		e = Car(self.Scratch)
+		r.Scratch = Cdr(r.Scratch)
+		e = Car(r.Scratch)
 	}
 
-	self.Scratch = Cdr(self.Scratch)
+	r.Scratch = Cdr(r.Scratch)
 
 	return l
 }
 
-func (self *Registers) Complete(line, prefix string) []string {
-	completions := self.Lexical.Complete(line, prefix)
-	return append(completions, self.Dynamic.Complete(line, prefix)...)
+func (r *Registers) Complete(line, prefix string) []string {
+	completions := r.Lexical.Complete(line, prefix)
+	return append(completions, r.Dynamic.Complete(line, prefix)...)
 }
 
-func (self *Registers) GetState() int64 {
-	if self.Stack == Null {
+func (r *Registers) GetState() int64 {
+	if r.Stack == Null {
 		return 0
 	}
-	return Car(self.Stack).(Atom).Int()
+	return Car(r.Stack).(Atom).Int()
 }
 
-func (self *Registers) NewBlock(dynamic *Env, lexical Context) {
-	self.Dynamic = NewEnv(dynamic)
-	self.Lexical = NewScope(lexical, nil)
+func (r *Registers) NewBlock(dynamic *Env, lexical Context) {
+	r.Dynamic = NewEnv(dynamic)
+	r.Lexical = NewScope(lexical, nil)
 }
 
-func (self *Registers) NewStates(l ...int64) {
+func (r *Registers) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= SaveMax {
-			self.Stack = Cons(NewInteger(f), self.Stack)
+			r.Stack = Cons(NewInteger(f), r.Stack)
 			continue
 		}
 
-		if s := self.GetState(); s < SaveMax && f&s == f {
+		if s := r.GetState(); s < SaveMax && f&s == f {
 			continue
 		}
 
 		if f&SaveCode > 0 {
 			if f&SaveCode == SaveCode {
-				self.Stack = Cons(self.Code, self.Stack)
+				r.Stack = Cons(r.Code, r.Stack)
 			} else if f&SaveCarCode > 0 {
-				self.Stack = Cons(Car(self.Code), self.Stack)
+				r.Stack = Cons(Car(r.Code), r.Stack)
 			} else if f&SaveCdrCode > 0 {
-				self.Stack = Cons(Cdr(self.Code), self.Stack)
+				r.Stack = Cons(Cdr(r.Code), r.Stack)
 			}
 		}
 
 		if f&SaveDynamic > 0 {
-			self.Stack = Cons(self.Dynamic, self.Stack)
+			r.Stack = Cons(r.Dynamic, r.Stack)
 		}
 
 		if f&SaveLexical > 0 {
-			self.Stack = Cons(self.Lexical, self.Stack)
+			r.Stack = Cons(r.Lexical, r.Stack)
 		}
 
 		if f&SaveScratch > 0 {
-			self.Stack = Cons(self.Scratch, self.Stack)
+			r.Stack = Cons(r.Scratch, r.Stack)
 		}
 
-		self.Stack = Cons(NewInteger(f), self.Stack)
+		r.Stack = Cons(NewInteger(f), r.Stack)
 	}
 }
 
-func (self *Registers) RemoveState() {
-	f := self.GetState()
+func (r *Registers) RemoveState() {
+	f := r.GetState()
 
-	self.Stack = Cdr(self.Stack)
+	r.Stack = Cdr(r.Stack)
 	if f >= SaveMax {
 		return
 	}
 
 	if f&SaveScratch > 0 {
-		self.Stack = Cdr(self.Stack)
+		r.Stack = Cdr(r.Stack)
 	}
 
 	if f&SaveLexical > 0 {
-		self.Stack = Cdr(self.Stack)
+		r.Stack = Cdr(r.Stack)
 	}
 
 	if f&SaveDynamic > 0 {
-		self.Stack = Cdr(self.Stack)
+		r.Stack = Cdr(r.Stack)
 	}
 
 	if f&SaveCode > 0 {
-		self.Stack = Cdr(self.Stack)
+		r.Stack = Cdr(r.Stack)
 	}
 }
 
-func (self *Registers) ReplaceStates(l ...int64) {
-	self.RemoveState()
-	self.NewStates(l...)
+func (r *Registers) ReplaceStates(l ...int64) {
+	r.RemoveState()
+	r.NewStates(l...)
 }
 
-func (self *Registers) RestoreState() {
-	f := self.GetState()
+func (r *Registers) RestoreState() {
+	f := r.GetState()
 
 	if f == 0 || f >= SaveMax {
 		return
 	}
 
 	if f&SaveScratch > 0 {
-		self.Stack = Cdr(self.Stack)
-		self.Scratch = Car(self.Stack)
+		r.Stack = Cdr(r.Stack)
+		r.Scratch = Car(r.Stack)
 	}
 
 	if f&SaveLexical > 0 {
-		self.Stack = Cdr(self.Stack)
-		self.Lexical = Car(self.Stack).(Context)
+		r.Stack = Cdr(r.Stack)
+		r.Lexical = Car(r.Stack).(Context)
 	}
 
 	if f&SaveDynamic > 0 {
-		self.Stack = Cdr(self.Stack)
-		self.Dynamic = Car(self.Stack).(*Env)
+		r.Stack = Cdr(r.Stack)
+		r.Dynamic = Car(r.Stack).(*Env)
 	}
 
 	if f&SaveCode > 0 {
-		self.Stack = Cdr(self.Stack)
-		self.Code = Car(self.Stack)
+		r.Stack = Cdr(r.Stack)
+		r.Code = Car(r.Stack)
 	}
 
-	self.Stack = Cdr(self.Stack)
+	r.Stack = Cdr(r.Stack)
 }
 
-func (self *Registers) Return(rv Cell) bool {
-	SetCar(self.Scratch, rv)
+func (r *Registers) Return(rv Cell) bool {
+	SetCar(r.Scratch, rv)
 
 	return false
 }
@@ -2767,16 +2761,16 @@ func NewTask0() *Task {
 	return NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
 }
 
-func (self *Task) Bool() bool {
+func (t *Task) Bool() bool {
 	return true
 }
 
-func (self *Task) String() string {
-	return fmt.Sprintf("%%task %p%%", self)
+func (t *Task) String() string {
+	return fmt.Sprintf("%%task %p%%", t)
 }
 
-func (self *Task) Equal(c Cell) bool {
-	return self == c
+func (t *Task) Equal(c Cell) bool {
+	return t == c
 }
 
 /* Task-specific functions. */
@@ -2835,18 +2829,18 @@ func (t *Task) Closure(n NewClosure) bool {
 	return false
 }
 
-func (self *Task) Continue() {
-	if self.pid > 0 {
-		syscall.Kill(self.pid, syscall.SIGCONT)
+func (t *Task) Continue() {
+	if t.pid > 0 {
+		syscall.Kill(t.pid, syscall.SIGCONT)
 	}
 
-	for k, v := range self.children {
+	for k, v := range t.children {
 		if v {
 			k.Continue()
 		}
 	}
 
-	close(self.suspended)
+	close(t.suspended)
 }
 
 func (t *Task) Debug(s string) {
@@ -2873,19 +2867,19 @@ func (t *Task) DynamicVar(state int64) bool {
 	return true
 }
 
-func (self *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
+func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
 
-	self.Lock()
-	defer self.Unlock()
+	t.Lock()
+	defer t.Unlock()
 
 	attr.Sys = &syscall.SysProcAttr{
 		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
 	}
-	if self.group == 0 {
+	if t.group == 0 {
 		attr.Sys.Setpgid = true
 		attr.Sys.Foreground = true
 	} else {
-		attr.Sys.Joinpgrp = self.group
+		attr.Sys.Joinpgrp = t.group
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -2893,15 +2887,15 @@ func (self *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Statu
 		return nil, err
 	}
 
-	if self.group == 0 {
-		self.group = proc.Pid
+	if t.group == 0 {
+		t.group = proc.Pid
 	}
 
-	self.pid = proc.Pid
+	t.pid = proc.Pid
 
 	status := JoinProcess(proc.Pid)
 
-	self.pid = 0
+	t.pid = 0
 
 	return NewStatus(int64(status.ExitStatus())), err
 }
@@ -3230,25 +3224,25 @@ func (t *Task) Run(end Cell) (successful bool) {
 	return
 }
 
-func (self *Task) Runnable() bool {
-	return !<-self.suspended
+func (t *Task) Runnable() bool {
+	return !<-t.suspended
 }
 
-func (self *Task) Stop() {
-	self.Stack = Null
-	close(self.Eval)
+func (t *Task) Stop() {
+	t.Stack = Null
+	close(t.Eval)
 
 	select {
-	case <-self.suspended:
+	case <-t.suspended:
 	default:
-		close(self.suspended)
+		close(t.suspended)
 	}
 
-	if self.pid > 0 {
-		syscall.Kill(self.pid, syscall.SIGTERM)
+	if t.pid > 0 {
+		syscall.Kill(t.pid, syscall.SIGTERM)
 	}
 
-	for k, v := range self.children {
+	for k, v := range t.children {
 		if v {
 			k.Stop()
 		}
@@ -3273,26 +3267,26 @@ func (t *Task) Strict() (ok bool) {
 	return c.Get().(Cell).Bool()
 }
 
-func (self *Task) Suspend() {
-	//	if self.pid > 0 {
-	//		syscall.Kill(self.pid, syscall.SIGSTOP)
+func (t *Task) Suspend() {
+	//	if t.pid > 0 {
+	//		syscall.Kill(t.pid, syscall.SIGSTOP)
 	//	}
 
-	for k, v := range self.children {
+	for k, v := range t.children {
 		if v {
 			k.Suspend()
 		}
 	}
 
-	self.suspended = make(chan bool)
+	t.suspended = make(chan bool)
 }
 
-func (self *Task) Wait() {
-	for k, v := range self.children {
+func (t *Task) Wait() {
+	for k, v := range t.children {
 		if v {
 			<-k.Done
 		}
-		delete(self.children, k)
+		delete(t.children, k)
 	}
 }
 
@@ -3310,23 +3304,23 @@ func NewScope(prev Context, fixed *Env) *Scope {
 	return &Scope{NewEnv(NewEnv(fixed)), prev}
 }
 
-func (self *Scope) Bool() bool {
+func (s *Scope) Bool() bool {
 	return true
 }
 
-func (self *Scope) String() string {
-	return fmt.Sprintf("%%scope %p%%", self)
+func (s *Scope) String() string {
+	return fmt.Sprintf("%%scope %p%%", s)
 }
 
-func (self *Scope) Equal(c Cell) bool {
-	return self == c
+func (s *Scope) Equal(c Cell) bool {
+	return s == c
 }
 
 /* Scope-specific functions */
 
-func (self *Scope) Access(key Cell) Reference {
+func (s *Scope) Access(key Cell) Reference {
 	var obj Context
-	for obj = self; obj != nil; obj = obj.Prev() {
+	for obj = s; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
 			return value
 		}
@@ -3335,72 +3329,72 @@ func (self *Scope) Access(key Cell) Reference {
 	return nil
 }
 
-func (self *Scope) Complete(line, prefix string) []string {
+func (s *Scope) Complete(line, prefix string) []string {
 	cl := []string{}
 
 	var obj Context
-	for obj = self; obj != nil; obj = obj.Prev() {
+	for obj = s; obj != nil; obj = obj.Prev() {
 		cl = append(cl, obj.Faces().Complete(line, prefix)...)
 	}
 
 	return cl
 }
 
-func (self *Scope) Copy() Context {
-	return &Scope{self.env.Copy(), self.prev}
+func (s *Scope) Copy() Context {
+	return &Scope{s.env.Copy(), s.prev}
 }
 
-func (self *Scope) Expose() Context {
-	return self
+func (s *Scope) Expose() Context {
+	return s
 }
 
-func (self *Scope) Faces() *Env {
-	return self.env
+func (s *Scope) Faces() *Env {
+	return s.env
 }
 
-func (self *Scope) Prev() Context {
-	return self.prev
+func (s *Scope) Prev() Context {
+	return s.prev
 }
 
-func (self *Scope) Define(key Cell, value Cell) {
-	self.env.Add(key, value)
+func (s *Scope) Define(key Cell, value Cell) {
+	s.env.Add(key, value)
 }
 
-func (self *Scope) Public(key Cell, value Cell) {
-	self.env.prev.Add(key, value)
+func (s *Scope) Public(key Cell, value Cell) {
+	s.env.prev.Add(key, value)
 }
 
-func (self *Scope) Remove(key Cell) bool {
-	if !self.env.prev.Remove(key) {
-		return self.env.Remove(key)
+func (s *Scope) Remove(key Cell) bool {
+	if !s.env.prev.Remove(key) {
+		return s.env.Remove(key)
 	}
 
 	return true
 }
 
-func (self *Scope) DefineBuiltin(k string, a Function) {
-	self.Define(NewSymbol(k),
-		NewUnbound(NewBuiltin(a, Null, Null, Null, self)))
+func (s *Scope) DefineBuiltin(k string, a Function) {
+	s.Define(NewSymbol(k),
+		NewUnbound(NewBuiltin(a, Null, Null, Null, s)))
 }
 
-func (self *Scope) DefineMethod(k string, a Function) {
-	self.Define(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, self), self))
+func (s *Scope) DefineMethod(k string, a Function) {
+	s.Define(NewSymbol(k),
+		NewBound(NewMethod(a, Null, Null, Null, s), s))
 }
 
-func (self *Scope) PublicMethod(k string, a Function) {
-	self.Public(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, self), self))
+func (s *Scope) PublicMethod(k string, a Function) {
+	s.Public(NewSymbol(k),
+		NewBound(NewMethod(a, Null, Null, Null, s), s))
 }
 
-func (self *Scope) DefineSyntax(k string, a Function) {
-	self.Define(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, self), self))
+func (s *Scope) DefineSyntax(k string, a Function) {
+	s.Define(NewSymbol(k),
+		NewBound(NewSyntax(a, Null, Null, Null, s), s))
 }
 
-func (self *Scope) PublicSyntax(k string, a Function) {
-	self.Public(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, self), self))
+func (s *Scope) PublicSyntax(k string, a Function) {
+	s.Public(NewSymbol(k),
+		NewBound(NewSyntax(a, Null, Null, Null, s), s))
 }
 
 /* Bound cell definition. */
@@ -3414,36 +3408,36 @@ func NewBound(ref Closure, context Context) *Bound {
 	return &Bound{ref, context}
 }
 
-func (self *Bound) Bool() bool {
+func (b *Bound) Bool() bool {
 	return true
 }
 
-func (self *Bound) String() string {
-	return fmt.Sprintf("%%bound %p%%", self)
+func (b *Bound) String() string {
+	return fmt.Sprintf("%%bound %p%%", b)
 }
 
-func (self *Bound) Equal(c Cell) bool {
+func (b *Bound) Equal(c Cell) bool {
 	if m, ok := c.(*Bound); ok {
-		return self.ref == m.Ref() && self.context == m.Self()
+		return b.ref == m.Ref() && b.context == m.Self()
 	}
 	return false
 }
 
 /* Bound-specific functions */
 
-func (self *Bound) Bind(c Context) Binding {
-	if c == self.context {
-		return self
+func (b *Bound) Bind(c Context) Binding {
+	if c == b.context {
+		return b
 	}
-	return NewBound(self.ref, c)
+	return NewBound(b.ref, c)
 }
 
-func (self *Bound) Ref() Closure {
-	return self.ref
+func (b *Bound) Ref() Closure {
+	return b.ref
 }
 
-func (self *Bound) Self() Context {
-	return self.context
+func (b *Bound) Self() Context {
+	return b.context
 }
 
 /* Unbound cell definition. */
@@ -3456,32 +3450,32 @@ func NewUnbound(Ref Closure) *Unbound {
 	return &Unbound{Ref}
 }
 
-func (self *Unbound) Bool() bool {
+func (u *Unbound) Bool() bool {
 	return true
 }
 
-func (self *Unbound) String() string {
-	return fmt.Sprintf("%%unbound %p%%", self)
+func (u *Unbound) String() string {
+	return fmt.Sprintf("%%unbound %p%%", u)
 }
 
-func (self *Unbound) Equal(c Cell) bool {
+func (u *Unbound) Equal(c Cell) bool {
 	if u, ok := c.(*Unbound); ok {
-		return self.ref == u.Ref()
+		return u.ref == u.Ref()
 	}
 	return false
 }
 
 /* Unbound-specific functions */
 
-func (self *Unbound) Bind(c Context) Binding {
-	return self
+func (u *Unbound) Bind(c Context) Binding {
+	return u
 }
 
-func (self *Unbound) Ref() Closure {
-	return self.ref
+func (u *Unbound) Ref() Closure {
+	return u.ref
 }
 
-func (self *Unbound) Self() Context {
+func (u *Unbound) Self() Context {
 	return nil
 }
 
@@ -3495,30 +3489,30 @@ func NewVariable(v Cell) Reference {
 	return &Variable{v}
 }
 
-func (self *Variable) Bool() bool {
+func (vr *Variable) Bool() bool {
 	return true
 }
 
-func (self *Variable) String() string {
-	return fmt.Sprintf("%%variable %p%%", self)
+func (vr *Variable) String() string {
+	return fmt.Sprintf("%%variable %p%%", vr)
 }
 
-func (self *Variable) Equal(c Cell) bool {
-	return self.v.Equal(c)
+func (vr *Variable) Equal(c Cell) bool {
+	return vr.v.Equal(c)
 }
 
 /* Variable-specific functions */
 
-func (self *Variable) Copy() Reference {
-	return NewVariable(self.v)
+func (vr *Variable) Copy() Reference {
+	return NewVariable(vr.v)
 }
 
-func (self *Variable) Get() Cell {
-	return self.v
+func (vr *Variable) Get() Cell {
+	return vr.v
 }
 
-func (self *Variable) Set(c Cell) {
-	self.v = c
+func (vr *Variable) Set(c Cell) {
+	vr.v = c
 }
 
 /* Constant cell definition. */
@@ -3531,10 +3525,11 @@ func NewConstant(v Cell) *Constant {
 	return &Constant{Variable{v}}
 }
 
-func (self *Constant) String() string {
-	return fmt.Sprintf("%%constant %p%%", self)
+func (ct *Constant) String() string {
+	return fmt.Sprintf("%%ct %p%%", ct)
 }
 
-func (self *Constant) Set(c Cell) {
-	panic("constant cannot be set")
+func (ct *Constant) Set(c Cell) {
+	panic("ct cannot be set")
 }
+
