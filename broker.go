@@ -36,11 +36,12 @@ var done0 chan Cell
 var eval0 chan Cell
 var incoming chan os.Signal
 var raw liner.ModeApplier
-var task0 *Task
 
-func broker(pid int, env0 *Env, scope0 *Scope) {
+func broker(pid int) {
+	task := ForegroundTask()
+
         var c Cell = nil
-        for c == nil && task0.Stack != Null {
+        for c == nil && task.Stack != Null {
                 for c == nil {
                         select {
                         case <-incoming:
@@ -48,9 +49,9 @@ func broker(pid int, env0 *Env, scope0 *Scope) {
                         case c = <-eval0:
                         }
                 }
-                task0.Eval <- c
+                task.Eval <- c
                 for c != nil {
-                        prev := task0
+                        prev := task
                         select {
                         case sig := <-incoming:
                                 // Handle signals.
@@ -60,7 +61,7 @@ func broker(pid int, env0 *Env, scope0 *Scope) {
                                                 syscall.Kill(pid, syscall.SIGSTOP)
                                                 continue
                                         }
-                                        task0.Suspend()
+                                        task.Suspend()
                                         last := 0
                                         for k, _ := range jobs {
                                                 if k > last {
@@ -69,7 +70,7 @@ func broker(pid int, env0 *Env, scope0 *Scope) {
                                         }
                                         last++
 
-                                        jobs[last] = task0
+                                        jobs[last] = task
 
                                         fallthrough
                                 case syscall.SIGINT:
@@ -77,16 +78,17 @@ func broker(pid int, env0 *Env, scope0 *Scope) {
                                                 os.Exit(130)
                                         }
                                         if sig == syscall.SIGINT {
-                                                task0.Stop()
+                                                task.Stop()
                                         }
                                         fmt.Printf("\n")
 
-                                        task0 = listen(env0, scope0)
+					task = NewTask0()
+                                        listen()
                                         c = nil
                                 }
 
-                        case c = <-task0.Done:
-                                if task0 != prev {
+                        case c = <-task.Done:
+                                if task != prev {
                                         c = Null
                                         continue
                                 }
@@ -94,15 +96,17 @@ func broker(pid int, env0 *Env, scope0 *Scope) {
                 }
                 done0 <- c
         }
-        os.Exit(status(Car(task0.Scratch)))
+        os.Exit(status(Car(task.Scratch)))
 }
 
 func files(line, prefix string) []string {
+	task := ForegroundTask()
+
 	completions := []string{}
 
 	prfx := path.Clean(prefix)
 	if !path.IsAbs(prfx) {
-	        ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
+	        ref := Resolve(task.Lexical, task.Dynamic, NewSymbol("$cwd"))
 	        cwd := ref.Get().String()
 
 	        prfx = path.Join(cwd, prfx)
@@ -148,8 +152,8 @@ func init() {
 	signal.Notify(incoming, signals...)
 }
 
-func listen(e *Env, s *Scope) *Task {
-	task := NewTask0()
+func listen() *Task {
+	task := ForegroundTask()
 
 	go func() {
 		for c := range task.Eval {
@@ -179,6 +183,8 @@ func listen(e *Env, s *Scope) *Task {
 }
 
 func Complete(line string) []string {
+	task := ForegroundTask()
+
 	fields := strings.Fields(line)
 
 	if len(fields) == 0 {
@@ -193,7 +199,7 @@ func Complete(line string) []string {
 	trimmed := line[0 : len(line)-len(prefix)]
 
 	completions := files(trimmed, prefix)
-	completions = append(completions, task0.Complete(trimmed, prefix)...)
+	completions = append(completions, task.Complete(trimmed, prefix)...)
 
 	if len(completions) == 0 {
 	        return []string{line}
@@ -203,14 +209,13 @@ func Complete(line string) []string {
 }
 
 func Evaluate(c Cell) {
+	task := ForegroundTask()
+
 	eval0 <- c
 	<-done0
-	task0.Job.command = ""
-	task0.Job.group = 0
-}
 
-func ForegroundTask() *Task {
-	return task0
+	task.Job.command = ""
+	task.Job.group = 0
 }
 
 func InjectSignal(s os.Signal) {
@@ -218,19 +223,16 @@ func InjectSignal(s os.Signal) {
 }
 
 func SetCommand(command string) {
-	if task0.Job.command == "" {
-		task0.Job.command = command
+	task := ForegroundTask()
+
+	if task.Job.command == "" {
+		task.Job.command = command
 	}
 }
 
-func SetForegroundTask(t *Task) {
-	task0 = t
-	task0.Continue()
-}
-
-func StartBroker(pid int, env0 *Env, scope0 *Scope) {
-	task0 = listen(env0, scope0)
-	go broker(pid, env0, scope0)
+func StartBroker(pid int) {
+	listen()
+	go broker(pid)
 }
 
 func StartInterface() {
