@@ -45,7 +45,7 @@ import (
 
 var ext Cell
 var group int
-var interactive bool
+var pid int
 
 var jobs = map[int]*Task{}
 
@@ -87,7 +87,7 @@ func expand(args Cell) Cell {
 }
 
 func init() {
-	pid := syscall.Getpid()
+	pid = syscall.Getpid()
 	pgrp := syscall.Getpgrp()
 	if pid != pgrp {
 		syscall.Setpgid(0, 0)
@@ -97,12 +97,6 @@ func init() {
 }
 
 func main() {
-	interactive = (len(os.Args) <= 1)
-
-	pid := os.Getpid()
-
-	env0, scope0 := NewEnv(nil), NewScope(nil, nil)
-
 	StartBroker(pid, env0, scope0)
 
 	env0.Add(NewSymbol("False"), False)
@@ -1323,24 +1317,6 @@ func status(c Cell) int {
 		return 0
 	}
 	return int(a.Status())
-}
-
-func strict(t *Task) (ok bool) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-
-		ok = false
-	}()
-
-	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
-	if c == nil {
-		return false
-	}
-
-	return c.Get().(Cell).Bool()
 }
 
 func wpipe(c Cell) *os.File {

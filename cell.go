@@ -146,12 +146,16 @@ var False *Boolean
 var True *Boolean
 
 var conduit_env *Env
+var env0 *Env
+var interactive bool
+var runnable chan bool
+var scope0 *Scope
 
 var next = map[int64][]int64{
-	psEvalArguments:        {SaveCdrCode, psEvalElement},
+	psEvalArguments:	{SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
-	psExecIf:               {psEvalBlock},
-	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
+	psExecIf:		{psEvalBlock},
+	psExecWhileBody:	{psExecWhileTest, SaveCode, psEvalBlock},
 }
 
 var num [512]*Integer
@@ -159,9 +163,9 @@ var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
 
-var runnable chan bool
-
 func init() {
+	interactive = (len(os.Args) <= 1)
+
 	pair := new(Pair)
 	pair.car = pair
 	pair.cdr = pair
@@ -242,6 +246,9 @@ func init() {
 
 	runnable = make(chan bool)
 	close(runnable)
+
+	env0 = NewEnv(nil)
+	scope0 = NewScope(nil, nil)
 }
 
 func AppendTo(list Cell, elements ...Cell) Cell {
@@ -1626,7 +1633,7 @@ type Task struct {
 	Eval      chan Cell
 	children  map[*Task]bool
 	parent    *Task
-	pid       int
+	pid	int
 	suspended chan bool
 }
 
@@ -1653,7 +1660,7 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 		Eval:      make(chan Cell, 1),
 		children:  make(map[*Task]bool),
 		parent:    p,
-		pid:       0,
+		pid:	0,
 		suspended: runnable,
 	}
 
@@ -1662,6 +1669,10 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 	}
 
 	return t
+}
+
+func NewTask0() *Task {
+	return NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
 }
 
 func (self *Task) Bool() bool {
@@ -1752,7 +1763,7 @@ func (t *Task) Debug(s string) {
 
 func (t *Task) DynamicVar(state int64) bool {
 	r := Raw(Car(t.Code))
-	if strict(t) && number(r) {
+	if t.Strict() && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
@@ -1856,7 +1867,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	t.NewStates(state)
 
 	r := Raw(Car(t.Code))
-	if strict(t) && number(r) {
+	if t.Strict() && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
 
@@ -1872,7 +1883,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	c := Resolve(t.Lexical, t.Dynamic, sym)
 	if c == nil {
 		r := Raw(sym)
-		if strict(t) && !number(r) {
+		if t.Strict() && !number(r) {
 			return false, r + " undefined"
 		} else {
 			t.Scratch = Cons(sym, t.Scratch)
@@ -2150,6 +2161,24 @@ func (self *Task) Stop() {
 			k.Stop()
 		}
 	}
+}
+
+func (t *Task) Strict() (ok bool) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+
+		ok = false
+	}()
+
+	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
+	if c == nil {
+		return false
+	}
+
+	return c.Get().(Cell).Bool()
 }
 
 func (self *Task) Suspend() {

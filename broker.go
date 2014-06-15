@@ -149,7 +149,7 @@ func init() {
 }
 
 func listen(e *Env, s *Scope) *Task {
-	task := NewTask(psEvalBlock, Cons(nil, Null), e, s, nil)
+	task := NewTask0()
 
 	go func() {
 		for c := range task.Eval {
