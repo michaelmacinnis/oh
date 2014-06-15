@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/peterh/liner"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -109,6 +110,34 @@ const (
 	SaveLexical
 	SaveScratch
 	SaveMax
+)
+
+const (
+	psChangeContext = SaveMax + iota
+
+	psEvalArguments
+	psEvalArgumentsBuiltin
+	psEvalBlock
+	psEvalCommand
+	psEvalElement
+	psEvalElementBuiltin
+
+	psExecBuiltin
+	psExecCommand
+	psExecDefine
+	psExecDynamic
+	psExecIf
+	psExecMethod
+	psExecPublic
+	psExecSet
+	psExecSetenv
+	psExecSplice
+	psExecSyntax
+	psExecWhileBody
+	psExecWhileTest
+	psReturn
+
+	psMax
 	SaveCode = SaveCarCode | SaveCdrCode
 )
 
@@ -117,6 +146,13 @@ var False *Boolean
 var True *Boolean
 
 var conduit_env *Env
+
+var next = map[int64][]int64{
+	psEvalArguments:        {SaveCdrCode, psEvalElement},
+	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
+	psExecIf:               {psEvalBlock},
+	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
+}
 
 var num [512]*Integer
 var res [256]*Status
@@ -137,6 +173,8 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
+
+	ext = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
 
 	str = make(map[string]*String)
 	sym = make(map[string]*Symbol)
@@ -448,41 +486,41 @@ func NewBoolean(v bool) *Boolean {
 	return False
 }
 
-func (self *Boolean) Bool() bool {
-	return self == True
+func (b *Boolean) Bool() bool {
+	return b == True
 }
 
-func (self *Boolean) Float() float64 {
-	if self == True {
+func (b *Boolean) Float() float64 {
+	if b == True {
 		return 1.0
 	}
 	return 0.0
 }
 
-func (self *Boolean) Int() int64 {
-	if self == True {
+func (b *Boolean) Int() int64 {
+	if b == True {
 		return 1
 	}
 	return 0
 }
 
-func (self *Boolean) Status() int64 {
-	if self == True {
+func (b *Boolean) Status() int64 {
+	if b == True {
 		return 0
 	}
 	return 1
 }
 
-func (self *Boolean) String() string {
-	if self == True {
+func (b *Boolean) String() string {
+	if b == True {
 		return "True"
 	}
 	return "False"
 }
 
-func (self *Boolean) Equal(c Cell) bool {
+func (b *Boolean) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return bool(*self) == a.Bool()
+		return bool(*b) == a.Bool()
 	}
 	return false
 }
@@ -510,59 +548,59 @@ func NewInteger(v int64) *Integer {
 	return &i
 }
 
-func (self *Integer) Bool() bool {
-	return *self != 0
+func (i *Integer) Bool() bool {
+	return *i != 0
 }
 
-func (self *Integer) Float() float64 {
-	return float64(*self)
+func (i *Integer) Float() float64 {
+	return float64(*i)
 }
 
-func (self *Integer) Int() int64 {
-	return int64(*self)
+func (i *Integer) Int() int64 {
+	return int64(*i)
 }
 
-func (self *Integer) Status() int64 {
-	return int64(*self)
+func (i *Integer) Status() int64 {
+	return int64(*i)
 }
 
-func (self *Integer) String() string {
-	return strconv.FormatInt(int64(*self), 10)
+func (i *Integer) String() string {
+	return strconv.FormatInt(int64(*i), 10)
 }
 
-func (self *Integer) Equal(c Cell) bool {
+func (i *Integer) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return int64(*self) == a.Int()
+		return int64(*i) == a.Int()
 	}
 	return false
 }
 
-func (self *Integer) Greater(c Cell) bool {
-	return int64(*self) > c.(Atom).Int()
+func (i *Integer) Greater(c Cell) bool {
+	return int64(*i) > c.(Atom).Int()
 }
 
-func (self *Integer) Less(c Cell) bool {
-	return int64(*self) < c.(Atom).Int()
+func (i *Integer) Less(c Cell) bool {
+	return int64(*i) < c.(Atom).Int()
 }
 
-func (self *Integer) Add(c Cell) Number {
-	return NewInteger(int64(*self) + c.(Atom).Int())
+func (i *Integer) Add(c Cell) Number {
+	return NewInteger(int64(*i) + c.(Atom).Int())
 }
 
-func (self *Integer) Divide(c Cell) Number {
-	return NewInteger(int64(*self) / c.(Atom).Int())
+func (i *Integer) Divide(c Cell) Number {
+	return NewInteger(int64(*i) / c.(Atom).Int())
 }
 
-func (self *Integer) Modulo(c Cell) Number {
-	return NewInteger(int64(*self) % c.(Atom).Int())
+func (i *Integer) Modulo(c Cell) Number {
+	return NewInteger(int64(*i) % c.(Atom).Int())
 }
 
-func (self *Integer) Multiply(c Cell) Number {
-	return NewInteger(int64(*self) * c.(Atom).Int())
+func (i *Integer) Multiply(c Cell) Number {
+	return NewInteger(int64(*i) * c.(Atom).Int())
 }
 
-func (self *Integer) Subtract(c Cell) Number {
-	return NewInteger(int64(*self) - c.(Atom).Int())
+func (i *Integer) Subtract(c Cell) Number {
+	return NewInteger(int64(*i) - c.(Atom).Int())
 }
 
 /* Status cell definition. */
@@ -587,59 +625,59 @@ func NewStatus(v int64) *Status {
 	return &s
 }
 
-func (self *Status) Bool() bool {
-	return int64(*self) == 0
+func (s *Status) Bool() bool {
+	return int64(*s) == 0
 }
 
-func (self *Status) Equal(c Cell) bool {
+func (s *Status) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return int64(*self) == a.Status()
+		return int64(*s) == a.Status()
 	}
 	return false
 }
 
-func (self *Status) Float() float64 {
-	return float64(*self)
+func (s *Status) Float() float64 {
+	return float64(*s)
 }
 
-func (self *Status) Int() int64 {
-	return int64(*self)
+func (s *Status) Int() int64 {
+	return int64(*s)
 }
 
-func (self *Status) Status() int64 {
-	return int64(*self)
+func (s *Status) Status() int64 {
+	return int64(*s)
 }
 
-func (self *Status) String() string {
-	return strconv.FormatInt(int64(*self), 10)
+func (s *Status) String() string {
+	return strconv.FormatInt(int64(*s), 10)
 }
 
-func (self *Status) Greater(c Cell) bool {
-	return int64(*self) > c.(Atom).Status()
+func (s *Status) Greater(c Cell) bool {
+	return int64(*s) > c.(Atom).Status()
 }
 
-func (self *Status) Less(c Cell) bool {
-	return int64(*self) < c.(Atom).Status()
+func (s *Status) Less(c Cell) bool {
+	return int64(*s) < c.(Atom).Status()
 }
 
-func (self *Status) Add(c Cell) Number {
-	return NewStatus(int64(*self) + c.(Atom).Status())
+func (s *Status) Add(c Cell) Number {
+	return NewStatus(int64(*s) + c.(Atom).Status())
 }
 
-func (self *Status) Divide(c Cell) Number {
-	return NewStatus(int64(*self) / c.(Atom).Status())
+func (s *Status) Divide(c Cell) Number {
+	return NewStatus(int64(*s) / c.(Atom).Status())
 }
 
-func (self *Status) Modulo(c Cell) Number {
-	return NewStatus(int64(*self) % c.(Atom).Status())
+func (s *Status) Modulo(c Cell) Number {
+	return NewStatus(int64(*s) % c.(Atom).Status())
 }
 
-func (self *Status) Multiply(c Cell) Number {
-	return NewStatus(int64(*self) * c.(Atom).Status())
+func (s *Status) Multiply(c Cell) Number {
+	return NewStatus(int64(*s) * c.(Atom).Status())
 }
 
-func (self *Status) Subtract(c Cell) Number {
-	return NewStatus(int64(*self) - c.(Atom).Status())
+func (s *Status) Subtract(c Cell) Number {
+	return NewStatus(int64(*s) - c.(Atom).Status())
 }
 
 /* Float cell definition. */
@@ -651,59 +689,59 @@ func NewFloat(v float64) *Float {
 	return &f
 }
 
-func (self *Float) Bool() bool {
-	return *self != 0
+func (f *Float) Bool() bool {
+	return *f != 0
 }
 
-func (self *Float) Equal(c Cell) bool {
+func (f *Float) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return float64(*self) == a.Float()
+		return float64(*f) == a.Float()
 	}
 	return false
 }
 
-func (self *Float) Float() float64 {
-	return float64(*self)
+func (f *Float) Float() float64 {
+	return float64(*f)
 }
 
-func (self *Float) Int() int64 {
-	return int64(*self)
+func (f *Float) Int() int64 {
+	return int64(*f)
 }
 
-func (self *Float) Status() int64 {
-	return int64(*self)
+func (f *Float) Status() int64 {
+	return int64(*f)
 }
 
-func (self *Float) String() string {
-	return strconv.FormatFloat(float64(*self), 'g', -1, 64)
+func (f *Float) String() string {
+	return strconv.FormatFloat(float64(*f), 'g', -1, 64)
 }
 
-func (self *Float) Greater(c Cell) bool {
-	return float64(*self) > c.(Atom).Float()
+func (f *Float) Greater(c Cell) bool {
+	return float64(*f) > c.(Atom).Float()
 }
 
-func (self *Float) Less(c Cell) bool {
-	return float64(*self) < c.(Atom).Float()
+func (f *Float) Less(c Cell) bool {
+	return float64(*f) < c.(Atom).Float()
 }
 
-func (self *Float) Add(c Cell) Number {
-	return NewFloat(float64(*self) + c.(Atom).Float())
+func (f *Float) Add(c Cell) Number {
+	return NewFloat(float64(*f) + c.(Atom).Float())
 }
 
-func (self *Float) Divide(c Cell) Number {
-	return NewFloat(float64(*self) / c.(Atom).Float())
+func (f *Float) Divide(c Cell) Number {
+	return NewFloat(float64(*f) / c.(Atom).Float())
 }
 
-func (self *Float) Modulo(c Cell) Number {
+func (f *Float) Modulo(c Cell) Number {
 	panic("Type 'float' does not implement 'modulo'.")
 }
 
-func (self *Float) Multiply(c Cell) Number {
-	return NewFloat(float64(*self) * c.(Atom).Float())
+func (f *Float) Multiply(c Cell) Number {
+	return NewFloat(float64(*f) * c.(Atom).Float())
 }
 
-func (self *Float) Subtract(c Cell) Number {
-	return NewFloat(float64(*self) - c.(Atom).Float())
+func (f *Float) Subtract(c Cell) Number {
+	return NewFloat(float64(*f) - c.(Atom).Float())
 }
 
 /* Symbol cell definition. */
@@ -727,110 +765,110 @@ func NewSymbol(v string) *Symbol {
 	return p
 }
 
-func (self *Symbol) Bool() bool {
-	if string(*self) == "False" {
+func (s *Symbol) Bool() bool {
+	if string(*s) == "False" {
 		return false
 	}
 
 	return true
 }
 
-func (self *Symbol) Equal(c Cell) bool {
+func (s *Symbol) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return string(*self) == a.String()
+		return string(*s) == a.String()
 	}
 	return false
 }
 
-func (self *Symbol) Float() (f float64) {
+func (s *Symbol) Float() (f float64) {
 	var err error
-	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
+	if f, err = strconv.ParseFloat(string(*s), 64); err != nil {
 		panic(err)
 	}
 	return f
 }
 
-func (self *Symbol) Int() (i int64) {
+func (s *Symbol) Int() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
 }
 
-func (self *Symbol) Status() (i int64) {
+func (s *Symbol) Status() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
 }
 
-func (self *Symbol) String() string {
-	return string(*self)
+func (s *Symbol) String() string {
+	return string(*s)
 }
 
-func (self *Symbol) Greater(c Cell) bool {
-	return string(*self) > c.(Atom).String()
+func (s *Symbol) Greater(c Cell) bool {
+	return string(*s) > c.(Atom).String()
 }
 
-func (self *Symbol) Less(c Cell) bool {
-	return string(*self) < c.(Atom).String()
+func (s *Symbol) Less(c Cell) bool {
+	return string(*s) < c.(Atom).String()
 }
 
-func (self *Symbol) isFloat() bool {
-	_, err := strconv.ParseFloat(string(*self), 64)
+func (s *Symbol) isFloat() bool {
+	_, err := strconv.ParseFloat(string(*s), 64)
 	return err == nil
 }
 
-func (self *Symbol) isInt() bool {
-	_, err := strconv.ParseInt(string(*self), 0, 64)
+func (s *Symbol) isInt() bool {
+	_, err := strconv.ParseInt(string(*s), 0, 64)
 	return err == nil
 }
 
-func (self *Symbol) Add(c Cell) Number {
-	if self.isInt() {
-		return NewInteger(self.Int() + c.(Atom).Int())
-	} else if self.isFloat() {
-		return NewFloat(self.Float() + c.(Atom).Float())
+func (s *Symbol) Add(c Cell) Number {
+	if s.isInt() {
+		return NewInteger(s.Int() + c.(Atom).Int())
+	} else if s.isFloat() {
+		return NewFloat(s.Float() + c.(Atom).Float())
 	}
 
 	panic("Type 'symbol' does not implement 'add'.")
 }
 
-func (self *Symbol) Divide(c Cell) Number {
-	if self.isInt() {
-		return NewInteger(self.Int() / c.(Atom).Int())
-	} else if self.isFloat() {
-		return NewFloat(self.Float() / c.(Atom).Float())
+func (s *Symbol) Divide(c Cell) Number {
+	if s.isInt() {
+		return NewInteger(s.Int() / c.(Atom).Int())
+	} else if s.isFloat() {
+		return NewFloat(s.Float() / c.(Atom).Float())
 	}
 
 	panic("Type 'symbol' does not implement 'divide'.")
 }
 
-func (self *Symbol) Modulo(c Cell) Number {
-	if self.isInt() {
-		return NewInteger(self.Int() % c.(Atom).Int())
+func (s *Symbol) Modulo(c Cell) Number {
+	if s.isInt() {
+		return NewInteger(s.Int() % c.(Atom).Int())
 	}
 
 	panic("Type 'symbol' does not implement 'modulo'.")
 }
 
-func (self *Symbol) Multiply(c Cell) Number {
-	if self.isInt() {
-		return NewInteger(self.Int() * c.(Atom).Int())
-	} else if self.isFloat() {
-		return NewFloat(self.Float() * c.(Atom).Float())
+func (s *Symbol) Multiply(c Cell) Number {
+	if s.isInt() {
+		return NewInteger(s.Int() * c.(Atom).Int())
+	} else if s.isFloat() {
+		return NewFloat(s.Float() * c.(Atom).Float())
 	}
 
 	panic("Type 'symbol' does not implement 'multiply'.")
 }
 
-func (self *Symbol) Subtract(c Cell) Number {
-	if self.isInt() {
-		return NewInteger(self.Int() - c.(Atom).Int())
-	} else if self.isFloat() {
-		return NewFloat(self.Float() - c.(Atom).Float())
+func (s *Symbol) Subtract(c Cell) Number {
+	if s.isInt() {
+		return NewInteger(s.Int() - c.(Atom).Int())
+	} else if s.isFloat() {
+		return NewFloat(s.Float() - c.(Atom).Float())
 	}
 
 	panic("Type 'symbol' does not implement 'subtract'.")
@@ -863,47 +901,47 @@ func NewString(q string) *String {
 	return NewRawString(v)
 }
 
-func (self *String) Bool() bool {
+func (s *String) Bool() bool {
 	return true
 }
 
-func (self *String) Equal(c Cell) bool {
+func (s *String) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return string(*self) == a.String()
+		return string(*s) == a.String()
 	}
 	return false
 }
 
-func (self *String) Float() (f float64) {
+func (s *String) Float() (f float64) {
 	var err error
-	if f, err = strconv.ParseFloat(string(*self), 64); err != nil {
+	if f, err = strconv.ParseFloat(string(*s), 64); err != nil {
 		panic(err)
 	}
 	return f
 }
 
-func (self *String) Int() (i int64) {
+func (s *String) Int() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
 }
 
-func (self *String) Raw() string {
-	return string(*self)
+func (s *String) Raw() string {
+	return string(*s)
 }
 
-func (self *String) Status() (i int64) {
+func (s *String) Status() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(*self), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
 }
 
-func (self *String) String() string {
-	return strconv.Quote(string(*self))
+func (s *String) String() string {
+	return strconv.Quote(string(*s))
 }
 
 /* Pair cell definition. */
@@ -917,27 +955,27 @@ func Cons(h, t Cell) Cell {
 	return &Pair{car: h, cdr: t}
 }
 
-func (self *Pair) Bool() bool {
-	return self != Null
+func (p *Pair) Bool() bool {
+	return p != Null
 }
 
-func (self *Pair) String() (s string) {
+func (p *Pair) String() (s string) {
 	s = ""
 
-	if IsCons(self.car) && IsCons(Cdr(self.car)) {
+	if IsCons(p.car) && IsCons(Cdr(p.car)) {
 		s += "("
 	}
 
-	if self.car != Null {
-		s += self.car.String()
+	if p.car != Null {
+		s += p.car.String()
 	}
 
-	if IsCons(self.car) && IsCons(Cdr(self.car)) {
+	if IsCons(p.car) && IsCons(Cdr(p.car)) {
 		s += ")"
 	}
 
-	if IsCons(self.cdr) {
-		if self.cdr == Null {
+	if IsCons(p.cdr) {
+		if p.cdr == Null {
 			return s
 		}
 
@@ -946,16 +984,16 @@ func (self *Pair) String() (s string) {
 		s += "::"
 	}
 
-	s += self.cdr.String()
+	s += p.cdr.String()
 
 	return s
 }
 
-func (self *Pair) Equal(c Cell) bool {
-	if self == Null && c == Null {
+func (p *Pair) Equal(c Cell) bool {
+	if p == Null && c == Null {
 		return true
 	}
-	return self.car.Equal(Car(c)) && self.cdr.Equal(Cdr(c))
+	return p.car.Equal(Car(c)) && p.cdr.Equal(Cdr(c))
 }
 
 /* Convert Channel/Pipe Context (or child Context) into a Conduit. */
@@ -1640,6 +1678,60 @@ func (self *Task) Equal(c Cell) bool {
 
 /* Task-specific functions. */
 
+func (t *Task) Apply(args Cell) bool {
+	m := Car(t.Scratch).(Binding)
+
+	t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+
+	t.Code = m.Ref().Body()
+	t.NewBlock(t.Dynamic, m.Ref().Scope())
+
+	label := m.Ref().Label()
+	if label != Null {
+		t.Lexical.Public(label, m.Self().Expose())
+	}
+
+	params := m.Ref().Params()
+	for args != Null && params != Null && IsAtom(Car(params)) {
+		t.Lexical.Public(Car(params), Car(args))
+		args, params = Cdr(args), Cdr(params)
+	}
+	if IsCons(Car(params)) {
+		t.Lexical.Public(Caar(params), args)
+	}
+
+	cc := NewContinuation(Cdr(t.Scratch), t.Stack)
+	t.Lexical.Public(NewSymbol("return"), cc)
+
+	return true
+}
+
+func (t *Task) Closure(n NewClosure) bool {
+	label := Null
+	params := Car(t.Code)
+	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
+		label = params
+		params = Cadr(t.Code)
+		t.Code = Cdr(t.Code)
+	}
+
+	if t.Code == Null {
+		panic("expected 'as'")
+	}
+
+	body := Cddr(t.Code)
+	scope := t.Lexical
+
+	c := n((*Task).Apply, body, label, params, scope)
+	if label == Null {
+		SetCar(t.Scratch, NewUnbound(c))
+	} else {
+		SetCar(t.Scratch, NewBound(c, scope))
+	}
+
+	return false
+}
+
 func (self *Task) Continue() {
 	if self.pid > 0 {
 		syscall.Kill(self.pid, syscall.SIGCONT)
@@ -1654,7 +1746,31 @@ func (self *Task) Continue() {
 	close(self.suspended)
 }
 
-func (self *Task) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
+func (t *Task) Debug(s string) {
+	fmt.Printf("%s: t.Code = %v, t.Scratch = %v\n", s, t.Code, t.Scratch)
+}
+
+func (t *Task) DynamicVar(state int64) bool {
+	r := Raw(Car(t.Code))
+	if strict(t) && number(r) {
+		panic(r + " cannot be used as a variable name")
+	}
+
+	if state == psExecSetenv {
+		if !strings.HasPrefix(r, "$") {
+			panic("environment variable names must begin with '$'")
+		}
+	}
+
+	t.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
+
+	t.Code = Cadr(t.Code)
+	t.Scratch = Cdr(t.Scratch)
+
+	return true
+}
+
+func (self *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
 
 	self.Lock()
 	defer self.Unlock()
@@ -1685,6 +1801,330 @@ func (self *Task) Launch(arg0 string, argv []string, attr *os.ProcAttr) (*Status
 	self.pid = 0
 
 	return NewStatus(int64(status.ExitStatus())), err
+}
+
+func (t *Task) External(args Cell) bool {
+	t.Scratch = Cdr(t.Scratch)
+
+	arg0, problem := exec.LookPath(Raw(Car(t.Scratch)))
+
+	SetCar(t.Scratch, False)
+
+	if problem != nil {
+		panic(problem)
+	}
+
+	argv := []string{arg0}
+
+	for ; args != Null; args = Cdr(args) {
+		argv = append(argv, Car(args).String())
+	}
+
+	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
+	dir := c.Get().String()
+
+	in := rpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get())
+	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
+	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
+
+	files := []*os.File{in, out, err}
+
+	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
+
+	status, problem := t.Execute(arg0, argv, attr)
+	if problem != nil {
+		panic(problem)
+	}
+
+	return t.Return(status)
+}
+
+func (t *Task) Launch() {
+	t.Run(nil)
+	close(t.Done)
+}
+
+func (t *Task) LexicalVar(state int64) bool {
+	t.RemoveState()
+
+	l := Car(t.Scratch).(Binding).Self().Expose()
+	if t.Lexical != l {
+		t.NewStates(SaveLexical)
+		t.Lexical = l
+	}
+
+	t.NewStates(state)
+
+	r := Raw(Car(t.Code))
+	if strict(t) && number(r) {
+		panic(r + " cannot be used as a variable name")
+	}
+
+	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
+
+	t.Code = Cadr(t.Code)
+	t.Scratch = Cdr(t.Scratch)
+
+	return true
+}
+
+func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
+	c := Resolve(t.Lexical, t.Dynamic, sym)
+	if c == nil {
+		r := Raw(sym)
+		if strict(t) && !number(r) {
+			return false, r + " undefined"
+		} else {
+			t.Scratch = Cons(sym, t.Scratch)
+		}
+	} else if simple && !IsSimple(c.Get()) {
+		t.Scratch = Cons(sym, t.Scratch)
+	} else if a, ok := c.Get().(Binding); ok {
+		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
+	} else {
+		t.Scratch = Cons(c.Get(), t.Scratch)
+	}
+
+	return true, ""
+}
+
+func (t *Task) Run(end Cell) (successful bool) {
+	successful = true
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+
+		fmt.Printf("oh: %v\n", r)
+
+		successful = false
+	}()
+
+	for t.Runnable() && t.Stack != Null {
+		state := t.GetState()
+
+		switch state {
+		case psChangeContext:
+			t.Dynamic = nil
+			t.Lexical = Car(t.Scratch).(Context)
+			t.Scratch = Cdr(t.Scratch)
+
+		case psExecBuiltin, psExecMethod:
+			args := t.Arguments()
+
+			if state == psExecBuiltin {
+				args = expand(args)
+			}
+
+			t.Code = args
+
+			fallthrough
+		case psExecSyntax:
+			m := Car(t.Scratch).(Binding)
+
+			if m.Ref().Applier()(t, t.Code) {
+				continue
+			}
+
+		case psExecIf, psExecWhileBody:
+			if !Car(t.Scratch).Bool() {
+				t.Code = Cdr(t.Code)
+
+				for Car(t.Code) != Null &&
+					!IsAtom(Car(t.Code)) {
+					t.Code = Cdr(t.Code)
+				}
+
+				if Car(t.Code) != Null &&
+					Raw(Car(t.Code)) != "else" {
+					panic("expected 'else'")
+				}
+			}
+
+			if Cdr(t.Code) == Null {
+				break
+			}
+
+			t.ReplaceStates(next[t.GetState()]...)
+
+			t.Code = Cdr(t.Code)
+
+			fallthrough
+		case psEvalBlock:
+			if t.Code == end {
+				t.Scratch = Cdr(t.Scratch)
+				return
+			}
+
+			if t.Code == Null ||
+				!IsCons(t.Code) || !IsCons(Car(t.Code)) {
+				break
+			}
+
+			if Cdr(t.Code) == Null || !IsCons(Cadr(t.Code)) {
+				t.ReplaceStates(psEvalCommand)
+			} else {
+				t.NewStates(SaveCdrCode, psEvalCommand)
+			}
+
+			t.Code = Car(t.Code)
+			t.Scratch = Cdr(t.Scratch)
+
+			fallthrough
+		case psEvalCommand:
+			if t.Code == Null {
+				t.Scratch = Cons(t.Code, t.Scratch)
+				break
+			}
+
+			t.ReplaceStates(psExecCommand,
+				SaveCdrCode,
+				psEvalElement)
+			t.Code = Car(t.Code)
+
+			continue
+
+		case psExecCommand:
+			switch k := Car(t.Scratch).(type) {
+			case *String, *Symbol:
+				t.Scratch = Cons(ext, t.Scratch)
+
+				t.ReplaceStates(psExecBuiltin,
+					psEvalArgumentsBuiltin)
+			case Binding:
+				switch k.Ref().(type) {
+				case *Builtin:
+					t.ReplaceStates(psExecBuiltin,
+						psEvalArgumentsBuiltin)
+
+				case *Method:
+					t.ReplaceStates(psExecMethod,
+						psEvalArguments)
+				case *Syntax:
+					t.ReplaceStates(psExecSyntax)
+					continue
+				}
+
+			case *Continuation:
+				t.ReplaceStates(psReturn, psEvalArguments)
+
+			default:
+				panic(fmt.Sprintf("can't evaluate: %v", t))
+			}
+
+			t.Scratch = Cons(nil, t.Scratch)
+
+			fallthrough
+		case psEvalArguments, psEvalArgumentsBuiltin:
+			if t.Code == Null {
+				break
+			}
+
+			t.NewStates(next[t.GetState()]...)
+
+			t.Code = Car(t.Code)
+
+			fallthrough
+		case psEvalElement, psEvalElementBuiltin:
+			if t.Code == Null {
+				t.Scratch = Cons(t.Code, t.Scratch)
+				break
+			} else if IsCons(t.Code) {
+				if IsAtom(Cdr(t.Code)) {
+					t.ReplaceStates(SaveDynamic|SaveLexical,
+						psEvalElement,
+						psChangeContext,
+						SaveCdrCode,
+						psEvalElement)
+					t.Code = Car(t.Code)
+				} else {
+					t.ReplaceStates(psEvalCommand)
+				}
+				continue
+			} else if sym, ok := t.Code.(*Symbol); ok {
+				simple := t.GetState() == psEvalElementBuiltin
+				ok, msg := t.Lookup(sym, simple)
+				if !ok {
+					panic(msg)
+				}
+				break
+			} else {
+				t.Scratch = Cons(t.Code, t.Scratch)
+				break
+			}
+
+		case psExecDefine:
+			t.Lexical.Define(t.Code, Car(t.Scratch))
+
+		case psExecPublic:
+			t.Lexical.Public(t.Code, Car(t.Scratch))
+
+		case psExecDynamic, psExecSetenv:
+			k := t.Code
+			v := Car(t.Scratch)
+
+			if state == psExecSetenv {
+				s := Raw(v)
+				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
+			}
+
+			t.Dynamic.Add(k, v)
+
+		case psExecSet:
+			k := t.Code.(*Symbol)
+			r := Resolve(t.Lexical, t.Dynamic, k)
+			if r == nil {
+				panic("'" + k.String() + "' is not defined")
+			}
+
+			r.Set(Car(t.Scratch))
+
+		case psExecSplice:
+			l := Car(t.Scratch)
+			t.Scratch = Cdr(t.Scratch)
+
+			if !IsCons(l) {
+				break
+			}
+
+			for l != Null {
+				t.Scratch = Cons(Car(l), t.Scratch)
+				l = Cdr(l)
+			}
+
+		case psExecWhileTest:
+			t.ReplaceStates(psExecWhileBody,
+				SaveCode,
+				psEvalElement)
+			t.Code = Car(t.Code)
+			t.Scratch = Cdr(t.Scratch)
+
+			continue
+
+		case psReturn:
+			args := t.Arguments()
+
+			t.Continuation = *Car(t.Scratch).(*Continuation)
+			t.Scratch = Cons(Car(args), t.Scratch)
+
+			break
+
+		default:
+			if state >= SaveMax {
+				panic(fmt.Sprintf("command not found: %s",
+					t.Code))
+			} else {
+				t.RestoreState()
+				continue
+			}
+		}
+
+		t.RemoveState()
+	}
+
+	return
 }
 
 func (self *Task) Runnable() bool {

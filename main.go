@@ -32,7 +32,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -44,124 +43,11 @@ import (
 	"unsafe"
 )
 
-const (
-	psChangeContext = SaveMax + iota
-
-	psEvalArguments
-	psEvalArgumentsBuiltin
-	psEvalBlock
-	psEvalCommand
-	psEvalElement
-	psEvalElementBuiltin
-
-	psExecBuiltin
-	psExecCommand
-	psExecDefine
-	psExecDynamic
-	psExecIf
-	psExecMethod
-	psExecPublic
-	psExecSet
-	psExecSetenv
-	psExecSplice
-	psExecSyntax
-	psExecWhileBody
-	psExecWhileTest
-	psReturn
-
-	psMax
-)
-
 var ext Cell
 var group int
 var interactive bool
 
 var jobs = map[int]*Task{}
-
-var next = map[int64][]int64{
-	psEvalArguments:        {SaveCdrCode, psEvalElement},
-	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
-	psExecIf:               {psEvalBlock},
-	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
-}
-
-func apply(t *Task, args Cell) bool {
-	m := Car(t.Scratch).(Binding)
-
-	t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
-
-	t.Code = m.Ref().Body()
-	t.NewBlock(t.Dynamic, m.Ref().Scope())
-
-	label := m.Ref().Label()
-	if label != Null {
-		t.Lexical.Public(label, m.Self().Expose())
-	}
-
-	params := m.Ref().Params()
-	for args != Null && params != Null && IsAtom(Car(params)) {
-		t.Lexical.Public(Car(params), Car(args))
-		args, params = Cdr(args), Cdr(params)
-	}
-	if IsCons(Car(params)) {
-		t.Lexical.Public(Caar(params), args)
-	}
-
-	cc := NewContinuation(Cdr(t.Scratch), t.Stack)
-	t.Lexical.Public(NewSymbol("return"), cc)
-
-	return true
-}
-
-func closure(t *Task, n NewClosure) bool {
-	label := Null
-	params := Car(t.Code)
-	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
-		label = params
-		params = Cadr(t.Code)
-		t.Code = Cdr(t.Code)
-	}
-
-	if t.Code == Null {
-		panic("expected 'as'")
-	}
-
-	body := Cddr(t.Code)
-	scope := t.Lexical
-
-	c := n(apply, body, label, params, scope)
-	if label == Null {
-		SetCar(t.Scratch, NewUnbound(c))
-	} else {
-		SetCar(t.Scratch, NewBound(c, scope))
-	}
-
-	return false
-}
-
-func debug(t *Task, s string) {
-	fmt.Printf("%s: t.Code = %v, t.Scratch = %v\n", s, t.Code, t.Scratch)
-}
-
-func dynamic(t *Task, state int64) bool {
-	r := Raw(Car(t.Code))
-	if strict(t) && number(r) {
-		panic(r + " cannot be used as a variable name")
-	}
-
-	if state == psExecSetenv {
-		if !strings.HasPrefix(r, "$") {
-			panic("environment variable names must begin with '$'")
-		}
-	}
-
-	t.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
-
-	t.Code = Cadr(t.Code)
-	t.Scratch = Cdr(t.Scratch)
-
-	return true
-}
 
 func expand(args Cell) Cell {
 	list := Null
@@ -200,42 +86,6 @@ func expand(args Cell) Cell {
 	return list
 }
 
-func external(t *Task, args Cell) bool {
-	t.Scratch = Cdr(t.Scratch)
-
-	arg0, problem := exec.LookPath(Raw(Car(t.Scratch)))
-
-	SetCar(t.Scratch, False)
-
-	if problem != nil {
-		panic(problem)
-	}
-
-	argv := []string{arg0}
-
-	for ; args != Null; args = Cdr(args) {
-		argv = append(argv, Car(args).String())
-	}
-
-	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
-	dir := c.Get().String()
-
-	in := rpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get())
-	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
-	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
-
-	files := []*os.File{in, out, err}
-
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
-
-	status, problem := t.Launch(arg0, argv, attr)
-	if problem != nil {
-		panic(problem)
-	}
-
-	return t.Return(status)
-}
-
 func init() {
 	pid := syscall.Getpid()
 	pgrp := syscall.Getpgrp()
@@ -244,57 +94,6 @@ func init() {
 	}
 	group = pid
 	C.ignore()
-
-	ext = NewUnbound(NewBuiltin(external, Null, Null, Null, nil))
-}
-
-func launch(task *Task) {
-	run(task, nil)
-	close(task.Done)
-}
-
-func lexical(t *Task, state int64) bool {
-	t.RemoveState()
-
-	l := Car(t.Scratch).(Binding).Self().Expose()
-	if t.Lexical != l {
-		t.NewStates(SaveLexical)
-		t.Lexical = l
-	}
-
-	t.NewStates(state)
-
-	r := Raw(Car(t.Code))
-	if strict(t) && number(r) {
-		panic(r + " cannot be used as a variable name")
-	}
-
-	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
-
-	t.Code = Cadr(t.Code)
-	t.Scratch = Cdr(t.Scratch)
-
-	return true
-}
-
-func lookup(t *Task, sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(t.Lexical, t.Dynamic, sym)
-	if c == nil {
-		r := Raw(sym)
-		if strict(t) && !number(r) {
-			return false, r + " undefined"
-		} else {
-			t.Scratch = Cons(sym, t.Scratch)
-		}
-	} else if simple && !IsSimple(c.Get()) {
-		t.Scratch = Cons(sym, t.Scratch)
-	} else if a, ok := c.Get().(Binding); ok {
-		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
-	} else {
-		t.Scratch = Cons(c.Get(), t.Scratch)
-	}
-
-	return true, ""
 }
 
 func main() {
@@ -351,13 +150,13 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("builtin", func(t *Task, args Cell) bool {
-		return closure(t, NewBuiltin)
+		return t.Closure(NewBuiltin)
 	})
 	scope0.DefineSyntax("define", func(t *Task, args Cell) bool {
-		return lexical(t, psExecDefine)
+		return t.LexicalVar(psExecDefine)
 	})
 	scope0.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
-		return dynamic(t, psExecDynamic)
+		return t.DynamicVar(psExecDynamic)
 	})
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical,
@@ -371,7 +170,7 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("method", func(t *Task, args Cell) bool {
-		return closure(t, NewMethod)
+		return t.Closure(NewMethod)
 	})
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
@@ -393,13 +192,13 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("setenv", func(t *Task, args Cell) bool {
-		return dynamic(t, psExecSetenv)
+		return t.DynamicVar(psExecSetenv)
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(psEvalBlock, t.Code, NewEnv(t.Dynamic),
 			NewScope(t.Lexical, nil), t)
 
-		go launch(child)
+		go child.Launch()
 
 		SetCar(t.Scratch, child)
 
@@ -414,7 +213,7 @@ func main() {
 		return true
 	})
 	scope0.DefineSyntax("syntax", func(t *Task, args Cell) bool {
-		return closure(t, NewSyntax)
+		return t.Closure(NewSyntax)
 	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
@@ -423,7 +222,7 @@ func main() {
 	})
 
 	scope0.PublicSyntax("public", func(t *Task, args Cell) bool {
-		return lexical(t, psExecPublic)
+		return t.LexicalVar(psExecPublic)
 	})
 
 	/* Builtins. */
@@ -441,7 +240,7 @@ func main() {
 		return t.Return(NewStatus(int64(status)))
 	})
 	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
-		debug(t, "debug")
+		t.Debug("debug")
 
 		return false
 	})
@@ -1516,245 +1315,6 @@ func number(s string) bool {
 
 func rpipe(c Cell) *os.File {
 	return GetConduit(c.(Context)).(*Pipe).ReadFd()
-}
-
-func run(t *Task, end Cell) (successful bool) {
-	successful = true
-
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-
-		fmt.Printf("oh: %v\n", r)
-
-		successful = false
-	}()
-
-	for t.Runnable() && t.Stack != Null {
-		state := t.GetState()
-
-		switch state {
-		case psChangeContext:
-			t.Dynamic = nil
-			t.Lexical = Car(t.Scratch).(Context)
-			t.Scratch = Cdr(t.Scratch)
-
-		case psExecBuiltin, psExecMethod:
-			args := t.Arguments()
-
-			if state == psExecBuiltin {
-				args = expand(args)
-			}
-
-			t.Code = args
-
-			fallthrough
-		case psExecSyntax:
-			m := Car(t.Scratch).(Binding)
-
-			if m.Ref().Applier()(t, t.Code) {
-				continue
-			}
-
-		case psExecIf, psExecWhileBody:
-			if !Car(t.Scratch).Bool() {
-				t.Code = Cdr(t.Code)
-
-				for Car(t.Code) != Null &&
-					!IsAtom(Car(t.Code)) {
-					t.Code = Cdr(t.Code)
-				}
-
-				if Car(t.Code) != Null &&
-					Raw(Car(t.Code)) != "else" {
-					panic("expected 'else'")
-				}
-			}
-
-			if Cdr(t.Code) == Null {
-				break
-			}
-
-			t.ReplaceStates(next[t.GetState()]...)
-
-			t.Code = Cdr(t.Code)
-
-			fallthrough
-		case psEvalBlock:
-			if t.Code == end {
-				t.Scratch = Cdr(t.Scratch)
-				return
-			}
-
-			if t.Code == Null ||
-				!IsCons(t.Code) || !IsCons(Car(t.Code)) {
-				break
-			}
-
-			if Cdr(t.Code) == Null || !IsCons(Cadr(t.Code)) {
-				t.ReplaceStates(psEvalCommand)
-			} else {
-				t.NewStates(SaveCdrCode, psEvalCommand)
-			}
-
-			t.Code = Car(t.Code)
-			t.Scratch = Cdr(t.Scratch)
-
-			fallthrough
-		case psEvalCommand:
-			if t.Code == Null {
-				t.Scratch = Cons(t.Code, t.Scratch)
-				break
-			}
-
-			t.ReplaceStates(psExecCommand,
-				SaveCdrCode,
-				psEvalElement)
-			t.Code = Car(t.Code)
-
-			continue
-
-		case psExecCommand:
-			switch k := Car(t.Scratch).(type) {
-			case *String, *Symbol:
-				t.Scratch = Cons(ext, t.Scratch)
-
-				t.ReplaceStates(psExecBuiltin,
-					psEvalArgumentsBuiltin)
-			case Binding:
-				switch k.Ref().(type) {
-				case *Builtin:
-					t.ReplaceStates(psExecBuiltin,
-						psEvalArgumentsBuiltin)
-
-				case *Method:
-					t.ReplaceStates(psExecMethod,
-						psEvalArguments)
-				case *Syntax:
-					t.ReplaceStates(psExecSyntax)
-					continue
-				}
-
-			case *Continuation:
-				t.ReplaceStates(psReturn, psEvalArguments)
-
-			default:
-				panic(fmt.Sprintf("can't evaluate: %v", t))
-			}
-
-			t.Scratch = Cons(nil, t.Scratch)
-
-			fallthrough
-		case psEvalArguments, psEvalArgumentsBuiltin:
-			if t.Code == Null {
-				break
-			}
-
-			t.NewStates(next[t.GetState()]...)
-
-			t.Code = Car(t.Code)
-
-			fallthrough
-		case psEvalElement, psEvalElementBuiltin:
-			if t.Code == Null {
-				t.Scratch = Cons(t.Code, t.Scratch)
-				break
-			} else if IsCons(t.Code) {
-				if IsAtom(Cdr(t.Code)) {
-					t.ReplaceStates(SaveDynamic|SaveLexical,
-						psEvalElement,
-						psChangeContext,
-						SaveCdrCode,
-						psEvalElement)
-					t.Code = Car(t.Code)
-				} else {
-					t.ReplaceStates(psEvalCommand)
-				}
-				continue
-			} else if sym, ok := t.Code.(*Symbol); ok {
-				simple := t.GetState() == psEvalElementBuiltin
-				ok, msg := lookup(t, sym, simple)
-				if !ok {
-					panic(msg)
-				}
-				break
-			} else {
-				t.Scratch = Cons(t.Code, t.Scratch)
-				break
-			}
-
-		case psExecDefine:
-			t.Lexical.Define(t.Code, Car(t.Scratch))
-
-		case psExecPublic:
-			t.Lexical.Public(t.Code, Car(t.Scratch))
-
-		case psExecDynamic, psExecSetenv:
-			k := t.Code
-			v := Car(t.Scratch)
-
-			if state == psExecSetenv {
-				s := Raw(v)
-				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
-			}
-
-			t.Dynamic.Add(k, v)
-
-		case psExecSet:
-			k := t.Code.(*Symbol)
-			r := Resolve(t.Lexical, t.Dynamic, k)
-			if r == nil {
-				panic("'" + k.String() + "' is not defined")
-			}
-
-			r.Set(Car(t.Scratch))
-
-		case psExecSplice:
-			l := Car(t.Scratch)
-			t.Scratch = Cdr(t.Scratch)
-
-			if !IsCons(l) {
-				break
-			}
-
-			for l != Null {
-				t.Scratch = Cons(Car(l), t.Scratch)
-				l = Cdr(l)
-			}
-
-		case psExecWhileTest:
-			t.ReplaceStates(psExecWhileBody,
-				SaveCode,
-				psEvalElement)
-			t.Code = Car(t.Code)
-			t.Scratch = Cdr(t.Scratch)
-
-			continue
-
-		case psReturn:
-			args := t.Arguments()
-
-			t.Continuation = *Car(t.Scratch).(*Continuation)
-			t.Scratch = Cons(Car(args), t.Scratch)
-
-			break
-
-		default:
-			if state >= SaveMax {
-				panic(fmt.Sprintf("command not found: %s",
-					t.Code))
-			} else {
-				t.RestoreState()
-				continue
-			}
-		}
-
-		t.RemoveState()
-	}
-
-	return
 }
 
 func status(c Cell) int {

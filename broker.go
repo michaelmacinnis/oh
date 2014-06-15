@@ -164,7 +164,7 @@ func listen(e *Env, s *Scope) *Task {
 			task.NewStates(SaveCode, psEvalCommand)
 
 			task.Code = c
-			if !run(task, end) {
+			if !task.Run(end) {
 				*(task.Registers) = saved
 
 				SetCar(task.Code, nil)
