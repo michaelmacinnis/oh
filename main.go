@@ -34,14 +34,12 @@ import (
 	"syscall"
 )
 
-var ext Cell
 var group int
-var pid int
 
 var jobs = map[int]*Task{}
 
 func init() {
-	pid = syscall.Getpid()
+	pid := syscall.Getpid()
 	pgrp := syscall.Getpgrp()
 	if pid != pgrp {
 		syscall.Setpgid(0, 0)
@@ -51,7 +49,7 @@ func init() {
 }
 
 func main() {
-	StartBroker(pid)
+	StartBroker(group)
 
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l
@@ -241,4 +239,3 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 
 	StartInterface()
 }
-

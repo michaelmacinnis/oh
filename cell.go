@@ -8,17 +8,15 @@ import (
 	"github.com/peterh/liner"
 	"os"
 	"os/exec"
-        "path"
-        "path/filepath"
-	"runtime"
+	"path"
+	"path/filepath"
 	"regexp"
-        "sort"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall"
-        "unicode"
-        "unsafe"
+	"unicode"
 )
 
 type Function func(t *Task, args Cell) bool
@@ -151,6 +149,7 @@ var Null Cell
 var False *Boolean
 var True *Boolean
 
+var external Cell
 var interactive bool
 var runnable chan bool
 
@@ -160,10 +159,10 @@ var scope0 *Scope
 var task0 *Task
 
 var next = map[int64][]int64{
-	psEvalArguments:	{SaveCdrCode, psEvalElement},
+	psEvalArguments:        {SaveCdrCode, psEvalElement},
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
-	psExecIf:		{psEvalBlock},
-	psExecWhileBody:	{psExecWhileTest, SaveCode, psEvalBlock},
+	psExecIf:               {psEvalBlock},
+	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
 
 var num [512]*Integer
@@ -223,7 +222,7 @@ func init() {
 	T := Boolean(true)
 	True = &T
 
-	ext = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
+	external = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
 
 	str = make(map[string]*String)
 	sym = make(map[string]*Symbol)
@@ -302,7 +301,7 @@ func init() {
 
 	/* Command-line arguments */
 	args := Null
-	if !interactive {
+	if !IsInteractive() {
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
@@ -317,7 +316,7 @@ func init() {
 	}
 	env0.Add(NewSymbol("$args"), args)
 
-	env0.Add(NewSymbol("$$"), NewInteger(int64(pid)))
+	env0.Add(NewSymbol("$$"), NewInteger(int64(syscall.Getpid())))
 
 	if wd, err := os.Getwd(); err == nil {
 		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
@@ -436,66 +435,6 @@ func init() {
 
 		return false
 	})
-	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !interactive || t != ForegroundTask() {
-			return false
-		}
-
-		index := 0
-		if args != Null {
-			if a, ok := Car(args).(Atom); ok {
-				index = int(a.Int())
-			}
-		} else {
-			for k, _ := range jobs {
-				if k > index {
-					index = k
-				}
-			}
-		}
-
-		found, ok := jobs[index]
-
-		if !ok {
-			return false
-		}
-
-		t.Stop()
-
-		if found.Job.group != 0 {
-			foreground := found.Job.group
-			syscall.Syscall(syscall.SYS_IOCTL,
-				uintptr(syscall.Stdin),
-				syscall.TIOCSPGRP,
-				uintptr(unsafe.Pointer(&foreground)))
-			found.Job.mode.ApplyMode()
-		}
-
-		SetForegroundTask(found)
-
-		delete(jobs, index)
-
-		return true
-	})
-	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !interactive || t != ForegroundTask() {
-			return false
-		}
-
-		i := make([]int, 0, len(jobs))
-		for k, _ := range jobs {
-			i = append(i, k)
-		}
-		sort.Ints(i)
-		for k, v := range i {
-			if k != len(jobs)-1 {
-				fmt.Printf("[%d] \t%s\n", v, jobs[v].Job.command)
-			} else {
-				fmt.Printf("[%d]+\t%s\n", v, jobs[v].Job.command)
-			}
-		}
-		return false
-	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(Raw(Car(args)))
 
@@ -518,7 +457,7 @@ func init() {
 			return false
 		}
 		SetCar(t.Scratch, Car(args))
-		t.Scratch = Cons(ext, t.Scratch)
+		t.Scratch = Cons(external, t.Scratch)
 		t.Scratch = Cons(nil, t.Scratch)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
 			t.Scratch = Cons(Car(args), t.Scratch)
@@ -1334,6 +1273,22 @@ func wpipe(c Cell) *os.File {
 	return GetConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
+func ForegroundTask() *Task {
+	return task0
+}
+
+func IsInteractive() bool {
+	return interactive
+}
+
+func RootScope() *Scope {
+	return scope0
+}
+
+func SetForegroundTask(t *Task) {
+	task0 = t
+}
+
 func AppendTo(list Cell, elements ...Cell) Cell {
 	var pair, prev, start Cell
 
@@ -1420,10 +1375,6 @@ func Cddar(c Cell) Cell {
 
 func Cdddr(c Cell) Cell {
 	return c.(*Pair).cdr.(*Pair).cdr.(*Pair).cdr
-}
-
-func ForegroundTask() *Task {
-	return task0
 }
 
 func IsAtom(c Cell) bool {
@@ -1567,11 +1518,6 @@ func SetCar(c, value Cell) {
 
 func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
-}
-
-func SetForegroundTask(t *Task) {
-	task0 = t
-	task0.Continue()
 }
 
 /* Boolean cell definition. */
@@ -2719,7 +2665,7 @@ type Task struct {
 	Eval      chan Cell
 	children  map[*Task]bool
 	parent    *Task
-	pid	int
+	pid       int
 	suspended chan bool
 }
 
@@ -2746,7 +2692,7 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 		Eval:      make(chan Cell, 1),
 		children:  make(map[*Task]bool),
 		parent:    p,
-		pid:	0,
+		pid:       0,
 		suspended: runnable,
 	}
 
@@ -3086,7 +3032,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 		case psExecCommand:
 			switch k := Car(t.Scratch).(type) {
 			case *String, *Symbol:
-				t.Scratch = Cons(ext, t.Scratch)
+				t.Scratch = Cons(external, t.Scratch)
 
 				t.ReplaceStates(psExecBuiltin,
 					psEvalArgumentsBuiltin)
@@ -3532,4 +3478,3 @@ func (ct *Constant) String() string {
 func (ct *Constant) Set(c Cell) {
 	panic("ct cannot be set")
 }
-
