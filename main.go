@@ -36,8 +36,6 @@ import (
 
 var group int
 
-var jobs = map[int]*Task{}
-
 func init() {
 	pid := syscall.Getpid()
 	pgrp := syscall.Getpgrp()

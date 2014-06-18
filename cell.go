@@ -294,7 +294,7 @@ func init() {
 	env0 = NewEnv(nil)
 	scope0 = NewScope(nil, nil)
 
-	task0 = NewTask0()
+	NewTask0()
 
 	env0.Add(NewSymbol("False"), False)
 	env0.Add(NewSymbol("True"), True)
@@ -2704,7 +2704,8 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 }
 
 func NewTask0() *Task {
-	return NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
+	task0 = NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
+	return task0
 }
 
 func (t *Task) Bool() bool {

@@ -38,11 +38,11 @@ var eval0 chan Cell
 var incoming chan os.Signal
 var raw liner.ModeApplier
 
-func broker(pid int) {
-	task := ForegroundTask()
+var jobs = map[int]*Task{}
 
+func broker(pid int) {
 	var c Cell = nil
-	for c == nil && task.Stack != Null {
+	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
 			case <-incoming:
@@ -50,9 +50,9 @@ func broker(pid int) {
 			case c = <-eval0:
 			}
 		}
-		task.Eval <- c
+		ForegroundTask().Eval <- c
 		for c != nil {
-			prev := task
+			prev := ForegroundTask()
 			select {
 			case sig := <-incoming:
 				// Handle signals.
@@ -62,7 +62,7 @@ func broker(pid int) {
 						syscall.Kill(pid, syscall.SIGSTOP)
 						continue
 					}
-					task.Suspend()
+					ForegroundTask().Suspend()
 					last := 0
 					for k, _ := range jobs {
 						if k > last {
@@ -71,7 +71,7 @@ func broker(pid int) {
 					}
 					last++
 
-					jobs[last] = task
+					jobs[last] = ForegroundTask()
 
 					fallthrough
 				case syscall.SIGINT:
@@ -79,18 +79,16 @@ func broker(pid int) {
 						os.Exit(130)
 					}
 					if sig == syscall.SIGINT {
-						task.Stop()
+						ForegroundTask().Stop()
 					}
 					fmt.Printf("\n")
 
-					task = NewTask0()
-					SetForegroundTask(task)
-					listen()
+					go listen(NewTask0())
 					c = nil
 				}
 
-			case c = <-task.Done:
-				if task != prev {
+			case c = <-ForegroundTask().Done:
+				if ForegroundTask() != prev {
 					c = Null
 					continue
 				}
@@ -98,7 +96,7 @@ func broker(pid int) {
 		}
 		done0 <- c
 	}
-	os.Exit(status(Car(task.Scratch)))
+	os.Exit(status(Car(ForegroundTask().Scratch)))
 }
 
 func complete(line string) []string {
@@ -181,42 +179,35 @@ func init() {
 	signal.Notify(incoming, signals...)
 }
 
-func listen() *Task {
-	task := ForegroundTask()
+func listen(task *Task) {
+	for c := range task.Eval {
+		saved := *(task.Registers)
 
-	go func() {
-		for c := range task.Eval {
-			saved := *(task.Registers)
+		end := Cons(nil, Null)
 
-			end := Cons(nil, Null)
+		SetCar(task.Code, c)
+		SetCdr(task.Code, end)
 
-			SetCar(task.Code, c)
-			SetCdr(task.Code, end)
+		task.Code = end
+		task.NewStates(SaveCode, psEvalCommand)
 
-			task.Code = end
-			task.NewStates(SaveCode, psEvalCommand)
+		task.Code = c
+		if !task.Run(end) {
+			*(task.Registers) = saved
 
-			task.Code = c
-			if !task.Run(end) {
-				*(task.Registers) = saved
-
-				SetCar(task.Code, nil)
-				SetCdr(task.Code, Null)
-			}
-
-			task.Done <- nil
+			SetCar(task.Code, nil)
+			SetCdr(task.Code, Null)
 		}
-	}()
 
-	return task
+		task.Done <- nil
+	}
 }
 
 func Evaluate(c Cell) {
-	task := ForegroundTask()
-
 	eval0 <- c
 	<-done0
 
+	task := ForegroundTask()
 	task.Job.command = ""
 	task.Job.group = 0
 }
@@ -259,8 +250,6 @@ func StartBroker(pid int) {
 			return false
 		}
 
-		t.Stop()
-
 		if found.Job.group != 0 {
 			foreground := found.Job.group
 			syscall.Syscall(syscall.SYS_IOCTL,
@@ -270,10 +259,12 @@ func StartBroker(pid int) {
 			found.Job.mode.ApplyMode()
 		}
 
-		SetForegroundTask(found)
-		found.Continue()
-
 		delete(jobs, index)
+
+		SetForegroundTask(found)
+
+		t.Stop()
+		found.Continue()
 
 		return true
 	})
@@ -289,15 +280,15 @@ func StartBroker(pid int) {
 		sort.Ints(i)
 		for k, v := range i {
 			if k != len(jobs)-1 {
-				fmt.Printf("[%d] \t%s\n", v, jobs[v].Job.command)
+				fmt.Printf("[%d] \t%d\t%s\n", v, jobs[v].Job.group, jobs[v].Job.command)
 			} else {
-				fmt.Printf("[%d]+\t%s\n", v, jobs[v].Job.command)
+				fmt.Printf("[%d]+\t%d\t%s\n", v, jobs[v].Job.group, jobs[v].Job.command)
 			}
 		}
 		return false
 	})
 
-	listen()
+	go listen(ForegroundTask())
 	go broker(pid)
 }
 
