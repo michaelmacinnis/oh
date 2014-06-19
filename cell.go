@@ -19,6 +19,9 @@ import (
 	"unicode"
 )
 
+//#include <unistd.h>
+import "C"
+
 type Function func(t *Task, args Cell) bool
 
 type NewClosure func(a Function, b, l, p Cell, s Context) Closure
@@ -208,7 +211,7 @@ func expand(args Cell) Cell {
 }
 
 func init() {
-	interactive = (len(os.Args) <= 1)
+	interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
 
 	pair := new(Pair)
 	pair.car = pair
@@ -301,7 +304,7 @@ func init() {
 
 	/* Command-line arguments */
 	args := Null
-	if !IsInteractive() {
+	if len(os.Args) > 1 {
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
@@ -2818,14 +2821,17 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Lock()
 
-	attr.Sys = &syscall.SysProcAttr{
-		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
-	}
-	if t.group == 0 {
-		attr.Sys.Setpgid = true
-		attr.Sys.Foreground = true
-	} else {
-		attr.Sys.Joinpgrp = t.group
+	if IsInteractive() {
+		attr.Sys = &syscall.SysProcAttr{
+			Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
+		}
+
+		if t.group == 0 {
+			attr.Sys.Setpgid = true
+			attr.Sys.Foreground = true
+		} else {
+			attr.Sys.Joinpgrp = t.group
+		}
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -2834,8 +2840,10 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 		return nil, err
 	}
 
-	if t.group == 0 {
-		t.group = proc.Pid
+	if IsInteractive() {
+		if t.group == 0 {
+			t.group = proc.Pid
+		}
 	}
 
 	t.pid = proc.Pid

@@ -307,8 +307,10 @@ func StartInterface() {
 
 		cli.Close()
 		fmt.Printf("\n")
-	} else {
+	} else if len(os.Args) > 1 {
 		Evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
+	} else {
+		Evaluate(List(NewSymbol("source"), NewString("/dev/stdin")))
 	}
 
 	os.Exit(0)
