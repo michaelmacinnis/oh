@@ -2817,7 +2817,6 @@ func (t *Task) DynamicVar(state int64) bool {
 func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
 
 	t.Lock()
-	defer t.Unlock()
 
 	attr.Sys = &syscall.SysProcAttr{
 		Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
@@ -2831,6 +2830,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
+		t.Unlock()
 		return nil, err
 	}
 
@@ -2839,6 +2839,8 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 
 	t.pid = proc.Pid
+
+	t.Unlock()
 
 	status := JoinProcess(proc.Pid)
 
@@ -2867,11 +2869,11 @@ func (t *Task) External(args Cell) bool {
 	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	in := rpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get())
-	out := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get())
-	err := wpipe(Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get())
+	in := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get()
+	out := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get()
+	err := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get()
 
-	files := []*os.File{in, out, err}
+	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
 
 	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
 
