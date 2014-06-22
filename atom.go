@@ -86,6 +86,70 @@ func (b *Boolean) Equal(c Cell) bool {
 	return false
 }
 
+/* Float cell definition. */
+
+type Float float64
+
+func NewFloat(v float64) *Float {
+	f := Float(v)
+	return &f
+}
+
+func (f *Float) Bool() bool {
+	return *f != 0
+}
+
+func (f *Float) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return float64(*f) == a.Float()
+	}
+	return false
+}
+
+func (f *Float) Float() float64 {
+	return float64(*f)
+}
+
+func (f *Float) Int() int64 {
+	return int64(*f)
+}
+
+func (f *Float) Status() int64 {
+	return int64(*f)
+}
+
+func (f *Float) String() string {
+	return strconv.FormatFloat(float64(*f), 'g', -1, 64)
+}
+
+func (f *Float) Greater(c Cell) bool {
+	return float64(*f) > c.(Atom).Float()
+}
+
+func (f *Float) Less(c Cell) bool {
+	return float64(*f) < c.(Atom).Float()
+}
+
+func (f *Float) Add(c Cell) Number {
+	return NewFloat(float64(*f) + c.(Atom).Float())
+}
+
+func (f *Float) Divide(c Cell) Number {
+	return NewFloat(float64(*f) / c.(Atom).Float())
+}
+
+func (f *Float) Modulo(c Cell) Number {
+	panic("Type 'float' does not implement 'modulo'.")
+}
+
+func (f *Float) Multiply(c Cell) Number {
+	return NewFloat(float64(*f) * c.(Atom).Float())
+}
+
+func (f *Float) Subtract(c Cell) Number {
+	return NewFloat(float64(*f) - c.(Atom).Float())
+}
+
 /* Integer cell definition. */
 
 type Integer int64
@@ -241,68 +305,74 @@ func (s *Status) Subtract(c Cell) Number {
 	return NewStatus(int64(*s) - c.(Atom).Status())
 }
 
-/* Float cell definition. */
+/* String cell definition. */
 
-type Float float64
+type String string
 
-func NewFloat(v float64) *Float {
-	f := Float(v)
-	return &f
+func NewRawString(v string) *String {
+	p, ok := str[v]
+
+	if ok {
+		return p
+	}
+
+	s := String(v)
+	p = &s
+
+	if len(v) <= 8 {
+		str[v] = p
+	}
+
+	return p
 }
 
-func (f *Float) Bool() bool {
-	return *f != 0
+func NewString(q string) *String {
+	v, _ := strconv.Unquote("\"" + q + "\"")
+
+	return NewRawString(v)
 }
 
-func (f *Float) Equal(c Cell) bool {
+func (s *String) Bool() bool {
+	return true
+}
+
+func (s *String) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return float64(*f) == a.Float()
+		return string(*s) == a.String()
 	}
 	return false
 }
 
-func (f *Float) Float() float64 {
-	return float64(*f)
+func (s *String) Float() (f float64) {
+	var err error
+	if f, err = strconv.ParseFloat(string(*s), 64); err != nil {
+		panic(err)
+	}
+	return f
 }
 
-func (f *Float) Int() int64 {
-	return int64(*f)
+func (s *String) Int() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
 }
 
-func (f *Float) Status() int64 {
-	return int64(*f)
+func (s *String) Raw() string {
+	return string(*s)
 }
 
-func (f *Float) String() string {
-	return strconv.FormatFloat(float64(*f), 'g', -1, 64)
+func (s *String) Status() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
 }
 
-func (f *Float) Greater(c Cell) bool {
-	return float64(*f) > c.(Atom).Float()
-}
-
-func (f *Float) Less(c Cell) bool {
-	return float64(*f) < c.(Atom).Float()
-}
-
-func (f *Float) Add(c Cell) Number {
-	return NewFloat(float64(*f) + c.(Atom).Float())
-}
-
-func (f *Float) Divide(c Cell) Number {
-	return NewFloat(float64(*f) / c.(Atom).Float())
-}
-
-func (f *Float) Modulo(c Cell) Number {
-	panic("Type 'float' does not implement 'modulo'.")
-}
-
-func (f *Float) Multiply(c Cell) Number {
-	return NewFloat(float64(*f) * c.(Atom).Float())
-}
-
-func (f *Float) Subtract(c Cell) Number {
-	return NewFloat(float64(*f) - c.(Atom).Float())
+func (s *String) String() string {
+	return strconv.Quote(string(*s))
 }
 
 /* Symbol cell definition. */
@@ -435,72 +505,3 @@ func (s *Symbol) Subtract(c Cell) Number {
 	panic("Type 'symbol' does not implement 'subtract'.")
 }
 
-/* String cell definition. */
-
-type String string
-
-func NewRawString(v string) *String {
-	p, ok := str[v]
-
-	if ok {
-		return p
-	}
-
-	s := String(v)
-	p = &s
-
-	if len(v) <= 8 {
-		str[v] = p
-	}
-
-	return p
-}
-
-func NewString(q string) *String {
-	v, _ := strconv.Unquote("\"" + q + "\"")
-
-	return NewRawString(v)
-}
-
-func (s *String) Bool() bool {
-	return true
-}
-
-func (s *String) Equal(c Cell) bool {
-	if a, ok := c.(Atom); ok {
-		return string(*s) == a.String()
-	}
-	return false
-}
-
-func (s *String) Float() (f float64) {
-	var err error
-	if f, err = strconv.ParseFloat(string(*s), 64); err != nil {
-		panic(err)
-	}
-	return f
-}
-
-func (s *String) Int() (i int64) {
-	var err error
-	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
-		panic(err)
-	}
-	return i
-}
-
-func (s *String) Raw() string {
-	return string(*s)
-}
-
-func (s *String) Status() (i int64) {
-	var err error
-	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
-		panic(err)
-	}
-	return i
-}
-
-func (s *String) String() string {
-	return strconv.Quote(string(*s))
-}
