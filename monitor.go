@@ -3,6 +3,8 @@
 package main
 
 import (
+	"os"
+	"os/signal"
 	"syscall"
 )
 
@@ -16,12 +18,17 @@ type Registration struct {
 	cb  chan Notification
 }
 
+var incoming chan os.Signal
 var register chan Registration
 
 func init() {
 	active := make(chan bool)
 	notify := make(chan Notification)
 	register = make(chan Registration)
+
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	incoming = make(chan os.Signal, len(signals))
+	signal.Notify(incoming, signals...)
 
 	go monitor(active, notify)
 	go registrar(active, notify)
@@ -40,12 +47,12 @@ func monitor(active chan bool, notify chan Notification) {
 
 			if status.Stopped() {
 				if pid == ForegroundTask().Job.group {
-					InjectSignal(syscall.SIGTSTP)
+					incoming <- syscall.SIGTSTP
 				}
 			} else if status.Signaled() &&
 				status.Signal() == syscall.SIGINT {
 				if pid == ForegroundTask().Job.group {
-					InjectSignal(syscall.SIGINT)
+					incoming <- syscall.SIGINT
 				}
 			} else {
 				notify <- Notification{pid, status}
@@ -78,6 +85,10 @@ func registrar(active chan bool, notify chan Notification) {
 			}
 		}
 	}
+}
+
+func Incoming() chan os.Signal {
+	return incoming
 }
 
 func JoinProcess(pid int) syscall.WaitStatus {

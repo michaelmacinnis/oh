@@ -25,7 +25,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/signal"
 	"sort"
 	"strings"
 	"syscall"
@@ -33,17 +32,20 @@ import (
 
 var done0 chan Cell
 var eval0 chan Cell
-var incoming chan os.Signal
 
 var jobs = map[int]*Task{}
 
 func broker() {
+	irq := Incoming()
 	pid := Pid()
+
+	go listen(NewForegroundTask())
+
 	var c Cell = nil
 	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
-			case <-incoming:
+			case <-irq:
 				// Ignore signals.
 			case c = <-eval0:
 			}
@@ -52,7 +54,7 @@ func broker() {
 		for c != nil {
 			prev := ForegroundTask()
 			select {
-			case sig := <-incoming:
+			case sig := <-irq:
 				// Handle signals.
 				switch sig {
 				case syscall.SIGTSTP:
@@ -109,10 +111,6 @@ func evaluate(c Cell) {
 func init() {
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
-	incoming = make(chan os.Signal, len(signals))
-	signal.Notify(incoming, signals...)
 }
 
 func listen(task *Task) {
@@ -139,11 +137,9 @@ func listen(task *Task) {
 	}
 }
 
-func InjectSignal(s os.Signal) {
-	incoming <- s
-}
-
 func main() {
+	go broker()
+
 	scope0 = RootScope()
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
 		if !Interactive() || t != ForegroundTask() {
@@ -202,9 +198,6 @@ func main() {
 		}
 		return false
 	})
-
-	go listen(NewForegroundTask())
-	go broker()
 
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l

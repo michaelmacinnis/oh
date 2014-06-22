@@ -150,6 +150,10 @@ func Interface() *Liner {
 }
 
 func NewForegroundTask() *Task {
+	if task0 != nil {
+		mode, _ := liner.TerminalMode()
+		task0.Job.mode = mode
+	}
 	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
 	return task0
 }
