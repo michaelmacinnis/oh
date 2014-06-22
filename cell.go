@@ -231,27 +231,27 @@ func init() {
 
 	conduit_env = NewEnv(nil)
 	conduit_env.Method("close", func(t *Task, args Cell) bool {
-		GetConduit(Car(t.Scratch).(Binding).Self()).Close()
+		as_conduit(Car(t.Scratch).(Binding).Self()).Close()
 		return t.Return(True)
 	})
 	conduit_env.Method("reader-close", func(t *Task, args Cell) bool {
-		GetConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
+		as_conduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
 		return t.Return(True)
 	})
 	conduit_env.Method("read", func(t *Task, args Cell) bool {
-		r := GetConduit(Car(t.Scratch).(Binding).Self()).Read()
+		r := as_conduit(Car(t.Scratch).(Binding).Self()).Read()
 		return t.Return(r)
 	})
 	conduit_env.Method("readline", func(t *Task, args Cell) bool {
-		r := GetConduit(Car(t.Scratch).(Binding).Self()).ReadLine()
+		r := as_conduit(Car(t.Scratch).(Binding).Self()).ReadLine()
 		return t.Return(r)
 	})
 	conduit_env.Method("writer-close", func(t *Task, args Cell) bool {
-		GetConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
+		as_conduit(Car(t.Scratch).(Binding).Self()).WriterClose()
 		return t.Return(True)
 	})
 	conduit_env.Method("write", func(t *Task, args Cell) bool {
-		GetConduit(Car(t.Scratch).(Binding).Self()).Write(args)
+		as_conduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
 
@@ -610,7 +610,7 @@ func init() {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("is-channel", func(t *Task, args Cell) bool {
-		_, ok := GetConduit(Car(args).(Context)).(*Channel)
+		_, ok := as_conduit(Car(args).(Context)).(*Channel)
 
 		return t.Return(NewBoolean(ok))
 	})
@@ -651,7 +651,7 @@ func init() {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
-		_, ok := GetConduit(Car(args).(Context)).(*Pipe)
+		_, ok := as_conduit(Car(args).(Context)).(*Pipe)
 
 		return t.Return(NewBoolean(ok))
 	})
@@ -1222,7 +1222,7 @@ func number(s string) bool {
 }
 
 func rpipe(c Cell) *os.File {
-	return GetConduit(c.(Context)).(*Pipe).ReadFd()
+	return as_conduit(c.(Context)).(*Pipe).ReadFd()
 }
 
 func status(c Cell) int {
@@ -1234,11 +1234,7 @@ func status(c Cell) int {
 }
 
 func wpipe(c Cell) *os.File {
-	return GetConduit(c.(Context)).(*Pipe).WriteFd()
-}
-
-func RootScope() *Scope {
-	return scope0
+	return as_conduit(c.(Context)).(*Pipe).WriteFd()
 }
 
 func IsSimple(c Cell) bool {
@@ -1267,8 +1263,12 @@ func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
 	return v
 }
 
+func RootScope() *Scope {
+	return scope0
+}
+
 /* Convert Channel/Pipe Context (or child Context) into a Conduit. */
-func GetConduit(o Context) Conduit {
+func as_conduit(o Context) Conduit {
 	for o != nil {
 		if c, ok := o.Expose().(Conduit); ok {
 			return c
