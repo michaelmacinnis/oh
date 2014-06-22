@@ -155,7 +155,6 @@ var runnable chan bool
 var conduit_env *Env
 var env0 *Env
 var scope0 *Scope
-var task0 *Task
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -291,8 +290,6 @@ func init() {
 	env0 = NewEnv(nil)
 	scope0 = NewScope(nil, nil)
 
-	NewTask0()
-
 	env0.Add(NewSymbol("False"), False)
 	env0.Add(NewSymbol("True"), True)
 
@@ -383,7 +380,7 @@ func init() {
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(t.Code, NewEnv(t.Dynamic),
-				 NewScope(t.Lexical, nil), t)
+			NewScope(t.Lexical, nil), t)
 
 		go child.Launch()
 
@@ -1269,16 +1266,8 @@ func wpipe(c Cell) *os.File {
 	return GetConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
-func ForegroundTask() *Task {
-	return task0
-}
-
 func RootScope() *Scope {
 	return scope0
-}
-
-func SetForegroundTask(t *Task) {
-	task0 = t
 }
 
 func AppendTo(list Cell, elements ...Cell) Cell {
@@ -2662,6 +2651,14 @@ type Task struct {
 }
 
 func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
+	if d == nil {
+		d = env0
+	}
+
+	if l == nil {
+		l = scope0
+	}
+
 	var j *Job
 	if p == nil {
 		j = NewJob()
@@ -2693,11 +2690,6 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 	}
 
 	return t
-}
-
-func NewTask0() *Task {
-	task0 = NewTask(Cons(nil, Null), env0, scope0, nil)
-	return task0
 }
 
 func (t *Task) Bool() bool {

@@ -58,7 +58,7 @@ func broker() {
 					}
 					fmt.Printf("\n")
 
-					go listen(NewTask0())
+					go listen(NewForegroundTask())
 					c = nil
 				}
 
@@ -188,7 +188,7 @@ func StartBroker() {
 		return false
 	})
 
-	go listen(ForegroundTask())
+	go listen(NewForegroundTask())
 	go broker()
 }
 

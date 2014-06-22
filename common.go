@@ -21,21 +21,21 @@ import (
 import "C"
 
 type Liner struct {
-        *liner.State
+	*liner.State
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
-        syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-                syscall.TIOCSPGRP, uintptr(unsafe.Pointer(Pgid())))
-        raw.ApplyMode()
-        defer cooked.ApplyMode()
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(Pgid())))
+	raw.ApplyMode()
+	defer cooked.ApplyMode()
 
-        if line, err = cli.State.Prompt("> "); err == nil {
-                cli.AppendHistory(line)
-                SetCommand(line)
-                line += "\n"
-        }
-        return
+	if line, err = cli.State.Prompt("> "); err == nil {
+		cli.AppendHistory(line)
+		SetCommand(line)
+		line += "\n"
+	}
+	return
 }
 
 var cli *Liner
@@ -44,106 +44,112 @@ var interactive bool
 var pgid int
 var pid int
 var raw liner.ModeApplier
+var task0 *Task
 
 func complete(line string) []string {
-        task := ForegroundTask()
+	fields := strings.Fields(line)
 
-        fields := strings.Fields(line)
+	if len(fields) == 0 {
+		return []string{"    " + line}
+	}
 
-        if len(fields) == 0 {
-                return []string{"    " + line}
-        }
+	prefix := fields[len(fields)-1]
+	if !strings.HasSuffix(line, prefix) {
+		return []string{line}
+	}
 
-        prefix := fields[len(fields)-1]
-        if !strings.HasSuffix(line, prefix) {
-                return []string{line}
-        }
+	trimmed := line[0 : len(line)-len(prefix)]
 
-        trimmed := line[0 : len(line)-len(prefix)]
+	completions := files(trimmed, prefix)
+	completions = append(completions, task0.Complete(trimmed, prefix)...)
 
-        completions := files(trimmed, prefix)
-        completions = append(completions, task.Complete(trimmed, prefix)...)
+	if len(completions) == 0 {
+		return []string{line}
+	}
 
-        if len(completions) == 0 {
-                return []string{line}
-        }
-
-        return completions
+	return completions
 }
 
 func files(line, prefix string) []string {
-        task := ForegroundTask()
+	completions := []string{}
 
-        completions := []string{}
+	prfx := path.Clean(prefix)
+	if !path.IsAbs(prfx) {
+		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
+		cwd := ref.Get().String()
 
-        prfx := path.Clean(prefix)
-        if !path.IsAbs(prfx) {
-                ref := Resolve(task.Lexical, task.Dynamic, NewSymbol("$cwd"))
-                cwd := ref.Get().String()
+		prfx = path.Join(cwd, prfx)
+	}
 
-                prfx = path.Join(cwd, prfx)
-        }
+	root, prfx := filepath.Split(prfx)
+	if strings.HasSuffix(prefix, "/") {
+		root, prfx = path.Join(root, prfx)+"/", ""
+	}
+	max := strings.Count(root, "/")
 
-        root, prfx := filepath.Split(prfx)
-        if strings.HasSuffix(prefix, "/") {
-                root, prfx = path.Join(root, prfx)+"/", ""
-        }
-        max := strings.Count(root, "/")
+	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
+		depth := strings.Count(p, "/")
+		if depth > max {
+			if i.IsDir() {
+				return filepath.SkipDir
+			} else {
+				return nil
+			}
+		} else if depth == max {
+			full := path.Join(root, prfx)
+			if len(prfx) == 0 {
+				full += "/"
+			} else if !strings.HasPrefix(p, full) {
+				return nil
+			}
 
-        filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
-                depth := strings.Count(p, "/")
-                if depth > max {
-                        if i.IsDir() {
-                                return filepath.SkipDir
-                        } else {
-                                return nil
-                        }
-                } else if depth == max {
-                        full := path.Join(root, prfx)
-                        if len(prfx) == 0 {
-                                full += "/"
-                        } else if !strings.HasPrefix(p, full) {
-                                return nil
-                        }
+			completion := line + prefix + p[len(full):]
+			completions = append(completions, completion)
+		}
 
-                        completion := line + prefix + p[len(full):]
-                        completions = append(completions, completion)
-                }
+		return nil
+	})
 
-                return nil
-        })
-
-        return completions
+	return completions
 }
 
 func init() {
-        interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
+	interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
 	if interactive {
-                // We assume the terminal starts in cooked mode.
-                cooked, _ = liner.TerminalMode()
+		// We assume the terminal starts in cooked mode.
+		cooked, _ = liner.TerminalMode()
 
-                cli = &Liner{liner.NewLiner()}
+		cli = &Liner{liner.NewLiner()}
 
-                raw, _ = liner.TerminalMode()
+		raw, _ = liner.TerminalMode()
 
-                cli.SetCompleter(complete)
+		cli.SetCompleter(complete)
 	}
-        pid = syscall.Getpid()
-        pgid = syscall.Getpgrp()
-        if pid != pgid {
-                syscall.Setpgid(0, 0)
-        }
+	pid = syscall.Getpid()
+	pgid = syscall.Getpgrp()
+	if pid != pgid {
+		syscall.Setpgid(0, 0)
+	}
 	pgid = pid
 
 	C.ignore()
 }
 
+func ForegroundTask() *Task {
+	return task0
+}
+
 func Interactive() bool {
-        return interactive
+	return interactive
 }
 
 func Interface() *Liner {
-        return cli
+	return cli
+}
+
+func NewForegroundTask() *Task {
+	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
+	return task0
 }
 
 func Pid() int {
@@ -156,6 +162,9 @@ func Pgid() *int {
 
 func SetForegroundGroup(group int) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
 }
 
+func SetForegroundTask(t *Task) {
+	task0 = t
+}
