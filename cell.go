@@ -139,13 +139,26 @@ var res [256]*Status
 var str map[string]*String
 var sym map[string]*Symbol
 
+/* Convert Channel/Pipe Context (or child Context) into a Conduit. */
+func as_conduit(o Context) Conduit {
+	for o != nil {
+		if c, ok := o.Expose().(Conduit); ok {
+			return c
+		}
+		o = o.Prev()
+	}
+
+	panic("Not a conduit")
+	return nil
+}
+
 func expand(args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
 		c := Car(args)
 
-		s := Raw(c)
+		s := raw(c)
 		if _, ok := c.(*Symbol); !ok {
 			list = AppendTo(list, NewSymbol(s))
 			continue
@@ -382,7 +395,7 @@ func init() {
 
 	/* Builtins. */
 	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
-		err := os.Chdir(Raw(Car(args)))
+		err := os.Chdir(raw(Car(args)))
 		status := 0
 		if err != nil {
 			status = 1
@@ -400,7 +413,7 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
-		str, err := module(Raw(Car(args)))
+		str, err := module(raw(Car(args)))
 
 		if err != nil {
 			return t.Return(Null)
@@ -442,7 +455,7 @@ func init() {
 	})
 	scope0.PublicMethod("exists", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
-		c := Resolve(l, t.Dynamic, NewSymbol(Raw(Car(args))))
+		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -455,7 +468,7 @@ func init() {
 	})
 	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
-		r := l.Remove(NewSymbol(Raw(Car(args))))
+		r := l.Remove(NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(r))
 	})
@@ -504,7 +517,7 @@ func init() {
 
 		switch c := Car(args); c.(type) {
 		case *String, *Symbol:
-			l = int64(len(Raw(c)))
+			l = int64(len(raw(c)))
 		default:
 			l = Length(c)
 		}
@@ -515,8 +528,8 @@ func init() {
 		return t.Return(args)
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
-		name := Raw(Car(args))
-		mode := Raw(Cadr(args))
+		name := raw(Car(args))
+		mode := raw(Cadr(args))
 		flags := 0
 
 		if strings.IndexAny(mode, "-") == -1 {
@@ -707,7 +720,7 @@ func init() {
 		return t.Return(NewString(Car(args).String()))
 	})
 	scope0.DefineMethod("symbol", func(t *Task, args Cell) bool {
-		return t.Return(NewSymbol(Raw(Car(args))))
+		return t.Return(NewSymbol(raw(Car(args))))
 	})
 
 	/* Relational. */
@@ -808,8 +821,8 @@ func init() {
 		return t.Return(True)
 	})
 	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
-		pattern := Raw(Car(args))
-		text := Raw(Cadr(args))
+		pattern := raw(Car(args))
+		text := raw(Cadr(args))
 
 		ok, err := path.Match(pattern, text)
 		if err != nil {
@@ -1066,11 +1079,11 @@ func init() {
 
 		for i := 0; list != Null; i++ {
 			_, str = Car(list).(*String)
-			arr[i] = string(Raw(Car(list)))
+			arr[i] = string(raw(Car(list)))
 			list = Cdr(list)
 		}
 
-		r := strings.Join(arr, string(Raw(sep)))
+		r := strings.Join(arr, string(raw(sep)))
 
 		if str {
 			return t.Return(NewString(r))
@@ -1083,7 +1096,7 @@ func init() {
 		sep := Car(args)
 		str := Cadr(args)
 
-		l := strings.Split(string(Raw(str)), string(Raw(sep)))
+		l := strings.Split(string(raw(str)), string(raw(sep)))
 
 		for i := len(l) - 1; i >= 0; i-- {
 			switch str.(type) {
@@ -1097,7 +1110,7 @@ func init() {
 		return t.Return(r)
 	})
 	text.PublicMethod("sprintf", func(t *Task, args Cell) bool {
-		f := Raw(Car(args))
+		f := raw(Car(args))
 
 		argv := []interface{}{}
 		for l := Cdr(args); l != Null; l = Cdr(l) {
@@ -1111,7 +1124,7 @@ func init() {
 			case *Float:
 				argv = append(argv, *t)
 			default:
-				argv = append(argv, Raw(t))
+				argv = append(argv, raw(t))
 			}
 		}
 
@@ -1122,7 +1135,7 @@ func init() {
 	text.PublicMethod("substring", func(t *Task, args Cell) bool {
 		var r Cell
 
-		s := []rune(Raw(Car(args)))
+		s := []rune(raw(Car(args)))
 
 		start := int(Cadr(args).(Atom).Int())
 		end := len(s)
@@ -1144,7 +1157,7 @@ func init() {
 	})
 	text.PublicMethod("to-list", func(t *Task, args Cell) bool {
 		l := Null
-		for _, char := range Raw(Car(args)) {
+		for _, char := range raw(Car(args)) {
 			l = Cons(NewInteger(int64(char)), l)
 		}
 
@@ -1157,9 +1170,9 @@ func init() {
 		case *Integer:
 			r = NewInteger(int64(unicode.ToLower(rune(t.Int()))))
 		case *String:
-			r = NewString(strings.ToLower(Raw(t)))
+			r = NewString(strings.ToLower(raw(t)))
 		case *Symbol:
-			r = NewSymbol(strings.ToLower(Raw(t)))
+			r = NewSymbol(strings.ToLower(raw(t)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1173,9 +1186,9 @@ func init() {
 		case *Integer:
 			r = NewInteger(int64(unicode.ToTitle(rune(t.Int()))))
 		case *String:
-			r = NewString(strings.ToTitle(Raw(t)))
+			r = NewString(strings.ToTitle(raw(t)))
 		case *Symbol:
-			r = NewSymbol(strings.ToTitle(Raw(t)))
+			r = NewSymbol(strings.ToTitle(raw(t)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1189,9 +1202,9 @@ func init() {
 		case *Integer:
 			r = NewInteger(int64(unicode.ToUpper(rune(t.Int()))))
 		case *String:
-			r = NewString(strings.ToUpper(Raw(t)))
+			r = NewString(strings.ToUpper(raw(t)))
 		case *Symbol:
-			r = NewSymbol(strings.ToUpper(Raw(t)))
+			r = NewSymbol(strings.ToUpper(raw(t)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1201,6 +1214,10 @@ func init() {
 
 	scope0.Public(NewSymbol("Root"), scope0)
 
+}
+
+func is_simple(c Cell) bool {
+	return IsAtom(c) || IsCons(c)
 }
 
 func module(f string) (string, error) {
@@ -1221,6 +1238,14 @@ func number(s string) bool {
 	return err == nil && m
 }
 
+func raw(c Cell) string {
+	if s, ok := c.(*String); ok {
+		return s.Raw()
+	}
+
+	return c.String()
+}
+
 func rpipe(c Cell) *os.File {
 	return as_conduit(c.(Context)).(*Pipe).ReadFd()
 }
@@ -1235,18 +1260,6 @@ func status(c Cell) int {
 
 func wpipe(c Cell) *os.File {
 	return as_conduit(c.(Context)).(*Pipe).WriteFd()
-}
-
-func IsSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
-}
-
-func Raw(c Cell) string {
-	if s, ok := c.(*String); ok {
-		return s.Raw()
-	}
-
-	return c.String()
 }
 
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
@@ -1265,19 +1278,6 @@ func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
 
 func RootScope() *Scope {
 	return scope0
-}
-
-/* Convert Channel/Pipe Context (or child Context) into a Conduit. */
-func as_conduit(o Context) Conduit {
-	for o != nil {
-		if c, ok := o.Expose().(Conduit); ok {
-			return c
-		}
-		o = o.Prev()
-	}
-
-	panic("Not a conduit")
-	return nil
 }
 
 /* Channel cell definition. */
@@ -1981,7 +1981,7 @@ func (t *Task) Apply(args Cell) bool {
 func (t *Task) Closure(n NewClosure) bool {
 	label := Null
 	params := Car(t.Code)
-	for t.Code != Null && Raw(Cadr(t.Code)) != "as" {
+	for t.Code != Null && raw(Cadr(t.Code)) != "as" {
 		label = params
 		params = Cadr(t.Code)
 		t.Code = Cdr(t.Code)
@@ -2023,7 +2023,7 @@ func (t *Task) Debug(s string) {
 }
 
 func (t *Task) DynamicVar(state int64) bool {
-	r := Raw(Car(t.Code))
+	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
@@ -2085,7 +2085,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Scratch = Cdr(t.Scratch)
 
-	arg0, problem := exec.LookPath(Raw(Car(t.Scratch)))
+	arg0, problem := exec.LookPath(raw(Car(t.Scratch)))
 
 	SetCar(t.Scratch, False)
 
@@ -2158,7 +2158,7 @@ func (t *Task) LexicalVar(state int64) bool {
 
 	t.NewStates(state)
 
-	r := Raw(Car(t.Code))
+	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		panic(r + " cannot be used as a variable name")
 	}
@@ -2174,13 +2174,13 @@ func (t *Task) LexicalVar(state int64) bool {
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	c := Resolve(t.Lexical, t.Dynamic, sym)
 	if c == nil {
-		r := Raw(sym)
+		r := raw(sym)
 		if t.Strict() && !number(r) {
 			return false, r + " undefined"
 		} else {
 			t.Scratch = Cons(sym, t.Scratch)
 		}
-	} else if simple && !IsSimple(c.Get()) {
+	} else if simple && !is_simple(c.Get()) {
 		t.Scratch = Cons(sym, t.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {
 		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
@@ -2241,7 +2241,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				}
 
 				if Car(t.Code) != Null &&
-					Raw(Car(t.Code)) != "else" {
+					raw(Car(t.Code)) != "else" {
 					panic("expected 'else'")
 				}
 			}
@@ -2369,7 +2369,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			v := Car(t.Scratch)
 
 			if state == psExecSetenv {
-				s := Raw(v)
+				s := raw(v)
 				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
 			}
 

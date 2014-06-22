@@ -27,7 +27,7 @@ type Liner struct {
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
 		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(Pgid())))
-	raw.ApplyMode()
+	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
 	if line, err = cli.State.Prompt("> "); err == nil {
@@ -45,8 +45,8 @@ var cooked liner.ModeApplier
 var interactive bool
 var pgid int
 var pid int
-var raw liner.ModeApplier
 var task0 *Task
+var uncooked liner.ModeApplier
 
 func complete(line string) []string {
 	fields := strings.Fields(line)
@@ -123,7 +123,7 @@ func init() {
 
 		cli = &Liner{liner.NewLiner()}
 
-		raw, _ = liner.TerminalMode()
+		uncooked, _ = liner.TerminalMode()
 
 		cli.SetCompleter(complete)
 	}
