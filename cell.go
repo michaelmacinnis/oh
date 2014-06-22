@@ -19,9 +19,6 @@ import (
 	"unicode"
 )
 
-//#include <unistd.h>
-import "C"
-
 type Function func(t *Task, args Cell) bool
 
 type NewClosure func(a Function, b, l, p Cell, s Context) Closure
@@ -153,7 +150,6 @@ var False *Boolean
 var True *Boolean
 
 var external Cell
-var interactive bool
 var runnable chan bool
 
 var conduit_env *Env
@@ -211,8 +207,6 @@ func expand(args Cell) Cell {
 }
 
 func init() {
-	interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
-
 	pair := new(Pair)
 	pair.car = pair
 	pair.cdr = pair
@@ -325,10 +319,9 @@ func init() {
 		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
 	}
 
-	fg := ForegroundTask()
-	env0.Add(NewSymbol("$stdin"), NewPipe(fg, os.Stdin, nil))
-	env0.Add(NewSymbol("$stdout"), NewPipe(fg, nil, os.Stdout))
-	env0.Add(NewSymbol("$stderr"), NewPipe(fg, nil, os.Stderr))
+	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
+	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
+	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
@@ -389,8 +382,8 @@ func init() {
 		return t.DynamicVar(psExecSetenv)
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(psEvalBlock, t.Code, NewEnv(t.Dynamic),
-			NewScope(t.Lexical, nil), t)
+		child := NewTask(t.Code, NewEnv(t.Dynamic),
+				 NewScope(t.Lexical, nil), t)
 
 		go child.Launch()
 
@@ -603,7 +596,7 @@ func init() {
 			w = nil
 		}
 
-		return t.Return(NewPipe(t, r, w))
+		return t.Return(NewPipe(t.Lexical, r, w))
 	})
 	scope0.DefineMethod("reverse", func(t *Task, args Cell) bool {
 		return t.Return(Reverse(Car(args)))
@@ -737,7 +730,7 @@ func init() {
 		return t.Return(NewInteger(Car(args).(Atom).Int()))
 	})
 	scope0.DefineMethod("pipe", func(t *Task, args Cell) bool {
-		return t.Return(NewPipe(t, nil, nil))
+		return t.Return(NewPipe(t.Lexical, nil, nil))
 	})
 	scope0.DefineMethod("status", func(t *Task, args Cell) bool {
 		return t.Return(NewStatus(Car(args).(Atom).Status()))
@@ -1278,10 +1271,6 @@ func wpipe(c Cell) *os.File {
 
 func ForegroundTask() *Task {
 	return task0
-}
-
-func IsInteractive() bool {
-	return interactive
 }
 
 func RootScope() *Scope {
@@ -2127,9 +2116,9 @@ type Pipe struct {
 	w *os.File
 }
 
-func NewPipe(t *Task, r *os.File, w *os.File) Context {
+func NewPipe(l Context, r *os.File, w *os.File) Context {
 	p := &Pipe{
-		Scope: NewScope(t.Lexical.Expose(), conduit_env),
+		Scope: NewScope(l.Expose(), conduit_env),
 		b:     nil, c: nil, d: nil, r: r, w: w,
 	}
 
@@ -2672,7 +2661,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
+func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 	var j *Job
 	if p == nil {
 		j = NewJob()
@@ -2685,7 +2674,7 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 		Registers: &Registers{
 			Continuation: Continuation{
 				Scratch: List(NewStatus(0)),
-				Stack:   List(NewInteger(s)),
+				Stack:   List(NewInteger(psEvalBlock)),
 			},
 			Code:    c,
 			Dynamic: d,
@@ -2707,7 +2696,7 @@ func NewTask(s int64, c Cell, d *Env, l Context, p *Task) *Task {
 }
 
 func NewTask0() *Task {
-	task0 = NewTask(psEvalBlock, Cons(nil, Null), env0, scope0, nil)
+	task0 = NewTask(Cons(nil, Null), env0, scope0, nil)
 	return task0
 }
 
@@ -2821,7 +2810,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Lock()
 
-	if IsInteractive() {
+	if Interactive() {
 		attr.Sys = &syscall.SysProcAttr{
 			Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
 		}
@@ -2840,7 +2829,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 		return nil, err
 	}
 
-	if IsInteractive() {
+	if Interactive() {
 		if t.group == 0 {
 			t.group = proc.Pid
 		}

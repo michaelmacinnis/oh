@@ -2,45 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/peterh/liner"
 	"os"
 	"os/signal"
-	"path"
-	"path/filepath"
 	"sort"
-	"strings"
 	"syscall"
-	"unsafe"
 )
 
-type Liner struct {
-	*liner.State
-}
-
-func (cli *Liner) ReadString(delim byte) (line string, err error) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-	raw.ApplyMode()
-	defer cooked.ApplyMode()
-
-	if line, err = cli.State.Prompt("> "); err == nil {
-		cli.AppendHistory(line)
-		SetCommand(line)
-		line += "\n"
-	}
-	return
-}
-
-var cli *Liner
-var cooked liner.ModeApplier
 var done0 chan Cell
 var eval0 chan Cell
 var incoming chan os.Signal
-var raw liner.ModeApplier
 
 var jobs = map[int]*Task{}
 
-func broker(pid int) {
+func broker() {
+	pid := Pid()
 	var c Cell = nil
 	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
@@ -58,7 +33,7 @@ func broker(pid int) {
 				// Handle signals.
 				switch sig {
 				case syscall.SIGTSTP:
-					if !IsInteractive() {
+					if !Interactive() {
 						syscall.Kill(pid, syscall.SIGSTOP)
 						continue
 					}
@@ -75,7 +50,7 @@ func broker(pid int) {
 
 					fallthrough
 				case syscall.SIGINT:
-					if !IsInteractive() {
+					if !Interactive() {
 						os.Exit(130)
 					}
 					if sig == syscall.SIGINT {
@@ -97,77 +72,6 @@ func broker(pid int) {
 		done0 <- c
 	}
 	os.Exit(status(Car(ForegroundTask().Scratch)))
-}
-
-func complete(line string) []string {
-	task := ForegroundTask()
-
-	fields := strings.Fields(line)
-
-	if len(fields) == 0 {
-		return []string{"    " + line}
-	}
-
-	prefix := fields[len(fields)-1]
-	if !strings.HasSuffix(line, prefix) {
-		return []string{line}
-	}
-
-	trimmed := line[0 : len(line)-len(prefix)]
-
-	completions := files(trimmed, prefix)
-	completions = append(completions, task.Complete(trimmed, prefix)...)
-
-	if len(completions) == 0 {
-		return []string{line}
-	}
-
-	return completions
-}
-
-func files(line, prefix string) []string {
-	task := ForegroundTask()
-
-	completions := []string{}
-
-	prfx := path.Clean(prefix)
-	if !path.IsAbs(prfx) {
-		ref := Resolve(task.Lexical, task.Dynamic, NewSymbol("$cwd"))
-		cwd := ref.Get().String()
-
-		prfx = path.Join(cwd, prfx)
-	}
-
-	root, prfx := filepath.Split(prfx)
-	if strings.HasSuffix(prefix, "/") {
-		root, prfx = path.Join(root, prfx)+"/", ""
-	}
-	max := strings.Count(root, "/")
-
-	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
-		depth := strings.Count(p, "/")
-		if depth > max {
-			if i.IsDir() {
-				return filepath.SkipDir
-			} else {
-				return nil
-			}
-		} else if depth == max {
-			full := path.Join(root, prfx)
-			if len(prfx) == 0 {
-				full += "/"
-			} else if !strings.HasPrefix(p, full) {
-				return nil
-			}
-
-			completion := line + prefix + p[len(full):]
-			completions = append(completions, completion)
-		}
-
-		return nil
-	})
-
-	return completions
 }
 
 func init() {
@@ -224,10 +128,10 @@ func SetCommand(command string) {
 	}
 }
 
-func StartBroker(pid int) {
+func StartBroker() {
 	scope0 = RootScope()
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !IsInteractive() || t != ForegroundTask() {
+		if !Interactive() || t != ForegroundTask() {
 			return false
 		}
 
@@ -251,11 +155,7 @@ func StartBroker(pid int) {
 		}
 
 		if found.Job.group != 0 {
-			foreground := found.Job.group
-			syscall.Syscall(syscall.SYS_IOCTL,
-				uintptr(syscall.Stdin),
-				syscall.TIOCSPGRP,
-				uintptr(unsafe.Pointer(&foreground)))
+			SetForegroundGroup(found.Job.group)
 			found.Job.mode.ApplyMode()
 		}
 
@@ -269,7 +169,7 @@ func StartBroker(pid int) {
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !IsInteractive() || t != ForegroundTask() || len(jobs) == 0 {
+		if !Interactive() || t != ForegroundTask() || len(jobs) == 0 {
 			return false
 		}
 
@@ -289,19 +189,12 @@ func StartBroker(pid int) {
 	})
 
 	go listen(ForegroundTask())
-	go broker(pid)
+	go broker()
 }
 
 func StartInterface() {
-	if IsInteractive() {
-		// We assume the terminal starts in cooked mode.
-		cooked, _ = liner.TerminalMode()
-
-		cli = &Liner{liner.NewLiner()}
-
-		raw, _ = liner.TerminalMode()
-
-		cli.SetCompleter(complete)
+	if Interactive() {
+		cli := Interface()
 
 		Parse(cli, Evaluate)
 

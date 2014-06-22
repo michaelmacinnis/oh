@@ -21,33 +21,13 @@ Oh is released under an MIT-style license.
 */
 package main
 
-//#include <signal.h>
-//void ignore(void) {
-//	signal(SIGTTOU, SIG_IGN);
-//	signal(SIGTTIN, SIG_IGN);
-//}
-import "C"
-
 import (
 	"bufio"
 	"strings"
-	"syscall"
 )
 
-var group int
-
-func init() {
-	pid := syscall.Getpid()
-	pgrp := syscall.Getpgrp()
-	if pid != pgrp {
-		syscall.Setpgid(0, 0)
-	}
-	group = pid
-	C.ignore()
-}
-
 func main() {
-	StartBroker(group)
+	StartBroker()
 
 	Parse(bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l
