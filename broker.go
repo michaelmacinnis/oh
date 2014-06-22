@@ -120,14 +120,6 @@ func InjectSignal(s os.Signal) {
 	incoming <- s
 }
 
-func SetCommand(command string) {
-	task := ForegroundTask()
-
-	if task.Job.command == "" {
-		task.Job.command = command
-	}
-}
-
 func StartBroker() {
 	scope0 = RootScope()
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {

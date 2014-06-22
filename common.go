@@ -32,7 +32,9 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
-		SetCommand(line)
+        	if task0.Job.command == "" {
+                	task0.Job.command = line
+        	}
 		line += "\n"
 	}
 	return
