@@ -39,7 +39,7 @@ func broker() {
 	irq := Incoming()
 	pid := Pid()
 
-	go listen(NewForegroundTask())
+	go NewForegroundTask().Listen()
 
 	var c Cell = nil
 	for c == nil && ForegroundTask().Stack != Null {
@@ -83,7 +83,7 @@ func broker() {
 					}
 					fmt.Printf("\n")
 
-					go listen(NewForegroundTask())
+					go NewForegroundTask().Listen()
 					c = nil
 				}
 
@@ -111,30 +111,6 @@ func evaluate(c Cell) {
 func init() {
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
-}
-
-func listen(task *Task) {
-	for c := range task.Eval {
-		saved := *(task.Registers)
-
-		end := Cons(nil, Null)
-
-		SetCar(task.Code, c)
-		SetCdr(task.Code, end)
-
-		task.Code = end
-		task.NewStates(SaveCode, psEvalCommand)
-
-		task.Code = c
-		if !task.Run(end) {
-			*(task.Registers) = saved
-
-			SetCar(task.Code, nil)
-			SetCdr(task.Code, Null)
-		}
-
-		task.Done <- nil
-	}
 }
 
 func main() {

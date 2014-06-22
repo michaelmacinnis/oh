@@ -2879,6 +2879,30 @@ func (t *Task) Launch() {
 	close(t.Done)
 }
 
+func (t *Task) Listen() {
+        for c := range t.Eval {
+                saved := *(t.Registers)
+
+                end := Cons(nil, Null)
+
+                SetCar(t.Code, c)
+                SetCdr(t.Code, end)
+
+                t.Code = end
+                t.NewStates(SaveCode, psEvalCommand)
+
+                t.Code = c
+                if !t.Run(end) {
+                        *(t.Registers) = saved
+
+                        SetCar(t.Code, nil)
+                        SetCdr(t.Code, Null)
+                }
+
+                t.Done <- nil
+        }
+}
+
 func (t *Task) LexicalVar(state int64) bool {
 	t.RemoveState()
 
