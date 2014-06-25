@@ -376,4 +376,3 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 
 	os.Exit(0)
 }
-
