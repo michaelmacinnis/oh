@@ -17,24 +17,35 @@ import (
 	"sync"
 	"syscall"
 	"unicode"
+	"unsafe"
 )
 
-type Binding interface {
-	Cell
+//#include <signal.h>
+//#include <unistd.h>
+//void ignore(void) {
+//      signal(SIGTTOU, SIG_IGN);
+//      signal(SIGTTIN, SIG_IGN);
+//}
+import "C"
 
-	Bind(c Context) Binding
-	Ref() Closure
-	Self() Context
+type Liner struct {
+	*liner.State
 }
 
-type Closure interface {
-	Cell
+func (cli *Liner) ReadString(delim byte) (line string, err error) {
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
+	uncooked.ApplyMode()
+	defer cooked.ApplyMode()
 
-	Applier() Function
-	Body() Cell
-	Label() Cell
-	Params() Cell
-	Scope() Context
+	if line, err = cli.State.Prompt("> "); err == nil {
+		cli.AppendHistory(line)
+		if task0.Job.command == "" {
+			task0.Job.command = line
+		}
+		line += "\n"
+	}
+	return
 }
 
 type Conduit interface {
@@ -47,30 +58,6 @@ type Conduit interface {
 	WriterClose()
 	Write(c Cell)
 }
-
-type Context interface {
-	Cell
-
-	Access(key Cell) Reference
-	Copy() Context
-	Complete(line, prefix string) []string
-	Define(key, value Cell)
-	Expose() Context
-	Faces() *Env
-	Prev() Context
-	Public(key, value Cell)
-	Remove(key Cell) bool
-
-	DefineBuiltin(k string, f Function)
-	DefineMethod(k string, f Function)
-	DefineSyntax(k string, f Function)
-	PublicMethod(k string, f Function)
-	PublicSyntax(k string, f Function)
-}
-
-type Function func(t *Task, args Cell) bool
-
-type NewClosure func(a Function, b, l, p Cell, s Context) Closure
 
 const (
 	SaveCarCode = 1 << iota
@@ -110,11 +97,18 @@ const (
 	SaveCode = SaveCarCode | SaveCdrCode
 )
 
+var cli *Liner
+var cooked liner.ModeApplier
 var env0 *Env
 var envc *Env
 var external Cell
+var interactive bool
+var pgid int
+var pid int
 var runnable chan bool
 var scope0 *Scope
+var task0 *Task
+var uncooked liner.ModeApplier
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},
@@ -134,6 +128,30 @@ func as_conduit(o Context) Conduit {
 
 	panic("Not a conduit")
 	return nil
+}
+
+func complete(line string) []string {
+	fields := strings.Fields(line)
+
+	if len(fields) == 0 {
+		return []string{"    " + line}
+	}
+
+	prefix := fields[len(fields)-1]
+	if !strings.HasSuffix(line, prefix) {
+		return []string{line}
+	}
+
+	trimmed := line[0 : len(line)-len(prefix)]
+
+	completions := files(trimmed, prefix)
+	completions = append(completions, task0.Complete(trimmed, prefix)...)
+
+	if len(completions) == 0 {
+		return []string{line}
+	}
+
+	return completions
 }
 
 func expand(args Cell) Cell {
@@ -171,6 +189,71 @@ func expand(args Cell) Cell {
 	}
 
 	return list
+}
+
+func files(line, prefix string) []string {
+	completions := []string{}
+
+	prfx := path.Clean(prefix)
+	if !path.IsAbs(prfx) {
+		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
+		cwd := ref.Get().String()
+
+		prfx = path.Join(cwd, prfx)
+	}
+
+	root, prfx := filepath.Split(prfx)
+	if strings.HasSuffix(prefix, "/") {
+		root, prfx = path.Join(root, prfx)+"/", ""
+	}
+	max := strings.Count(root, "/")
+
+	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
+		depth := strings.Count(p, "/")
+		if depth > max {
+			if i.IsDir() {
+				return filepath.SkipDir
+			} else {
+				return nil
+			}
+		} else if depth == max {
+			full := path.Join(root, prfx)
+			if len(prfx) == 0 {
+				full += "/"
+			} else if !strings.HasPrefix(p, full) {
+				return nil
+			}
+
+			completion := line + prefix + p[len(full):]
+			completions = append(completions, completion)
+		}
+
+		return nil
+	})
+
+	return completions
+}
+
+func init() {
+        interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
+	if interactive {
+		// We assume the terminal starts in cooked mode.
+		cooked, _ = liner.TerminalMode()
+
+		cli = &Liner{liner.NewLiner()}
+
+		uncooked, _ = liner.TerminalMode()
+
+		cli.SetCompleter(complete)
+	}
+	pid = syscall.Getpid()
+	pgid = syscall.Getpgrp()
+	if pid != pgid {
+		syscall.Setpgid(0, 0)
+	}
+	pgid = pid
+
+	C.ignore()
 }
 
 func module(f string) (string, error) {
@@ -215,18 +298,29 @@ func wpipe(c Cell) *os.File {
 	return as_conduit(c.(Context)).(*Pipe).WriteFd()
 }
 
-func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
-	v = nil
+func ForegroundTask() *Task {
+	return task0
+}
 
-	if v = s.Access(k); v == nil {
-		if e == nil {
-			return v
-		}
+func Interactive() bool {
+	return interactive
+}
 
-		v = e.Access(k)
+func Interface() *Liner {
+	return cli
+}
+
+func NewForegroundTask() *Task {
+	if task0 != nil {
+		mode, _ := liner.TerminalMode()
+		task0.Job.mode = mode
 	}
+	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
+	return task0
+}
 
-	return v
+func Pid() int {
+	return pid
 }
 
 func RootScope() *Scope {
@@ -1207,6 +1301,15 @@ func RootScope() *Scope {
 	return scope0
 }
 
+func SetForegroundGroup(group int) {
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+}
+
+func SetForegroundTask(t *Task) {
+	task0 = t
+}
+
 /* Channel cell definition. */
 
 type Channel struct {
@@ -1263,6 +1366,43 @@ func (ch *Channel) WriterClose() {
 
 func (ch *Channel) Write(c Cell) {
 	ch.v <- c
+}
+
+/* Continuation cell definition. */
+
+type Continuation struct {
+	Scratch Cell
+	Stack   Cell
+}
+
+func NewContinuation(scratch Cell, stack Cell) *Continuation {
+	return &Continuation{Scratch: scratch, Stack: stack}
+}
+
+func (ct *Continuation) Bool() bool {
+	return true
+}
+
+func (ct *Continuation) Equal(c Cell) bool {
+	return ct == c
+}
+
+func (ct *Continuation) String() string {
+	return fmt.Sprintf("%%continuation %p%%", ct)
+}
+
+/* Job definition. */
+
+type Job struct {
+	*sync.Mutex
+	command string
+	group   int
+	mode    liner.ModeApplier
+}
+
+func NewJob() *Job {
+	mode, _ := liner.TerminalMode()
+	return &Job{&sync.Mutex{}, "", 0, mode}
 }
 
 /* Pipe cell definition. */
@@ -1387,263 +1527,6 @@ func (p *Pipe) ReadFd() *os.File {
 
 func (p *Pipe) WriteFd() *os.File {
 	return p.w
-}
-
-/* Combiner cell definition. */
-
-type Combiner struct {
-	applier Function
-	body    Cell
-	label   Cell
-	params  Cell
-	scope   Context
-}
-
-func (c *Combiner) Bool() bool {
-	return true
-}
-
-func (c *Combiner) Applier() Function {
-	return c.applier
-}
-
-func (c *Combiner) Body() Cell {
-	return c.body
-}
-
-func (c *Combiner) Params() Cell {
-	return c.params
-}
-
-func (c *Combiner) Label() Cell {
-	return c.label
-}
-
-func (c *Combiner) Scope() Context {
-	return c.scope
-}
-
-/* Builtin cell definition. */
-
-type Builtin struct {
-	Combiner
-}
-
-func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
-	return &Builtin{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
-	}
-}
-
-func (b *Builtin) String() string {
-	return fmt.Sprintf("%%builtin %p%%", b)
-}
-
-func (b *Builtin) Equal(c Cell) bool {
-	return b == c
-}
-
-/* Method cell definition. */
-
-type Method struct {
-	Combiner
-}
-
-func NewMethod(a Function, b, l, p Cell, s Context) Closure {
-	return &Method{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
-	}
-}
-
-func (m *Method) String() string {
-	return fmt.Sprintf("%%method %p%%", m)
-}
-
-func (m *Method) Equal(c Cell) bool {
-	return m == c
-}
-
-/* Syntax cell definition. */
-
-type Syntax struct {
-	Combiner
-}
-
-func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
-	return &Syntax{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
-	}
-}
-
-func (m *Syntax) String() string {
-	return fmt.Sprintf("%%syntax %p%%", m)
-}
-
-func (m *Syntax) Equal(c Cell) bool {
-	return m == c
-}
-
-/* Env cell definition. */
-
-type Env struct {
-	hash map[string]Reference
-	prev *Env
-}
-
-func NewEnv(prev *Env) *Env {
-	return &Env{make(map[string]Reference), prev}
-}
-
-func (e *Env) Bool() bool {
-	return true
-}
-
-func (e *Env) Equal(c Cell) bool {
-	return e == c
-}
-
-func (e *Env) String() string {
-	return fmt.Sprintf("%%env %p%%", e)
-}
-
-/* Env-specific functions */
-
-func (e *Env) Access(key Cell) Reference {
-	for env := e; env != nil; env = env.prev {
-		if value, ok := env.hash[key.String()]; ok {
-			return value
-		}
-	}
-
-	return nil
-}
-
-func (e *Env) Add(key Cell, value Cell) {
-	e.hash[key.String()] = NewVariable(value)
-}
-
-func (e *Env) Complete(line, prefix string) []string {
-	cl := []string{}
-
-	for k, _ := range e.hash {
-		if strings.HasPrefix(k, prefix) {
-			cl = append(cl, line+k)
-		}
-	}
-
-	if e.prev != nil {
-		cl = append(cl, e.prev.Complete(line, prefix)...)
-	}
-
-	return cl
-}
-
-func (e *Env) Copy() *Env {
-	if e == nil {
-		return nil
-	}
-
-	fresh := NewEnv(e.prev.Copy())
-
-	for k, v := range e.hash {
-		fresh.hash[k] = v.Copy()
-	}
-
-	return fresh
-}
-
-func (e *Env) Method(name string, m Function) {
-	e.hash[name] =
-		NewConstant(NewBound(NewMethod(m, Null, Null, Null, nil), nil))
-}
-
-func (e *Env) Prev() *Env {
-	return e.prev
-}
-
-func (e *Env) Remove(key Cell) bool {
-	_, ok := e.hash[key.String()]
-
-	delete(e.hash, key.String())
-
-	return ok
-}
-
-/*
- * Object cell definition.
- * (An object cell only allows access to a context's public members).
- */
-
-type Object struct {
-	Context
-}
-
-func NewObject(v Context) *Object {
-	return &Object{v.Expose()}
-}
-
-func (o *Object) Equal(c Cell) bool {
-	if o == c {
-		return true
-	}
-	if o, ok := c.(*Object); ok {
-		return o.Context == o.Expose()
-	}
-	return false
-}
-
-func (o *Object) String() string {
-	return fmt.Sprintf("%%object %p%%", o)
-}
-
-/* Object-specific functions */
-
-func (o *Object) Access(key Cell) Reference {
-	var obj Context
-	for obj = o; obj != nil; obj = obj.Prev() {
-		if value := obj.Faces().prev.Access(key); value != nil {
-			return value
-		}
-	}
-
-	return nil
-}
-
-func (o *Object) Copy() Context {
-	return &Object{
-		&Scope{o.Expose().Faces().Copy(), o.Context.Prev()},
-	}
-}
-
-func (o *Object) Expose() Context {
-	return o.Context
-}
-
-func (o *Object) Define(key Cell, value Cell) {
-	panic("Private members cannot be added to an object.")
-}
-
-/* Continuation cell definition. */
-
-type Continuation struct {
-	Scratch Cell
-	Stack   Cell
-}
-
-func NewContinuation(scratch Cell, stack Cell) *Continuation {
-	return &Continuation{Scratch: scratch, Stack: stack}
-}
-
-func (ct *Continuation) Bool() bool {
-	return true
-}
-
-func (ct *Continuation) Equal(c Cell) bool {
-	return ct == c
-}
-
-func (ct *Continuation) String() string {
-	return fmt.Sprintf("%%continuation %p%%", ct)
 }
 
 /* Registers cell definition. */
@@ -1792,20 +1675,6 @@ func (r *Registers) Return(rv Cell) bool {
 	SetCar(r.Scratch, rv)
 
 	return false
-}
-
-/* Job definition. */
-
-type Job struct {
-	*sync.Mutex
-	command string
-	group   int
-	mode    liner.ModeApplier
-}
-
-func NewJob() *Job {
-	mode, _ := liner.TerminalMode()
-	return &Job{&sync.Mutex{}, "", 0, mode}
 }
 
 /* Task cell definition. */
@@ -2423,191 +2292,3 @@ func (t *Task) Wait() {
 	}
 }
 
-/*
- * Scope cell definition.
- * (A scope cell allows access to a context's public and private members).
- */
-
-type Scope struct {
-	env  *Env
-	prev Context
-}
-
-func NewScope(prev Context, fixed *Env) *Scope {
-	return &Scope{NewEnv(NewEnv(fixed)), prev}
-}
-
-func (s *Scope) Bool() bool {
-	return true
-}
-
-func (s *Scope) String() string {
-	return fmt.Sprintf("%%scope %p%%", s)
-}
-
-func (s *Scope) Equal(c Cell) bool {
-	return s == c
-}
-
-/* Scope-specific functions */
-
-func (s *Scope) Access(key Cell) Reference {
-	var obj Context
-	for obj = s; obj != nil; obj = obj.Prev() {
-		if value := obj.Faces().Access(key); value != nil {
-			return value
-		}
-	}
-
-	return nil
-}
-
-func (s *Scope) Complete(line, prefix string) []string {
-	cl := []string{}
-
-	var obj Context
-	for obj = s; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Complete(line, prefix)...)
-	}
-
-	return cl
-}
-
-func (s *Scope) Copy() Context {
-	return &Scope{s.env.Copy(), s.prev}
-}
-
-func (s *Scope) Expose() Context {
-	return s
-}
-
-func (s *Scope) Faces() *Env {
-	return s.env
-}
-
-func (s *Scope) Prev() Context {
-	return s.prev
-}
-
-func (s *Scope) Define(key Cell, value Cell) {
-	s.env.Add(key, value)
-}
-
-func (s *Scope) Public(key Cell, value Cell) {
-	s.env.prev.Add(key, value)
-}
-
-func (s *Scope) Remove(key Cell) bool {
-	if !s.env.prev.Remove(key) {
-		return s.env.Remove(key)
-	}
-
-	return true
-}
-
-func (s *Scope) DefineBuiltin(k string, a Function) {
-	s.Define(NewSymbol(k),
-		NewUnbound(NewBuiltin(a, Null, Null, Null, s)))
-}
-
-func (s *Scope) DefineMethod(k string, a Function) {
-	s.Define(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, s), s))
-}
-
-func (s *Scope) PublicMethod(k string, a Function) {
-	s.Public(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, s), s))
-}
-
-func (s *Scope) DefineSyntax(k string, a Function) {
-	s.Define(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, s), s))
-}
-
-func (s *Scope) PublicSyntax(k string, a Function) {
-	s.Public(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, s), s))
-}
-
-/* Bound cell definition. */
-
-type Bound struct {
-	ref     Closure
-	context Context
-}
-
-func NewBound(ref Closure, context Context) *Bound {
-	return &Bound{ref, context}
-}
-
-func (b *Bound) Bool() bool {
-	return true
-}
-
-func (b *Bound) String() string {
-	return fmt.Sprintf("%%bound %p%%", b)
-}
-
-func (b *Bound) Equal(c Cell) bool {
-	if m, ok := c.(*Bound); ok {
-		return b.ref == m.Ref() && b.context == m.Self()
-	}
-	return false
-}
-
-/* Bound-specific functions */
-
-func (b *Bound) Bind(c Context) Binding {
-	if c == b.context {
-		return b
-	}
-	return NewBound(b.ref, c)
-}
-
-func (b *Bound) Ref() Closure {
-	return b.ref
-}
-
-func (b *Bound) Self() Context {
-	return b.context
-}
-
-/* Unbound cell definition. */
-
-type Unbound struct {
-	ref Closure
-}
-
-func NewUnbound(Ref Closure) *Unbound {
-	return &Unbound{Ref}
-}
-
-func (u *Unbound) Bool() bool {
-	return true
-}
-
-func (u *Unbound) String() string {
-	return fmt.Sprintf("%%unbound %p%%", u)
-}
-
-func (u *Unbound) Equal(c Cell) bool {
-	if u, ok := c.(*Unbound); ok {
-		return u.ref == u.Ref()
-	}
-	return false
-}
-
-/* Unbound-specific functions */
-
-func (u *Unbound) Bind(c Context) Binding {
-	return u
-}
-
-func (u *Unbound) Ref() Closure {
-	return u.ref
-}
-
-func (u *Unbound) Self() Context {
-	return nil
-}
