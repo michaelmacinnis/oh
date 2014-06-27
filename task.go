@@ -8,6 +8,7 @@ import (
 	"github.com/peterh/liner"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -59,6 +60,16 @@ type Conduit interface {
 	Write(c Cell)
 }
 
+type Notification struct {
+	pid    int
+	status syscall.WaitStatus
+}
+
+type Registration struct {
+	pid int
+	cb  chan Notification
+}
+
 const (
 	SaveCarCode = 1 << iota
 	SaveCdrCode
@@ -102,9 +113,11 @@ var cooked liner.ModeApplier
 var env0 *Env
 var envc *Env
 var external Cell
+var incoming chan os.Signal
 var interactive bool
 var pgid int
 var pid int
+var register chan Registration
 var runnable chan bool
 var scope0 *Scope
 var task0 *Task
@@ -235,8 +248,17 @@ func files(line, prefix string) []string {
 }
 
 func init() {
+	pid = syscall.Getpid()
+	pgid = syscall.Getpgrp()
+	if pid != pgid {
+		syscall.Setpgid(0, 0)
+	}
+	pgid = pid
+
         interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
 	if interactive {
+		C.ignore()
+
 		// We assume the terminal starts in cooked mode.
 		cooked, _ = liner.TerminalMode()
 
@@ -246,14 +268,17 @@ func init() {
 
 		cli.SetCompleter(complete)
 	}
-	pid = syscall.Getpid()
-	pgid = syscall.Getpgrp()
-	if pid != pgid {
-		syscall.Setpgid(0, 0)
-	}
-	pgid = pid
 
-	C.ignore()
+	active := make(chan bool)
+	notify := make(chan Notification)
+	register = make(chan Registration)
+
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	incoming = make(chan os.Signal, len(signals))
+	signal.Notify(incoming, signals...)
+
+	go monitor(active, notify)
+	go registrar(active, notify)
 }
 
 func module(f string) (string, error) {
@@ -269,6 +294,37 @@ func module(f string) (string, error) {
 	return m, nil
 }
 
+func monitor(active chan bool, notify chan Notification) {
+	for <-active {
+		for {
+			var rusage syscall.Rusage
+			var status syscall.WaitStatus
+			options := syscall.WUNTRACED
+			pid, e := syscall.Wait4(-1, &status, options, &rusage)
+			if e != nil || pid <= 0 {
+				continue
+			}
+
+			if status.Stopped() {
+				if pid == ForegroundTask().Job.group {
+					incoming <- syscall.SIGTSTP
+				}
+			} else if status.Signaled() &&
+				status.Signal() == syscall.SIGINT {
+				if pid == ForegroundTask().Job.group {
+					incoming <- syscall.SIGINT
+				}
+			} else {
+				notify <- Notification{pid, status}
+				if !<-active {
+					break
+				}
+			}
+		}
+	}
+	panic("This should never happen.")
+}
+
 func number(s string) bool {
 	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
 	return err == nil && m
@@ -280,6 +336,28 @@ func raw(c Cell) string {
 	}
 
 	return c.String()
+}
+
+func registrar(active chan bool, notify chan Notification) {
+	registered := make(map[int]Registration)
+	for {
+		select {
+		case n := <-notify:
+			r, ok := registered[n.pid]
+			if ok {
+				if n.status.Exited() {
+					r.cb <- n
+					delete(registered, n.pid)
+				}
+			}
+			active <- len(registered) != 0
+		case r := <-register:
+			registered[r.pid] = r
+			if len(registered) == 1 {
+				active <- true
+			}
+		}
+	}
 }
 
 func rpipe(c Cell) *os.File {
@@ -302,12 +380,24 @@ func ForegroundTask() *Task {
 	return task0
 }
 
+func Incoming() chan os.Signal {
+	return incoming
+}
+
 func Interactive() bool {
 	return interactive
 }
 
 func Interface() *Liner {
 	return cli
+}
+
+func JoinProcess(pid int) syscall.WaitStatus {
+	cb := make(chan Notification)
+	register <- Registration{pid, cb}
+	n := <-cb
+
+	return n.status
 }
 
 func NewForegroundTask() *Task {
