@@ -49,7 +49,8 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:220
+//line parser.y:222
+
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
@@ -869,6 +870,8 @@ yydefault:
 				yyVAL.c = (*Bound)(unsafe.Pointer(addr))
 			case kind == "builtin":
 				yyVAL.c = (*Builtin)(unsafe.Pointer(addr))
+			case kind == "channel":
+				yyVAL.c = (*Channel)(unsafe.Pointer(addr))
 			case kind == "constant":
 				yyVAL.c = (*Constant)(unsafe.Pointer(addr))
 			case kind == "continuation":
@@ -898,27 +901,27 @@ yydefault:
 
 		}
 	case 42:
-		//line parser.y:210
+		//line parser.y:212
 		{
 			yyVAL = yyS[yypt-1]
 		}
 	case 43:
-		//line parser.y:212
+		//line parser.y:214
 		{
 			yyVAL.c = Null
 		}
 	case 44:
-		//line parser.y:214
+		//line parser.y:216
 		{
 			yyVAL = yyS[yypt-0]
 		}
 	case 45:
-		//line parser.y:216
+		//line parser.y:218
 		{
 			yyVAL.c = NewString(yyS[yypt-0].s[1 : len(yyS[yypt-0].s)-1])
 		}
 	case 46:
-		//line parser.y:218
+		//line parser.y:220
 		{
 			yyVAL.c = NewSymbol(yyS[yypt-0].s)
 		}

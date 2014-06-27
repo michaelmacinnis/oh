@@ -40,6 +40,8 @@ type Closure interface {
 	Scope() Context
 }
 
+type ClosureGenerator func(a Function, b, l, p Cell, s Context) Closure
+
 type Context interface {
 	Cell
 
@@ -61,8 +63,6 @@ type Context interface {
 }
 
 type Function func(t *Task, args Cell) bool
-
-type NewClosure func(a Function, b, l, p Cell, s Context) Closure
 
 type Number interface {
 	Atom
@@ -1368,4 +1368,3 @@ func (vr *Variable) Get() Cell {
 func (vr *Variable) Set(c Cell) {
 	vr.v = c
 }
-

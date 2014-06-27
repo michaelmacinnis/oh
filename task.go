@@ -255,7 +255,7 @@ func init() {
 	}
 	pgid = pid
 
-        interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
+	interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
 	if interactive {
 		C.ignore()
 
@@ -1864,7 +1864,7 @@ func (t *Task) Apply(args Cell) bool {
 	return true
 }
 
-func (t *Task) Closure(n NewClosure) bool {
+func (t *Task) Closure(n ClosureGenerator) bool {
 	label := Null
 	params := Car(t.Code)
 	for t.Code != Null && raw(Cadr(t.Code)) != "as" {
@@ -2381,4 +2381,3 @@ func (t *Task) Wait() {
 		delete(t.children, k)
 	}
 }
-

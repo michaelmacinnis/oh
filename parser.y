@@ -178,6 +178,8 @@ expression: "%" SYMBOL SYMBOL "%" {
         $$.c = (*Bound)(unsafe.Pointer(addr))
     case kind == "builtin":
         $$.c = (*Builtin)(unsafe.Pointer(addr))
+    case kind == "channel":
+        $$.c = (*Channel)(unsafe.Pointer(addr))
     case kind == "constant":
         $$.c = (*Constant)(unsafe.Pointer(addr))
     case kind == "continuation":
