@@ -21,18 +21,10 @@ type SysProcAttr struct {
 	Ctty       int         // Controlling TTY fd (Linux only)
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 	Cloneflags uintptr     // Flags for clone calls (Linux only)
-	Foreground bool        // If true, set as foreground process group. (Only meaningful if Setpgid is set. Stdin should be a TTY).
-	Joinpgrp   int         // If != 0, set process group ID of new process to this.
-	Sigdfl     []Signal    // Set default signal handler for these signals in child.
-}
-
-// TODO: Thanks to John Southworth for mailing me this:
-// Sigaction structure as Linux expects it to be laid out.
-type sigaction struct {
-	sa_handler  uintptr
-	sa_mask     uint64
-	sa_restorer uintptr
-	sa_flags    uint64
+	Foreground bool        // Process ID becomes foreground process group.
+                               // (Setpgid must be set. Stdin should be a TTY).
+	Joinpgrp   int         // If != 0, set process group ID of new process.
+	Sigdfl     []Signal    // Set child's default handler for these signals.
 }
 
 // Implemented in runtime package.
@@ -56,12 +48,10 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		err1   Errno
 		nextfd int
 		i      int
-		sa     *sigaction
-		sig    Signal
+		sigaction [64]byte
 	)
 
-	// Zero-value used to reset to default signal handler.
-	sa = &sigaction{}
+	pidaddr := unsafe.Pointer(&pid)
 
 	// Guard against side effects of shuffling fds below.
 	// Make sure that nextfd is beyond any currently open files so
@@ -99,8 +89,8 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 			RawSyscall(SYS_SETPGID, 0, 0, 0)
 
 			if sys.Foreground {
-				// Set new foreground process group. (Stdin should be a TTY).
-				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid)))
+				// Set new foreground process group.
+				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
 			}
 		}
 
@@ -163,8 +153,8 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		pid = int(r1)
 
 		if sys.Foreground {
-			// Set new foreground process group. (Stdin should be a TTY).
-			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid))) // TODO: Is it safe to take the address of 'pid' at this point?
+			// Set new foreground process group.
+			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
 			if err1 != 0 {
 				goto childerror
 			}
@@ -173,9 +163,8 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 	// Reset default signal handlers for specified signals.
 	if sys.Sigdfl != nil {
-		// TODO: I'm paranoid. Is it OK to use range here?
-		for _, sig = range sys.Sigdfl {
-			_, _, err1 = RawSyscall6(SYS_RT_SIGACTION, uintptr(sig), uintptr(unsafe.Pointer(sa)), 0, unsafe.Sizeof(sa.sa_mask), 0, 0)
+		for i = 0; i < len(sys.Sigdfl); i++ {
+			_, _, err1 = RawSyscall(SYS_SIGACTION, uintptr(sys.Sigdfl[i]), uintptr(unsafe.Pointer(&sigaction[0])), 0)
 			if err1 != 0 {
 				goto childerror
 			}
@@ -193,11 +182,11 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// User and groups
 	if cred := sys.Credential; cred != nil {
 		ngroups := uintptr(len(cred.Groups))
-		groups := uintptr(0)
+		var groups unsafe.Pointer
 		if ngroups > 0 {
-			groups = uintptr(unsafe.Pointer(&cred.Groups[0]))
+			groups = unsafe.Pointer(&cred.Groups[0])
 		}
-		_, _, err1 = RawSyscall(SYS_SETGROUPS, ngroups, groups, 0)
+		_, _, err1 = RawSyscall(SYS_SETGROUPS, ngroups, uintptr(groups), 0)
 		if err1 != 0 {
 			goto childerror
 		}
