@@ -47,7 +47,10 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		err1   Errno
 		nextfd int
 		i      int
+		sigaction [64]byte
 	)
+
+	pidaddr := unsafe.Pointer(&pid)
 
 	// guard against side effects of shuffling fds below.
 	// Make sure that nextfd is beyond any currently open files so
@@ -84,7 +87,23 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	if r1 != 0 {
 		// parent; return PID
 		runtime_AfterFork()
-		return int(r1), 0
+
+		pid = int(r1)
+
+		if sys.Joinpgrp != 0 {
+			// Place the child in the specified process group.
+			RawSyscall(SYS_SETPGID, r1, uintptr(sys.Joinpgrp), 0)
+		} else if sys.Setpgid {
+			// Place the child in a new process group.
+			RawSyscall(SYS_SETPGID, 0, 0, 0)
+
+			if sys.Foreground {
+				// Set new foreground process group.
+				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
+			}
+		}
+
+		return pid, 0
 	}
 
 	// Fork succeeded, now in child.
@@ -106,10 +125,38 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Set process group
-	if sys.Setpgid {
+	if sys.Joinpgrp != 0 {
+		// Place the child in the specified process group.
+		_, _, err1 = RawSyscall(SYS_SETPGID, r1, uintptr(sys.Joinpgrp), 0)
+		if err1 != 0 {
+			goto childerror
+		}
+	} else if sys.Setpgid {
+		// Place the child in a new process group.
 		_, _, err1 = RawSyscall(SYS_SETPGID, 0, 0, 0)
 		if err1 != 0 {
 			goto childerror
+		}
+
+		r1, _, _ = RawSyscall(SYS_GETPID, 0, 0, 0)
+
+		pid = int(r1)
+
+		if sys.Foreground {
+			// Set new foreground process group.
+			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
+			if err1 != 0 {
+				goto childerror
+			}
+		}
+	}
+
+	if sys.Sigdfl != nil {
+		for i = 0; i < len(sys.Sigdfl); i++ {
+			_, _, err1 = RawSyscall(SYS_SIGACTION, uintptr(sys.Sigdfl[i]), uintptr(unsafe.Pointer(&sigaction[0])), 0)
+			if err1 != 0 {
+				goto childerror
+			}
 		}
 	}
 
