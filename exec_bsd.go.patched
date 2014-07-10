@@ -50,7 +50,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		sigaction [64]byte
 	)
 
-	pidaddr := unsafe.Pointer(&pid)
+	pidaddr := uintptr(unsafe.Pointer(&pid))
 
 	// guard against side effects of shuffling fds below.
 	// Make sure that nextfd is beyond any currently open files so
@@ -99,7 +99,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 			if sys.Foreground {
 				// Set new foreground process group.
-				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
+				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, pidaddr)
 			}
 		}
 
@@ -144,13 +144,14 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 		if sys.Foreground {
 			// Set new foreground process group.
-			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(pidaddr))
+			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, pidaddr)
 			if err1 != 0 {
 				goto childerror
 			}
 		}
 	}
 
+	// Set default signal handlers for specified signals.
 	if sys.Sigdfl != nil {
 		for i = 0; i < len(sys.Sigdfl); i++ {
 			_, _, err1 = RawSyscall(SYS_SIGACTION, uintptr(sys.Sigdfl[i]), uintptr(unsafe.Pointer(&sigaction[0])), 0)
