@@ -19,9 +19,9 @@ type SysProcAttr struct {
 	Setpgid    bool        // Set process group ID to new pid (SYSV setpgrp)
 	Setctty    bool        // Set controlling terminal to fd 0
 	Noctty     bool        // Detach fd 0 from controlling terminal
-        Foreground bool        // Process ID becomes foreground process group.
+        Foreground bool        // Set foreground process group to child's pid.
                                // (Setpgid must be set. Stdin should be a TTY).
-        Joinpgrp   int         // If != 0, set process group ID of new process.
+        Joinpgrp   int         // If != 0, set child's process group ID.
         Sigdfl     []Signal    // Set child's default handler for these signals.
 
 }
@@ -152,6 +152,17 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Set default signal handlers for specified signals.
+	//
+	// SIG_DFL is defined as ((__sighandler_t *)0). Provided the
+	// sigaction array is at least sizeof(struct sigaction) bytes,
+	// &sigaction[0] and &handler point to equivalent values. So,
+	//	RawSyscall(SYS_SIGACTION, uintptr(<signal>),
+        //                 uintptr(unsafe.Pointer(&sigaction[0])), 0)
+	// is equivalent to:
+	// 	struct sigaction handler
+	//	memset(&handler, 0, sizeof(handler));
+	//	handler.sa_sigaction = SIG_DFL
+	//	sigaction(<signal>, &handler, NULL);
 	if sys.Sigdfl != nil {
 		for i = 0; i < len(sys.Sigdfl); i++ {
 			_, _, err1 = RawSyscall(SYS_SIGACTION, uintptr(sys.Sigdfl[i]), uintptr(unsafe.Pointer(&sigaction[0])), 0)

@@ -21,9 +21,9 @@ type SysProcAttr struct {
 	Ctty       int         // Controlling TTY fd (Linux only)
 	Pdeathsig  Signal      // Signal that the process will get when its parent dies (Linux only)
 	Cloneflags uintptr     // Flags for clone calls (Linux only)
-	Foreground bool        // Process ID becomes foreground process group.
+	Foreground bool        // Set foreground process group to child's pid.
                                // (Setpgid must be set. Stdin should be a TTY).
-	Joinpgrp   int         // If != 0, set process group ID of new process.
+	Joinpgrp   int         // If != 0, set child's process group ID.
 	Sigdfl     []Signal    // Set child's default handler for these signals.
 }
 
