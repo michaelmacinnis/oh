@@ -118,7 +118,7 @@ func main() {
 
 	scope0 = RootScope()
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !Interactive() || t != ForegroundTask() {
+		if !JobControlEnabled() || t != ForegroundTask() {
 			return false
 		}
 
@@ -156,7 +156,8 @@ func main() {
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !Interactive() || t != ForegroundTask() || len(jobs) == 0 {
+		if !JobControlEnabled() || t != ForegroundTask() ||
+		   len(jobs) == 0 {
 			return false
 		}
 

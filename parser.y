@@ -1,4 +1,4 @@
-/* Released under an MIT-style license. See LICENSE. -*- mode: Go -*- */
+// Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
 %token DEDENT END INDENT STRING SYMBOL
 %left BACKGROUND /* & */

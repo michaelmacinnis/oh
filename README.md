@@ -1,40 +1,13 @@
-﻿Note:
+Note:
 -----
 
-Oh currently requires a small patch to Go. This patch will only work on Linux.
-To apply the patch copy exec_linux.go over the existing file in your Go source
-tree and run all.bash to re-complile Go. 
+Oh currently requires a small patch to Go. This patch only works on BSD or
+Linux. To apply the patch copy exec_bsd.go.patched or exec_linux.go.patched,
+as appropriate, over the existing file in your Go source tree and run all.bash
+to re-complile Go. 
 
-Alternatively, oh can be compiled by commenting out the lines that set the
-members of SysProcAttr added by the patched exec_linux.go: 
-
-    //      if IsInteractive() {
-    //              attr.Sys = &syscall.SysProcAttr{
-    //                      Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
-    //              }
-    //
-    //              if t.group == 0 {
-    //                      attr.Sys.Setpgid = true
-    //                      attr.Sys.Foreground = true
-    //              } else {
-    //                      attr.Sys.Joinpgrp = t.group
-    //              }
-    //      }
-    
-            proc, err := os.StartProcess(arg0, argv, attr)
-            if err != nil {
-                    t.Unlock()
-                    return nil, err
-            }
-
-    //      if IsInteractive() {
-    //              if t.group == 0 {
-    //                      t.group = proc.Pid
-    //              }
-    //      }
-
-Commenting out these lines will break job control but everything else should
-work.
+Alternatively, remove your OS from the list of build constraints in the files
+job_control.go and no_job_control.go to build oh with job control disabled.
 
 
 oh

@@ -1,4 +1,4 @@
-/* Released under an MIT-style license. See LICENSE. */
+// Released under an MIT-style license. See LICENSE.
 
 package main
 
@@ -35,7 +35,7 @@ type Liner struct {
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
+			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
@@ -390,6 +390,10 @@ func Interactive() bool {
 
 func Interface() *Liner {
 	return cli
+}
+
+func JobControlEnabled() bool {
+	return Interactive() && JobControlSupported()
 }
 
 func JoinProcess(pid int) syscall.WaitStatus {
@@ -1932,18 +1936,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Lock()
 
-	if Interactive() {
-		attr.Sys = &syscall.SysProcAttr{
-			Sigdfl: []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU},
-		}
-
-		if t.group == 0 {
-			attr.Sys.Setpgid = true
-			attr.Sys.Foreground = true
-		} else {
-			attr.Sys.Joinpgrp = t.group
-		}
-	}
+	attr.Sys = SysProcAttr(t.group)
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
@@ -1951,7 +1944,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 		return nil, err
 	}
 
-	if Interactive() {
+	if JobControlEnabled() {
 		if t.group == 0 {
 			t.group = proc.Pid
 		}
