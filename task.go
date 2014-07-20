@@ -295,34 +295,38 @@ func module(f string) (string, error) {
 }
 
 func monitor(active chan bool, notify chan Notification) {
-	for <-active {
-		for {
+	for {
+		monitoring := <-active
+		for monitoring {
 			var rusage syscall.Rusage
 			var status syscall.WaitStatus
 			options := syscall.WUNTRACED
-			pid, e := syscall.Wait4(-1, &status, options, &rusage)
-			if e != nil || pid <= 0 {
-				continue
+			pid, err := syscall.Wait4(-1, &status, options, &rusage)
+			if err != nil {
+				println("Wait4:", err.Error())
+				break
 			}
 
 			if status.Stopped() {
 				if pid == ForegroundTask().Job.group {
 					incoming <- syscall.SIGTSTP
 				}
-			} else if status.Signaled() &&
-				status.Signal() == syscall.SIGINT {
-				if pid == ForegroundTask().Job.group {
+				continue
+			}
+
+			if status.Signaled() {
+				if status.Signal() == syscall.SIGINT &&
+					pid == ForegroundTask().Job.group {
 					incoming <- syscall.SIGINT
 				}
-			} else {
-				notify <- Notification{pid, status}
-				if !<-active {
-					break
-				}
+				status += 128
 			}
+
+			notify <- Notification{pid, status}
+			monitoring = <-active
 		}
 	}
-	panic("This should never happen.")
+	panic("Unreachable.")
 }
 
 func number(s string) bool {
@@ -345,10 +349,8 @@ func registrar(active chan bool, notify chan Notification) {
 		case n := <-notify:
 			r, ok := registered[n.pid]
 			if ok {
-				if n.status.Exited() {
-					r.cb <- n
-					delete(registered, n.pid)
-				}
+				r.cb <- n
+				delete(registered, n.pid)
 			}
 			active <- len(registered) != 0
 		case r := <-register:
@@ -1936,7 +1938,9 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Lock()
 
-	attr.Sys = SysProcAttr(t.group)
+	if JobControlEnabled() {
+		attr.Sys = SysProcAttr(t.group)
+	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
