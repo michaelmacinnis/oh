@@ -1097,11 +1097,7 @@ func RootScope() *Scope {
 		return t.Return(acc)
 	})
 
-	/* Standard namespaces. */
-	list := NewObject(NewScope(scope0, nil))
-	scope0.Define(NewSymbol("List"), list)
-
-	list.PublicMethod("to-string", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
@@ -1109,7 +1105,7 @@ func RootScope() *Scope {
 
 		return t.Return(NewRawString(t, s))
 	})
-	list.PublicMethod("to-symbol", func(t *Task, args Cell) bool {
+	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
@@ -1118,6 +1114,7 @@ func RootScope() *Scope {
 		return t.Return(NewSymbol(s))
 	})
 
+	/* Standard namespaces. */
 	text := NewObject(NewScope(scope0, nil))
 	scope0.Define(NewSymbol("Text"), text)
 

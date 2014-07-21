@@ -350,10 +350,10 @@ define source: syntax e (name) as {
 }
 define write: method (: args) as: $stdout::write @args
 
-List::public ref: method (k x) as: car: List::tail k x
-List::public tail: method (k x) as {
+define list-ref: method (k x) as: car: list-tail k x
+define list-tail: method (k x) as {
     if k {
-        List::tail (sub k 1): cdr x
+        list-tail (sub k 1): cdr x
     } else {
         return x
     }
