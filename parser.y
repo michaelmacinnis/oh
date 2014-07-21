@@ -215,7 +215,7 @@ expression: "(" ")" { $$.c = Null };
 
 expression: word { $$ = $1 };
 
-word: STRING { $$.c = NewString($1.s[1:len($1.s)-1]) };
+word: STRING { $$.c = NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1]) };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };
 
@@ -227,6 +227,7 @@ type ReadStringer interface {
 
 type scanner struct {
     process func(Cell)
+    task *Task
         
     input ReadStringer
     line []rune
@@ -442,10 +443,11 @@ func (s *scanner) Error (msg string) {
     println(msg)
 }
 
-func Parse(r ReadStringer, p func(Cell)) {
+func Parse(t *Task, r ReadStringer, p func(Cell)) {
     s := new(scanner)
 
     s.process = p
+    s.task = t
 
     s.input = r
     s.line = []rune("")

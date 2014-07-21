@@ -54,8 +54,8 @@ type Conduit interface {
 
 	Close()
 	ReaderClose()
-	Read() Cell
-	ReadLine() Cell
+	Read(t *Task) Cell
+	ReadLine(t *Task) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -112,6 +112,7 @@ var cli *Liner
 var cooked liner.ModeApplier
 var env0 *Env
 var envc *Env
+var envs *Env
 var external Cell
 var incoming chan os.Signal
 var interactive bool
@@ -140,6 +141,19 @@ func as_conduit(o Context) Conduit {
 	}
 
 	panic("Not a conduit")
+	return nil
+}
+
+/* Convert String Context (or child Context) into a String. */
+func as_string(o Context) *String {
+	for o != nil {
+		if s, ok := o.Expose().(*String); ok {
+			return s
+		}
+		o = o.Prev()
+	}
+
+	panic("Not a string")
 	return nil
 }
 
@@ -399,11 +413,10 @@ func JobControlEnabled() bool {
 }
 
 func JoinProcess(pid int) syscall.WaitStatus {
-	cb := make(chan Notification)
-	register <- Registration{pid, cb}
-	n := <-cb
+	response := make(chan Notification)
+	register <- Registration{pid, response}
 
-	return n.status
+	return (<-response).status
 }
 
 func NewForegroundTask() *Task {
@@ -432,11 +445,11 @@ func RootScope() *Scope {
 		return t.Return(True)
 	})
 	envc.Method("read", func(t *Task, args Cell) bool {
-		r := as_conduit(Car(t.Scratch).(Binding).Self()).Read()
+		r := as_conduit(Car(t.Scratch).(Binding).Self()).Read(t)
 		return t.Return(r)
 	})
 	envc.Method("readline", func(t *Task, args Cell) bool {
-		r := as_conduit(Car(t.Scratch).(Binding).Self()).ReadLine()
+		r := as_conduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
 		return t.Return(r)
 	})
 	envc.Method("writer-close", func(t *Task, args Cell) bool {
@@ -447,6 +460,8 @@ func RootScope() *Scope {
 		as_conduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
+
+	envs = NewEnv(nil)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -897,7 +912,7 @@ func RootScope() *Scope {
 		return t.Return(NewStatus(Car(args).(Atom).Status()))
 	})
 	scope0.DefineMethod("string", func(t *Task, args Cell) bool {
-		return t.Return(NewString(Car(args).String()))
+		return t.Return(NewString(t, Car(args).String()))
 	})
 	scope0.DefineMethod("symbol", func(t *Task, args Cell) bool {
 		return t.Return(NewSymbol(raw(Car(args))))
@@ -1092,7 +1107,7 @@ func RootScope() *Scope {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return t.Return(NewRawString(s))
+		return t.Return(NewRawString(t, s))
 	})
 	list.PublicMethod("to-symbol", func(t *Task, args Cell) bool {
 		s := ""
@@ -1266,7 +1281,7 @@ func RootScope() *Scope {
 		r := strings.Join(arr, string(raw(sep)))
 
 		if str {
-			return t.Return(NewString(r))
+			return t.Return(NewString(t, r))
 		}
 		return t.Return(NewSymbol(r))
 	})
@@ -1283,7 +1298,7 @@ func RootScope() *Scope {
 			case *Symbol:
 				r = Cons(NewSymbol(l[i]), r)
 			case *String:
-				r = Cons(NewString(l[i]), r)
+				r = Cons(NewString(t, l[i]), r)
 			}
 		}
 
@@ -1310,7 +1325,7 @@ func RootScope() *Scope {
 
 		s := fmt.Sprintf(f, argv...)
 
-		return t.Return(NewString(s))
+		return t.Return(NewString(t, s))
 	})
 	text.PublicMethod("substring", func(t *Task, args Cell) bool {
 		var r Cell
@@ -1326,7 +1341,7 @@ func RootScope() *Scope {
 
 		switch Car(args).(type) {
 		case *String:
-			r = NewString(string(s[start:end]))
+			r = NewString(t, string(s[start:end]))
 		case *Symbol:
 			r = NewSymbol(string(s[start:end]))
 		default:
@@ -1346,13 +1361,13 @@ func RootScope() *Scope {
 	text.PublicMethod("lower", func(t *Task, args Cell) bool {
 		var r Cell
 
-		switch t := Car(args).(type) {
+		switch k := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToLower(rune(t.Int()))))
+			r = NewInteger(int64(unicode.ToLower(rune(k.Int()))))
 		case *String:
-			r = NewString(strings.ToLower(raw(t)))
+			r = NewString(t, strings.ToLower(raw(k)))
 		case *Symbol:
-			r = NewSymbol(strings.ToLower(raw(t)))
+			r = NewSymbol(strings.ToLower(raw(k)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1362,13 +1377,13 @@ func RootScope() *Scope {
 	text.PublicMethod("title", func(t *Task, args Cell) bool {
 		var r Cell
 
-		switch t := Car(args).(type) {
+		switch k := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToTitle(rune(t.Int()))))
+			r = NewInteger(int64(unicode.ToTitle(rune(k.Int()))))
 		case *String:
-			r = NewString(strings.ToTitle(raw(t)))
+			r = NewString(t, strings.ToTitle(raw(k)))
 		case *Symbol:
-			r = NewSymbol(strings.ToTitle(raw(t)))
+			r = NewSymbol(strings.ToTitle(raw(k)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1378,13 +1393,13 @@ func RootScope() *Scope {
 	text.PublicMethod("upper", func(t *Task, args Cell) bool {
 		var r Cell
 
-		switch t := Car(args).(type) {
+		switch k := Car(args).(type) {
 		case *Integer:
-			r = NewInteger(int64(unicode.ToUpper(rune(t.Int()))))
+			r = NewInteger(int64(unicode.ToUpper(rune(k.Int()))))
 		case *String:
-			r = NewString(strings.ToUpper(raw(t)))
+			r = NewString(t, strings.ToUpper(raw(k)))
 		case *Symbol:
-			r = NewSymbol(strings.ToUpper(raw(t)))
+			r = NewSymbol(strings.ToUpper(raw(k)))
 		default:
 			r = NewInteger(0)
 		}
@@ -1440,7 +1455,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read() Cell {
+func (ch *Channel) Read(t *Task) Cell {
 	v := <-ch.v
 	if v == nil {
 		return Null
@@ -1448,12 +1463,12 @@ func (ch *Channel) Read() Cell {
 	return v
 }
 
-func (ch *Channel) ReadLine() Cell {
+func (ch *Channel) ReadLine(t *Task) Cell {
 	v := <-ch.v
 	if v == nil {
 		return False
 	}
-	return NewString(v.String())
+	return NewString(t, v.String())
 }
 
 func (ch *Channel) WriterClose() {
@@ -1568,7 +1583,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read() Cell {
+func (p *Pipe) Read(t *Task) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -1577,7 +1592,7 @@ func (p *Pipe) Read() Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			Parse(p.reader(), func(c Cell) {
+			Parse(t, p.reader(), func(c Cell) {
 				p.c <- c
 				<-p.d
 			})
@@ -1590,14 +1605,14 @@ func (p *Pipe) Read() Cell {
 	return <-p.c
 }
 
-func (p *Pipe) ReadLine() Cell {
+func (p *Pipe) ReadLine(t *Task) Cell {
 	s, err := p.reader().ReadString('\n')
 	if err != nil && len(s) == 0 {
 		p.b = nil
 		return Null
 	}
 
-	return NewString(strings.TrimRight(s, "\n"))
+	return NewString(t, strings.TrimRight(s, "\n"))
 }
 
 func (p *Pipe) WriterClose() {
@@ -1771,6 +1786,90 @@ func (r *Registers) Return(rv Cell) bool {
 	SetCar(r.Scratch, rv)
 
 	return false
+}
+
+/* String cell definition. */
+
+type String struct {
+	*Scope
+	v string
+}
+
+func NewRawString(t *Task, v string) *String {
+	p, ok := str[v]
+
+	if ok {
+		return p
+	}
+
+	l := scope0
+	if t != nil {
+		l = NewScope(t.Lexical.Expose(), envs)
+	} else if task0 != nil {
+		l = NewScope(task0.Lexical.Expose(), envs)
+	} else {
+		l = NewScope(l, envs)
+	}
+
+	s := String{l, v}
+	p = &s
+
+	if len(v) <= 8 {
+		str[v] = p
+	}
+
+	return p
+}
+
+func NewString(t *Task, q string) *String {
+	v, _ := strconv.Unquote("\"" + q + "\"")
+
+	return NewRawString(t, v)
+}
+
+func (s *String) Bool() bool {
+	return true
+}
+
+func (s *String) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return string(s.v) == a.String()
+	}
+	return false
+}
+
+func (s *String) String() string {
+	return strconv.Quote(string(s.v))
+}
+
+func (s *String) Float() (f float64) {
+	var err error
+	if f, err = strconv.ParseFloat(string(s.v), 64); err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func (s *String) Int() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (s *String) Status() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
+}
+
+/* String-specific functions. */
+
+func (s *String) Raw() string {
+	return string(s.v)
 }
 
 /* Task cell definition. */

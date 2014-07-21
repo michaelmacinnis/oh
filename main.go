@@ -176,7 +176,7 @@ func main() {
 		return false
 	})
 
-	Parse(bufio.NewReader(strings.NewReader(`
+	Parse(nil, bufio.NewReader(strings.NewReader(`
 define caar: method (l) as: car: car l
 define cadr: method (l) as: car: cdr l
 define cdar: method (l) as: cdr: car l
@@ -365,14 +365,14 @@ test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
 	if Interactive() {
 		cli := Interface()
 
-		Parse(cli, evaluate)
+		Parse(nil, cli, evaluate)
 
 		cli.Close()
 		fmt.Printf("\n")
 	} else if len(os.Args) > 1 {
-		evaluate(List(NewSymbol("source"), NewString(os.Args[1])))
+		evaluate(List(NewSymbol("source"), NewSymbol(os.Args[1])))
 	} else {
-		evaluate(List(NewSymbol("source"), NewString("/dev/stdin")))
+		evaluate(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
 
 	os.Exit(0)

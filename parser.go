@@ -57,6 +57,7 @@ type ReadStringer interface {
 
 type scanner struct {
 	process func(Cell)
+	task    *Task
 
 	input ReadStringer
 	line  []rune
@@ -280,10 +281,11 @@ func (s *scanner) Error(msg string) {
 	println(msg)
 }
 
-func Parse(r ReadStringer, p func(Cell)) {
+func Parse(t *Task, r ReadStringer, p func(Cell)) {
 	s := new(scanner)
 
 	s.process = p
+	s.task = t
 
 	s.input = r
 	s.line = []rune("")
@@ -918,7 +920,7 @@ yydefault:
 	case 45:
 		//line parser.y:218
 		{
-			yyVAL.c = NewString(yyS[yypt-0].s[1 : len(yyS[yypt-0].s)-1])
+			yyVAL.c = NewString(yylex.(*scanner).task, yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1])
 		}
 	case 46:
 		//line parser.y:220
