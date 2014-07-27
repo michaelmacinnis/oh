@@ -21,14 +21,6 @@ import (
 	"unsafe"
 )
 
-//#include <signal.h>
-//#include <unistd.h>
-//void ignore(void) {
-//      signal(SIGTTOU, SIG_IGN);
-//      signal(SIGTTIN, SIG_IGN);
-//}
-import "C"
-
 type Liner struct {
 	*liner.State
 }
@@ -262,16 +254,12 @@ func files(line, prefix string) []string {
 }
 
 func init() {
-	pid = syscall.Getpid()
-	pgid = syscall.Getpgrp()
-	if pid != pgid {
-		syscall.Setpgid(0, 0)
-	}
+	pid = SetProcessGroup()
 	pgid = pid
 
-	interactive = len(os.Args) <= 1 && C.isatty(C.int(0)) != 0
+	interactive = len(os.Args) <= 1 && InputIsTTY() 
 	if interactive {
-		C.ignore()
+		InitSignalHandling()
 
 		// We assume the terminal starts in cooked mode.
 		cooked, _ = liner.TerminalMode()

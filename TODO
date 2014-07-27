@@ -1,8 +1,12 @@
-- Strings should be objects.
+- Strings should be objects (with join, split, etc. methods).
 - Signal handing:
   - 'trap' builtin (trap <signal1> [... <signalN>] <method>)
+- Improve completion suggestions and use WordCompleter for mid-line completion.
+- Use go generate to replace Makefile and reduce duplication.
 - Parameter substitution (for environment variables)
-- Detection and formatting/parsing of recursive structures
 - Improve error checking and error messages.
-- Go FFI (for modules that are really Go->shell wrappers)
+- User's manual.
+- Tests.
+- Detection and formatting/parsing of recursive structures
+- Behave nicely on non-Unix systems.
 
