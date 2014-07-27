@@ -7,7 +7,7 @@ as appropriate, over the existing file in your Go source tree and run all.bash
 to re-complile Go. 
 
 Alternatively, remove your OS from the list of build constraints in the files
-job_control.go and no_job_control.go to build oh with job control disabled.
+unix.go and other.go to build oh with job control disabled.
 
 
 oh
