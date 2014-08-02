@@ -806,7 +806,10 @@ func RootScope() *Scope {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("is-channel", func(t *Task, args Cell) bool {
-		_, ok := as_conduit(Car(args).(Context)).(*Channel)
+		c, ok := Car(args).(Context)
+		if ok {
+			_, ok = as_conduit(c).(*Channel)
+		}
 
 		return t.Return(NewBoolean(ok))
 	})
@@ -847,7 +850,10 @@ func RootScope() *Scope {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
-		_, ok := as_conduit(Car(args).(Context)).(*Pipe)
+		c, ok := Car(args).(Context)
+		if ok {
+			_, ok = as_conduit(c).(*Pipe)
+		}
 
 		return t.Return(NewBoolean(ok))
 	})
