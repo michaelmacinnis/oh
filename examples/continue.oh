@@ -1,12 +1,12 @@
 #!/usr/bin/env oh
 
-define label: method () as: return return
-define continue: method (label) as: label label
+define label =: method () as: return return
+define continue =: method (label) as: label label
 
-define count: integer 0
-define loop: label
+define count =: integer 0
+define loop =: label
 if (lt count (integer 100)) {
-	set count: add count 1
+	set count =: add count 1
 	echo: Text::sprintf "Hello, World! (%03d)" count
 	continue loop
 }

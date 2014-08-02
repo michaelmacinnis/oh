@@ -1,7 +1,7 @@
 #!/usr/bin/env oh
 
-define blah: method () as {
-    define foo "I'm a local variable!"
+define blah =: method () as {
+    define foo = "I'm a local variable!"
 }
 
 blah

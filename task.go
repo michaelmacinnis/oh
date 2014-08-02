@@ -526,7 +526,11 @@ func RootScope() *Scope {
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
 
-		s := Cadr(t.Code)
+		if raw(Cadr(t.Code)) != "=" {
+			panic("expected '='")
+		}
+
+		s := Caddr(t.Code)
 		t.Code = Car(t.Code)
 		if !IsCons(t.Code) {
 			t.ReplaceStates(psExecSet, SaveCode)
@@ -2018,7 +2022,11 @@ func (t *Task) DynamicVar(state int64) bool {
 
 	t.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
 
-	t.Code = Cadr(t.Code)
+	if raw(Cadr(t.Code)) != "=" {
+		panic("expected '=' after " + r)
+	}
+
+	t.Code = Caddr(t.Code)
 	t.Scratch = Cdr(t.Scratch)
 
 	return true
@@ -2138,7 +2146,11 @@ func (t *Task) LexicalVar(state int64) bool {
 
 	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
-	t.Code = Cadr(t.Code)
+	if raw(Cadr(t.Code)) != "=" {
+		panic("expected '=' after " + r)
+	}
+
+	t.Code = Caddr(t.Code)
 	t.Scratch = Cdr(t.Scratch)
 
 	return true

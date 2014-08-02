@@ -35,12 +35,12 @@ extended:
 
 ```
 # The short-circuit and operator is defined using the syntax command.
-define and: syntax e (: lst) as {
-    define r False
+define and =: syntax e (: lst) as {
+    define r = False
     while (not: is-null: car lst) {
-        set r: e::eval: car lst
+        set r =: e::eval: car lst
         if (not r): return r
-        set lst: cdr lst
+        set lst =: cdr lst
     }
     return r
 }
@@ -49,16 +49,15 @@ define and: syntax e (: lst) as {
 Oh is properly tail-recursive and exposes continuations as first-class values:
 
 ```
-define label: method () as: return return
-define continue: method (label) as: label label
+define label =: method () as: return return
+define continue =: method (label) as: label label
 
-# Print 1 to 100 using the continuation (return) returned by label.
-define count: integer 0
-define loop: label
+define count =: integer 0
+define loop =: label
 if (lt count (integer 100)) {
-    set count: add count 1
-    write count
-    continue loop
+        set count =: add count 1
+        echo: Text::sprintf "Hello, World! (%03d)" count
+        continue loop
 }
 ```
 
@@ -66,16 +65,16 @@ Oh exposes pipes, which are implicit in other shells, as first-class
 values:
 
 ```
-define p: pipe
+define p =: pipe
 
 spawn {
     # Save code to create a continuation-based while command. 
-    define code '(syntax e (condition: body) as {
-        define label: method () as: return return
-        define continue: method (label) as: label label
+    define code = '(syntax e (condition: body) as {
+        define label =: method () as: return return
+        define continue =: method (label) as: label label
 
-        set body: cons 'block body
-        define loop: label
+        set body =: cons 'block body
+        define loop =: label
         if (not (e::eval condition)): return '()
         e::eval body
         continue loop
@@ -86,12 +85,12 @@ spawn {
 }
 
 # Create the new command by evaluating what was sent through the pipe.
-define while2: eval: p::read
+define while2 =: eval: p::read
 
 # Now use the new 'while2' command.
-define count: integer 0
+define count =: integer 0
 while2 (lt count (integer 100)) {
-    set count: add count 1
+    set count =: add count 1
     write count
 }
 ```
@@ -100,25 +99,29 @@ Oh's environments are first-class and form the basis for its prototype-based
 object system:
 
 ```
-# Create a point prototype.
-define point: object {
-    # Private members are created with the define command.
-    define x: integer 0
-    define y: integer 0
+define point =: method (r s) as: object {
+    define x =: integer r
+    define y =: integer s
 
-    # Public members are created with the public command.
-    public move: method self (a b) as {
-        set self::x: add self::x a
-        set self::y: add self::y b
+    public get-x =: method self () as {
+        return self::x
     }
 
-    public show: method self () as {
+    public get-y =: method self () as {
+        return self::y
+        }
+
+    public move =: method self (a b) as {
+        set self::x =: add self::x a
+        set self::y =: add self::y b
+    }
+
+        public show =: method self () as {
         echo self::x self::y
     }
 }
-
-# Create a new point by cloning the point prototype:
-define o: point::clone
+ 
+define p =: point 0 0
 ```
 
 To go get oh:

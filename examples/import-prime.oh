@@ -3,10 +3,10 @@
 # The import below is relative to the current working directory.
 # This script must be invoked as: ./import-prime.oh
 
-define prime: import "./another-prime.oh"
+define prime =: import "./another-prime.oh"
 
-define count: integer 1000
+define count =: integer 1000
 while count {
 	  write @(prime::next-prime::read)
-	  set count: sub count 1
+	  set count =: sub count 1
 }

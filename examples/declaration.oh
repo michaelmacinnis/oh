@@ -1,8 +1,8 @@
 #!/usr/bin/env oh
 
-define FileName foo
+define FileName = foo
 
 # ...
 
 # Error. 'Filename' is not defined.
-set Filename bar
+set Filename = bar

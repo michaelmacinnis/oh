@@ -2,19 +2,19 @@
 
 # This script doesn't do much on its own. It is imported by import-prime.oh.
 
-public next-prime: channel
+public next-prime =: channel
 
-define number: integer 2
-define list-of-primes '(1)
+define number =: integer 2
+define list-of-primes = '(1)
 
 spawn: while True {
-    define previous list-of-primes
-    define prime: boolean True
+    define previous = list-of-primes
+    define prime =: boolean True
 
     while (and (cdr previous) prime) {
-        set prime: mod number (cadr previous)
+        set prime =: mod number (cadr previous)
 
-        set previous: cdr previous
+        set previous =: cdr previous
     }
 
     if prime {
@@ -23,5 +23,5 @@ spawn: while True {
         echo number
     }
 
-    set number: add number 1
+    set number =: add number 1
 } > next-prime

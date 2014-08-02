@@ -1,28 +1,29 @@
 #!/usr/bin/env oh
 
-define a "lexical"
-dynamic caller "top-level"
+define a = "lexical"
+dynamic caller = "top-level"
 
-define foo: method () as {
+define foo =: method () as {
     echo a caller
 }
 
 foo
 
-define bar: method () as {
-    define a "local"
-    dynamic caller "bar"
+define bar =: method () as {
+    define a = "local"
+    dynamic caller = "bar"
 
     foo
 }
 
 bar
 
-define baz: method () as {
-    dynamic a "nice try"
-    dynamic caller "baz"
+define baz =: method () as {
+    dynamic a = "nice try"
+    dynamic caller = "baz"
 
     foo
 }
 
 baz
+
