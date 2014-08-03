@@ -56,7 +56,7 @@ define count =: integer 0
 define loop =: label
 if (lt count (integer 100)) {
         set count =: add count 1
-        echo: Text::sprintf "Hello, World! (%03d)" count
+        echo: "Hello, World! (%03d)"::sprintf count
         continue loop
 }
 ```

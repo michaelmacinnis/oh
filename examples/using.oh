@@ -135,7 +135,7 @@ p::move 3 4
 
 # New public members may be added to any object:
 p::public show =: method self () as {
-	echo: Text::join "" "(" self::x "," self::y ")"
+	echo: ""::join "(" self::x "," self::y ")"
 }
 
 # Public methods may access private members.  This means it is possible to

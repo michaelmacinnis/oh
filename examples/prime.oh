@@ -37,7 +37,7 @@ printf "The first %d prime numbers" count
 define line = ""
 while count {
     define p =: car: read
-    set line =: Text::join "" line: Text::sprintf "%7d" p
+    set line =: ""::join line: "%7d"::sprintf p
     set count =: sub count 1
     if (not: mod count 10) {
         echo line

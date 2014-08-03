@@ -154,7 +154,7 @@ func AppendTo(list Cell, elements ...Cell) Cell {
 	start = Null
 
 	if list == nil {
-		panic("Cannot append to non-existent list.")
+		panic("cannot append to non-existent list")
 	}
 
 	if list != Null {
@@ -288,9 +288,9 @@ func JoinTo(list Cell, elements ...Cell) Cell {
 	start = list
 
 	if list == nil {
-		panic("Cannot append to non-existent list.")
+		panic("cannot append to non-existent list")
 	} else if list == Null {
-		panic("Cannot destructively modify nil value.")
+		panic("cannot destructively modify nil value")
 	}
 
 	for ; list != Null; list = Cdr(list) {
@@ -671,7 +671,7 @@ func (f *Float) Divide(c Cell) Number {
 }
 
 func (f *Float) Modulo(c Cell) Number {
-	panic("Type 'float' does not implement 'modulo'.")
+	panic("type 'float' does not implement 'mod'")
 }
 
 func (f *Float) Multiply(c Cell) Number {
@@ -831,7 +831,7 @@ func (o *Object) Expose() Context {
 }
 
 func (o *Object) Define(key Cell, value Cell) {
-	panic("Private members cannot be added to an object.")
+	panic("private members cannot be added to an object")
 }
 
 /* Pair cell definition. */
@@ -1149,7 +1149,7 @@ func (s *Symbol) Add(c Cell) Number {
 		return NewFloat(s.Float() + c.(Atom).Float())
 	}
 
-	panic("Type 'symbol' does not implement 'add'.")
+	panic("type 'symbol' does not implement 'add'")
 }
 
 func (s *Symbol) Divide(c Cell) Number {
@@ -1159,7 +1159,7 @@ func (s *Symbol) Divide(c Cell) Number {
 		return NewFloat(s.Float() / c.(Atom).Float())
 	}
 
-	panic("Type 'symbol' does not implement 'divide'.")
+	panic("type 'symbol' does not implement 'div'")
 }
 
 func (s *Symbol) Modulo(c Cell) Number {
@@ -1167,7 +1167,7 @@ func (s *Symbol) Modulo(c Cell) Number {
 		return NewInteger(s.Int() % c.(Atom).Int())
 	}
 
-	panic("Type 'symbol' does not implement 'modulo'.")
+	panic("type 'symbol' does not implement 'mod'")
 }
 
 func (s *Symbol) Multiply(c Cell) Number {
@@ -1177,7 +1177,7 @@ func (s *Symbol) Multiply(c Cell) Number {
 		return NewFloat(s.Float() * c.(Atom).Float())
 	}
 
-	panic("Type 'symbol' does not implement 'multiply'.")
+	panic("type 'symbol' does not implement 'multiply'")
 }
 
 func (s *Symbol) Subtract(c Cell) Number {
@@ -1187,7 +1187,7 @@ func (s *Symbol) Subtract(c Cell) Number {
 		return NewFloat(s.Float() - c.(Atom).Float())
 	}
 
-	panic("Type 'symbol' does not implement 'subtract'.")
+	panic("type 'symbol' does not implement 'subtract'")
 }
 
 /* Symbol-specific functions. */

@@ -311,7 +311,7 @@ define or =: syntax e (: lst) as {
 }
 define pipe-stderr =: $connect pipe $stderr True
 define pipe-stdout =: $connect pipe $stdout True
-define printf =: method (: args) as: echo: Text::sprintf (car args) @(cdr args)
+define printf =: method (: args) as: echo: (car args)::sprintf @(cdr args)
 define quote =: syntax (cell) as: return cell
 define read =: builtin () as: $stdin::read
 define readline =: builtin () as: $stdin::readline
@@ -323,9 +323,9 @@ define source =: syntax e (name) as {
 	define paths = '()
 	define name = basename
 
-	if (exists $OHPATH): set paths =: Text::split ":" $OHPATH
+	if (exists $OHPATH): set paths =: (string $OHPATH)::split ":"
 	while (and (not: is-null paths) (not: test -r name)) {
-		set name =: Text::join / (car paths) basename
+		set name =: "/"::join (car paths) basename
 		set paths =: cdr paths
 	}
 
@@ -358,7 +358,7 @@ define list-tail =: method (k x) as {
     }
 }
 
-test -r (Text::join / $HOME .ohrc) && source (Text::join / $HOME .ohrc)
+test -r ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 `)), evaluate)
 
 	if Interactive() {

@@ -132,20 +132,17 @@ func as_conduit(o Context) Conduit {
 		o = o.Prev()
 	}
 
-	panic("Not a conduit")
+	panic("not a conduit")
 	return nil
 }
 
 /* Convert String Context (or child Context) into a String. */
 func as_string(o Context) *String {
-	for o != nil {
-		if s, ok := o.Expose().(*String); ok {
-			return s
-		}
-		o = o.Prev()
+	if s, ok := o.(*String); ok {
+		return s
 	}
 
-	panic("Not a string")
+	panic("not a string")
 	return nil
 }
 
@@ -328,7 +325,7 @@ func monitor(active chan bool, notify chan Notification) {
 			monitoring = <-active
 		}
 	}
-	panic("Unreachable.")
+	panic("unreachable")
 }
 
 func number(s string) bool {
@@ -450,6 +447,65 @@ func RootScope() *Scope {
 	})
 
 	envs = NewEnv(nil)
+	envs.Method("child", func(t *Task, args Cell) bool {
+		panic("strings cannot be parents")
+	})
+	envs.Method("clone", func(t *Task, args Cell) bool {
+		panic("strings cannot be cloned")
+	})
+	envs.Method("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to an object")
+	})
+	envs.Method("join", func(t *Task, args Cell) bool {
+		sep := as_string(Car(t.Scratch).(Binding).Self())
+		arr := make([]string, Length(args))
+
+		for i := 0; args != Null; i++ {
+			arr[i] = string(raw(Car(args)))
+			args = Cdr(args)
+		}
+
+		r := strings.Join(arr, string(raw(sep)))
+
+		return t.Return(NewString(t, r))
+	})
+	envs.Method("split", func(t *Task, args Cell) bool {
+		var r Cell = Null
+
+		sep := Car(args)
+		str := as_string(Car(t.Scratch).(Binding).Self())
+
+		l := strings.Split(string(raw(str)), string(raw(sep)))
+
+		for i := len(l) - 1; i >= 0; i-- {
+			r = Cons(NewString(t, l[i]), r)
+		}
+
+		return t.Return(r)
+	})
+	envs.Method("sprintf", func(t *Task, args Cell) bool {
+		f := raw(as_string(Car(t.Scratch).(Binding).Self()))
+
+		argv := []interface{}{}
+		for l := args; l != Null; l = Cdr(l) {
+			switch t := Car(l).(type) {
+			case *Boolean:
+				argv = append(argv, *t)
+			case *Integer:
+				argv = append(argv, *t)
+			case *Status:
+				argv = append(argv, *t)
+			case *Float:
+				argv = append(argv, *t)
+			default:
+				argv = append(argv, raw(t))
+			}
+		}
+
+		s := fmt.Sprintf(f, argv...)
+
+		return t.Return(NewString(t, s))
+	})
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -1816,7 +1872,7 @@ func NewRawString(t *Task, v string) *String {
 	return p
 }
 
-func NewString(t *Task, q string) *String {
+func NewString(t *Task, q string) Context {
 	v, _ := strconv.Unquote("\"" + q + "\"")
 
 	return NewRawString(t, v)
@@ -1859,6 +1915,10 @@ func (s *String) Status() (i int64) {
 		panic(err)
 	}
 	return i
+}
+
+func (s *String) Expose() Context {
+	return s
 }
 
 /* String-specific functions. */
