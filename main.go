@@ -45,8 +45,14 @@ func broker() {
 	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
-			case <-irq:
-				// Ignore signals.
+			case sig := <-irq:
+				// Handle signals.
+				switch sig {
+				case syscall.SIGINT:
+					if Interactive() {
+						Interface().Inject([]rune{3, 13}...)
+					}
+				}
 			case c = <-eval0:
 			}
 		}

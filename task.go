@@ -5,7 +5,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/peterh/liner"
+	"github.com/michaelmacinnis/liner"
 	"os"
 	"os/exec"
 	"os/signal"

@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token DEDENT END INDENT STRING SYMBOL
+%token DEDENT END ERROR INDENT STRING SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
 %left ANDF       /* && */
@@ -295,6 +295,10 @@ main:
             if error != nil {
                 line += "\n"
                 s.finished = true
+            } else if len(line) > 1 && line[len(line)-2:] == "\x03\n" {
+                s.start = 0
+                s.token = ERROR
+                break
             }
             
             if s.start < s.cursor - 1 {
