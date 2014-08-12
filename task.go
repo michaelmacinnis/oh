@@ -32,7 +32,9 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	defer cooked.ApplyMode()
 
 	if line, err = cli.State.Prompt("> "); err == nil {
-		cli.AppendHistory(line)
+                if line[len(line) - 1] != '\x03' {
+			cli.AppendHistory(line)
+		}
 		if task0.Job.command == "" {
 			task0.Job.command = line
 		}
