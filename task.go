@@ -27,14 +27,12 @@ type Liner struct {
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
 	if line, err = cli.State.Prompt("> "); err == nil {
-                if line[len(line) - 1] != '\x03' {
-			cli.AppendHistory(line)
-		}
+		cli.AppendHistory(line)
 		if task0.Job.command == "" {
 			task0.Job.command = line
 		}
@@ -256,7 +254,7 @@ func init() {
 	pid = SetProcessGroup()
 	pgid = pid
 
-	interactive = len(os.Args) <= 1 && InputIsTTY() 
+	interactive = len(os.Args) <= 1 && InputIsTTY()
 	if interactive {
 		InitSignalHandling()
 

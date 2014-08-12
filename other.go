@@ -8,7 +8,7 @@ package main
 
 import "syscall"
 
-func InitSignalHandling() { }
+func InitSignalHandling() {}
 
 func InputIsTTY() bool {
 	// TODO: Not sure what to do on non-Unix platforms.
@@ -24,6 +24,6 @@ func SetProcessGroup() int {
 	return 0
 }
 
-func SysProcAttr(group int) syscall.SysProcAttr{
+func SysProcAttr(group int) syscall.SysProcAttr {
 	return &syscall.SysProcAttr{}
 }

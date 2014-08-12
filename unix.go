@@ -38,7 +38,7 @@ func SetProcessGroup() int {
 	return pid
 }
 
-func SysProcAttr(group int) *syscall.SysProcAttr{
+func SysProcAttr(group int) *syscall.SysProcAttr {
 	sys := &syscall.SysProcAttr{}
 
 	sys.Sigdfl = []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU}

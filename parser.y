@@ -15,6 +15,7 @@
 package main
 
 import (
+    "github.com/michaelmacinnis/liner"
     "strconv"
     "unsafe"
 )
@@ -292,13 +293,13 @@ main:
             }
             
             line, error := s.input.ReadString('\n')
-            if error != nil {
-                line += "\n"
-                s.finished = true
-            } else if len(line) > 1 && line[len(line)-2:] == "\x03\n" {
+            if error == liner.ErrPromptAborted {
                 s.start = 0
                 s.token = ERROR
                 break
+            } else if error != nil {
+                line += "\n"
+                s.finished = true
             }
             
             if s.start < s.cursor - 1 {

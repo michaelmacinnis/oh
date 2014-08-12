@@ -50,7 +50,7 @@ func broker() {
 				switch sig {
 				case syscall.SIGINT:
 					if Interactive() {
-						Interface().Inject([]rune{3, 13}...)
+						Interface().Inject(rune(3))
 					}
 				}
 			case c = <-eval0:
@@ -163,7 +163,7 @@ func main() {
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
 		if !JobControlEnabled() || t != ForegroundTask() ||
-		   len(jobs) == 0 {
+			len(jobs) == 0 {
 			return false
 		}
 
