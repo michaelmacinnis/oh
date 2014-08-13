@@ -50,7 +50,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		err1      Errno
 		nextfd    int
 		i         int
-		sigaction [64]byte
+		sigaction [SizeofSigaction]byte
 	)
 
 	pidaddr := uintptr(unsafe.Pointer(&pid))
