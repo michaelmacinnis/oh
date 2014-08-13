@@ -50,7 +50,7 @@ func broker() {
 				switch sig {
 				case syscall.SIGINT:
 					if Interactive() {
-						Interface().Inject(rune(3))
+						Interface().Abort()
 					}
 				}
 			case c = <-eval0:
