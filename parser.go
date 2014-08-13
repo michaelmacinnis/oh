@@ -53,7 +53,6 @@ const yyErrCode = 2
 const yyMaxDepth = 200
 
 //line parser.y:223
-
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
