@@ -254,6 +254,9 @@ func init() {
 	pid = SetProcessGroup()
 	pgid = pid
 
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	incoming = make(chan os.Signal, len(signals))
+
 	interactive = len(os.Args) <= 1 && InputIsTTY()
 	if interactive {
 		InitSignalHandling()
@@ -266,15 +269,13 @@ func init() {
 		uncooked, _ = liner.TerminalMode()
 
 		cli.SetCompleter(complete)
+
+		signal.Notify(incoming, signals...)
 	}
 
 	active := make(chan bool)
 	notify := make(chan Notification)
 	register = make(chan Registration)
-
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
-	incoming = make(chan os.Signal, len(signals))
-	signal.Notify(incoming, signals...)
 
 	go monitor(active, notify)
 	go registrar(active, notify)

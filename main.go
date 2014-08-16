@@ -37,7 +37,6 @@ var jobs = map[int]*Task{}
 
 func broker() {
 	irq := Incoming()
-	pid := Pid()
 
 	go NewForegroundTask().Listen()
 
@@ -49,9 +48,7 @@ func broker() {
 				// Handle signals.
 				switch sig {
 				case syscall.SIGINT:
-					if Interactive() {
-						Interface().Abort()
-					}
+					Interface().Abort()
 				}
 			case c = <-eval0:
 			}
@@ -64,10 +61,6 @@ func broker() {
 				// Handle signals.
 				switch sig {
 				case syscall.SIGTSTP:
-					if !Interactive() {
-						syscall.Kill(pid, syscall.SIGSTOP)
-						continue
-					}
 					ForegroundTask().Suspend()
 					last := 0
 					for k, _ := range jobs {
@@ -81,9 +74,6 @@ func broker() {
 
 					fallthrough
 				case syscall.SIGINT:
-					if !Interactive() {
-						os.Exit(130)
-					}
 					if sig == syscall.SIGINT {
 						ForegroundTask().Stop()
 					}
