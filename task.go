@@ -343,6 +343,7 @@ func raw(c Cell) string {
 }
 
 func registrar(active chan bool, notify chan Notification) {
+	preregistered := make(map[int]Notification)
 	registered := make(map[int]Registration)
 	for {
 		select {
@@ -351,12 +352,20 @@ func registrar(active chan bool, notify chan Notification) {
 			if ok {
 				r.cb <- n
 				delete(registered, n.pid)
+			} else {
+				preregistered[n.pid] = n
 			}
 			active <- len(registered) != 0
 		case r := <-register:
-			registered[r.pid] = r
-			if len(registered) == 1 {
-				active <- true
+			if n, ok := preregistered[r.pid]; ok {
+				r.cb <- n
+				delete(preregistered, r.pid)
+				continue
+			} else {
+				registered[r.pid] = r
+				if len(registered) == 1 {
+					active <- true
+				}
 			}
 		}
 	}
