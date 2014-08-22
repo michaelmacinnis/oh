@@ -12,7 +12,7 @@ func InitSignalHandling() {}
 
 func InputIsTTY() bool {
 	// TODO: Not sure what to do on non-Unix platforms.
-	return false
+	return true
 }
 
 func JobControlSupported() bool {
@@ -25,5 +25,5 @@ func SetProcessGroup() int {
 }
 
 func SysProcAttr(group int) syscall.SysProcAttr {
-	return &syscall.SysProcAttr{}
+	return nil
 }

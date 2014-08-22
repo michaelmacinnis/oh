@@ -304,6 +304,8 @@ func monitor(active chan bool, notify chan Notification) {
 			pid, err := syscall.Wait4(-1, &status, options, &rusage)
 			if err != nil {
 				println("Wait4:", err.Error())
+			}
+			if pid <= 0 {
 				break
 			}
 
@@ -360,7 +362,6 @@ func registrar(active chan bool, notify chan Notification) {
 			if n, ok := preregistered[r.pid]; ok {
 				r.cb <- n
 				delete(preregistered, r.pid)
-				continue
 			} else {
 				registered[r.pid] = r
 				if len(registered) == 1 {
