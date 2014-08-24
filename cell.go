@@ -136,6 +136,8 @@ func init() {
 		"redirect-stderr",
 		"redirect-stdin",
 		"redirect-stdout",
+		"substitute-stdin",
+		"substitute-stdout",
 		"substring",
 		"writer-close",
 		"is-control",

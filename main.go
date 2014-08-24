@@ -305,6 +305,12 @@ define or =: syntax e (: lst) as {
     }
     return r
 }
+define substitute-stdin =: syntax () as {
+    echo "process substitution not yet implemented."
+}
+define substitute-stdout =: syntax () as {
+    echo "process substitution not yet implemented."
+}
 define pipe-stderr =: $connect pipe $stderr True
 define pipe-stdout =: $connect pipe $stdout True
 define printf =: method (: args) as: echo: (car args)::sprintf @(cdr args)

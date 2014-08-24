@@ -4,8 +4,9 @@
 %left BACKGROUND /* & */
 %left ORF        /* || */
 %left ANDF       /* && */
-%left PIPE       /* |,!| */
+%left PIPE       /* |,|+,!|,!|+ */
 %left REDIRECT   /* <,>,!>,>>,!>> */
+%left SUBSTITUTE /* <(,>( */
 %right "@"
 %right "'"
 %right "`"
@@ -64,6 +65,10 @@ command: command PIPE command  {
 };
 
 command: command REDIRECT expression {
+    $$.c = List(NewSymbol($2.s), $3.c, $1.c)
+};
+
+command: command SUBSTITUTE command ")" {
     $$.c = List(NewSymbol($2.s), $3.c, $1.c)
 };
 
@@ -247,8 +252,8 @@ type scanner struct {
 }
 
 const (
-    ssStart = iota; ssAmpersand; ssBang; ssBangGreater;
-    ssColon; ssComment; ssGreater; ssPipe; ssString; ssSymbol
+    ssStart = iota; ssAmpersand; ssBang; ssBangGreater; ssColon;
+    ssComment; ssGreater; ssLess; ssPipe; ssString; ssSymbol
 )
 
 func (s *scanner) Lex(lval *yySymType) (token int) {
@@ -260,7 +265,9 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
         "&": "spawn",
         "&&": "and",
         "<": "redirect-stdin",
+        "<(": "substitute-stdout",
         ">": "redirect-stdout",
+        ">(": "substitute-stdin",
         ">>": "append-stdout",
         "|": "pipe-stdout",
         "|+": "channel-stdout",
@@ -271,7 +278,7 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
         exists := false
 
         switch s.token {
-        case BACKGROUND, ORF, ANDF, PIPE, REDIRECT:
+        case BACKGROUND, ORF, ANDF, PIPE, REDIRECT, SUBSTITUTE:
             lval.s, exists = operator[string(s.line[s.start:s.cursor])]
             if exists {
                 break
@@ -327,7 +334,7 @@ main:
             case '&':
                 s.state = ssAmpersand
             case '<':
-                s.token = REDIRECT
+                s.state = ssLess
             case '|':
                 s.state = ssPipe
             case '\t', ' ':
@@ -392,8 +399,18 @@ main:
 
         case ssGreater:
             s.token = REDIRECT
-            if s.line[s.cursor] != '>' {
+            if s.line[s.cursor] == '(' {
+                s.token = SUBSTITUTE
+            } else if s.line[s.cursor] != '>' {
                 continue main
+            }
+
+        case ssLess:
+            s.token = REDIRECT
+            if s.line[s.cursor] == '(' {
+                s.token = SUBSTITUTE
+            } else {
+            	continue main
             }
 
         case ssPipe:
