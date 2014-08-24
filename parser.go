@@ -52,7 +52,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:223
+//line parser.y:224
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
@@ -702,44 +702,45 @@ yydefault:
 			if yyS[yypt-0].c != Null {
 				yylex.(*scanner).process(yyS[yypt-0].c)
 			}
+			goto start
 		}
 	case 7:
-		//line parser.y:49
+		//line parser.y:50
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
 		}
 	case 8:
-		//line parser.y:53
+		//line parser.y:54
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 9:
-		//line parser.y:57
+		//line parser.y:58
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 10:
-		//line parser.y:61
+		//line parser.y:62
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 11:
-		//line parser.y:65
+		//line parser.y:66
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
 		}
 	case 12:
-		//line parser.y:69
+		//line parser.y:70
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 13:
-		//line parser.y:71
+		//line parser.y:72
 		{
 			yyVAL.c = Null
 		}
 	case 14:
-		//line parser.y:73
+		//line parser.y:74
 		{
 			if yyS[yypt-0].c == Null {
 				yyVAL.c = yyS[yypt-1].c
@@ -748,47 +749,47 @@ yydefault:
 			}
 		}
 	case 19:
-		//line parser.y:89
+		//line parser.y:90
 		{
 			yyVAL.c = Null
 		}
 	case 20:
-		//line parser.y:91
+		//line parser.y:92
 		{
 			yyVAL.c = yyS[yypt-1].c
 		}
 	case 21:
-		//line parser.y:93
+		//line parser.y:94
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 22:
-		//line parser.y:95
+		//line parser.y:96
 		{
 			yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 23:
-		//line parser.y:97
+		//line parser.y:98
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 24:
-		//line parser.y:99
+		//line parser.y:100
 		{
 			yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
 		}
 	case 25:
-		//line parser.y:103
+		//line parser.y:104
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 26:
-		//line parser.y:105
+		//line parser.y:106
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 27:
-		//line parser.y:107
+		//line parser.y:108
 		{
 			if yyS[yypt-1].c == Null {
 				yyVAL.c = yyS[yypt-0].c
@@ -797,22 +798,22 @@ yydefault:
 			}
 		}
 	case 28:
-		//line parser.y:115
+		//line parser.y:116
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 29:
-		//line parser.y:119
+		//line parser.y:120
 		{
 			yyVAL.c = Null
 		}
 	case 30:
-		//line parser.y:121
+		//line parser.y:122
 		{
 			yyVAL.c = yyS[yypt-2].c
 		}
 	case 31:
-		//line parser.y:123
+		//line parser.y:124
 		{
 			if yyS[yypt-0].c == Null {
 				yyVAL.c = yyS[yypt-0].c
@@ -821,7 +822,7 @@ yydefault:
 			}
 		}
 	case 32:
-		//line parser.y:131
+		//line parser.y:132
 		{
 			if yyS[yypt-2].c == Null {
 				if yyS[yypt-0].c == Null {
@@ -838,47 +839,47 @@ yydefault:
 			}
 		}
 	case 33:
-		//line parser.y:147
+		//line parser.y:148
 		{
 			yyVAL.c = Null
 		}
 	case 34:
-		//line parser.y:149
+		//line parser.y:150
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 35:
-		//line parser.y:151
+		//line parser.y:152
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 36:
-		//line parser.y:153
+		//line parser.y:154
 		{
 			yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c)
 		}
 	case 37:
-		//line parser.y:155
+		//line parser.y:156
 		{
 			yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
 		}
 	case 38:
-		//line parser.y:159
+		//line parser.y:160
 		{
 			yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
 		}
 	case 39:
-		//line parser.y:163
+		//line parser.y:164
 		{
 			yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
 		}
 	case 40:
-		//line parser.y:167
+		//line parser.y:168
 		{
 			yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 41:
-		//line parser.y:171
+		//line parser.y:172
 		{
 			kind := yyS[yypt-2].s
 			value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
@@ -921,27 +922,27 @@ yydefault:
 
 		}
 	case 42:
-		//line parser.y:213
+		//line parser.y:214
 		{
 			yyVAL = yyS[yypt-1]
 		}
 	case 43:
-		//line parser.y:215
+		//line parser.y:216
 		{
 			yyVAL.c = Null
 		}
 	case 44:
-		//line parser.y:217
+		//line parser.y:218
 		{
 			yyVAL = yyS[yypt-0]
 		}
 	case 45:
-		//line parser.y:219
+		//line parser.y:220
 		{
 			yyVAL.c = NewString(yylex.(*scanner).task, yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1])
 		}
 	case 46:
-		//line parser.y:221
+		//line parser.y:222
 		{
 			yyVAL.c = NewSymbol(yyS[yypt-0].s)
 		}

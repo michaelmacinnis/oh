@@ -44,6 +44,7 @@ opt_evaluate_command: command {
     if ($1.c != Null) {
         yylex.(*scanner).process($1.c)
     }
+    goto start
 };
 
 command: command BACKGROUND {
@@ -307,7 +308,7 @@ main:
                 s.cursor -= s.start
             } else {
                 s.cursor = 0
-            	s.line = []rune(line)
+                s.line = []rune(line)
             }
             s.start = 0
             s.token = 0
@@ -357,7 +358,7 @@ main:
             case '>':
                 s.state = ssBangGreater
             case '|':
-		s.state = ssPipe
+                s.state = ssPipe
             default:
                 s.state = ssSymbol
                 continue main
@@ -412,9 +413,9 @@ main:
                 s.cursor++
             }
             if s.cursor >= len(s.line) {
-		if s.line[s.cursor - 1] == '\n' {
+                if s.line[s.cursor - 1] == '\n' {
                     s.line = append(s.line[0:s.cursor - 1], []rune("\\n")...)
-		}
+                }
                 continue main
             }
             s.token = STRING
