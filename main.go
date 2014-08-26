@@ -40,7 +40,7 @@ func broker() {
 
 	go NewForegroundTask().Listen()
 
-	var c Cell = nil
+	var c Cell
 	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
@@ -63,7 +63,7 @@ func broker() {
 				case syscall.SIGTSTP:
 					ForegroundTask().Suspend()
 					last := 0
-					for k, _ := range jobs {
+					for k := range jobs {
 						if k > last {
 							last = k
 						}
@@ -124,7 +124,7 @@ func main() {
 				index = int(a.Int())
 			}
 		} else {
-			for k, _ := range jobs {
+			for k := range jobs {
 				if k > index {
 					index = k
 				}
@@ -158,7 +158,7 @@ func main() {
 		}
 
 		i := make([]int, 0, len(jobs))
-		for k, _ := range jobs {
+		for k := range jobs {
 			i = append(i, k)
 		}
 		sort.Ints(i)

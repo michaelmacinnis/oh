@@ -229,9 +229,8 @@ func files(line, prefix string) []string {
 		if depth > max {
 			if i.IsDir() {
 				return filepath.SkipDir
-			} else {
-				return nil
 			}
+			return nil
 		} else if depth == max {
 			full := path.Join(root, prfx)
 			if len(prfx) == 0 {
@@ -481,7 +480,7 @@ func RootScope() *Scope {
 		return t.Return(NewString(t, r))
 	})
 	envs.Method("split", func(t *Task, args Cell) bool {
-		var r Cell = Null
+		r := Null
 
 		sep := Car(args)
 		str := as_string(Car(t.Scratch).(Binding).Self())
@@ -767,7 +766,7 @@ func RootScope() *Scope {
 		return true
 	})
 	scope0.DefineMethod("length", func(t *Task, args Cell) bool {
-		var l int64 = 0
+		var l int64
 
 		switch c := Car(args); c.(type) {
 		case *String, *Symbol:
@@ -1348,7 +1347,7 @@ func RootScope() *Scope {
 		return t.Return(NewSymbol(r))
 	})
 	text.PublicMethod("split", func(t *Task, args Cell) bool {
-		var r Cell = Null
+		r := Null
 
 		sep := Car(args)
 		str := Cadr(args)
@@ -2233,9 +2232,8 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 		r := raw(sym)
 		if t.Strict() && !number(r) {
 			return false, r + " undefined"
-		} else {
-			t.Scratch = Cons(sym, t.Scratch)
 		}
+		t.Scratch = Cons(sym, t.Scratch)
 	} else if simple && !IsSimple(c.Get()) {
 		t.Scratch = Cons(sym, t.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {

@@ -311,7 +311,7 @@ func JoinTo(list Cell, elements ...Cell) Cell {
 }
 
 func Length(list Cell) int64 {
-	var length int64 = 0
+	var length int64
 
 	for ; list != nil && list != Null; list = Cdr(list) {
 		length++
@@ -576,7 +576,7 @@ func (e *Env) Add(key Cell, value Cell) {
 func (e *Env) Complete(line, prefix string) []string {
 	cl := []string{}
 
-	for k, _ := range e.hash {
+	for k := range e.hash {
 		if strings.HasPrefix(k, prefix) {
 			cl = append(cl, line+k)
 		}
