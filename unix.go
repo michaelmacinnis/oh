@@ -41,8 +41,6 @@ func SetProcessGroup() int {
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	sys := &syscall.SysProcAttr{}
 
-	sys.Sigdfl = []syscall.Signal{syscall.SIGTTIN, syscall.SIGTTOU}
-
 	if group == 0 {
 		sys.Setpgid = true
 		sys.Foreground = true

@@ -19,14 +19,10 @@ type SysProcAttr struct {
 	Setpgid    bool        // Set process group ID to new pid (SYSV setpgrp)
 	Setctty    bool        // Set controlling terminal to fd 0
 	Noctty     bool        // Detach fd 0 from controlling terminal
-	Foreground bool        // Set foreground process group to child's pid.*
-	Joinpgrp   int         // If != 0, set child's process group ID.**
-	Sigdfl     []Signal    // Set child's default handler for these signals.
+	Foreground bool        // Set foreground process group to child's pid. (Setpgid must be set. Stdin should be a TTY)
+	Joinpgrp   int         // If != 0, set child's process group ID. (Setpgid must not be set)
 
 }
-
-// * 	- Setpgid must be set. Stdin should be a TTY
-// **	- Setpgid must not be set.
 
 // Implemented in runtime package.
 func runtime_BeforeFork()
@@ -45,14 +41,11 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	// Declare all variables at top in case any
 	// declarations require heap allocation (e.g., err1).
 	var (
-		r1, r2    uintptr
-		err1      Errno
-		nextfd    int
-		i         int
-		sigaction [SizeofSigaction]byte
+		r1, r2 uintptr
+		err1   Errno
+		nextfd int
+		i      int
 	)
-
-	pidaddr := uintptr(unsafe.Pointer(&pid))
 
 	// guard against side effects of shuffling fds below.
 	// Make sure that nextfd is beyond any currently open files so
@@ -101,7 +94,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 			if sys.Foreground {
 				// Set new foreground process group.
-				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, pidaddr)
+				RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid)))
 			}
 		}
 
@@ -146,28 +139,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 		if sys.Foreground {
 			// Set new foreground process group.
-			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, pidaddr)
-			if err1 != 0 {
-				goto childerror
-			}
-		}
-	}
-
-	// Set default signal handler for the specified signals.
-	//
-	// SIG_DFL is defined as ((__sighandler_t *)0). Provided the
-	// sigaction array is at least sizeof(struct sigaction) bytes,
-	// &sigaction[0] and &handler point to equivalent values. So,
-	//	RawSyscall(SYS_SIGACTION, uintptr(<signal>),
-	//                 uintptr(unsafe.Pointer(&sigaction[0])), 0)
-	// is equivalent to:
-	// 	struct sigaction handler
-	//	memset(&handler, 0, sizeof(handler));
-	//	handler.sa_sigaction = SIG_DFL
-	//	sigaction(<signal>, &handler, NULL);
-	if sys.Sigdfl != nil {
-		for i = 0; i < len(sys.Sigdfl); i++ {
-			_, _, err1 = RawSyscall(SYS_SIGACTION, uintptr(sys.Sigdfl[i]), uintptr(unsafe.Pointer(&sigaction[0])), 0)
+			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pid)))
 			if err1 != 0 {
 				goto childerror
 			}
