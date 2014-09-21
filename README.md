@@ -1,7 +1,8 @@
 Note:
 -----
 
-Oh currently requires a small patch to Go. This patch only works on BSD or
+Unless you are tracking the default (development) branch of Go, you will need
+to apply a small patch before building Oh. This patch only works on BSD or
 Linux. To apply the patch copy exec_bsd.go.patched or exec_linux.go.patched,
 as appropriate, over the existing file in your Go source tree and run all.bash
 to re-complile Go. 
