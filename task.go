@@ -2128,6 +2128,11 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	status := JoinProcess(proc.Pid)
 
+	if JobControlEnabled() {
+		if t.group == t.pid {
+			t.group = 0
+		}
+	}
 	t.pid = 0
 
 	return NewStatus(int64(status.ExitStatus())), err
