@@ -1,0 +1,26 @@
+#!/usr/bin/env oh
+# PROVIDE: intro
+# KEYWORD: readme
+
+## oh
+## ==
+##
+## Oh is a Unix shell written in Go. The following commands behave as expected:
+##
+#{
+true
+touch user.names
+date >current-date
+who >>user.names
+wc <current-date
+date | wc
+true; false
+grep impossible [a-f]*-date &
+mkdir junk && cd junk
+cd ..
+rm -r current-date junk user.names || echo "rm failed!"
+#}
+##
+#-  1  6 29
+#-       1       6      29
+

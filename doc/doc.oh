@@ -1,0 +1,28 @@
+#!/usr/bin/env oh
+
+define $ORIGIN = .
+define $dir =: "/"::join $ORIGIN test
+define $doc =: "/"::join $ORIGIN doc.txt
+
+rm $doc !> /dev/null
+
+# Generate README.
+find $dir -name "[0-9]*.oh" |
+grep -i readme | sort |
+while (define $file =: readline) {
+	awk "
+BEGIN { code = 0 }
+$0 ~ /^#[#+]/ { print substr($0, 4) }
+$1 ~ /^#[}]/ { code = 0; print \"'''\" }
+code > 0
+$1 ~ /^#[{]/ { code = 1; print \"'''\" }
+" $file
+} > $doc
+
+# Run tests.
+find $dir -name "[0-9]*.oh" |
+while (define $file =: readline) {
+	grep "^#[+-] " $file | sed -e "s/^#[+-] //g"
+	$file
+} | sort | uniq -u
+

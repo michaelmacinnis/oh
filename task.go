@@ -132,7 +132,6 @@ func as_conduit(o Context) Conduit {
 		o = o.Prev()
 	}
 
-	panic("not a conduit")
 	return nil
 }
 
@@ -372,7 +371,12 @@ func registrar(active chan bool, notify chan Notification) {
 }
 
 func rpipe(c Cell) *os.File {
-	return as_conduit(c.(Context)).(*Pipe).ReadFd()
+	conduit := as_conduit(c.(Context))
+	if conduit == nil {
+		panic("not a conduit")
+	}
+	return conduit.(*Pipe).ReadFd()
+
 }
 
 func status(c Cell) int {
@@ -384,7 +388,11 @@ func status(c Cell) int {
 }
 
 func wpipe(c Cell) *os.File {
-	return as_conduit(c.(Context)).(*Pipe).WriteFd()
+	conduit := as_conduit(c.(Context))
+	if conduit == nil {
+		panic("not a conduit")
+	}
+	return conduit.(*Pipe).WriteFd()
 }
 
 func ForegroundTask() *Task {
@@ -878,7 +886,12 @@ func RootScope() *Scope {
 	scope0.DefineMethod("is-channel", func(t *Task, args Cell) bool {
 		c, ok := Car(args).(Context)
 		if ok {
-			_, ok = as_conduit(c).(*Channel)
+			conduit := as_conduit(c.(Context))
+			if conduit != nil {
+				_, ok = conduit.(*Channel)
+			} else {
+				ok = false
+			}
 		}
 
 		return t.Return(NewBoolean(ok))
@@ -922,7 +935,12 @@ func RootScope() *Scope {
 	scope0.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
 		c, ok := Car(args).(Context)
 		if ok {
-			_, ok = as_conduit(c).(*Pipe)
+			conduit := as_conduit(c.(Context))
+			if conduit != nil {
+				_, ok = conduit.(*Pipe)
+			} else {
+				ok = false
+			}
 		}
 
 		return t.Return(NewBoolean(ok))
