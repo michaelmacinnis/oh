@@ -1,8 +1,7 @@
 #!/usr/bin/env oh
 
-define $ORIGIN = .
-define $dir =: "/"::join $ORIGIN tests
-define $doc =: "/"::join $ORIGIN doc.txt
+define $dir =: "/"::join $origin tests
+define $doc =: "/"::join $origin doc.txt
 
 rm $doc !> /dev/null
 

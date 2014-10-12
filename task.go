@@ -536,7 +536,9 @@ func RootScope() *Scope {
 
 	/* Command-line arguments */
 	args := Null
+	origin := ""
 	if len(os.Args) > 1 {
+		origin = filepath.Dir(os.Args[1])
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
@@ -555,6 +557,10 @@ func RootScope() *Scope {
 
 	if wd, err := os.Getwd(); err == nil {
 		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
+		if !filepath.IsAbs(origin) {
+			origin = filepath.Join(wd, origin);
+		}
+		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
 	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
