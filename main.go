@@ -276,7 +276,7 @@ define for =: method (l m) as {
 }
 define glob =: builtin (: args) as: return args
 define import =: syntax e (name) as {
-    define m =: module name
+    define m =: module: e::eval name
     if (or (is-null m) (is-object m)) {
         return m
     }
