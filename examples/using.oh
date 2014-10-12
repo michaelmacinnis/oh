@@ -6,6 +6,7 @@
 
 # The simplest command is the single word:
 who
+exit 0
 
 # A command ends with a newline.  A semicolon can be used to sequence commands
 # entered on the same line.
@@ -76,29 +77,29 @@ echo "Type a few words.  One on each line.  Then hit Ctrl-D:"; echo @`(cat)
 # A new object can be created "ex nihilo" with the 'object' command.
 # Private members are defined using the command 'define' and public members
 # are defined using the command 'public'.
-define point =: method (r s) as: object {
-    define x =: integer r
-    define y =: integer s
+define point: method (r s) as: object {
+    define x: integer r
+    define y: integer s
 
-    public get-x =: method self () as {
+    public get-x: method self () as {
         return self::x
     }
 
-    public get-y =: method self () as {
+    public get-y: method self () as {
         return self::y
    	}
 
-    public move =: method self (a b) as {
-        set self::x =: add self::x a
-        set self::y =: add self::y b
+    public move: method self (a b) as {
+        set self::x: add self::x a
+        set self::y: add self::y b
     }
 
-	public show =: method self () as {
+	public show: method self () as {
         echo self::x self::y
     }
 }
 
-define p =: point 0 0
+define p: point 0 0
 
 # In the above example, we create a generator method, 'point', which acts
 # very much like a constructor in class-based languages, but we could also
@@ -134,7 +135,7 @@ define p =: point 0 0
 p::move 3 4
 
 # New public members may be added to any object:
-p::public show =: method self () as {
+p::public show: method self () as {
 	echo: ""::join "(" self::x "," self::y ")"
 }
 
@@ -153,7 +154,7 @@ p::show
 # 
 # and can be used as follows:
 #
-#     define module =: import file
+#     define module: import file
 #
 # Public, top-level definitions in 'file' can now be accessed using 'module'
 # and the '::' operator.  See the Oh script import-prime.oh

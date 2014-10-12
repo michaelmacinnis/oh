@@ -1,14 +1,14 @@
 #!/usr/bin/env oh
 
-define count =: integer 0
+define count: integer 0
 
 # Show occurences of 'count' and number of lines in this file.
 cat $0 | block {
-	define line =: readline
+	define line: readline
 	while line {
 		  echo line
-		  set count =: add count 1
-		  set line =: readline
+		  set count: add count 1
+		  set line: readline
 	}
 } | grep "count"
 

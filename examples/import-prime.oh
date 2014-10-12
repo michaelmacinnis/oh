@@ -1,9 +1,9 @@
 #!/usr/bin/env oh
 
-define prime =: import: "/"::join $origin another-prime.oh
+define prime: import: "/"::join $origin another-prime.oh
 
-define count =: integer 1000
+define count: integer 1000
 while count {
 	  write @(prime::next-prime::read)
-	  set count =: sub count 1
+	  set count: sub count 1
 }

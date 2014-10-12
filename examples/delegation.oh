@@ -1,20 +1,20 @@
 #!/usr/bin/env oh
 
 # Trait. All objects 'inherit' this method. 
-public me =: method self () as: echo self::name
+public me: method self () as: echo self::name
 
-define x =: object {
+define x: object {
     define name = "x"
 }
 
-define y =: object {
+define y: object {
     define name = "y"
     public me-too = x::me    # Explicit delegation.
 }
 
-define z =: object {
+define z: object {
     define name = "z"
-    public you =: method () as: x::me    # Redirection.
+    public you: method () as: x::me    # Redirection.
 }
 
 x::me
