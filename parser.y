@@ -387,11 +387,11 @@ main:
             }
 
         case ssComment:
-            for s.line[s.cursor + 1] != '\n' ||
-                s.line[s.cursor] == '\\' {
+            for s.line[s.cursor] != '\n' ||
+                s.line[s.cursor - 1] == '\\' {
                 s.cursor++
 
-                if s.cursor + 1 >= len(s.line) {
+                if s.cursor >= len(s.line) {
                     continue main
                 }
             }

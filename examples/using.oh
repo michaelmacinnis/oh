@@ -6,7 +6,6 @@
 
 # The simplest command is the single word:
 who
-exit 0
 
 # A command ends with a newline.  A semicolon can be used to sequence commands
 # entered on the same line.
@@ -60,7 +59,7 @@ echo "***"
 # specifying that an expression should be treated as data and not evaluated.
 
 # String concatenation is possible but not implicit in oh:
-echo: add "Hello," "World!"
+echo: ", "::join "Hello" "World!"
 
 # The output of a program can be captured in a list using the backquote
 # operator.  This list can then be expanded using the splice operator:
@@ -158,5 +157,5 @@ p::show
 #
 # Public, top-level definitions in 'file' can now be accessed using 'module'
 # and the '::' operator.  See the Oh script import-prime.oh
-./import-prime.oh
+"/"::join $origin import-prime.oh
 
