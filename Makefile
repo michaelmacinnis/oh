@@ -10,5 +10,5 @@ README.md:
 clean:
 	rm -rf main.[0-9] oh
 
-.PHONY: clean
+.PHONY: clean README.md
 

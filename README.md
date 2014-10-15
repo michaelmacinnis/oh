@@ -59,16 +59,16 @@ values:
 Oh exposes pipes, which are implicit in other shells, as first-class
 values:
 
-    define p =: pipe
+    define p: pipe
     
     spawn {
         # Save code to create a continuation-based while command.
         define code = '(syntax e (condition: body) as {
-            define label =: method () as: return return
-            define continue =: method (label) as: label label
+            define label: method () as: return return
+            define continue: method (label) as: label label
     
-            set body =: cons 'block body
-            define loop =: label
+            set body: cons 'block body
+            define loop: label
             if (not (e::eval condition)): return '()
             e::eval body
             continue loop
@@ -79,12 +79,12 @@ values:
     }
     
     # Create the new command by evaluating what was sent through the pipe.
-    define while2 =: eval: p::read
+    define while2: eval: p::read
     
     # Now use the new 'while2' command.
-    define count =: integer 0
+    define count: integer 0
     while2 (lt count (integer 100)) {
-        set count =: add count 1
+        set count: add count 1
         write count
     }
 
