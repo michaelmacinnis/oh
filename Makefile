@@ -4,6 +4,9 @@ parser.go: parser.y
 	go fmt parser.go
 	rm -f y.output parser.go.save
 
+README.md:
+	doc/doc.oh $@
+
 clean:
 	rm -rf main.[0-9] oh
 

@@ -232,6 +232,7 @@ main:
 					continue main
 				}
 			}
+			s.cursor--
 			s.state = ssStart
 
 		case ssGreater:

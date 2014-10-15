@@ -1,0 +1,12 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: installing
+# REQUIRE: objects
+
+## Installing
+## ----------
+##
+##     go get github.com/michaelmacinnis/oh
+##
+

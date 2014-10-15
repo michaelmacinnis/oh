@@ -1,0 +1,24 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: homoiconic
+# REQUIRE: intro
+
+## Oh uses the same syntax for code and data. This enables it to be easily
+## extended:
+##
+#{
+# The short-circuit and operator is defined using the syntax command.
+define and: syntax e (: lst) as {
+    define r = False
+    while (not: is-null: car lst) {
+        set r: e::eval: car lst
+        if (not r): return r
+        set lst: cdr lst
+    }
+    return r
+}
+write: and True False (echo "Never reached")
+#}
+
+#- False

@@ -1,171 +1,144 @@
 Note:
 -----
 
-Unless you are tracking the default (development) branch of Go, you will need
-to apply a small patch before building Oh. This patch only works on BSD or
-Linux. To apply the patch copy exec_bsd.go.patched or exec_linux.go.patched,
-as appropriate, over the existing file in your Go source tree and run all.bash
-to re-complile Go. 
+Unless you are tracking the default (development) branch of Go, you will
+need to apply a small patch before building Oh. This patch only works on
+BSD or Linux. To apply the patch copy exec_bsd.go.patched or
+exec_linux.go.patched, as appropriate, over the existing file in your Go
+source tree and run all.bash to re-complile Go.
 
-Alternatively, remove your OS from the list of build constraints in the files
-unix.go and other.go to build oh with job control disabled.
-
+Alternatively, remove your OS from the list of build constraints in the
+files unix.go and other.go to build oh with job control disabled.
 
 oh
 ==
 
-Oh is a Unix shell written in Go.  The following commands behave as expected:
+Oh is a Unix shell written in Go. The following commands behave as expected:
 
-```
-date
-cat /usr/share/dict/words
-who >user.names
-who >>user.names
-wc <file
-echo [a-f]*.c
-who | wc
-who; date
-cc *.c &
-mkdir junk && cd junk
-cd ..
-rm -r junk || echo "rm failed!"
-```
+    echo "Hello, World!"
+    cal 01 2030
+    date >greeting
+    echo "Hello, World!" >>greeting
+    wc <greeting
+    cat greeting | wc	# Useless use of cat.
+    tail -n1 greeting; cal 01 2030
+    grep impossible *[a-z]ing &
+    mkdir junk && cd junk
+    cd ..
+    rm -r greeting junk || echo "rm failed!"
 
 Oh uses the same syntax for code and data. This enables it to be easily
 extended:
 
-```
-# The short-circuit and operator is defined using the syntax command.
-define and =: syntax e (: lst) as {
-    define r = False
-    while (not: is-null: car lst) {
-        set r =: e::eval: car lst
-        if (not r): return r
-        set lst =: cdr lst
+    # The short-circuit and operator is defined using the syntax command.
+    define and: syntax e (: lst) as {
+        define r = False
+        while (not: is-null: car lst) {
+            set r: e::eval: car lst
+            if (not r): return r
+            set lst: cdr lst
+        }
+        return r
     }
-    return r
-}
-```
+    write: and True False (echo "Never reached")
 
-Oh is properly tail-recursive and exposes continuations as first-class values:
+Oh is properly tail-recursive and exposes continuations as first-class
+values:
 
-```
-define label =: method () as: return return
-define continue =: method (label) as: label label
-
-define count =: integer 0
-define loop =: label
-if (lt count (integer 100)) {
-        set count =: add count 1
-        echo: "Hello, World! (%03d)"::sprintf count
-        continue loop
-}
-```
+    define label: method () as: return return
+    define continue: method (label) as: label label
+    
+    define count: integer 0
+    define loop: label
+    if (lt count (integer 100)) {
+            set count: add count 1
+            echo: "Hello, World! (%03d)"::sprintf count
+            continue loop
+    }
 
 Oh exposes pipes, which are implicit in other shells, as first-class
 values:
 
-```
-define p =: pipe
-
-spawn {
-    # Save code to create a continuation-based while command. 
-    define code = '(syntax e (condition: body) as {
-        define label =: method () as: return return
-        define continue =: method (label) as: label label
-
-        set body =: cons 'block body
-        define loop =: label
-        if (not (e::eval condition)): return '()
-        e::eval body
-        continue loop
-    })
-
-    # Now send this code through the pipe.
-    p::write @code
-}
-
-# Create the new command by evaluating what was sent through the pipe.
-define while2 =: eval: p::read
-
-# Now use the new 'while2' command.
-define count =: integer 0
-while2 (lt count (integer 100)) {
-    set count =: add count 1
-    write count
-}
-```
-
-Oh's environments are first-class and form the basis for its prototype-based
-object system:
-
-```
-define point =: method (r s) as: object {
-    define x =: integer r
-    define y =: integer s
-
-    public get-x =: method self () as {
-        return self::x
+    define p =: pipe
+    
+    spawn {
+        # Save code to create a continuation-based while command.
+        define code = '(syntax e (condition: body) as {
+            define label =: method () as: return return
+            define continue =: method (label) as: label label
+    
+            set body =: cons 'block body
+            define loop =: label
+            if (not (e::eval condition)): return '()
+            e::eval body
+            continue loop
+        })
+    
+        # Now send this code through the pipe.
+        p::write @code
+    }
+    
+    # Create the new command by evaluating what was sent through the pipe.
+    define while2 =: eval: p::read
+    
+    # Now use the new 'while2' command.
+    define count =: integer 0
+    while2 (lt count (integer 100)) {
+        set count =: add count 1
+        write count
     }
 
-    public get-y =: method self () as {
-        return self::y
+Oh's environments are first-class and form the basis for its
+prototype-based object system:
+
+    define point: method (r s) as: object {
+        define x: integer r
+        define y: integer s
+    
+        public get-x: method self () as {
+            return self::x
         }
-
-    public move =: method self (a b) as {
-        set self::x =: add self::x a
-        set self::y =: add self::y b
+    
+        public get-y: method self () as {
+            return self::y
+            }
+    
+        public move: method self (a b) as {
+            set self::x: add self::x a
+            set self::y: add self::y b
+        }
+    
+            public show: method self () as {
+            echo self::x self::y
+        }
     }
+    
+    define p: point 0 0
+    p::show
 
-        public show =: method self () as {
-        echo self::x self::y
-    }
-}
- 
-define p =: point 0 0
-```
-
-To go get oh:
+Installing
+----------
 
     go get github.com/michaelmacinnis/oh
 
+License
+-------
+
 Oh is released under an MIT-style license.
-
-
-Background
-----------
-
-Despite multiple attempts to improve the Unix shell, its essential character
-has remained largely unchanged.  Popular Unix shells have retained the look
-and feel established by the Bourne shell and so share a strong family
-resemblance.  The most successful shells in this family (bash, ksh, zsh) are
-backward compatible with the Bourne shell.  Unfortunately, this backward
-compatibility results in shells that are "inconsistent and confusing command
-languages."[[18](#18)]
-
-If you squint hard enough, the Unix shell looks very similar to other existing
-languages.  So similar that many have attempted embedding the Unix shell in
-an existing language.  The problem with this approach is that the result is
-either "an uglier, and confusing, language"[[21](#21)] or a language that is
-more cumbersome when used as an interactive shell.[[23](#23)]
-
-Like es, fish and rc, oh retains the look and feel of the Unix shell but does
-not aim for strict backward compatibility.  Oh makes substantial improvements
-to the programming language features of the Unix shell by borrowing heavily
-from the Scheme dialect of Lisp. Rather than attempting to embed a Unix shell
-in scheme, oh was designed from scratch.
-
 
 Motivation
 ----------
 
-Oh was motivated by the belief that many of the flaws in current Unix shells
-are not inherent but rather historical.  Design choices that are clearly
-unfortunate in retrospect have been carried forward in the name of backward
-compatibility.  As a re-imagining of the Unix shell, oh revisits these design
-choices while adding support for concurrent, functional and object-based
-programming.
+Oh was motivated by the belief that many of the flaws in current Unix
+shells are not inherent but rather historical. Design choices that are
+clearly unfortunate in retrospect have been carried forward in the name
+of backward compatibility.
 
+Like es, fish and rc, oh retains the look and feel of the Unix shell
+but does not aim for strict backward compatibility.  Oh makes substantial
+improvements to the programming language features of the Unix shell by
+borrowing heavily from the Scheme dialect of Lisp. Rather than attempting
+to embed a Unix shell in scheme, oh was designed from scratch.
 
 References and Other Shells
 ---------------------------

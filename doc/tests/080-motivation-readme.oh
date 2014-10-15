@@ -1,0 +1,21 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: motivation
+# REQUIRE: license
+
+## Motivation
+## ----------
+##
+## Oh was motivated by the belief that many of the flaws in current Unix
+## shells are not inherent but rather historical. Design choices that are
+## clearly unfortunate in retrospect have been carried forward in the name
+## of backward compatibility.
+##
+## Like es, fish and rc, oh retains the look and feel of the Unix shell
+## but does not aim for strict backward compatibility.  Oh makes substantial
+## improvements to the programming language features of the Unix shell by
+## borrowing heavily from the Scheme dialect of Lisp. Rather than attempting
+## to embed a Unix shell in scheme, oh was designed from scratch.
+##
+

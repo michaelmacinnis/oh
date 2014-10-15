@@ -1,0 +1,12 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: license
+# REQUIRE: installing
+
+## License
+## -------
+##
+## Oh is released under an MIT-style license.
+##
+
