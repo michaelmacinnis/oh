@@ -6,7 +6,7 @@ if (ne 1: length $args) {
 }
 
 define $dir: "/"::join $origin tests
-define $doc $1
+define $doc = $1
 
 rm $doc !> /dev/null
 
