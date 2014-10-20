@@ -25,9 +25,8 @@ var (
 	StopRequest      os.Signal = syscall.SIGTSTP
 )
 
-func GrabTerminal(group *int) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(group)))
+func ContinueProcess(pid int) {
+	syscall.Kill(pid, syscall.SIGCONT)
 }
 
 func InitSignalHandling() {
@@ -114,6 +113,11 @@ func Registrar(active chan bool, notify chan Notification) {
 	}
 }
 
+func SetForegroundGroup(group int) {
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+}
+
 func SetProcessGroup() int {
 	pid := syscall.Getpid()
 	pgid := syscall.Getpgrp()
@@ -135,4 +139,8 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 	}
 
 	return sys
+}
+
+func TerminateProcess(pid int) {
+	syscall.Kill(pid, syscall.SIGTERM)
 }

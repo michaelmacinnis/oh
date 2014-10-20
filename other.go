@@ -16,7 +16,7 @@ var (
 	StopRequest      os.Signal = os.Kill
 )
 
-func GrabTerminal(group *int) {}
+func ContinueProcess(pid int) {}
 
 func InitSignalHandling() {}
 
@@ -38,8 +38,11 @@ func JoinProcess(proc *os.Process) int {
 	return status.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-func Monitor(active chan bool, notify chan Notification)   {}
+func Monitor(active chan bool, notify chan Notification) {}
+
 func Registrar(active chan bool, notify chan Notification) {}
+
+func SetForegroundGroup(group int) {}
 
 func SetProcessGroup() int {
 	// TODO: Not sure what to do on non-Unix platforms.
@@ -49,3 +52,5 @@ func SetProcessGroup() int {
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	return nil
 }
+
+func TerminateProcess(pid int) {}

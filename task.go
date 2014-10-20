@@ -18,7 +18,6 @@ import (
 	"sync"
 	"syscall"
 	"unicode"
-	"unsafe"
 )
 
 type Liner struct {
@@ -26,7 +25,7 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
-	GrabTerminal(&pgid)
+	SetForegroundGroup(pgid)
 
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
@@ -1430,11 +1429,6 @@ func RootScope() *Scope {
 	return scope0
 }
 
-func SetForegroundGroup(group int) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-}
-
 func SetForegroundTask(t *Task) {
 	task0 = t
 }
@@ -2019,7 +2013,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 
 func (t *Task) Continue() {
 	if t.pid > 0 {
-		syscall.Kill(t.pid, syscall.SIGCONT)
+		ContinueProcess(t.pid)
 	}
 
 	for k, v := range t.children {
@@ -2469,7 +2463,7 @@ func (t *Task) Stop() {
 	}
 
 	if t.pid > 0 {
-		syscall.Kill(t.pid, syscall.SIGTERM)
+		TerminateProcess(t.pid)
 	}
 
 	for k, v := range t.children {
