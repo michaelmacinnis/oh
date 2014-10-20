@@ -26,8 +26,8 @@ type Liner struct {
 }
 
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
+	GrabTerminal(&pgid)
+
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
@@ -252,7 +252,7 @@ func init() {
 	pid = SetProcessGroup()
 	pgid = pid
 
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	signals := []os.Signal{InterruptRequest, StopRequest}
 	incoming = make(chan os.Signal, len(signals))
 
 	interactive = len(os.Args) <= 1 && InputIsTTY()
@@ -275,8 +275,8 @@ func init() {
 	notify := make(chan Notification)
 	register = make(chan Registration)
 
-	go monitor(active, notify)
-	go registrar(active, notify)
+	go Monitor(active, notify)
+	go Registrar(active, notify)
 }
 
 func module(f string) (string, error) {
@@ -292,43 +292,6 @@ func module(f string) (string, error) {
 	return m, nil
 }
 
-func monitor(active chan bool, notify chan Notification) {
-	for {
-		monitoring := <-active
-		for monitoring {
-			var rusage syscall.Rusage
-			var status syscall.WaitStatus
-			options := syscall.WUNTRACED
-			pid, err := syscall.Wait4(-1, &status, options, &rusage)
-			if err != nil {
-				println("Wait4:", err.Error())
-			}
-			if pid <= 0 {
-				break
-			}
-
-			if status.Stopped() {
-				if pid == ForegroundTask().Job.group {
-					incoming <- syscall.SIGTSTP
-				}
-				continue
-			}
-
-			if status.Signaled() {
-				if status.Signal() == syscall.SIGINT &&
-					pid == ForegroundTask().Job.group {
-					incoming <- syscall.SIGINT
-				}
-				status += 128
-			}
-
-			notify <- Notification{pid, status}
-			monitoring = <-active
-		}
-	}
-	panic("unreachable")
-}
-
 func number(s string) bool {
 	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
 	return err == nil && m
@@ -340,34 +303,6 @@ func raw(c Cell) string {
 	}
 
 	return c.String()
-}
-
-func registrar(active chan bool, notify chan Notification) {
-	preregistered := make(map[int]Notification)
-	registered := make(map[int]Registration)
-	for {
-		select {
-		case n := <-notify:
-			r, ok := registered[n.pid]
-			if ok {
-				r.cb <- n
-				delete(registered, n.pid)
-			} else {
-				preregistered[n.pid] = n
-			}
-			active <- len(registered) != 0
-		case r := <-register:
-			if n, ok := preregistered[r.pid]; ok {
-				r.cb <- n
-				delete(preregistered, r.pid)
-			} else {
-				registered[r.pid] = r
-				if len(registered) == 1 {
-					active <- true
-				}
-			}
-		}
-	}
 }
 
 func rpipe(c Cell) *os.File {
@@ -413,13 +348,6 @@ func Interface() *Liner {
 
 func JobControlEnabled() bool {
 	return Interactive() && JobControlSupported()
-}
-
-func JoinProcess(pid int) syscall.WaitStatus {
-	response := make(chan Notification)
-	register <- Registration{pid, response}
-
-	return (<-response).status
 }
 
 func NewForegroundTask() *Task {
@@ -558,7 +486,7 @@ func RootScope() *Scope {
 	if wd, err := os.Getwd(); err == nil {
 		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
-			origin = filepath.Join(wd, origin);
+			origin = filepath.Join(wd, origin)
 		}
 		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
 	}
@@ -2159,7 +2087,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Unlock()
 
-	status := JoinProcess(proc.Pid)
+	status := JoinProcess(proc)
 
 	if JobControlEnabled() {
 		if t.group == t.pid {
@@ -2168,7 +2096,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 	t.pid = 0
 
-	return NewStatus(int64(status.ExitStatus())), err
+	return NewStatus(int64(status)), err
 }
 
 func (t *Task) External(args Cell) bool {

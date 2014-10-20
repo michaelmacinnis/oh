@@ -60,7 +60,7 @@ func broker() {
 			case sig := <-irq:
 				// Handle signals.
 				switch sig {
-				case syscall.SIGTSTP:
+				case StopRequest:
 					ForegroundTask().Suspend()
 					last := 0
 					for k := range jobs {
@@ -73,8 +73,8 @@ func broker() {
 					jobs[last] = ForegroundTask()
 
 					fallthrough
-				case syscall.SIGINT:
-					if sig == syscall.SIGINT {
+				case InterruptRequest:
+					if sig == InterruptRequest {
 						ForegroundTask().Stop()
 					}
 					fmt.Printf("\n")
