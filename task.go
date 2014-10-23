@@ -611,6 +611,17 @@ func RootScope() *Scope {
 
 		return false
 	})
+	scope0.DefineBuiltin("exists", func(t *Task, args Cell) bool {
+		count := 0
+		for ; args != Null; args = Cdr(args) {
+			count++
+			if _, err := os.Stat(raw(Car(args))); err != nil {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(NewBoolean(count > 0))
+	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
 
@@ -652,18 +663,18 @@ func RootScope() *Scope {
 
 		return t.Return(NewObject(o.Copy()))
 	})
-	scope0.PublicMethod("exists", func(t *Task, args Cell) bool {
-		l := Car(t.Scratch).(Binding).Self()
-		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
-
-		return t.Return(NewBoolean(c != nil))
-	})
 	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
 		t.Scratch = List(Car(args))
 
 		t.Stop()
 
 		return true
+	})
+	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
+		l := Car(t.Scratch).(Binding).Self()
+		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(c != nil))
 	})
 	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()

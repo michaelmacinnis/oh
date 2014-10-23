@@ -326,13 +326,13 @@ define source: syntax e (name) as {
 	define paths = '()
 	define name = basename
 
-	if (exists $OHPATH): set paths: (string $OHPATH)::split ":"
-	while (and (not: is-null paths) (not: test -r name)) {
+	if (has $OHPATH): set paths: (string $OHPATH)::split ":"
+	while (and (not: is-null paths) (not: exists name)) {
 		set name: "/"::join (car paths) basename
 		set paths: cdr paths
 	}
 
-	if (not: test -r name): set name = basename
+	if (not: exists name): set name = basename
 
         define r: cons '() '()
         define c = r
@@ -361,7 +361,7 @@ define list-tail: method (k x) as {
     }
 }
 
-test -r ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
+exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 `)), evaluate)
 
 	if Interactive() {
