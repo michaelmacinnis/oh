@@ -490,6 +490,8 @@ func RootScope() *Scope {
 		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
+	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
+
 	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
 	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
 	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))

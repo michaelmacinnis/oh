@@ -12,6 +12,7 @@ import (
 var (
 	InterruptRequest os.Signal = os.Interrupt
 	StopRequest      os.Signal = os.Kill
+	Platform         string    = "windows"
 )
 
 func ContinueProcess(pid int) {}

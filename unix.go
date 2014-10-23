@@ -23,6 +23,7 @@ import "C"
 var (
 	InterruptRequest os.Signal = os.Interrupt
 	StopRequest      os.Signal = syscall.SIGTSTP
+	Platform         string    = "unix"
 )
 
 func ContinueProcess(pid int) {
