@@ -145,13 +145,13 @@ main:
 			}
 
 			runes := []rune(line)
-			last := len(runes) - 1
+			last := len(runes) - 2
 			if last >= 0 && runes[last] == '\r' {
-				runes = runes[0:last]
+				runes = append(runes[0:last], '\n')
 			}
 
 			if error != nil {
-				runes = append(runes, rune('\n'))
+				runes = append(runes, '\n')
 				s.finished = true
 			}
 
