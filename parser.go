@@ -55,6 +55,7 @@ const yyErrCode = 2
 const yyMaxDepth = 200
 
 //line parser.y:229
+
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
@@ -141,17 +142,25 @@ main:
 				s.start = 0
 				s.token = ERROR
 				break
-			} else if error != nil {
-				line += "\n"
+			}
+
+			runes := []rune(line)
+			last := len(runes) - 1
+			if last >= 0 && runes[last] == '\r' {
+				runes = runes[0:last]
+			}
+
+			if error != nil {
+				runes = append(runes, rune('\n'))
 				s.finished = true
 			}
 
 			if s.start < s.cursor-1 {
-				s.line = append(s.line[s.start:s.cursor], []rune(line)...)
+				s.line = append(s.line[s.start:s.cursor], runes...)
 				s.cursor -= s.start
 			} else {
 				s.cursor = 0
-				s.line = []rune(line)
+				s.line = runes
 			}
 			s.start = 0
 			s.token = 0
