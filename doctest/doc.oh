@@ -1,10 +1,16 @@
 #!/usr/bin/env oh
 
+if (ne 1: length $args) {
+    error "usage:" $0 "<pattern>"
+    exit 1
+}
+
 define $dir: "/"::join $origin scripts
+define $pattern = $1
 
 # Generate README.
 find $dir -name "[0-9]*.oh" |
-grep -i readme | sort |
+grep -i $pattern | sort |
 while (define $file: readline) {
 	awk "
 BEGIN { code = 0 }

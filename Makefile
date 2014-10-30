@@ -5,8 +5,8 @@ parser.go: parser.y
 	rm -f y.output parser.go.save
 
 README.md:
-	doctests/run-tests.oh
-	doctests/generate-readme.oh > $@
+	doctest/test.oh
+	doctest/doc.oh readme > $@
 
 clean:
 	rm -rf main.[0-9] oh
