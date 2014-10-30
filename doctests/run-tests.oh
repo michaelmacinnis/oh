@@ -1,0 +1,11 @@
+#!/usr/bin/env oh
+
+define $dir: "/"::join $origin scripts
+
+# Run tests.
+find $dir -name "[0-9]*.oh" |
+while (define $file: readline) {
+	grep "^#[+-] " $file | sed -e "s/^#[+-] //g"
+	$file
+} | sort | uniq -u
+
