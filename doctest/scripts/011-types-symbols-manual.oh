@@ -1,0 +1,63 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: symbols
+# REQUIRE: types
+
+## Symbols
+## -------
+##
+## Oh's default data type is the symbol. A symbol is one or more alphanumeric
+## or '!', '$', '+', '-', '/', '=', or  '_' characters. Unless a symbol has
+## been used as a variable name, it evaluates to itself.
+##
+## The command,
+##
+#{
+write this-is-a-symbol
+#}
+## produces the output,
+##
+#+     this-is-a-symbol
+##
+
+#> write !: is-symbol !
+#> write $: is-symbol $
+#> write +: is-symbol +
+#> write -: is-symbol -
+#> write /: is-symbol /
+#> write =: is-symbol =
+#> write _: is-symbol _
+
+#- ! True
+#- $ True
+#- + True
+#- - True
+#- / True
+#- = True
+#- _ True
+
+#> define x this-is-a-symbol
+#> define predicates '(is-atom is-boolean is-builtin is-channel is-cons is-float is-integer is-method is-null is-number is-object is-pipe is-status is-string is-symbol is-syntax)
+#> for predicates: method (name) as {
+#>     define predicate: eval name
+#>     write name: "x => %v"::sprintf: predicate x
+#> }
+
+#- is-atom "x => true"
+#- is-boolean "x => false"
+#- is-builtin "x => false"
+#- is-channel "x => false"
+#- is-cons "x => false"
+#- is-float "x => false"
+#- is-integer "x => false"
+#- is-method "x => false"
+#- is-null "x => false"
+#- is-number "x => true"
+#- is-object "x => false"
+#- is-pipe "x => false"
+#- is-status "x => false"
+#- is-string "x => false"
+#- is-symbol "x => true"
+#- is-syntax "x => false"
+
