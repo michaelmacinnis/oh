@@ -53,7 +53,7 @@ write this-is-a-symbol
 #- is-integer "x => false"
 #- is-method "x => false"
 #- is-null "x => false"
-#- is-number "x => true"
+#- is-number "x => false"
 #- is-object "x => false"
 #- is-pipe "x => false"
 #- is-status "x => false"

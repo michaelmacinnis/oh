@@ -874,7 +874,14 @@ func RootScope() *Scope {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("is-number", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(Number)
+		arg := Car(args)
+
+		s, ok := arg.(*Symbol)
+		if ok {
+			ok = s.isFloat() || s.isInt()
+		} else {
+			_, ok = arg.(Number)
+		}
 
 		return t.Return(NewBoolean(ok))
 	})
