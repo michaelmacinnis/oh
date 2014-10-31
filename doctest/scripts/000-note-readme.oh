@@ -4,8 +4,7 @@
 # KEYWORD: readme
 # PROVIDE: note
 
-## Note:
-## -----
+## ### Note:
 ##
 ## Oh now compiles and runs (but should be considered unstable) on Windows.
 ## 

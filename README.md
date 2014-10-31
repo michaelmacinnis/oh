@@ -1,5 +1,4 @@
-Note:
------
+### Note:
 
 Oh now compiles and runs (but should be considered unstable) on Windows.
 
@@ -12,8 +11,7 @@ all.bash to re-complile Go.
 Alternatively, remove your OS from the list of build constraints in the
 files unix.go and other.go to build oh with job control disabled.
 
-oh
-==
+# oh
 
 Oh is a Unix shell written in Go. The following commands behave as expected:
 
@@ -118,18 +116,15 @@ prototype-based object system:
     define p: point 0 0
     p::show
 
-Installing
-----------
+## Installing
 
     go get github.com/michaelmacinnis/oh
 
-License
--------
+## License
 
 Oh is released under an MIT-style license.
 
-Motivation
-----------
+## Motivation
 
 Oh was motivated by the belief that many of the flaws in current Unix
 shells are not inherent but rather historical. Design choices that are
@@ -142,8 +137,7 @@ improvements to the programming language features of the Unix shell by
 borrowing heavily from the Scheme dialect of Lisp. Rather than attempting
 to embed a Unix shell in scheme, oh was designed from scratch.
 
-References and Other Shells
----------------------------
+## References and Other Shells
 
 Fexprs:
 

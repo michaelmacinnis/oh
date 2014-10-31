@@ -4,8 +4,7 @@
 # PROVIDE: license
 # REQUIRE: installing
 
-## License
-## -------
+## ## License
 ##
 ## Oh is released under an MIT-style license.
 ##

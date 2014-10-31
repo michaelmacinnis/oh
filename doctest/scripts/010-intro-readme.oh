@@ -3,8 +3,7 @@
 # KEYWORD: readme
 # PROVIDE: intro
 
-## oh
-## ==
+## # oh
 ##
 ## Oh is a Unix shell written in Go. The following commands behave as expected:
 ##

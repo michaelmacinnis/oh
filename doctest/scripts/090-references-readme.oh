@@ -4,8 +4,7 @@
 # PROVIDE: references
 # REQUIRE: motivation
 
-## References and Other Shells
-## ---------------------------
+## ## References and Other Shells
 ##
 ## Fexprs:
 ##

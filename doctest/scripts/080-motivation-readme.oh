@@ -4,8 +4,7 @@
 # PROVIDE: motivation
 # REQUIRE: license
 
-## Motivation
-## ----------
+## ## Motivation
 ##
 ## Oh was motivated by the belief that many of the flaws in current Unix
 ## shells are not inherent but rather historical. Design choices that are

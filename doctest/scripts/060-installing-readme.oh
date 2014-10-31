@@ -4,8 +4,7 @@
 # PROVIDE: installing
 # REQUIRE: objects
 
-## Installing
-## ----------
+## ## Installing
 ##
 ##     go get github.com/michaelmacinnis/oh
 ##

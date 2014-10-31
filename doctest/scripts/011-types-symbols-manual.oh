@@ -4,8 +4,7 @@
 # PROVIDE: symbols
 # REQUIRE: types
 
-## Symbols
-## -------
+## ## Symbols
 ##
 ## Oh's default data type is the symbol. A symbol is one or more alphanumeric
 ## or '!', '$', '+', '-', '/', '=', or  '_' characters. Unless a symbol has
