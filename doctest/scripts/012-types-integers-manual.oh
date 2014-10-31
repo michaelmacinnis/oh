@@ -1,0 +1,78 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: integers
+# REQUIRE: symbols
+
+## ## Integers
+##
+## In oh, things that look like integers are still symbols by default.
+## To create an integer, the `integer` command can be used with an argument
+## that will parse correctly as an integer.
+##
+## The command,
+##
+#{
+write (integer -1)
+#}
+## produces the output,
+##
+#+     -1
+##
+## In the above example parentheses are used around the `integer` command to
+## indicate that is should be evaluated and its value used as the argument to
+## write. Oh has a convenient shorthand when a command is to be evaluated as
+## the final argument of another command:
+##
+#{
+write: integer -1
+#}
+## This shorthand is used often in oh to avoid lots of irritating and
+## superfluous parentheses when constructing more compilcated commands:
+##
+#{
+write: is-integer -1
+write: is-symbol -1
+write: is-integer: integer -1
+write: is-symbol: integer -1
+#}
+#- False
+#- True
+#- True
+#- False
+## Oh will also try to help by converting symbols that will parse correctly
+## as an integer when used in a context where that would be appropriate. For
+## example,
+##
+#{
+write: add 1 2 3
+#}
+## produces the output,
+##
+#+     6
+##
+
+#> define x: integer -1
+#> define predicates '(is-atom is-boolean is-builtin is-channel is-cons is-float is-integer is-method is-null is-number is-object is-pipe is-status is-string is-symbol is-syntax)
+#> for predicates: method (name) as {
+#>     define predicate: eval name
+#>     write name: "x => %v"::sprintf: predicate x
+#> }
+
+#- is-atom "x => true"
+#- is-boolean "x => false"
+#- is-builtin "x => false"
+#- is-channel "x => false"
+#- is-cons "x => false"
+#- is-float "x => false"
+#- is-integer "x => true"
+#- is-method "x => false"
+#- is-null "x => false"
+#- is-number "x => true"
+#- is-object "x => false"
+#- is-pipe "x => false"
+#- is-status "x => false"
+#- is-string "x => false"
+#- is-symbol "x => false"
+#- is-syntax "x => false"
+
