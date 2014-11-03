@@ -20,5 +20,6 @@ define and: syntax e (: lst) as {
 }
 write: and True False (echo "Never reached")
 #}
+##
 
-#- False
+#-     False

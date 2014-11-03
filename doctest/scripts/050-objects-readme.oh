@@ -33,6 +33,7 @@ define point: method (r s) as: object {
 define p: point 0 0
 p::show
 #}
+##
 
-#- 0 0
+#-     0 0
 

@@ -15,7 +15,7 @@ while (define $file: readline) {
 	awk "
 BEGIN { code = 0 }
 $0 ~ /^#[#+]/ { print substr($0, 4) }
-$1 ~ /^#[}]/ { code = 0; print \"\" }
+$1 ~ /^#[}]/ { code = 0 }
 code > 0 { print \"    \" $0 }
 $1 ~ /^#[{]/ { code = 1 }
 " $file

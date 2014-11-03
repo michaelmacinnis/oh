@@ -5,8 +5,7 @@ define $dir: "/"::join $origin scripts
 # Run tests.
 find $dir -name "[0-9]*.oh" |
 while (define $file: readline) {
-	grep "^#[+-] " $file | sed -e "s/^#- //g" -e "s/^#+     //g"
+	grep "^#[+-]     " $file | sed -e "s/^#[+-]     //g"
 	$file
-	grep "^#> " $file | sed -e "s/^#> //g" | /usr/bin/env oh
 } | sort | uniq -u
 
