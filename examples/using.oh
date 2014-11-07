@@ -58,8 +58,8 @@ echo "***"
 # representation for data and programs and so, like Lisp, needs a way of
 # specifying that an expression should be treated as data and not evaluated.
 
-# String concatenation is possible but not implicit in oh:
-echo: ", "::join "Hello" "World!"
+# Strings can be concatenated with the string concatenation operator:
+echo "Hello," ^ " World!"
 
 # The output of a program can be captured in a list using the backquote
 # operator.  This list can then be expanded using the splice operator:

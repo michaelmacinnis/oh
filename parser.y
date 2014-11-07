@@ -7,6 +7,7 @@
 %left PIPE       /* |,|+,!|,!|+ */
 %left REDIRECT   /* <,>,!>,>>,!>> */
 %left SUBSTITUTE /* <(,>( */
+%left "^"
 %right "@"
 %right "'"
 %right "`"
@@ -157,6 +158,11 @@ opt_command: command { $$.c = $1.c };
 list: expression { $$.c = Cons($1.c, Null) };
 
 list: list expression { $$.c = AppendTo($1.c, $2.c) };
+
+expression: expression "^" expression {
+    s := Cons(NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+    $$.c = List(s, $1.c, $3.c)
+};
 
 expression: "@" expression {
     $$.c = List(NewSymbol("splice"), $2.c)
@@ -337,7 +343,7 @@ main:
             default:
                 s.state = ssSymbol
                 continue main
-            case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
+            case '\n', '%', '\'', '(', ')', ';', '@', '^', '`', '{', '}':
                 s.token = s.line[s.cursor]
             case '&':
                 s.state = ssAmpersand
@@ -449,7 +455,7 @@ main:
         case ssSymbol:
             switch s.line[s.cursor] {
             case '\n','%','&','\'','(',')',';',
-                '<','@','`','{','|','}',
+                '<','@','^','`','{','|','}',
                 '\t',' ','"','#',':','>':
                 if s.line[s.cursor - 1] != '\\' {
                     s.token = SYMBOL

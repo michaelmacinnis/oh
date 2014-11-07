@@ -1,9 +1,9 @@
-//line parser.y:16
+//line parser.y:17
 package main
 
 import __yyfmt__ "fmt"
 
-//line parser.y:16
+//line parser.y:17
 import (
 	"github.com/michaelmacinnis/liner"
 	"strconv"
@@ -43,6 +43,7 @@ var yyToknames = []string{
 	"PIPE",
 	"REDIRECT",
 	"SUBSTITUTE",
+	"^",
 	"@",
 	"'",
 	"`",
@@ -54,7 +55,8 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line parser.y:229
+//line parser.y:240
+
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
@@ -173,7 +175,7 @@ main:
 			default:
 				s.state = ssSymbol
 				continue main
-			case '\n', '%', '\'', '(', ')', ';', '@', '`', '{', '}':
+			case '\n', '%', '\'', '(', ')', ';', '@', '^', '`', '{', '}':
 				s.token = s.line[s.cursor]
 			case '&':
 				s.state = ssAmpersand
@@ -285,7 +287,7 @@ main:
 		case ssSymbol:
 			switch s.line[s.cursor] {
 			case '\n', '%', '&', '\'', '(', ')', ';',
-				'<', '@', '`', '{', '|', '}',
+				'<', '@', '^', '`', '{', '|', '}',
 				'\t', ' ', '"', '#', ':', '>':
 				if s.line[s.cursor-1] != '\\' {
 					s.token = SYMBOL
@@ -337,14 +339,14 @@ var yyExca = []int{
 	-1, 0,
 	8, 16,
 	9, 16,
-	16, 16,
 	17, 16,
 	18, 16,
-	20, 5,
-	23, 16,
+	19, 16,
+	21, 5,
 	24, 16,
-	26, 16,
+	25, 16,
 	27, 16,
+	28, 16,
 	-2, 0,
 	-1, 1,
 	1, -1,
@@ -356,68 +358,69 @@ var yyExca = []int{
 	13, 14,
 	14, 14,
 	15, 14,
-	20, 14,
 	21, 14,
+	22, 14,
 	-2, 17,
 	-1, 10,
 	1, 1,
 	8, 16,
 	9, 16,
-	16, 16,
 	17, 16,
 	18, 16,
-	20, 5,
-	23, 16,
+	19, 16,
+	21, 5,
 	24, 16,
-	26, 16,
+	25, 16,
 	27, 16,
+	28, 16,
 	-2, 0,
-	-1, 46,
-	20, 34,
+	-1, 47,
+	21, 34,
 	-2, 16,
-	-1, 66,
-	20, 34,
+	-1, 70,
+	21, 34,
 	-2, 16,
 }
 
-const yyNprod = 48
+const yyNprod = 50
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 113
+const yyLast = 125
 
 var yyAct = []int{
 
-	5, 8, 18, 60, 7, 67, 21, 11, 12, 13,
-	14, 15, 16, 33, 34, 35, 9, 37, 63, 69,
-	39, 9, 36, 40, 58, 44, 42, 52, 9, 51,
-	9, 47, 48, 49, 17, 66, 30, 31, 4, 46,
-	10, 20, 43, 55, 24, 25, 26, 61, 57, 3,
-	56, 22, 23, 62, 27, 28, 64, 50, 9, 65,
-	32, 41, 29, 30, 31, 15, 16, 61, 68, 59,
-	70, 24, 25, 26, 45, 30, 31, 17, 22, 23,
-	19, 27, 28, 24, 25, 26, 11, 12, 13, 14,
-	15, 16, 54, 27, 28, 38, 6, 53, 11, 12,
-	13, 14, 15, 16, 13, 14, 15, 16, 14, 15,
-	16, 2, 1,
+	5, 8, 63, 18, 7, 71, 9, 9, 21, 73,
+	61, 53, 9, 33, 34, 35, 9, 37, 4, 17,
+	39, 30, 31, 40, 36, 70, 45, 47, 42, 52,
+	24, 25, 26, 48, 49, 50, 17, 22, 23, 9,
+	27, 28, 10, 43, 56, 30, 31, 44, 64, 44,
+	60, 65, 58, 59, 24, 25, 26, 67, 30, 31,
+	68, 69, 15, 16, 27, 28, 51, 24, 25, 26,
+	3, 64, 72, 74, 22, 23, 20, 27, 28, 30,
+	31, 32, 11, 12, 13, 14, 15, 16, 24, 25,
+	26, 14, 15, 16, 66, 57, 41, 29, 27, 28,
+	11, 12, 13, 14, 15, 16, 11, 12, 13, 14,
+	15, 16, 54, 13, 14, 15, 16, 62, 46, 19,
+	55, 38, 6, 2, 1,
 }
 var yyPact = []int{
 
-	36, -1000, 20, -1000, -1000, 88, -1000, 12, 28, -1000,
-	36, -1000, 8, 8, 8, 67, 8, -1000, 8, 28,
-	-1000, 23, 28, 19, 67, 67, 67, 48, 6, -1000,
-	-1000, -1000, -1000, 92, 95, 51, 23, 76, -1000, -1000,
-	55, -1000, 23, 67, -1000, 28, -1, 23, 23, 23,
-	44, -3, -1000, -1000, 8, -1000, -1000, -1000, -1000, 15,
-	-1000, 88, -21, -1000, -1000, 55, -6, -1000, -1000, -1000,
-	-1000,
+	16, -1000, 21, -1000, -1000, 96, -1000, -4, 50, -1000,
+	16, -1000, -7, -7, -7, 37, -7, -1000, -7, 50,
+	-1000, 27, 50, 6, 37, 37, 37, 57, -11, -1000,
+	-1000, -1000, -1000, 101, 78, 48, 27, 90, -1000, -1000,
+	13, -1000, 27, 71, 37, -1000, 50, -16, 29, 29,
+	29, 42, 72, -1000, -1000, -7, -1000, 50, 29, -1000,
+	-1000, -1000, 4, -1000, 96, -22, -1000, -1000, 13, -1000,
+	-17, -1000, -1000, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 112, 111, 49, 0, 6, 96, 4, 1, 2,
-	95, 92, 80, 41, 74, 69, 3, 62,
+	0, 124, 123, 70, 0, 8, 122, 4, 1, 3,
+	121, 120, 119, 76, 118, 117, 2, 97,
 }
 var yyR1 = []int{
 
@@ -425,58 +428,58 @@ var yyR1 = []int{
 	4, 4, 4, 4, 6, 6, 8, 8, 7, 7,
 	10, 10, 11, 11, 9, 9, 9, 13, 13, 13,
 	14, 14, 15, 15, 16, 16, 12, 12, 5, 5,
-	5, 5, 5, 5, 5, 5, 17, 17,
+	5, 5, 5, 5, 5, 5, 5, 5, 17, 17,
 }
 var yyR2 = []int{
 
 	0, 2, 1, 3, 1, 0, 1, 2, 3, 3,
 	3, 3, 4, 1, 1, 3, 0, 1, 1, 2,
 	1, 3, 1, 3, 1, 2, 1, 2, 3, 2,
-	2, 4, 1, 3, 0, 1, 1, 2, 2, 2,
-	2, 3, 4, 3, 2, 1, 1, 1,
+	2, 4, 1, 3, 0, 1, 1, 2, 4, 3,
+	2, 2, 2, 3, 4, 3, 2, 1, 1, 1,
 }
 var yyChk = []int{
 
-	-1000, -1, -2, -3, 2, -4, -6, -7, -8, 22,
-	20, 10, 11, 12, 13, 14, 15, 22, -9, -12,
-	-13, -5, 23, 24, 16, 17, 18, 26, 27, -17,
+	-1000, -1, -2, -3, 2, -4, -6, -7, -8, 23,
+	21, 10, 11, 12, 13, 14, 15, 23, -9, -12,
+	-13, -5, 24, 25, 17, 18, 19, 27, 28, -17,
 	8, 9, -3, -4, -4, -4, -5, -4, -10, -8,
-	-7, -13, -5, 19, -9, -14, 20, -5, -5, -5,
-	9, -4, 21, 21, -11, -9, -5, -9, 25, -15,
-	-16, -4, 9, 21, -8, -7, 20, 26, -9, 25,
-	-16,
+	-7, -13, -5, 16, 20, -9, -14, 21, -5, -5,
+	-5, 9, -4, 22, 22, -11, -9, 24, -5, -5,
+	-9, 26, -15, -16, -4, 9, 22, -8, -7, -9,
+	21, 27, -9, 26, -16,
 }
 var yyDef = []int{
 
 	-2, -2, 0, 2, 4, 6, 13, -2, 0, 18,
 	-2, 7, 16, 16, 16, 0, 16, 19, 16, 24,
-	26, 36, 0, 0, 0, 0, 0, 0, 16, 45,
-	46, 47, 3, 8, 9, 10, 11, 0, 15, 20,
-	17, 25, 37, 0, 27, 29, -2, 38, 39, 40,
-	0, 0, 44, 12, 16, 22, 41, 28, 30, 0,
-	32, 35, 0, 43, 21, 17, -2, 42, 23, 31,
-	33,
+	26, 36, 0, 0, 0, 0, 0, 0, 16, 47,
+	48, 49, 3, 8, 9, 10, 11, 0, 15, 20,
+	17, 25, 37, 0, 0, 27, 29, -2, 40, 41,
+	42, 0, 0, 46, 12, 16, 22, 0, 39, 43,
+	28, 30, 0, 32, 35, 0, 45, 21, 17, 38,
+	-2, 44, 23, 31, 33,
 }
 var yyTok1 = []int{
 
 	1, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	20, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	21, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 26, 3, 17,
-	27, 21, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 23, 22,
-	3, 3, 3, 3, 16, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 18, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 27, 3, 18,
+	28, 22, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 24, 23,
+	3, 3, 3, 3, 17, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 24, 3, 25,
+	3, 3, 3, 3, 16, 3, 19, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 25, 3, 26,
 }
 var yyTok2 = []int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-	12, 13, 14, 15, 19,
+	12, 13, 14, 15, 20,
 }
 var yyTok3 = []int{
 	0,
@@ -720,12 +723,12 @@ yydefault:
 	switch yynt {
 
 	case 5:
-		//line parser.y:41
+		//line parser.y:42
 		{
 			yyVAL.c = Null
 		}
 	case 6:
-		//line parser.y:43
+		//line parser.y:44
 		{
 			yyVAL.c = yyS[yypt-0].c
 			if yyS[yypt-0].c != Null {
@@ -734,47 +737,47 @@ yydefault:
 			goto start
 		}
 	case 7:
-		//line parser.y:51
+		//line parser.y:52
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-0].s), yyS[yypt-1].c)
 		}
 	case 8:
-		//line parser.y:55
+		//line parser.y:56
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 9:
-		//line parser.y:59
+		//line parser.y:60
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 10:
-		//line parser.y:63
+		//line parser.y:64
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 11:
-		//line parser.y:67
+		//line parser.y:68
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-1].s), yyS[yypt-0].c, yyS[yypt-2].c)
 		}
 	case 12:
-		//line parser.y:71
+		//line parser.y:72
 		{
 			yyVAL.c = List(NewSymbol(yyS[yypt-2].s), yyS[yypt-1].c, yyS[yypt-3].c)
 		}
 	case 13:
-		//line parser.y:75
+		//line parser.y:76
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 14:
-		//line parser.y:77
+		//line parser.y:78
 		{
 			yyVAL.c = Null
 		}
 	case 15:
-		//line parser.y:79
+		//line parser.y:80
 		{
 			if yyS[yypt-0].c == Null {
 				yyVAL.c = yyS[yypt-1].c
@@ -783,47 +786,47 @@ yydefault:
 			}
 		}
 	case 20:
-		//line parser.y:95
+		//line parser.y:96
 		{
 			yyVAL.c = Null
 		}
 	case 21:
-		//line parser.y:97
+		//line parser.y:98
 		{
 			yyVAL.c = yyS[yypt-1].c
 		}
 	case 22:
-		//line parser.y:99
+		//line parser.y:100
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 23:
-		//line parser.y:101
+		//line parser.y:102
 		{
 			yyVAL.c = AppendTo(yyS[yypt-2].c, yyS[yypt-0].c)
 		}
 	case 24:
-		//line parser.y:103
+		//line parser.y:104
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 25:
-		//line parser.y:105
+		//line parser.y:106
 		{
 			yyVAL.c = JoinTo(yyS[yypt-1].c, yyS[yypt-0].c)
 		}
 	case 26:
-		//line parser.y:109
+		//line parser.y:110
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 27:
-		//line parser.y:111
+		//line parser.y:112
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 28:
-		//line parser.y:113
+		//line parser.y:114
 		{
 			if yyS[yypt-1].c == Null {
 				yyVAL.c = yyS[yypt-0].c
@@ -832,22 +835,22 @@ yydefault:
 			}
 		}
 	case 29:
-		//line parser.y:121
+		//line parser.y:122
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 30:
-		//line parser.y:125
+		//line parser.y:126
 		{
 			yyVAL.c = Null
 		}
 	case 31:
-		//line parser.y:127
+		//line parser.y:128
 		{
 			yyVAL.c = yyS[yypt-2].c
 		}
 	case 32:
-		//line parser.y:129
+		//line parser.y:130
 		{
 			if yyS[yypt-0].c == Null {
 				yyVAL.c = yyS[yypt-0].c
@@ -856,7 +859,7 @@ yydefault:
 			}
 		}
 	case 33:
-		//line parser.y:137
+		//line parser.y:138
 		{
 			if yyS[yypt-2].c == Null {
 				if yyS[yypt-0].c == Null {
@@ -873,47 +876,59 @@ yydefault:
 			}
 		}
 	case 34:
-		//line parser.y:153
+		//line parser.y:154
 		{
 			yyVAL.c = Null
 		}
 	case 35:
-		//line parser.y:155
+		//line parser.y:156
 		{
 			yyVAL.c = yyS[yypt-0].c
 		}
 	case 36:
-		//line parser.y:157
+		//line parser.y:158
 		{
 			yyVAL.c = Cons(yyS[yypt-0].c, Null)
 		}
 	case 37:
-		//line parser.y:159
+		//line parser.y:160
 		{
 			yyVAL.c = AppendTo(yyS[yypt-1].c, yyS[yypt-0].c)
 		}
 	case 38:
-		//line parser.y:161
+		//line parser.y:162
+		{
+			s := Cons(NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+			yyVAL.c = List(s, yyS[yypt-3].c, yyS[yypt-0].c)
+		}
+	case 39:
+		//line parser.y:167
+		{
+			s := Cons(NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+			yyVAL.c = List(s, yyS[yypt-2].c, yyS[yypt-0].c)
+		}
+	case 40:
+		//line parser.y:172
 		{
 			yyVAL.c = List(NewSymbol("splice"), yyS[yypt-0].c)
 		}
-	case 39:
-		//line parser.y:165
+	case 41:
+		//line parser.y:176
 		{
 			yyVAL.c = List(NewSymbol("quote"), yyS[yypt-0].c)
 		}
-	case 40:
-		//line parser.y:169
+	case 42:
+		//line parser.y:180
 		{
 			yyVAL.c = List(NewSymbol("backtick"), yyS[yypt-0].c)
 		}
-	case 41:
-		//line parser.y:173
+	case 43:
+		//line parser.y:184
 		{
 			yyVAL.c = Cons(yyS[yypt-2].c, yyS[yypt-0].c)
 		}
-	case 42:
-		//line parser.y:177
+	case 44:
+		//line parser.y:188
 		{
 			kind := yyS[yypt-2].s
 			value, _ := strconv.ParseUint(yyS[yypt-1].s, 0, 64)
@@ -955,28 +970,28 @@ yydefault:
 			}
 
 		}
-	case 43:
-		//line parser.y:219
+	case 45:
+		//line parser.y:230
 		{
 			yyVAL = yyS[yypt-1]
 		}
-	case 44:
-		//line parser.y:221
+	case 46:
+		//line parser.y:232
 		{
 			yyVAL.c = Null
 		}
-	case 45:
-		//line parser.y:223
+	case 47:
+		//line parser.y:234
 		{
 			yyVAL = yyS[yypt-0]
 		}
-	case 46:
-		//line parser.y:225
+	case 48:
+		//line parser.y:236
 		{
 			yyVAL.c = NewString(yylex.(*scanner).task, yyS[yypt-0].s[1:len(yyS[yypt-0].s)-1])
 		}
-	case 47:
-		//line parser.y:227
+	case 49:
+		//line parser.y:238
 		{
 			yyVAL.c = NewSymbol(yyS[yypt-0].s)
 		}
