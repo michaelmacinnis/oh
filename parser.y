@@ -317,6 +317,11 @@ main:
             last := len(runes) - 2
             if last >= 0 && runes[last] == '\r' {
                 runes = append(runes[0:last], '\n')
+                last--
+            }
+
+            if last >= 0 && runes[last] == '\\' {
+                runes = runes[0:last]
             }
 
             if error != nil {
