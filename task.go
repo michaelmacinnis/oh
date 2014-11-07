@@ -1156,7 +1156,7 @@ func RootScope() *Scope {
 
 	/* Standard namespaces. */
 	text := NewObject(NewScope(scope0, nil))
-	scope0.Define(NewSymbol("Text"), text)
+	scope0.Define(NewSymbol("$text"), text)
 
 	text.PublicMethod("is-control", func(t *Task, args Cell) bool {
 		var r Cell
@@ -1444,7 +1444,7 @@ func RootScope() *Scope {
 		return t.Return(r)
 	})
 
-	scope0.Public(NewSymbol("Root"), scope0)
+	scope0.Public(NewSymbol("$root"), scope0)
 
 	return scope0
 }

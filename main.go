@@ -207,7 +207,7 @@ define $connect: syntax (type out close) as {
     syntax e (left right) as {
         define p: type
         spawn {
-            eval: list 'dynamic out '= 'p
+            eval: list 'dynamic out 'p
             e::eval left
             if close: p::writer-close
         }
@@ -226,7 +226,7 @@ define $redirect: syntax (chan mode mthd) as {
             set f: open c mode
             set c = f
         }
-        eval: list 'dynamic chan '= 'c
+        eval: list 'dynamic chan 'c
         e::eval cmd
         if (not: is-null f): eval: cons 'f mthd
     }
@@ -284,7 +284,7 @@ define import: syntax e (name) as {
 
     define l: list 'source name
     set l: cons 'object: cons l '()
-    set l: list 'Root::define m '= l
+    set l: list '$root::define m l
     e::eval l
 }
 define is-list: method (l) as {
