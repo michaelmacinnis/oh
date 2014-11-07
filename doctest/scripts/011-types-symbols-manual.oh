@@ -7,8 +7,9 @@
 ## ## Symbols
 ##
 ## Oh's default data type is the symbol. A symbol is one or more alphanumeric
-## or '!', '$', '+', '-', '/', '=', or  '_' characters. Unless a symbol has
-## been used as a variable name, it evaluates to itself.
+## or '!', '$', '*', '+', ',', '-', '/', '=', '?', '[', ']', or  '_' 
+## characters. Unless a symbol has been used as a variable name, it evaluates
+## to itself.
 ##
 ## The command,
 ##
@@ -23,18 +24,28 @@ write this-is-a-symbol
 
 write !: is-symbol !
 write $: is-symbol $
+write *: is-symbol *
 write +: is-symbol +
+write ,: is-symbol ,
 write -: is-symbol -
 write /: is-symbol /
 write =: is-symbol =
+write ?: is-symbol ?
+write [: is-symbol [
+write ]: is-symbol ]
 write _: is-symbol _
 
 #-     ! True
 #-     $ True
+#-     * True
 #-     + True
+#-     , True
 #-     - True
 #-     / True
 #-     = True
+#-     ? True
+#-     [ True
+#-     ] True
 #-     _ True
 
 define x this-is-a-symbol

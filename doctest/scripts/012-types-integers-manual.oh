@@ -55,6 +55,7 @@ write: add 1 2 3
 ##
 #+     6
 ##
+## Note that oh does not have infix arithmetic, logical or relation operators.
 
 define x: integer -1
 define predicates '(is-atom is-boolean is-builtin is-channel is-cons is-float is-integer is-method is-null is-number is-object is-pipe is-status is-string is-symbol is-syntax)
