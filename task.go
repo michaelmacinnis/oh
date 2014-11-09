@@ -122,25 +122,12 @@ var next = map[int64][]int64{
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
 }
 
-/* Convert Channel/Pipe Context (or child Context) into a Conduit. */
+/* Convert Context into a Conduit. (Return nil if not possible). */
 func as_conduit(o Context) Conduit {
-	for o != nil {
-		if c, ok := o.Expose().(Conduit); ok {
-			return c
-		}
-		o = o.Prev()
+	if c, ok := o.(Conduit); ok {
+		return c
 	}
 
-	return nil
-}
-
-/* Convert String Context (or child Context) into a String. */
-func as_string(o Context) *String {
-	if s, ok := o.(*String); ok {
-		return s
-	}
-
-	panic("not a string")
 	return nil
 }
 
@@ -305,11 +292,7 @@ func raw(c Cell) string {
 }
 
 func rpipe(c Cell) *os.File {
-	conduit := as_conduit(c.(Context))
-	if conduit == nil {
-		panic("not a conduit")
-	}
-	return conduit.(*Pipe).ReadFd()
+	return to_conduit(c.(Context)).(*Pipe).ReadFd()
 
 }
 
@@ -321,12 +304,27 @@ func status(c Cell) int {
 	return int(a.Status())
 }
 
-func wpipe(c Cell) *os.File {
-	conduit := as_conduit(c.(Context))
+/* Convert Context into a Conduit. */
+func to_conduit(o Context) Conduit {
+	conduit := as_conduit(o)
 	if conduit == nil {
 		panic("not a conduit")
 	}
-	return conduit.(*Pipe).WriteFd()
+
+	return conduit
+}
+
+/* Convert Context into a String. */
+func to_string(o Context) *String {
+	if s, ok := o.(*String); ok {
+		return s
+	}
+
+	panic("not a string")
+}
+
+func wpipe(c Cell) *os.File {
+	return to_conduit(c.(Context)).(*Pipe).WriteFd()
 }
 
 func ForegroundTask() *Task {
@@ -366,28 +364,37 @@ func RootScope() *Scope {
 	external = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
 
 	envc = NewEnv(nil)
+	envc.Method("child", func(t *Task, args Cell) bool {
+		panic("conduits cannot be parents")
+	})
+	envc.Method("clone", func(t *Task, args Cell) bool {
+		panic("conduits cannot be cloned")
+	})
+	envc.Method("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to a conduit")
+	})
 	envc.Method("close", func(t *Task, args Cell) bool {
-		as_conduit(Car(t.Scratch).(Binding).Self()).Close()
+		to_conduit(Car(t.Scratch).(Binding).Self()).Close()
 		return t.Return(True)
 	})
 	envc.Method("reader-close", func(t *Task, args Cell) bool {
-		as_conduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
+		to_conduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
 		return t.Return(True)
 	})
 	envc.Method("read", func(t *Task, args Cell) bool {
-		r := as_conduit(Car(t.Scratch).(Binding).Self()).Read(t)
+		r := to_conduit(Car(t.Scratch).(Binding).Self()).Read(t)
 		return t.Return(r)
 	})
 	envc.Method("readline", func(t *Task, args Cell) bool {
-		r := as_conduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
+		r := to_conduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
 		return t.Return(r)
 	})
 	envc.Method("writer-close", func(t *Task, args Cell) bool {
-		as_conduit(Car(t.Scratch).(Binding).Self()).WriterClose()
+		to_conduit(Car(t.Scratch).(Binding).Self()).WriterClose()
 		return t.Return(True)
 	})
 	envc.Method("write", func(t *Task, args Cell) bool {
-		as_conduit(Car(t.Scratch).(Binding).Self()).Write(args)
+		to_conduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
 
@@ -399,10 +406,10 @@ func RootScope() *Scope {
 		panic("strings cannot be cloned")
 	})
 	envs.Method("define", func(t *Task, args Cell) bool {
-		panic("private members cannot be added to an object")
+		panic("private members cannot be added to a string")
 	})
 	envs.Method("join", func(t *Task, args Cell) bool {
-		sep := as_string(Car(t.Scratch).(Binding).Self())
+		sep := to_string(Car(t.Scratch).(Binding).Self())
 		arr := make([]string, Length(args))
 
 		for i := 0; args != Null; i++ {
@@ -418,7 +425,7 @@ func RootScope() *Scope {
 		r := Null
 
 		sep := Car(args)
-		str := as_string(Car(t.Scratch).(Binding).Self())
+		str := to_string(Car(t.Scratch).(Binding).Self())
 
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
@@ -429,7 +436,7 @@ func RootScope() *Scope {
 		return t.Return(r)
 	})
 	envs.Method("sprintf", func(t *Task, args Cell) bool {
-		f := raw(as_string(Car(t.Scratch).(Binding).Self()))
+		f := raw(to_string(Car(t.Scratch).(Binding).Self()))
 
 		argv := []interface{}{}
 		for l := args; l != Null; l = Cdr(l) {
@@ -1461,10 +1468,10 @@ type Channel struct {
 }
 
 func NewChannel(t *Task, cap int) Context {
-	return NewObject(&Channel{
+	return &Channel{
 		NewScope(t.Lexical.Expose(), envc),
 		make(chan Cell, cap),
-	})
+	}
 }
 
 func (ch *Channel) String() string {
@@ -1575,7 +1582,7 @@ func NewPipe(l Context, r *os.File, w *os.File) Context {
 
 	runtime.SetFinalizer(p, (*Pipe).Close)
 
-	return NewObject(p)
+	return p
 }
 
 func (p *Pipe) String() string {
