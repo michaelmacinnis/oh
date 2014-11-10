@@ -21,15 +21,16 @@ write (integer -1)
 #+     -1
 ##
 ## In the above example parentheses are used around the `integer` command to
-## indicate that is should be evaluated and its value used as the argument to
-## write. Oh has a convenient shorthand when a command is to be evaluated as
-## the final argument of another command:
+## indicate that it should be evaluated and its value used as the argument to
+## write. Oh has a convenient shorthand when a command is to be evaluated and
+## the result of this evaluation used as ## the final argument of another
+## command:
 ##
 #{
 write: integer -1
 #}
 ##
-## This shorthand is used often in oh to avoid lots of irritating and
+## This shorthand is used often to avoid lots of irritating and
 ## superfluous parentheses when constructing more compilcated commands:
 ##
 #{
@@ -55,8 +56,21 @@ write: add 1 2 3
 ##
 #+     6
 ##
-## Note that oh does not have infix arithmetic, logical or relation operators.
+## Note that oh does not have infix arithmetic operators instead the commands
+## add, sub, mul, div and mod must be used.
 ##
+#{
+write: sub 3 2 1
+write: mul 1024 1024 16
+write: div 65536 256
+write: mod 511 256
+#}
+##
+
+#-     0
+#-     16777216
+#-     256
+#-     255
 
 define operators '(add div eq ge gt is le lt mod mul ne sub)
 define operands: list 1 2 3 4
