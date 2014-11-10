@@ -39,10 +39,10 @@ write: is-symbol -1
 write: is-integer: integer -1
 write: is-symbol: integer -1
 #}
-#-     False
-#-     True
-#-     True
-#-     False
+#-     false
+#-     true
+#-     true
+#-     false
 ##
 ## Oh will also try to help by converting symbols that will parse correctly
 ## as an integer when used in a context where that would be appropriate. For

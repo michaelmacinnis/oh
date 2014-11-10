@@ -232,7 +232,7 @@ define $redirect: syntax (chan mode mthd) as {
     }
 }
 define and: syntax e (: lst) as {
-    define r = False
+    define r = false
     while (not: is-null: car lst) {
         set r: e::eval: car lst
         if (not r): return r
@@ -261,8 +261,8 @@ define backtick: syntax e (cmd) as {
     p::reader-close
     return: cdr r
 }
-define channel-stderr: $connect channel $stderr True
-define channel-stdout: $connect channel $stdout True
+define channel-stderr: $connect channel $stderr true
+define channel-stdout: $connect channel $stdout true
 define echo: builtin (: args) as: $stdout::write @args
 define error: builtin (: args) as: $stderr::write @args
 define for: method (l m) as {
@@ -288,9 +288,9 @@ define import: syntax e (name) as {
     e::eval l
 }
 define is-list: method (l) as {
-    if (is-null l): return False
-    if (not: is-cons l): return False
-    if (is-null: cdr l): return True
+    if (is-null l): return false
+    if (not: is-cons l): return false
+    if (is-null: cdr l): return true
     is-list: cdr l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
@@ -298,7 +298,7 @@ define object: syntax e (: body) as {
     e::eval: cons 'block: append body '(clone)
 }
 define or: syntax e (: lst) as {
-    define r = False
+    define r = false
     while (not: is-null: car lst) {
 	set r: e::eval: car lst
         if r: return r
@@ -312,8 +312,8 @@ define substitute-stdin: syntax () as {
 define substitute-stdout: syntax () as {
     echo "process substitution not yet implemented."
 }
-define pipe-stderr: $connect pipe $stderr True
-define pipe-stdout: $connect pipe $stdout True
+define pipe-stderr: $connect pipe $stderr true
+define pipe-stdout: $connect pipe $stdout true
 define printf: method (: args) as: echo: (car args)::sprintf @(cdr args)
 define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read

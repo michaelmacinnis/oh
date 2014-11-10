@@ -32,7 +32,7 @@ extended:
 
     # The short-circuit and operator is defined using the syntax command.
     define and: syntax e (: lst) as {
-        define r = False
+        define r = false
         while (not: is-null: car lst) {
             set r: e::eval: car lst
             if (not r): return r
@@ -40,7 +40,7 @@ extended:
         }
         return r
     }
-    write: and True False (echo "Never reached")
+    write: and true false (echo "Never reached")
 
 Oh is properly tail-recursive and exposes continuations as first-class
 values:

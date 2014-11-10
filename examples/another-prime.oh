@@ -7,9 +7,9 @@ public next-prime: channel
 define number: integer 2
 define list-of-primes = '(1)
 
-spawn: while True {
+spawn: while true {
     define previous = list-of-primes
-    define prime: boolean True
+    define prime: boolean true
 
     while (and (cdr previous) prime) {
         set prime: mod number (cadr previous)

@@ -465,8 +465,8 @@ func RootScope() *Scope {
 	env0 = NewEnv(nil)
 	scope0 = NewScope(nil, nil)
 
-	env0.Add(NewSymbol("False"), False)
-	env0.Add(NewSymbol("True"), True)
+	env0.Add(NewSymbol("false"), False)
+	env0.Add(NewSymbol("true"), True)
 
 	/* Command-line arguments */
 	args := Null

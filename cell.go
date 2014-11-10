@@ -393,9 +393,9 @@ func (b *Boolean) Equal(c Cell) bool {
 
 func (b *Boolean) String() string {
 	if b == True {
-		return "True"
+		return "true"
 	}
-	return "False"
+	return "false"
 }
 
 func (b *Boolean) Float() float64 {
@@ -1094,7 +1094,7 @@ func NewSymbol(v string) *Symbol {
 }
 
 func (s *Symbol) Bool() bool {
-	if string(*s) == "False" {
+	if string(*s) == "false" {
 		return false
 	}
 

@@ -35,18 +35,18 @@ write [: is-symbol [
 write ]: is-symbol ]
 write _: is-symbol _
 
-#-     ! True
-#-     $ True
-#-     * True
-#-     + True
-#-     , True
-#-     - True
-#-     / True
-#-     = True
-#-     ? True
-#-     [ True
-#-     ] True
-#-     _ True
+#-     ! true
+#-     $ true
+#-     * true
+#-     + true
+#-     , true
+#-     - true
+#-     / true
+#-     = true
+#-     ? true
+#-     [ true
+#-     ] true
+#-     _ true
 
 define x this-is-a-symbol
 define predicates '(is-atom is-boolean is-builtin is-channel is-cons is-float is-integer is-method is-null is-number is-object is-pipe is-status is-string is-symbol is-syntax)
