@@ -22,7 +22,8 @@ write: boolean 0
 ##
 #+     false
 ##
-## Oh provides short-circuit `and` and `or` commands as well as `not`.
+## Oh provides short-circuit `and` and `or` commands as well as the `not`
+## command.
 ##
 ## The commands below,
 ##
@@ -38,7 +39,7 @@ echo "boolean not =>": not false
 #+     short-circuit or => true
 #+     boolean not => true
 ##
-## Oh also has relational operators:
+## Oh also provides a set of relational operators:
 ##
 #{
 echo "3 is equal to 2 =>": eq 3 2

@@ -17,9 +17,9 @@ produces the output,
 
 ## Integers
 
-In oh, things that look like integers are still symbols by default.
-To create an integer, the `integer` command can be used with an argument
-that will parse correctly as an integer.
+In oh, things that look like integers are still symbols by default. To
+explicitly create an integer, the `integer` command can be used with an
+argument that will parse correctly as an integer.
 
 The command,
 
@@ -66,8 +66,8 @@ Note that oh does not have infix arithmetic operators instead the commands
 ## Floats
 
 Just like integers in oh, things that look like floats are still symbols
-by default. To create a float, the `float` command can be used with an
-argument that will parse correctly as an float.
+by default. To explicitly create a float, the `float` command can be used
+with an argument that will parse correctly as an float.
 
 The command,
 
@@ -81,11 +81,11 @@ Again, like integers, oh will try to help by converting symbols that will
 parse correctly as a float when used in a context where that would be
 appropriate. For example,
 
-    write: add 1.2 2.3 3.4
+    write: add 3.14 2.72 1.41 2.50 4.67
 
 produces the output,
 
-    6.9
+    14.44
 
 ## Booleans
 
@@ -103,7 +103,8 @@ produces the output,
 
     false
 
-Oh provides short-circuit `and` and `or` commands as well as `not`.
+Oh provides short-circuit `and` and `or` commands as well as the `not`
+command.
 
 The commands below,
 
@@ -117,7 +118,7 @@ produce the output,
     short-circuit or => true
     boolean not => true
 
-Oh also has relational operators:
+Oh also provides a set of relational operators:
 
     echo "3 is equal to 2 =>": eq 3 2
     echo "3 is greater than or equal to 2 =>": ge 3 2

@@ -7,8 +7,8 @@
 ## ## Floats
 ##
 ## Just like integers in oh, things that look like floats are still symbols
-## by default. To create a float, the `float` command can be used with an
-## argument that will parse correctly as an float.
+## by default. To explicitly create a float, the `float` command can be used
+## with an argument that will parse correctly as an float.
 ##
 ## The command,
 ##
@@ -25,12 +25,12 @@ write: float "3.14"
 ## appropriate. For example,
 ##
 #{
-write: add 1.2 2.3 3.4
+write: add 3.14 2.72 1.41 2.50 4.67
 #}
 ##
 ## produces the output,
 ##
-#+     6.9
+#+     14.44
 ##
 
 define x: float -1

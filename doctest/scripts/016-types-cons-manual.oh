@@ -1,0 +1,75 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: cons
+# REQUIRE: status
+
+## ## Cons Cells
+##
+## Because of its Lisp heritage, one of oh's fundamental types is the cons
+## cell. A cons cell is a pair of values referred to as the head and tail or
+## (for historical reasons) the car and cdr. The head of a cons cell is
+## accessed using the `car` command. The tail of a cons cell is accessed using
+## the `cdr` command. The `cons` command is used to construct a new cons cell.
+##
+## The commands,
+##
+#{
+write: car: cons 11 12
+write: cdr: cons 11 12
+#}
+##
+## produce the output,
+##
+#+     11
+#+     12
+##
+## Lists, in oh, are composed of cons cells. A list, in oh, is formed by
+## chaining cons cells. The cdr of each cons cell is set to the next cons cell
+## in the list. The cdr of the last element in the list is set to empty list,
+## which is written as `'()`.
+##
+## The single quote before the parentheses is a short hand for the `quote`
+## command, which tells oh not to evaluate the following expression.
+##
+## The following commands are equivalent:
+##
+#{
+write: cons 1 (cons 2 (cons 3 '()))
+write: cons 1: cons 2: cons 3 '()
+write: list 1 2 3
+write '(1 2 3)
+#}
+##
+
+#-     (1 2 3)
+#-     (1 2 3)
+#-     (1 2 3)
+#-     (1 2 3)
+
+define x: cons 0 '()
+define predicates '(is-atom is-boolean is-builtin is-channel is-cons \
+                    is-float is-integer is-method is-null is-number \
+                    is-object is-pipe is-status is-string is-symbol is-syntax)
+for predicates: method (name) as {
+    define predicate: eval name
+    write name: "x => %v"::sprintf: predicate x
+}
+
+#-     is-atom "x => false"
+#-     is-boolean "x => false"
+#-     is-builtin "x => false"
+#-     is-channel "x => false"
+#-     is-cons "x => true"
+#-     is-float "x => false"
+#-     is-integer "x => false"
+#-     is-method "x => false"
+#-     is-null "x => false"
+#-     is-number "x => false"
+#-     is-object "x => false"
+#-     is-pipe "x => false"
+#-     is-status "x => false"
+#-     is-string "x => false"
+#-     is-symbol "x => false"
+#-     is-syntax "x => false"
+
