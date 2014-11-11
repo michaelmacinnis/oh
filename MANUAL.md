@@ -162,13 +162,12 @@ produce the output,
     11
     12
 
-Lists, in oh, are composed of cons cells. A list, in oh, is formed by
-chaining cons cells. The cdr of each cons cell is set to the next cons cell
-in the list. The cdr of the last element in the list is set to empty list,
-which is written as `'()`.
+Lists, in oh, are formed by chaining cons cells. The cdr of each cons cell
+is set to the next cons cell in the list. The cdr of the last element in
+the list is set to empty list, which is written as `'()`.
 
-The single quote before the parentheses is a short hand for the `quote`
-command, which tells oh not to evaluate the following expression.
+(The single quote before the parentheses is a short hand for the `quote`
+command, which tells oh not to evaluate the following expression).
 
 The following commands are equivalent:
 
