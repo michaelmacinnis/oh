@@ -4,7 +4,7 @@
 # PROVIDE: integers
 # REQUIRE: symbols
 
-## ## Integers
+## #### Integers
 ##
 ## In oh, things that look like integers are still symbols by default. To
 ## explicitly create an integer, the `integer` command can be used with an

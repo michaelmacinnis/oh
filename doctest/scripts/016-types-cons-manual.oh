@@ -4,7 +4,7 @@
 # PROVIDE: cons
 # REQUIRE: status
 
-## ## Cons Cells
+## #### Cons Cells
 ##
 ## Because of its Lisp heritage, one of oh's fundamental types is the cons
 ## cell. A cons cell is a pair of values referred to as the head and tail or

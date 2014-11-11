@@ -1,6 +1,6 @@
-# Types
+### Types
 
-## Symbols
+#### Symbols
 
 Oh's default data type is the symbol. A symbol is one or more alphanumeric
 or `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`, `?`, `[`, `]`, or  `_` 
@@ -15,7 +15,7 @@ produces the output,
 
     this-is-a-symbol
 
-## Integers
+#### Integers
 
 In oh, things that look like integers are still symbols by default. To
 explicitly create an integer, the `integer` command can be used with an
@@ -63,7 +63,7 @@ Note that oh does not have infix arithmetic operators instead the commands
     write: div 65536 256
     write: mod 511 256
 
-## Floats
+#### Floats
 
 Just like integers in oh, things that look like floats are still symbols
 by default. To explicitly create a float, the `float` command can be used
@@ -87,7 +87,7 @@ produces the output,
 
     14.44
 
-## Booleans
+#### Booleans
 
 Oh has a boolean type and the boolean values `true` and `false`.
 The `boolean` command can be used to create a boolean value. Passing
@@ -127,7 +127,7 @@ Oh also provides a set of relational operators:
     echo "3 is less than 2 =>": lt 3 2
     echo "3 is not equal to 2 =>": ne 3 2
 
-## The Status Type
+#### The Status Type
 
 Typical Unix commands return 0 on success and non-zero on failure. This
 makes sense as there are many ways to fail but typicaly only one way to
@@ -144,7 +144,7 @@ produces the output,
 
     false
 
-## Cons Cells
+#### Cons Cells
 
 Because of its Lisp heritage, one of oh's fundamental types is the cons
 cell. A cons cell is a pair of values referred to as the head and tail or
@@ -175,4 +175,28 @@ The following commands are equivalent:
     write: cons 1: cons 2: cons 3 '()
     write: list 1 2 3
     write '(1 2 3)
+
+### Control Structures
+
+#### Block
+
+The most basic control structure in oh is the block. A block creates a new
+scope.
+
+The command,
+
+    block {
+        define x = 1
+    }
+    set x = 3
+
+produces the output,
+
+    oh: 'x' is not defined
+
+as the variable x is not accessible outside the scope in which it was
+defined.
+
+Variable are created with the `define` command. A variable's value can be
+changed with the `set` (or `define`) command.
 

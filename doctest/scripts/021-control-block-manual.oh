@@ -1,0 +1,31 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: block
+# REQUIRE: control
+
+## #### Block
+##
+## The most basic control structure in oh is the block. A block creates a new
+## scope.
+##
+## The command,
+##
+#{
+block {
+    define x = 1
+}
+set x = 3
+#}
+##
+## produces the output,
+##
+#+     oh: 'x' is not defined
+##
+## as the variable x is not accessible outside the scope in which it was
+## defined.
+##
+## Variable are created with the `define` command. A variable's value can be
+## changed with the `set` (or `define`) command.
+##
+
