@@ -126,7 +126,7 @@ Oh also has relational operators:
     echo "3 is less than 2 =>": lt 3 2
     echo "3 is not equal to 2 =>": ne 3 2
 
-## Status
+## The Status Type
 
 Typical Unix commands return 0 on success and non-zero on failure. This
 makes sense as there are many ways to fail but typicaly only one way to
@@ -142,4 +142,37 @@ The command,
 produces the output,
 
     false
+
+## Cons Cells
+
+Because of its Lisp heritage, one of oh's fundamental types is the cons
+cell. A cons cell is a pair of values referred to as the head and tail or
+(for historical reasons) the car and cdr. The head of a cons cell is
+accessed using the `car` command. The tail of a cons cell is accessed using
+the `cdr` command. The `cons` command is used to construct a new cons cell.
+
+The commands,
+
+    write: car: cons 11 12
+    write: cdr: cons 11 12
+
+produce the output,
+
+    11
+    12
+
+Lists, in oh, are composed of cons cells. A list, in oh, is formed by
+chaining cons cells. The cdr of each cons cell is set to the next cons cell
+in the list. The cdr of the last element in the list is set to empty list,
+which is written as `'()`.
+
+The single quote before the parentheses is a short hand for the `quote`
+command, which tells oh not to evaluate the following expression.
+
+The following commands are equivalent:
+
+    write: cons 1 (cons 2 (cons 3 '()))
+    write: cons 1: cons 2: cons 3 '()
+    write: list 1 2 3
+    write '(1 2 3)
 
