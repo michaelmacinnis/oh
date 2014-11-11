@@ -26,6 +26,6 @@ set x = 3
 ## defined.
 ##
 ## Variable are created with the `define` command. A variable's value can be
-## changed with the `set` (or `define`) command.
+## changed with the `set` (or, in the same scope, `define`) command.
 ##
 

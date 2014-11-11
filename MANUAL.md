@@ -198,5 +198,39 @@ as the variable x is not accessible outside the scope in which it was
 defined.
 
 Variable are created with the `define` command. A variable's value can be
-changed with the `set` (or `define`) command.
+changed with the `set` (or, in the same scope, `define`) command.
+
+#### If
+
+Like other languages, oh has an if statement.
+
+The command,
+
+    if (cd /tmp) {
+        echo $cwd
+    }
+
+produces the output,
+
+    /tmp
+
+(The current working directory is stored in the variable `$cwd`).
+
+If statements may have an else clause:
+
+    if (cd /non-existent-directory) {
+        echo $cwd
+    } else {
+        echo "Couldn't change the current working directory."
+    }
+
+If statements can be chained:
+
+    if (cd /non-existent-directory) {
+        echo $cwd
+    } else: if (cd /another-non-existent-directory) {
+        echo $cwd
+    } else {
+        echo "Couldn't change the current working directory, again."
+    }
 
