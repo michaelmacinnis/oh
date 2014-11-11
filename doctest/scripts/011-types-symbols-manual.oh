@@ -7,7 +7,7 @@
 ## ## Symbols
 ##
 ## Oh's default data type is the symbol. A symbol is one or more alphanumeric
-## or '!', '$', '*', '+', ',', '-', '/', '=', '?', '[', ']', or  '_' 
+## or `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`, `?`, `[`, `]`, or  `_` 
 ## characters. Unless a symbol has been used as a variable name, it evaluates
 ## to itself.
 ##
