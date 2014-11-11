@@ -4,6 +4,10 @@ parser.go: parser.y
 	go fmt parser.go
 	rm -f y.output parser.go.save
 
+MANUAL.md:
+	doctest/test.oh
+	doctest/doc.oh manual > $@
+
 README.md:
 	doctest/test.oh
 	doctest/doc.oh readme > $@
@@ -11,5 +15,5 @@ README.md:
 clean:
 	rm -rf main.[0-9] oh
 
-.PHONY: clean README.md
+.PHONY: clean MANUAL.md README.md
 

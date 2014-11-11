@@ -1,8 +1,8 @@
 #!/usr/bin/env oh
 
 # KEYWORD: manual
-# PROVIDE: integers
-# REQUIRE: symbols
+# PROVIDE: floats
+# REQUIRE: integers
 
 ## ## Floats
 ##
@@ -13,7 +13,7 @@
 ## The command,
 ##
 #{
-write: float 3.14
+write: float "3.14"
 #}
 ##
 ## produces the output,

@@ -57,7 +57,7 @@ write: add 1 2 3
 #+     6
 ##
 ## Note that oh does not have infix arithmetic operators instead the commands
-## add, sub, mul, div and mod must be used.
+## `add`, `sub`, `mul`, `div` and `mod` must be used.
 ##
 #{
 write: sub 3 2 1

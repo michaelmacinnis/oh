@@ -1,0 +1,52 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: status
+# REQUIRE: booleans
+
+## ## Status
+##
+## Typical Unix commands return 0 on success and non-zero on failure. This
+## makes sense as there are many ways to fail but typicaly only one way to
+## succeed. As a result, most Unix shells treat the zero value as true and
+## non-zero values as false - unlike most other mainstream programming
+## languages. To solve this problem, oh introduces a status type. The status
+## type is an integer that evaluates to true only when it has the value 0.
+##
+## The command,
+##
+#{
+write: boolean: status 11
+#}
+##
+## produces the output,
+##
+#+     false
+##
+
+define x: status 0
+define predicates '(is-atom is-boolean is-builtin is-channel is-cons \
+                    is-float is-integer is-method is-null is-number \
+                    is-object is-pipe is-status is-string is-symbol is-syntax)
+for predicates: method (name) as {
+    define predicate: eval name
+    write name: "x => %v"::sprintf: predicate x
+}
+
+#-     is-atom "x => true"
+#-     is-boolean "x => false"
+#-     is-builtin "x => false"
+#-     is-channel "x => false"
+#-     is-cons "x => false"
+#-     is-float "x => false"
+#-     is-integer "x => false"
+#-     is-method "x => false"
+#-     is-null "x => false"
+#-     is-number "x => true"
+#-     is-object "x => false"
+#-     is-pipe "x => false"
+#-     is-status "x => true"
+#-     is-string "x => false"
+#-     is-symbol "x => false"
+#-     is-syntax "x => false"
+
