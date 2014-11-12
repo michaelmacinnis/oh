@@ -23,6 +23,7 @@ Oh is a Unix shell written in Go. The following commands behave as expected:
     cat greeting | wc	# Useless use of cat.
     tail -n1 greeting; cal 01 2030
     grep impossible *[a-z]ing &
+    wait
     mkdir junk && cd junk
     cd ..
     rm -r greeting junk || echo "rm failed!"

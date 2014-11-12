@@ -1,12 +1,10 @@
 #!/usr/bin/env oh
 
 # KEYWORD: manual
-# PROVIDE: block
-# REQUIRE: control
+# PROVIDE: if
+# REQUIRE: block
 
 ## #### If
-##
-## Like other languages, oh has an if statement.
 ##
 ## The command,
 ##

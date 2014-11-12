@@ -127,7 +127,7 @@ Oh also provides a set of relational operators:
     echo "3 is less than 2 =>": lt 3 2
     echo "3 is not equal to 2 =>": ne 3 2
 
-#### The Status Type
+#### Status
 
 Typical Unix commands return 0 on success and non-zero on failure. This
 makes sense as there are many ways to fail but typicaly only one way to
@@ -144,7 +144,7 @@ produces the output,
 
     false
 
-#### Cons Cells
+#### Conses
 
 Because of its Lisp heritage, one of oh's fundamental types is the cons
 cell. A cons cell is a pair of values referred to as the head and tail or
@@ -202,8 +202,6 @@ changed with the `set` (or, in the same scope, `define`) command.
 
 #### If
 
-Like other languages, oh has an if statement.
-
 The command,
 
     if (cd /tmp) {
@@ -233,4 +231,28 @@ If statements can be chained:
     } else {
         echo "Couldn't change the current working directory, again."
     }
+
+#### While
+
+The command,
+
+    define count = 0
+    while (lt x 10) {
+        write x
+        set x: add x 1
+    }
+
+produces the output,
+
+    0
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+
 

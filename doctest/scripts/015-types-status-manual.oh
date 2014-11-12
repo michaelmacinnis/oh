@@ -4,7 +4,7 @@
 # PROVIDE: status
 # REQUIRE: booleans
 
-## #### The Status Type
+## #### Status
 ##
 ## Typical Unix commands return 0 on success and non-zero on failure. This
 ## makes sense as there are many ways to fail but typicaly only one way to
