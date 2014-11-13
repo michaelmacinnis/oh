@@ -30,9 +30,9 @@ produces the output,
     -1
 
 In the above example parentheses are used around the `integer` command to
-indicate that it should be evaluated and its value used as the argument to
-write. Oh has a convenient shorthand when a command is to be evaluated and
-the result of this evaluation used as ## the final argument of another
+indicate that it should be evaluated and its value used as the argument
+to write. Oh has a convenient shorthand when a command is to be evaluated
+and the result of this evaluation used as the final argument of another
 command:
 
     write: integer -1
