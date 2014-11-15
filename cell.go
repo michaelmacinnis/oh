@@ -465,12 +465,12 @@ func (b *Bound) Self() Context {
 /* Builtin cell definition. */
 
 type Builtin struct {
-	Combiner
+	Command
 }
 
 func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
 	return &Builtin{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
+		Command{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 
@@ -482,9 +482,9 @@ func (b *Builtin) String() string {
 	return fmt.Sprintf("%%builtin %p%%", b)
 }
 
-/* Combiner cell definition. */
+/* Command cell definition. */
 
-type Combiner struct {
+type Command struct {
 	applier Function
 	body    Cell
 	label   Cell
@@ -492,27 +492,27 @@ type Combiner struct {
 	scope   Context
 }
 
-func (c *Combiner) Bool() bool {
+func (c *Command) Bool() bool {
 	return true
 }
 
-func (c *Combiner) Applier() Function {
+func (c *Command) Applier() Function {
 	return c.applier
 }
 
-func (c *Combiner) Body() Cell {
+func (c *Command) Body() Cell {
 	return c.body
 }
 
-func (c *Combiner) Params() Cell {
+func (c *Command) Params() Cell {
 	return c.params
 }
 
-func (c *Combiner) Label() Cell {
+func (c *Command) Label() Cell {
 	return c.label
 }
 
-func (c *Combiner) Scope() Context {
+func (c *Command) Scope() Context {
 	return c.scope
 }
 
@@ -765,12 +765,12 @@ func (i *Integer) Subtract(c Cell) Number {
 /* Method cell definition. */
 
 type Method struct {
-	Combiner
+	Command
 }
 
 func NewMethod(a Function, b, l, p Cell, s Context) Closure {
 	return &Method{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
+		Command{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 
@@ -1207,12 +1207,12 @@ func (s *Symbol) isInt() bool {
 /* Syntax cell definition. */
 
 type Syntax struct {
-	Combiner
+	Command
 }
 
 func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
 	return &Syntax{
-		Combiner{applier: a, body: b, label: l, params: p, scope: s},
+		Command{applier: a, body: b, label: l, params: p, scope: s},
 	}
 }
 
