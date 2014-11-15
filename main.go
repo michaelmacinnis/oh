@@ -295,7 +295,7 @@ define is-list: method (l) as {
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
 define object: syntax e (: body) as {
-    e::eval: cons 'block: append body '(clone)
+    e::eval: cons 'block: append body '(context)
 }
 define or: syntax e (: lst) as {
     define r = false

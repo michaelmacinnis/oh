@@ -672,6 +672,14 @@ func RootScope() *Scope {
 
 		return t.Return(NewObject(o.Copy()))
 	})
+	scope0.PublicMethod("context", func(t *Task, args Cell) bool {
+		self := Car(t.Scratch).(Binding).Self()
+		bare := self.Expose()
+		if self == bare {
+			self = NewObject(bare)
+		}
+		return t.Return(self)
+	})
 	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
 		t.Scratch = List(Car(args))
 
