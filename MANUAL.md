@@ -181,7 +181,7 @@ The following commands are equivalent:
 #### Block
 
 The most basic control structure in oh is the block. A block creates a new
-scope.
+scope and evaluates to the value returned by the final command in the block.
 
 The command,
 
@@ -192,7 +192,7 @@ The command,
 
 produces the output,
 
-    oh: 'x' is not defined
+    oh: 'x' undefined
 
 as the variable x is not accessible outside the scope in which it was
 defined.
@@ -257,4 +257,28 @@ produces the output,
 
 
 ### Objects and Methods
+
+#### Context
+
+In oh, environments are first-class values. The command `context` returns
+the current environment. The `context` command along with the `::` operator
+can be used to evaluate a public variable in an explicit context. For a
+variable to be public it must be created with the `public` command instead
+of the `define` command.
+
+The commands,
+
+    define o: block {
+        public x = 1
+        define y = 2
+        context
+    }
+    
+    echo "public variable" o::x
+    echo "private variable" o::y
+
+produce the output,
+
+    public variable 1
+    oh: y undefined
 

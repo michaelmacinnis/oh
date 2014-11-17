@@ -79,6 +79,7 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBuiltin
+	psEvalMember
 
 	psExecBuiltin
 	psExecCommand
@@ -2229,7 +2230,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	c := Resolve(t.Lexical, t.Dynamic, sym)
 	if c == nil {
 		r := raw(sym)
-		if t.Strict() && !number(r) {
+		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, r + " undefined"
 		}
 		t.Scratch = Cons(sym, t.Scratch)
@@ -2383,14 +2384,14 @@ func (t *Task) Run(end Cell) (successful bool) {
 			t.Code = Car(t.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementBuiltin:
+		case psEvalElement, psEvalElementBuiltin, psEvalMember:
 			if t.Code == Null {
 				t.Scratch = Cons(t.Code, t.Scratch)
 				break
 			} else if IsCons(t.Code) {
 				if IsAtom(Cdr(t.Code)) {
 					t.ReplaceStates(SaveDynamic|SaveLexical,
-						psEvalElement,
+						psEvalMember,
 						psChangeContext,
 						SaveCdrCode,
 						psEvalElement)
@@ -2432,7 +2433,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			k := t.Code.(*Symbol)
 			r := Resolve(t.Lexical, t.Dynamic, k)
 			if r == nil {
-				panic("'" + k.String() + "' is not defined")
+				panic("'" + k.String() + "' undefined")
 			}
 
 			r.Set(Car(t.Scratch))

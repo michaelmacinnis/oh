@@ -2,6 +2,7 @@
 
 # KEYWORD: manual
 # PROVIDE: objects
+# REQUIRE: while
 
 ## ### Objects and Methods
 ##
