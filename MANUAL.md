@@ -300,6 +300,51 @@ The previous example can be rewritten as,
 
 #### $root
 
-All variables in oh belongs to an environment. These environments are
+All variables in oh belong to an environment. These environments are
 chained. The top-level environment is called `$root`.
+
+#### Method
+
+A sequence of actions can be created with the `method` command.
+
+    define hello: method () as {
+        echo "Hello, World!"
+    }
+
+Once defined, a method can be called in the same way as other commands.
+
+    hello
+
+Methods can take arguments.
+
+    define sum3: method (a b c) as {
+        add a b c
+    }
+    sum3 1 2 3
+Methods can take a self parameter.
+
+    define point: method (r s) as: object {
+        define x: integer r
+        define y: integer s
+    
+        public get-x: method self () as {
+            return self::x
+        }
+    
+        public get-y: method self () as {
+            return self::y
+        }
+    
+        public move: method self (a b) as {
+            set self::x: add self::x a
+            set self::y: add self::y b
+        }
+    
+        public show: method self () as {
+            echo self::x self::y
+        }
+    }
+    
+    define p: point 0 0
+    p::show
 

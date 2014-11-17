@@ -102,14 +102,14 @@ prototype-based object system:
     
         public get-y: method self () as {
             return self::y
-            }
+        }
     
         public move: method self (a b) as {
             set self::x: add self::x a
             set self::y: add self::y b
         }
     
-            public show: method self () as {
+        public show: method self () as {
             echo self::x self::y
         }
     }

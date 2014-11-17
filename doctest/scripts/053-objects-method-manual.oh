@@ -1,0 +1,42 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: method
+# REQUIRE: object
+# BEFORE: point
+
+## #### Method
+##
+## A sequence of actions can be created with the `method` command.
+##
+#{
+define hello: method () as {
+    echo "Hello, World!"
+}
+#}
+##
+
+#-     Hello, World!
+
+## Once defined, a method can be called in the same way as other commands.
+##
+#{
+hello
+#}
+##
+
+#-     Hello, World!
+
+## Methods can take arguments.
+##
+#{
+define sum3: method (a b c) as {
+    add a b c
+}
+sum3 1 2 3
+#}
+
+#-     6
+
+## Methods can take a self parameter.
+##

@@ -3,37 +3,9 @@
 # KEYWORD: readme
 # PROVIDE: objects
 # REQUIRE: pipes
+# BEFORE: point
 
 ## Oh's environments are first-class and form the basis for its
 ## prototype-based object system:
 ##
-#{
-define point: method (r s) as: object {
-    define x: integer r
-    define y: integer s
-
-    public get-x: method self () as {
-        return self::x
-    }
-
-    public get-y: method self () as {
-        return self::y
-        }
-
-    public move: method self (a b) as {
-        set self::x: add self::x a
-        set self::y: add self::y b
-    }
-
-        public show: method self () as {
-        echo self::x self::y
-    }
-}
-
-define p: point 0 0
-p::show
-#}
-##
-
-#-     0 0
 
