@@ -1,0 +1,33 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: object
+# REQUIRE: context
+
+## #### Object
+##
+## Oh's first-class environments form the basis for its object system. In fact,
+## oh's `object` command is really just a convenience wrapper around a `block`
+## command with a `context` command as the final action.
+##
+## The previous example can be rewritten as,
+##
+#{
+define o: object {
+    public x = 1
+    define y = 2
+}
+
+echo "public member" o::x
+echo "private member" o::y
+#}
+##
+
+#-     public member 1
+#-     oh: y undefined
+
+## #### $root
+##
+## All variables in oh belong to an environment. These environments are
+## chained. The top-level environment is called `$root`.
+##

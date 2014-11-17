@@ -282,3 +282,24 @@ produce the output,
     public variable 1
     oh: y undefined
 
+#### Object
+
+Oh's first-class environments form the basis for its object system. In fact,
+oh's `object` command is really just a convenience wrapper around a `block`
+command with a `context` command as the final action.
+
+The previous example can be rewritten as,
+
+    define o: object {
+        public x = 1
+        define y = 2
+    }
+    
+    echo "public member" o::x
+    echo "private member" o::y
+
+#### $root
+
+All variables in oh belongs to an environment. These environments are
+chained. The top-level environment is called `$root`.
+
