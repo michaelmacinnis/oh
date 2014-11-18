@@ -117,6 +117,52 @@ prototype-based object system:
     define p: point 0 0
     p::show
 
+Shared behavior can be implemented by defining a method in an outer scope.
+
+The following code,
+
+    public me: method self () as: echo "my name is:" self::name
+    
+    define x: object {
+        define name = "x"
+    }
+    
+    x::me
+
+produces the output,
+
+    my name is: x
+
+An object may explicitly delegate behavior, as shown in the following code,
+
+    define y: object {
+        define name = "y"
+        public me-too = x::me    # Explicit delegation.
+    }
+    
+    y::me
+    y::me-too
+
+which produces the output,
+
+    my name is: y
+    my name is: y
+
+An object may redirect a call to another object, as shown in the code below,
+
+    define z: object {
+        define name = "z"
+        public you: method () as: x::me    # Redirection.
+    }
+    
+    z::me
+    z::you
+
+which produces the output,
+
+    my name is: z
+    my name is: x
+
 ## Installing
 
     go get github.com/michaelmacinnis/oh

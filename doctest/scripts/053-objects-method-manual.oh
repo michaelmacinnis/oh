@@ -7,7 +7,7 @@
 
 ## #### Method
 ##
-## A sequence of actions can be created with the `method` command.
+## A sequence of actions can be saved with the `method` command.
 ##
 #{
 define hello: method () as {
@@ -27,7 +27,7 @@ hello
 
 #-     Hello, World!
 
-## Methods can take arguments.
+## Arguments allow a method to be parameterized.
 ##
 #{
 define sum3: method (a b c) as {
@@ -35,8 +35,10 @@ define sum3: method (a b c) as {
 }
 sum3 1 2 3
 #}
+##
 
 #-     6
 
-## Methods can take a self parameter.
+## Methods may have a self parameter. The name for the self parameter must
+## appear before the list of arguments.
 ##

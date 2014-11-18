@@ -305,7 +305,7 @@ chained. The top-level environment is called `$root`.
 
 #### Method
 
-A sequence of actions can be created with the `method` command.
+A sequence of actions can be saved with the `method` command.
 
     define hello: method () as {
         echo "Hello, World!"
@@ -315,13 +315,15 @@ Once defined, a method can be called in the same way as other commands.
 
     hello
 
-Methods can take arguments.
+Arguments allow a method to be parameterized.
 
     define sum3: method (a b c) as {
         add a b c
     }
     sum3 1 2 3
-Methods can take a self parameter.
+
+Methods may have a self parameter. The name for the self parameter must
+appear before the list of arguments.
 
     define point: method (r s) as: object {
         define x: integer r
@@ -347,4 +349,50 @@ Methods can take a self parameter.
     
     define p: point 0 0
     p::show
+
+Shared behavior can be implemented by defining a method in an outer scope.
+
+The following code,
+
+    public me: method self () as: echo "my name is:" self::name
+    
+    define x: object {
+        define name = "x"
+    }
+    
+    x::me
+
+produces the output,
+
+    my name is: x
+
+An object may explicitly delegate behavior, as shown in the following code,
+
+    define y: object {
+        define name = "y"
+        public me-too = x::me    # Explicit delegation.
+    }
+    
+    y::me
+    y::me-too
+
+which produces the output,
+
+    my name is: y
+    my name is: y
+
+An object may redirect a call to another object, as shown in the code below,
+
+    define z: object {
+        define name = "z"
+        public you: method () as: x::me    # Redirection.
+    }
+    
+    z::me
+    z::you
+
+which produces the output,
+
+    my name is: z
+    my name is: x
 
