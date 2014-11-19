@@ -1,6 +1,6 @@
 ### Note:
 
-Oh now compiles and runs (but should be considered unstable) on Windows.
+Oh requires Go 1.4 to build. Go 1.4 has not yet been released.
 
 On BSD, Linux or Mac OS X, unless you are tracking the default (development)
 branch of Go, you will need to apply a small patch before building Oh.
@@ -10,6 +10,8 @@ all.bash to re-complile Go.
 
 Alternatively, remove your OS from the list of build constraints in the
 files unix.go and other.go to build oh with job control disabled.
+
+Oh now compiles and runs (but should be considered unstable) on Windows.
 
 # oh
 
