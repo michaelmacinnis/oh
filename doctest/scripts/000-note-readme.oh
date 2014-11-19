@@ -14,8 +14,9 @@
 ## as appropriate, over the existing file in your Go source tree and run
 ## all.bash to re-complile Go.
 ## 
-## Alternatively, remove your OS from the list of build constraints in the
-## files unix.go and other.go to build oh with job control disabled.
+## Alternatively, you should be able to remove your OS from the list of build
+## constraints in the files unix.go and other.go to build oh with job control
+## disabled.
 ##
 ## Oh now compiles and runs (but should be considered unstable) on Windows.
 ## 
