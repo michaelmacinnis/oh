@@ -1,17 +1,16 @@
 ### Note:
 
-Oh requires Go 1.4 to build. Go 1.4 has not yet been released.
+On BSD, Linux or Mac OS X, you will need to apply a small patch
+before building Oh. To apply the patch copy exec_bsd.go.patched or
+exec_linux.go.patched, as appropriate, over the existing file in
+your Go source tree and run all.bash to re-complile Go.
 
-On BSD, Linux or Mac OS X, unless you are tracking the default (development)
-branch of Go, you will need to apply a small patch before building Oh.
-To apply the patch copy exec_bsd.go.patched or exec_linux.go.patched,
-as appropriate, over the existing file in your Go source tree and run
-all.bash to re-complile Go.
+Alternatively, you should be able to remove your OS from the list
+of build constraints in the files unix.go and other.go to build oh
+with job control disabled.
 
-Alternatively, remove your OS from the list of build constraints in the
-files unix.go and other.go to build oh with job control disabled.
-
-Oh now compiles and runs (but should be considered unstable) on Windows.
+Oh now compiles and runs (but should be considered unstable) on
+Windows.
 
 # oh
 
@@ -118,52 +117,6 @@ prototype-based object system:
     
     define p: point 0 0
     p::show
-
-Shared behavior can be implemented by defining a method in an outer scope.
-
-The following code,
-
-    public me: method self () as: echo "my name is:" self::name
-    
-    define x: object {
-        define name = "x"
-    }
-    
-    x::me
-
-produces the output,
-
-    my name is: x
-
-An object may explicitly delegate behavior, as shown in the following code,
-
-    define y: object {
-        define name = "y"
-        public me-too = x::me    # Explicit delegation.
-    }
-    
-    y::me
-    y::me-too
-
-which produces the output,
-
-    my name is: y
-    my name is: y
-
-An object may redirect a call to another object, as shown in the code below,
-
-    define z: object {
-        define name = "z"
-        public you: method () as: x::me    # Redirection.
-    }
-    
-    z::me
-    z::you
-
-which produces the output,
-
-    my name is: z
-    my name is: x
 
 ## Installing
 
