@@ -91,24 +91,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	if r1 != 0 {
 		// parent; return PID
 		runtime_AfterFork()
-		pid = int(r1)
-
-		if sys.Setpgid || sys.Foreground || sys.Joinpgrp != 0 {
-			// Place child in process group.
-			setpgid(r1, uintptr(sys.Joinpgrp))
-		}
-
-		if sys.Foreground {
-			pgrp := sys.Joinpgrp
-			if pgrp == 0 {
-				pgrp = pid
-			}
-
-			// Place process group in foreground.
-			ioctl(uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
-		}
-
-		return pid, 0
+		return int(r1), 0
 	}
 
 	// Fork succeeded, now in child.
@@ -131,16 +114,24 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 /* 
- 	TODO: How do we call getpid?
+ 	TODO: Add getpid to thunk_solaris_amd64.s, syscall_solaris.c and syscall_solaris.go.
 
 	if sys.Foreground {
 		pgrp := sys.Joinpgrp
 		if pgrp == 0 {
-			pgrp = int(getpid())
+			r1, err1 = getpid()
+			if err1 != 0 {
+				goto childerror
+			}
+
+			pgrp = int(r1)
 		}
 
 		// Place process group in foreground.
-		ioctl(uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+		err1 = ioctl(uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+		if err1 != 0 {
+			goto childerror
+		}
 	}
 */
 
