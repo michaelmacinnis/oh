@@ -8,4 +8,6 @@
 ##
 ## Oh provides a command-line interface to Unix and Unix-like systems.
 ##
- 
+## (Much of this section shamelessly copied from "An Introduction to the
+## UNIX Shell")
+##

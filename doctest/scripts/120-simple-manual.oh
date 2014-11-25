@@ -1,0 +1,34 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: simple
+# REQUIRE: commands
+
+## ### Simple Commands
+##
+## Simple commands consist of one or more words separated by blanks. The first
+## word is the name of the command to be executed; any remaining words are
+## passed as arguments to the command. For example,
+##
+##     ls -l
+##
+
+mkdir /tmp/simple-commands
+cd /tmp/simple-commands
+touch 1 2 3
+ls -l | awk "{ print $1 FS $9 }"
+rm 1 2 3
+cd $origin
+rmdir /tmp/simple-commands
+
+#-     -rw-rw-r-- 1
+#-     -rw-rw-r-- 2
+#-     -rw-rw-r-- 3
+#-     total 
+
+## is a command that prints a list of files in the current directory. The
+## argument `-l` tells `ls` to print status information, the size and the
+## creation date for each file.
+##
+## Multiple commands may be written on the same line separated by a semicolon.
+##

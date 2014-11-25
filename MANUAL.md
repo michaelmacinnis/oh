@@ -4,6 +4,23 @@
 
 Oh provides a command-line interface to Unix and Unix-like systems.
 
+(Much of this section shamelessly copied from "An Introduction to the
+UNIX Shell")
+
+### Simple Commands
+
+Simple commands consist of one or more words separated by blanks. The first
+word is the name of the command to be executed; any remaining words are
+passed as arguments to the command. For example,
+
+    ls -l
+
+is a command that prints a list of files in the current directory. The
+argument `-l` tells `ls` to print status information, the size and the
+creation date for each file.
+
+Multiple commands may be written on the same line separated by a semicolon.
+
 ## Programming Language
 
 In addition to providing a command-line interface to Unix and Unix-like
