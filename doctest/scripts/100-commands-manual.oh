@@ -1,0 +1,11 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: commands
+# REQUIRE: intro
+
+## ## Command-Line Interface
+##
+## Oh provides a command-line interface to Unix and Unix-like systems.
+##
+ 
