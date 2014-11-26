@@ -21,6 +21,32 @@ creation date for each file.
 
 Multiple commands may be written on the same line separated by a semicolon.
 
+### Input/Output Redirection
+
+Standard input, standard output and standard error are initially connected
+to the terminal. Standard output may be sent to a file.
+
+    ls > file
+
+The notation `>file` is interpreted by the shell and is not passed as an
+argument to `ls`. If the file does not exist then the shell creates it,
+otherwise the original contents of the file are replaced with the output
+from ls. Output may also be appended to a file.
+
+    ls >> file
+
+Standard error may be redirected,
+
+    ls -l !>errors
+
+or appended to a file.
+
+    ls -l !>>errors
+
+Standard input may also be redirected.
+
+    wc -l <file
+
 ## Programming Language
 
 In addition to providing a command-line interface to Unix and Unix-like
