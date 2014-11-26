@@ -47,6 +47,31 @@ Standard input may also be redirected.
 
     wc -l <file
 
+### Pipelines and Filters
+
+The standard output of one command may be connected to the standard input
+of another command using the pipe operator.
+
+    ls | wc -l
+
+The commands connected in this way constitute a pipeline. The overall
+effect is the same as,
+
+    ls >file; wc -l file
+
+except that no file is used. Instead the two processes are connected by a
+pipe and are run in parallel.
+
+A filter is a command that reads its standard input, transforms it in some
+way, and sends the result to standard output. One such filter `grep` selects
+from its input those lines that contain some specified string.
+
+    ls | grep old
+
+A pipeline may consist of more than two commands.
+
+    ls | grep old | wc -l
+
 ## Programming Language
 
 In addition to providing a command-line interface to Unix and Unix-like
