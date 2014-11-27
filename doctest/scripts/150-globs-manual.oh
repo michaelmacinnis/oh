@@ -21,7 +21,7 @@ ls *.go
 ## that end in `.go`. The character * is a pattern that will match any string
 ## including the empty string. In general patterns are specified as follows.
 ##
-## | pattern | action                                                         |
+## | Pattern | Action                                                         |
 ## |:-------:|:---------------------------------------------------------------|
 ## |   `*`   | Matches any sequence of zero or more characters.               |
 ## |   `?`   | Matches any single character.                                  |
