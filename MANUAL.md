@@ -84,6 +84,7 @@ generates, as arguments to `ls`, all file names in the current directory
 that end in `.go`. The character * is a pattern that will match any string
 including the empty string. In general patterns are specified as follows.
 
+| pattern | action                                                         |
 |:-------:|:---------------------------------------------------------------|
 |   `*`   | Matches any sequence of zero or more characters.               |
 |   `?`   | Matches any single character.                                  |
