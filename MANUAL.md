@@ -2,7 +2,8 @@
 
 ## Command-Line Interface
 
-Oh provides a command-line interface to Unix and Unix-like systems.
+The oh shell provides a command-line interface to Unix and Unix-like
+systems.
 
 (Much of this section shamelessly copied from "An Introduction to the
 UNIX Shell")
@@ -71,6 +72,48 @@ from its input those lines that contain some specified string.
 A pipeline may consist of more than two commands.
 
     ls | grep old | wc -l
+
+### File Name Generation
+
+The oh shell provides a mechanism for generating a list of file names that
+match a pattern.
+
+    ls *.go
+
+generates, as arguments to `ls`, all file names in the current directory
+that end in `.go`. The character * is a pattern that will match any string
+including the empty string. In general patterns are specified as follows.
+
+|:-------:|:---------------------------------------------------------------|
+|   `*`   | Matches any sequence of zero or more characters.               |
+|   `?`   | Matches any single character.                                  |
+| `[...]` | Matches any one of the characters enclosed. A pair separated by a minus will match a lexical range of characters.|
+
+For example,
+
+    ls [a-z]*
+
+matches all names in the current directoy beginning with on of the letters
+`a` through `z`, while,
+
+    ls ?
+
+matches all names in the current directory that consist of a single
+character.
+
+There is one exception to the general rules given for patterns. The
+character `.` at the start of a file name must be explicitly matched.
+
+    echo *
+
+will therefore echo all file names not beginning with a `.` in the current
+directory, while,
+
+    echo .*
+
+will echo all those file names that begin with `.` as the `.` was explicitly
+specified. This avoids inadvertent matching of the names `.` and `..` which
+mean the current directory and the parent directory, respectively.
 
 ## Programming Language
 
