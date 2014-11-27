@@ -1,0 +1,43 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: quoting
+# REQUIRE: globs
+
+## ### Quoting
+##
+## Characters that have a special meaning to the shell, such as `<` and `>`,
+## are called metacharacters. These characters must be quoted to strip them of
+## their special meaning.
+##
+#{
+echo "?"
+#}
+##
+## will echo a single `?',
+##
+
+#-     ?
+
+## while, 
+##
+#{
+echo "xx**\"**xx"
+#}
+##
+## will echo,
+##
+#+     xx**"**xx
+##
+## The quoted string may not contain an unescaped double quote but may contain
+## contain newlines, which are preserved.
+##
+#{
+echo "Hello,
+World!"
+#}
+##
+
+#-     Hello,
+#-     World!
+

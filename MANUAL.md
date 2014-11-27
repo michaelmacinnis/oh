@@ -116,6 +116,30 @@ will echo all those file names that begin with `.` as the `.` was explicitly
 specified. This avoids inadvertent matching of the names `.` and `..` which
 mean the current directory and the parent directory, respectively.
 
+### Quoting
+
+Characters that have a special meaning to the shell, such as `<` and `>`,
+are called metacharacters. These characters must be quoted to strip them of
+their special meaning.
+
+    echo "?"
+
+will echo a single `?',
+
+while, 
+
+    echo "xx**\"**xx"
+
+will echo,
+
+    xx**"**xx
+
+The quoted string may not contain an unescaped double quote but may contain
+contain newlines, which are preserved.
+
+    echo "Hello,
+    World!"
+
 ## Programming Language
 
 In addition to providing a command-line interface to Unix and Unix-like

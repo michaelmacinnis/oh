@@ -462,10 +462,8 @@ main:
             case '\n','%','&','\'','(',')',';',
                 '<','@','^','`','{','|','}',
                 '\t',' ','"','#',':','>':
-                if s.line[s.cursor - 1] != '\\' {
-                    s.token = SYMBOL
-                    continue main
-                }
+                s.token = SYMBOL
+                continue main
             }
 
         }
