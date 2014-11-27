@@ -94,7 +94,7 @@ For example,
 
     ls [a-z]*
 
-matches all names in the current directoy beginning with on of the letters
+matches all names in the current directory beginning with on of the letters
 `a` through `z`, while,
 
     ls ?
