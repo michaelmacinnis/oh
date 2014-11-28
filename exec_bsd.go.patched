@@ -19,7 +19,7 @@ type SysProcAttr struct {
 	Setpgid    bool        // Set process group ID to new pid (SYSV setpgrp)
 	Setctty    bool        // Set controlling terminal to fd 0
 	Noctty     bool        // Detach fd 0 from controlling terminal
-	Foreground bool        // Place child's process group in foreground. (Implies Setpgid. Stdin should be a TTY)
+	Foreground bool        // Place child's process group in foreground. (Implies Setpgid. Stdout should be a TTY)
 	Joinpgrp   int         // If != 0, child's process group ID. (Implies Setpgid)
 }
 
@@ -123,7 +123,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		}
 
 		// Place process group in foreground.
-		_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdin), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+		_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(Stdout), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
 		if err1 != 0 {
 			goto childerror
 		}

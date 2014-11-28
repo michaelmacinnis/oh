@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+/*
+import "unsafe"
+
+//#include <signal.h>
+//#include <unistd.h>
+//void ignore(void) {
+//      signal(SIGTTOU, SIG_IGN);
+//      signal(SIGTTIN, SIG_IGN);
+//}
+import "C"
+*/
+
 type handle struct {
 	*exec.Cmd
 	io.WriteCloser
@@ -141,4 +153,42 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 	cmd1.Stop()
 	cmd2.Stop()
 }
+
+/*
+ 
+ To test Foreground we need to be able to ignore signals
+
+func TestForeground(t *testing.T) {
+	fpgrp := 0
+
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
+				       uintptr(syscall.Stdout),
+				       syscall.TIOCGPGRP,
+				       uintptr(unsafe.Pointer(&fpgrp)))
+
+
+	if errno != 0 || fpgrp == 0 {
+		t.FailNow()
+	}
+
+	ppid, ppgrp := parent()
+
+	cmd := command(t)
+
+        cmd.SysProcAttr = &syscall.SysProcAttr{Foreground: true}
+	cmd.Start()
+
+	cpid, cpgrp := child(cmd)
+
+	if cpid == ppid || cpgrp == ppgrp || cpid != cpgrp {
+		t.FailNow()
+	}
+
+	cmd.Stop()
+
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdout),
+			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&fpgrp)))
+}
+
+*/
 
