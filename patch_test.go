@@ -7,89 +7,95 @@ import (
 	"testing"
 )
 
-func child(t *testing.T, cmd *exec.Cmd) (pid, pgrp int) {
+type handle struct {
+	*exec.Cmd
+	io.WriteCloser
+	*testing.T
+}
+
+func (h *handle) Stop() {
+	h.Close()
+	h.Wait()
+}
+
+func child(cmd *handle) (pid, pgrp int) {
 	pid = cmd.Process.Pid
 
 	pgrp, err := syscall.Getpgid(pid)
 	if err != nil {
-		t.Fatal(err)
+		cmd.Fatal(err)
 	}
 
 	return
 }
 
-func parent(t *testing.T) (pid, pgrp int) {
-	return syscall.Getpid(), syscall.Getpgrp()
-}
-
-func command(t *testing.T) (cmd *exec.Cmd, stdin io.WriteCloser) {
-        cmd = exec.Command("cat")
+func command(t *testing.T) *handle {
+        cmd := exec.Command("cat")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return
+	return &handle{cmd, stdin, t}
 }
 
-func stop(t *testing.T, cmd *exec.Cmd, stdin io.WriteCloser) {
+func parent() (pid, pgrp int) {
+	return syscall.Getpid(), syscall.Getpgrp()
 }
 
-func TestBare(t *testing.T) {
-	ppid, ppgrp := parent(t)
+func TestZeroSysProcAttr(t *testing.T) {
+	ppid, ppgrp := parent()
 
-	cmd, stdin := command(t)
+	cmd := command(t)
 
 	cmd.Start()
 
-	cpid, cpgrp := child(t, cmd)
+	cpid, cpgrp := child(cmd)
 
 	if cpid == ppid || cpgrp != ppgrp {
 		t.FailNow()
 	}
 
-	stdin.Close()
-	cmd.Wait()
+	cmd.Stop()
 }
 
 func TestSetpgid(t *testing.T) {
-	ppid, ppgrp := parent(t)
+	ppid, ppgrp := parent()
 
-	cmd, stdin := command(t)
+	cmd := command(t)
 
         cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Start()
 
-	cpid, cpgrp := child(t, cmd)
+	cpid, cpgrp := child(cmd)
 
 	if cpid == ppid || cpgrp == ppgrp || cpid != cpgrp {
 		t.FailNow()
 	}
 
-	stdin.Close()
-	cmd.Wait()
+	cmd.Stop()
 }
 
 func TestJoinpgrp(t *testing.T) {
-	ppid, ppgrp := parent(t)
+	ppid, ppgrp := parent()
 
-	cmd1, stdin1 := command(t)
+	cmd1 := command(t)
 
         cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd1.Start()
 
-	cpid1, cpgrp1 := child(t, cmd1)
+	cpid1, cpgrp1 := child(cmd1)
 
 	if cpid1 == ppid || cpgrp1 == ppgrp || cpid1 != cpgrp1 {
 		t.FailNow()
 	}
 
-	cmd2, stdin2 := command(t)
+	cmd2 := command(t)
 
         cmd2.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Joinpgrp: cpgrp1}
 	cmd2.Start()
 
-	cpid2, cpgrp2 := child(t, cmd2)
+	cpid2, cpgrp2 := child(cmd2)
 
 	if cpid2 == ppid || cpgrp2 == ppgrp || cpid2 == cpgrp2 {
 		t.FailNow()
@@ -99,33 +105,30 @@ func TestJoinpgrp(t *testing.T) {
 		t.FailNow()
 	}
 
-	stdin1.Close()
-	cmd1.Wait()
-
-	stdin2.Close()
-	cmd2.Wait()
+	cmd1.Stop()
+	cmd2.Stop()
 }
 
 func TestJoinpgrpImpliedSetpgid(t *testing.T) {
-	ppid, ppgrp := parent(t)
+	ppid, ppgrp := parent()
 
-	cmd1, stdin1 := command(t)
+	cmd1 := command(t)
 
         cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd1.Start()
 
-	cpid1, cpgrp1 := child(t, cmd1)
+	cpid1, cpgrp1 := child(cmd1)
 
 	if cpid1 == ppid || cpgrp1 == ppgrp || cpid1 != cpgrp1 {
 		t.FailNow()
 	}
 
-	cmd2, stdin2 := command(t)
+	cmd2 := command(t)
 
         cmd2.SysProcAttr = &syscall.SysProcAttr{Joinpgrp: cpgrp1}
 	cmd2.Start()
 
-	cpid2, cpgrp2 := child(t, cmd2)
+	cpid2, cpgrp2 := child(cmd2)
 
 	if cpid2 == ppid || cpgrp2 == ppgrp || cpid2 == cpgrp2 {
 		t.FailNow()
@@ -135,10 +138,7 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 		t.FailNow()
 	}
 
-	stdin1.Close()
-	cmd1.Wait()
-
-	stdin2.Close()
-	cmd2.Wait()
+	cmd1.Stop()
+	cmd2.Stop()
 }
 
