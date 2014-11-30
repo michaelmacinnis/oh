@@ -543,3 +543,30 @@ which produces the output,
     my name is: z
     my name is: x
 
+### Pipes
+
+Using oh, it is relatively simple to record the exit status for each stage
+in a pipeline. The example below,
+
+    define exit-status: channel 3
+    
+    define pipe-fitting: method (label cmd: args) as {
+        exit-status::write label: cmd @args
+    }
+    
+    pipe-fitting "1st stage in pipeline" echo 1 2 3 |
+    pipe-fitting "2nd stage in pipeline" tr " " "\n" |
+    pipe-fitting "3rd stage in pipeline" grep 2
+    
+    write: exit-status::read
+    write: exit-status::read
+    write: exit-status::read
+    
+
+produces the output,
+
+    2
+    ("1st stage in pipeline" true)
+    ("2nd stage in pipeline" 0)
+    ("3rd stage in pipeline" 0)
+
