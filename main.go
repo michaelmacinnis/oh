@@ -263,7 +263,7 @@ define backtick: syntax e (cmd) as {
 }
 define channel-stderr: $connect channel $stderr true
 define channel-stdout: $connect channel $stdout true
-define echo: builtin (: args) as: $stdout::write @args
+define echo: builtin (: args) as: $stdout::write @(for args symbol)
 define error: builtin (: args) as: $stderr::write @args
 define for: method (l m) as {
     define r: cons '() '()

@@ -156,7 +156,7 @@ func complete(line string) []string {
 	return completions
 }
 
-func expand(args Cell) Cell {
+func expand(t *Task, args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
@@ -184,7 +184,7 @@ func expand(args Cell) Cell {
 
 		for _, v := range m {
 			if v[0] != '.' || s[0] == '.' {
-				e := NewSymbol(v)
+				e := NewString(t, v)
 				list = AppendTo(list, e)
 			}
 		}
@@ -2272,7 +2272,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			args := t.Arguments()
 
 			if state == psExecBuiltin {
-				args = expand(args)
+				args = expand(t, args)
 			}
 
 			t.Code = args
