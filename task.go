@@ -688,11 +688,37 @@ func RootScope() *Scope {
 
 		return true
 	})
+	scope0.PublicMethod("get-slot", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
+
+		s := raw(Car(args))
+		k := NewSymbol(s)
+
+		c := Resolve(o, nil, k)
+		if c == nil {
+			panic(s + " undefined")
+		} else if a, ok := c.Get().(Binding); ok {
+			return t.Return(a.Bind(t.Lexical))
+		} else {
+			return t.Return(c.Get())
+		}
+	})
 	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
 		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
+	})
+	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
+
+		s := raw(Car(args))
+		v := Cadr(args)
+
+		k := NewSymbol(s)
+
+		o.Public(k, v)
+		return t.Return(v)
 	})
 	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
 		l := Car(t.Scratch).(Binding).Self()
