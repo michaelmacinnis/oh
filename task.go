@@ -2169,7 +2169,7 @@ func (t *Task) External(args Cell) bool {
 	argv := []string{arg0}
 
 	for ; args != Null; args = Cdr(args) {
-		argv = append(argv, Car(args).String())
+		argv = append(argv, raw(Car(args)))
 	}
 
 	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))

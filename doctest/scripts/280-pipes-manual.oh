@@ -10,27 +10,26 @@
 ## in a pipeline. The example below,
 ##
 #{
-define exit-status: channel 3
+define exit-status: object
 
 define pipe-fitting: method (label cmd: args) as {
-    exit-status::write label: cmd @args
+    exit-status::set-slot label: cmd @args
 }
 
-pipe-fitting "1st stage in pipeline" echo 1 2 3 |
-pipe-fitting "2nd stage in pipeline" tr " " "\n" |
-pipe-fitting "3rd stage in pipeline" grep 2
+pipe-fitting "1st" echo 1 2 3 |
+pipe-fitting "2nd" tr " " "\n" |
+pipe-fitting "3rd" grep 2
 
-write: exit-status::read
-write: exit-status::read
-write: exit-status::read
-
+echo "1st stage exit status =>": exit-status::get-slot "1st"
+echo "2nd stage exit status =>": exit-status::get-slot "2nd"
+echo "3rd stage exit status =>": exit-status::get-slot "3rd"
 #}
 ##
 ## produces the output,
 ##
 #+     2
-#+     ("1st stage in pipeline" true)
-#+     ("2nd stage in pipeline" 0)
-#+     ("3rd stage in pipeline" 0)
+#+     1st stage exit status => true
+#+     2nd stage exit status => 0
+#+     3rd stage exit status => 0
 ##
 
