@@ -569,3 +569,53 @@ produces the output,
     2nd stage exit status => 0
     3rd stage exit status => 0
 
+### Channels
+
+In addition to pipes, oh exposes channels as first-class values. Channels
+allow particularly elegant solutions to some problems, as shown in the prime
+sieve example below (adapted from "Newsqueak: A Language for Communicating
+with Mice").
+
+    define counter: method (n) as {
+        while true {
+            write: set n: add n 1
+        }
+    }
+    
+    define filter: method (base) as {
+        while true {
+    	define n: car: read
+            if (mod n base): write n
+        }
+    }
+    
+    define prime-numbers: channel
+    
+    counter 2 |+ block {
+        define in = $stdin
+    
+        while true {
+            define prime: car: in::read
+            write prime
+    
+            define out: channel
+            spawn: filter prime <in >out
+    
+            set in = out
+        }
+    } >prime-numbers &
+    
+    define count: integer 100
+    printf "The first %d prime numbers" count
+    
+    define line = ""
+    while count {
+        define p: car: read
+        set line = line ^ ("%7d"::sprintf p)
+        set count: sub count 1
+        if (not: mod count 10) {
+            echo line
+    	set line = ""
+        }
+    } <prime-numbers
+
