@@ -2,8 +2,8 @@ package main
 
 import (
 	"io"
-        "os/exec"
-        "syscall"
+	"os/exec"
+	"syscall"
 	"testing"
 )
 
@@ -42,7 +42,7 @@ func child(cmd *handle) (pid, pgrp int) {
 }
 
 func command(t *testing.T) *handle {
-        cmd := exec.Command("cat")
+	cmd := exec.Command("cat")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +76,7 @@ func TestSetpgid(t *testing.T) {
 
 	cmd := command(t)
 
-        cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Start()
 
 	cpid, cpgrp := child(cmd)
@@ -93,7 +93,7 @@ func TestJoinpgrp(t *testing.T) {
 
 	cmd1 := command(t)
 
-        cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd1.Start()
 
 	cpid1, cpgrp1 := child(cmd1)
@@ -104,7 +104,7 @@ func TestJoinpgrp(t *testing.T) {
 
 	cmd2 := command(t)
 
-        cmd2.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Joinpgrp: cpgrp1}
+	cmd2.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Joinpgrp: cpgrp1}
 	cmd2.Start()
 
 	cpid2, cpgrp2 := child(cmd2)
@@ -126,7 +126,7 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 
 	cmd1 := command(t)
 
-        cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd1.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd1.Start()
 
 	cpid1, cpgrp1 := child(cmd1)
@@ -137,7 +137,7 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 
 	cmd2 := command(t)
 
-        cmd2.SysProcAttr = &syscall.SysProcAttr{Joinpgrp: cpgrp1}
+	cmd2.SysProcAttr = &syscall.SysProcAttr{Joinpgrp: cpgrp1}
 	cmd2.Start()
 
 	cpid2, cpgrp2 := child(cmd2)
@@ -155,7 +155,7 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 }
 
 /*
- 
+
  To test Foreground we need to be able to ignore signals
 
 func TestForeground(t *testing.T) {
@@ -191,4 +191,3 @@ func TestForeground(t *testing.T) {
 }
 
 */
-

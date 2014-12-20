@@ -30,7 +30,7 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = cli.State.Prompt("> "); err == nil {
+	if line, err = cli.State.AbortablePrompt("> ", "^C"); err == nil {
 		cli.AppendHistory(line)
 		if task0.Job.command == "" {
 			task0.Job.command = line
