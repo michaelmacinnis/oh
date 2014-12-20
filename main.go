@@ -27,7 +27,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"syscall"
 )
 
 var done0 chan Cell
@@ -44,12 +43,7 @@ func broker() {
 	for c == nil && ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
-			case sig := <-irq:
-				// Handle signals.
-				switch sig {
-				case syscall.SIGINT:
-					Interface().Abort()
-				}
+			case <-irq:
 			case c = <-eval0:
 			}
 		}
