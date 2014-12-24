@@ -5,7 +5,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/liner"
+	"github.com/peterh/liner"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -30,7 +30,7 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = cli.State.AbortablePrompt("> ", "^C"); err == nil {
+	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
 		if task0.Job.command == "" {
 			task0.Job.command = line
@@ -253,6 +253,7 @@ func init() {
 
 		uncooked, _ = liner.TerminalMode()
 
+		cli.SetCtrlCAborts(true)
 		cli.SetCompleter(complete)
 
 		signal.Notify(incoming, signals...)

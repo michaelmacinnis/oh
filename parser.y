@@ -17,7 +17,7 @@
 package main
 
 import (
-    "github.com/michaelmacinnis/liner"
+    "github.com/peterh/liner"
     "strconv"
     "unsafe"
 )
