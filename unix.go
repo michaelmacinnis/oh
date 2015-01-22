@@ -133,6 +133,7 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 	sys := &syscall.SysProcAttr{}
 
 	if group == 0 {
+		sys.Ctty = syscall.Stdout
 		sys.Setpgid = true
 		sys.Foreground = true
 	} else {
