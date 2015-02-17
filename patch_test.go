@@ -3,21 +3,11 @@ package main
 import (
 	"io"
 	"os/exec"
+	"os/signal"
 	"syscall"
 	"testing"
+	"unsafe"
 )
-
-/*
-import "unsafe"
-
-//#include <signal.h>
-//#include <unistd.h>
-//void ignore(void) {
-//      signal(SIGTTOU, SIG_IGN);
-//      signal(SIGTTIN, SIG_IGN);
-//}
-import "C"
-*/
 
 type handle struct {
 	*exec.Cmd
@@ -154,18 +144,15 @@ func TestJoinpgrpImpliedSetpgid(t *testing.T) {
 	cmd2.Stop()
 }
 
-/*
-
- To test Foreground we need to be able to ignore signals
-
 func TestForeground(t *testing.T) {
+	signal.Ignore(syscall.SIGTTIN, syscall.SIGTTOU)
+
 	fpgrp := 0
 
 	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
-				       uintptr(syscall.Stdout),
-				       syscall.TIOCGPGRP,
-				       uintptr(unsafe.Pointer(&fpgrp)))
-
+		uintptr(syscall.Stdout),
+		syscall.TIOCGPGRP,
+		uintptr(unsafe.Pointer(&fpgrp)))
 
 	if errno != 0 || fpgrp == 0 {
 		t.FailNow()
@@ -175,7 +162,10 @@ func TestForeground(t *testing.T) {
 
 	cmd := command(t)
 
-        cmd.SysProcAttr = &syscall.SysProcAttr{Foreground: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Ctty:       syscall.Stdout,
+		Foreground: true,
+	}
 	cmd.Start()
 
 	cpid, cpgrp := child(cmd)
@@ -187,7 +177,5 @@ func TestForeground(t *testing.T) {
 	cmd.Stop()
 
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdout),
-			syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&fpgrp)))
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&fpgrp)))
 }
-
-*/

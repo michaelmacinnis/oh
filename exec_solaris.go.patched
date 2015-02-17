@@ -19,9 +19,10 @@ type SysProcAttr struct {
 	Credential *Credential // Credential.
 	Setsid     bool        // Create session.
 	Setpgid    bool        // Set process group ID to new pid (SYSV setpgrp)
-	Setctty    bool        // Set controlling terminal to fd 0
+	Setctty    bool        // Set controlling terminal to fd Ctty
 	Noctty     bool        // Detach fd 0 from controlling terminal
-	Foreground bool        // Place child's process group in foreground. (Implies Setpgid. Stdout should be a TTY)
+	Ctty       int         // Controlling TTY fd
+	Foreground bool        // Place child's process group in foreground. (Implies Setpgid. Uses Ctty as fd of controlling TTY)
 	Joinpgrp   int         // If != 0, child's process group ID. (Implies Setpgid)
 }
 
@@ -52,7 +53,7 @@ func write1(fd uintptr, buf uintptr, nbyte uintptr) (n uintptr, err Errno)
 // no rescheduling, no malloc calls, and no new stack segments.
 //
 // We call hand-crafted syscalls, implemented in
-// ../runtime/syscall_solaris.goc, rather than generated libc wrappers
+// ../runtime/syscall_solaris.go, rather than generated libc wrappers
 // because we need to avoid lazy-loading the functions (might malloc,
 // split the stack, or acquire mutexes). We can't call RawSyscall
 // because it's not safe even for BSD-subsystem calls.
@@ -115,6 +116,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 /* 
  	TODO: Add getpid to thunk_solaris_amd64.s, syscall_solaris.c and syscall_solaris.go.
+*/
 
 	if sys.Foreground {
 		pgrp := sys.Joinpgrp
@@ -128,12 +130,13 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		}
 
 		// Place process group in foreground.
-		err1 = ioctl(uintptr(Stdout), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
-		if err1 != 0 {
-			goto childerror
+		if sys.Ctty >= 0 {
+			err1 = ioctl(uintptr(sys.Ctty), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+			if err1 != 0 {
+				goto childerror
+			}
 		}
 	}
-*/
 
 	// Chroot
 	if chroot != nil {
@@ -237,9 +240,9 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		}
 	}
 
-	// Make fd 0 the tty
-	if sys.Setctty {
-		err1 = ioctl(0, uintptr(TIOCSCTTY), 0)
+	// Set the controlling TTY to Ctty
+	if sys.Setctty && sys.Ctty >= 0 {
+		err1 = ioctl(uintptr(sys.Ctty), uintptr(TIOCSCTTY), 0)
 		if err1 != 0 {
 			goto childerror
 		}

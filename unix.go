@@ -8,16 +8,12 @@ package main
 
 import (
 	"os"
+	"os/signal"
 	"syscall"
 	"unsafe"
 )
 
-//#include <signal.h>
 //#include <unistd.h>
-//void ignore(void) {
-//      signal(SIGTTOU, SIG_IGN);
-//      signal(SIGTTIN, SIG_IGN);
-//}
 import "C"
 
 var (
@@ -31,7 +27,7 @@ func ContinueProcess(pid int) {
 }
 
 func InitSignalHandling() {
-	C.ignore()
+	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
 }
 
 func InputIsTTY() bool {
