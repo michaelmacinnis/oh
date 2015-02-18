@@ -2,12 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ***************************************************************************
-//
-// THIS PATCH DOES NOT WORK YET!
-//
-// ***************************************************************************
-
 package syscall
 
 import (
@@ -37,6 +31,7 @@ func execve(path uintptr, argv uintptr, envp uintptr) (err Errno)
 func exit(code uintptr)
 func fcntl1(fd uintptr, cmd uintptr, arg uintptr) (val uintptr, err Errno)
 func forkx(flags uintptr) (pid uintptr, err Errno)
+func getpid() (pid uintptr, err Errno)
 func ioctl(fd uintptr, req uintptr, arg uintptr) (err Errno)
 func setgid(gid uintptr) (err Errno)
 func setgroups1(ngid uintptr, gid uintptr) (err Errno)
@@ -114,10 +109,6 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 		}
 	}
 
-/* 
- 	TODO: Add getpid to thunk_solaris_amd64.s, syscall_solaris.c and syscall_solaris.go.
-*/
-
 	if sys.Foreground {
 		pgrp := sys.Joinpgrp
 		if pgrp == 0 {
@@ -131,7 +122,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 		// Place process group in foreground.
 		if sys.Ctty >= 0 {
-			err1 = ioctl(uintptr(sys.Ctty), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+			err1 = ioctl(uintptr(sys.Ctty), uintptr(TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp)))
 			if err1 != 0 {
 				goto childerror
 			}

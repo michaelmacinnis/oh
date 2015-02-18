@@ -125,7 +125,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 
 		// Place process group in foreground.
 		if sys.Ctty >= 0 {
-			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(sys.Ctty), TIOCSPGRP, uintptr(unsafe.Pointer(&pgrp)))
+			_, _, err1 = RawSyscall(SYS_IOCTL, uintptr(sys.Ctty), uintptr(TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp)))
 			if err1 != 0 {
 				goto childerror
 			}
