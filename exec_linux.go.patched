@@ -23,12 +23,12 @@ type SysProcAttr struct {
 	Credential  *Credential    // Credential.
 	Ptrace      bool           // Enable tracing.
 	Setsid      bool           // Create session.
-	Setpgid     bool           // Set process group ID to new pid (SYSV setpgrp)
+	Setpgid     bool           // Set process group ID to Joinpgrp or new pid (SYSV setpgrp) if Joinpgrp == 0
 	Setctty     bool           // Set controlling terminal to fd Ctty (only meaningful if Setsid is set)
 	Noctty      bool           // Detach fd 0 from controlling terminal
 	Ctty        int            // Controlling TTY fd
 	Foreground  bool           // Place child's process group in foreground. (Implies Setpgid. Uses Ctty as fd of controlling TTY)
-	Joinpgrp    int            // If != 0, child's process group ID. (Implies Setpgid)
+	Joinpgrp    int            // If > 0, child's process group ID. (Implies Setpgid)
 	Pdeathsig   Signal         // Signal that the process will get when its parent dies (Linux only)
 	Cloneflags  uintptr        // Flags for clone calls (Linux only)
 	UidMappings []SysProcIDMap // User ID mappings for user namespaces.
@@ -169,7 +169,7 @@ func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr
 	}
 
 	// Set process group
-	if sys.Setpgid || sys.Foreground || sys.Joinpgrp != 0 {
+	if sys.Setpgid || sys.Foreground || sys.Joinpgrp > 0 {
 		// Place child in process group.
 		_, _, err1 = RawSyscall(SYS_SETPGID, 0, uintptr(sys.Joinpgrp), 0)
 		if err1 != 0 {
