@@ -242,12 +242,12 @@ func init() {
 	signals := []os.Signal{InterruptRequest, StopRequest}
 	incoming = make(chan os.Signal, len(signals))
 
-	interactive = len(os.Args) <= 1 && InputIsTTY()
+	// We assume the terminal starts in cooked mode.
+	cooked, _ = liner.TerminalMode()
+
+	interactive = len(os.Args) <= 1 && cooked != nil
 	if interactive {
 		InitSignalHandling()
-
-		// We assume the terminal starts in cooked mode.
-		cooked, _ = liner.TerminalMode()
 
 		cli = &Liner{liner.NewLiner()}
 

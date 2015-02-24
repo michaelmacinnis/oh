@@ -13,9 +13,6 @@ import (
 	"unsafe"
 )
 
-//#include <unistd.h>
-import "C"
-
 var (
 	InterruptRequest os.Signal = os.Interrupt
 	StopRequest      os.Signal = syscall.SIGTSTP
@@ -28,10 +25,6 @@ func ContinueProcess(pid int) {
 
 func InitSignalHandling() {
 	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
-}
-
-func InputIsTTY() bool {
-	return C.isatty(C.int(0)) != 0
 }
 
 func JobControlSupported() bool {

@@ -19,11 +19,6 @@ func ContinueProcess(pid int) {}
 
 func InitSignalHandling() {}
 
-func InputIsTTY() bool {
-	// TODO: Not sure what to do on non-Unix platforms.
-	return true
-}
-
 func JobControlSupported() bool {
 	return false
 }
