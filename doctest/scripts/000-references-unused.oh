@@ -1,8 +1,7 @@
 #!/usr/bin/env oh
 
-# KEYWORD: readme
+# KEYWORD: unused
 # PROVIDE: references
-# REQUIRE: motivation
 
 ## ## References and Other Shells
 ##

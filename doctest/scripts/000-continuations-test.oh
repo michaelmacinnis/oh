@@ -1,8 +1,7 @@
 #!/usr/bin/env oh
 
-# KEYWORD: readme
+# KEYWORD: test
 # PROVIDE: continuations
-# REQUIRE: homoiconic
 
 ## Oh is properly tail-recursive and exposes continuations as first-class
 ## values:

@@ -1,8 +1,7 @@
 #!/usr/bin/env oh
 
-# KEYWORD: readme
+# KEYWORD: test
 # PROVIDE: pipes
-# REQUIRE: continuations
 
 ## Oh exposes pipes, which are implicit in other shells, as first-class
 ## values:
