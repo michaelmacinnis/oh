@@ -1,5 +1,7 @@
 # oh
 
+![gif](images/oh.gif)
+
 Oh is a Unix shell. If you've used other Unix shells, oh should feel
 familiar. The following commands behave as expected:
 
