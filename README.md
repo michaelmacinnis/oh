@@ -37,7 +37,7 @@ For more detail see: [Using oh](MANUAL.md)
 
 ## Installing
 
-Until Go 1.5 is released, building oh requires installing Go from source,
+Until Go 1.5 is released, building oh requires building Go from source,
 after switching to the master (development) branch. For instructions on
 how to do this see:
 [Installing Go from source](http://golang.org/doc/install/source)
