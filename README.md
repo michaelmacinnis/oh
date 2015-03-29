@@ -1,22 +1,9 @@
 # oh
 
-![gif](images/oh.gif)
-
 Oh is a Unix shell. If you've used other Unix shells, oh should feel
-familiar. The following commands behave as expected:
+familiar.
 
-    echo "Hello, World!"
-    cal 01 2030
-    date >greeting
-    echo "Hello, World!" >>greeting
-    wc <greeting
-    cat greeting | wc	# Useless use of cat.
-    tail -n1 greeting; cal 01 2030
-    grep impossible *[a-z]ing &
-    wait
-    mkdir junk && cd junk
-    cd ..
-    rm -r greeting junk || echo "rm failed!"
+![gif](images/oh.gif)
 
 Where oh diverges from traditional Unix shells is in its programming
 language features.
