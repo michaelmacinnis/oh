@@ -1,6 +1,7 @@
 # oh
 
-Oh is a Unix shell. The following commands behave as expected:
+Oh is a Unix shell. If you've used other Unix shells, oh should feel
+familiar. The following commands behave as expected:
 
     echo "Hello, World!"
     cal 01 2030
@@ -15,7 +16,6 @@ Oh is a Unix shell. The following commands behave as expected:
     cd ..
     rm -r greeting junk || echo "rm failed!"
 
-If you've used other Unix shells, oh should feel familiar.
 Where oh diverges from traditional Unix shells is in its programming
 language features.
 
@@ -24,13 +24,13 @@ language. Like early Scheme implementations, oh exposes environments as
 first-class values. First-class environments form the basis for oh's
 prototype-based object system.
 
-Oh is also a concurrent programming language. Written in Go, oh exposes
+Written in Go, oh is also a concurrent programming language. It exposes
 channels, in addition to pipes, as first-class values. Channels and
 pipes can, in many cases, be used interchangeably due to oh's homoiconic
 nature.
 
 Using the same syntax for code and data allows oh to support fexprs.
-This allows oh to be easily extended. In fact, much of oh is written
+Fexprs allow oh to be easily extended. In fact, much of oh is written
 in oh.
 
 For more detail see: [Using oh](MANUAL.md)
