@@ -8,7 +8,13 @@ if (ne 1: length $args) {
 define $dir: "/"::join $origin scripts
 define $pattern = $1
 
-# Generate README.
+if (eq $pattern manual) {
+    set $stdout: open ("/"::join $origin ".." "MANUAL.md") "w"
+} else: if (eq $pattern readme) {
+    set $stdout =: open ("/"::join $origin ".." "README.md") "w"
+}
+
+# Generate documentation.
 find $dir -name "[0-9]*.oh" |
 grep -i $pattern | sort |
 while (define $file: readline) {

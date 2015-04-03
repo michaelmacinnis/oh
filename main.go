@@ -373,3 +373,7 @@ exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 
 	os.Exit(0)
 }
+
+//go:generate doctest/test.oh
+//go:generate doctest/doc.oh manual
+//go:generate doctest/doc.oh readme
