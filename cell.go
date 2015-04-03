@@ -85,14 +85,16 @@ type Reference interface {
 	Set(c Cell)
 }
 
-var Null Cell
-var False *Boolean
-var True *Boolean
+var (
+	Null  Cell
+	False *Boolean
+	True  *Boolean
 
-var num [512]*Integer
-var res [256]*Status
-var str map[string]*String
-var sym map[string]*Symbol
+	num [512]*Integer
+	res [256]*Status
+	str map[string]*String
+	sym map[string]*Symbol
+)
 
 func init() {
 	pair := new(Pair)

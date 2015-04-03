@@ -29,10 +29,11 @@ import (
 	"strings"
 )
 
-var done0 chan Cell
-var eval0 chan Cell
-
-var jobs = map[int]*Task{}
+var (
+	done0 chan Cell
+	eval0 chan Cell
+	jobs  = map[int]*Task{}
+)
 
 func broker() {
 	irq := Incoming()

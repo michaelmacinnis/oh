@@ -100,21 +100,23 @@ const (
 	SaveCode = SaveCarCode | SaveCdrCode
 )
 
-var cli *Liner
-var cooked liner.ModeApplier
-var env0 *Env
-var envc *Env
-var envs *Env
-var external Cell
-var incoming chan os.Signal
-var interactive bool
-var pgid int
-var pid int
-var register chan Registration
-var runnable chan bool
-var scope0 *Scope
-var task0 *Task
-var uncooked liner.ModeApplier
+var (
+	cli         *Liner
+	cooked      liner.ModeApplier
+	env0        *Env
+	envc        *Env
+	envs        *Env
+	external    Cell
+	incoming    chan os.Signal
+	interactive bool
+	pgid        int
+	pid         int
+	register    chan Registration
+	runnable    chan bool
+	scope0      *Scope
+	task0       *Task
+	uncooked    liner.ModeApplier
+)
 
 var next = map[int64][]int64{
 	psEvalArguments:        {SaveCdrCode, psEvalElement},

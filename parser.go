@@ -288,4 +288,3 @@ func Parse(t *Task, r ReadStringer, p func(Cell)) {
 //go:generate sed -i.save -f grammar.sed grammar.go
 //go:generate go fmt grammar.go
 //go:generate rm -f y.output grammar.go.save
-
