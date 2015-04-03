@@ -1,10 +1,8 @@
 // Released under an MIT-style license. See LICENSE.
 
-// +build !linux,!darwin,!dragonfly,!freebsd,!openbsd,!netbsd,!windows
+// +build !linux,!darwin,!dragonfly,!freebsd,!openbsd,!netbsd,!solaris,!windows
 
 package main
-
-// TODO: !solaris should also be in the list above.
 
 import (
 	"os"
