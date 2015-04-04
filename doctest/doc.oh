@@ -1,18 +1,15 @@
 #!/usr/bin/env oh
 
-if (ne 1: length $args) {
-    error "usage:" $0 "<pattern>"
+if (ne 2: length $args) {
+    error "usage:" $0 "<pattern> <output>"
     exit 1
 }
 
 define $dir: "/"::join $origin scripts
 define $pattern = $1
+define $output = $2
 
-if (eq $pattern manual) {
-    set $stdout: open ("/"::join $origin ".." "MANUAL.md") "w"
-} else: if (eq $pattern readme) {
-    set $stdout =: open ("/"::join $origin ".." "README.md") "w"
-}
+set $stdout: open "w": "/"::join $origin ".." $output
 
 # Generate documentation.
 find $dir -name "[0-9]*.oh" |

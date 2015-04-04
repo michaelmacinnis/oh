@@ -785,8 +785,8 @@ func RootScope() *Scope {
 		return t.Return(args)
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
-		name := raw(Car(args))
-		mode := raw(Cadr(args))
+		mode := raw(Car(args))
+		path := raw(Cadr(args))
 		flags := 0
 
 		if strings.IndexAny(mode, "-") == -1 {
@@ -819,7 +819,7 @@ func RootScope() *Scope {
 			flags |= os.O_WRONLY
 		}
 
-		f, err := os.OpenFile(name, flags, 0666)
+		f, err := os.OpenFile(path, flags, 0666)
 		if err != nil {
 			panic(err)
 		}

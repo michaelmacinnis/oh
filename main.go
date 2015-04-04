@@ -218,7 +218,7 @@ define $redirect: syntax (chan mode mthd) as {
         define c: e::eval c
         define f = '()
         if (not: or (is-channel c) (is-pipe c)) {
-            set f: open c mode
+            set f: open mode c
             set c = f
         }
         eval: list 'dynamic chan 'c
@@ -331,7 +331,7 @@ define source: syntax e (name) as {
 
         define r: cons '() '()
         define c = r
-	define f: open name "r-"
+	define f: open "r-" name
 	define l: f::read
 	while l {
 		set-cdr c: cons l '()
@@ -376,5 +376,5 @@ exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 }
 
 //go:generate doctest/test.oh
-//go:generate doctest/doc.oh manual
-//go:generate doctest/doc.oh readme
+//go:generate doctest/doc.oh manual MANUAL.md
+//go:generate doctest/doc.oh readme README.md
