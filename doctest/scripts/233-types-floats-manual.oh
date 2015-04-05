@@ -34,7 +34,10 @@ write: add 3.14 2.72 1.41 2.50 4.67
 ##
 
 define x: float -1
-define predicates '(is-atom is-boolean is-builtin is-channel is-cons is-float is-integer is-method is-null is-number is-object is-pipe is-status is-string is-symbol is-syntax)
+define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
+                          is-float is-integer is-method is-null is-number \
+                          is-object is-pipe is-status is-string is-symbol \
+                          is-syntax
 for predicates: method (name) as {
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x

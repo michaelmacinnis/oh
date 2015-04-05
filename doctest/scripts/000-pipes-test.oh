@@ -11,16 +11,16 @@ define p: pipe
 
 spawn {
     # Save code to create a continuation-based while command.
-    define code = '(syntax e (condition: body) as {
+    define code: quote: syntax e (condition: body) as {
         define label: method () as: return return
         define continue: method (label) as: label label
 
-        set body: cons 'block body
+        set body: cons (quote block) body
         define loop: label
-        if (not (e::eval condition)): return '()
+        if (not (e::eval condition)): return ()
         e::eval body
         continue loop
-    })
+    }
 
     # Now send this code through the pipe.
     p::write @code

@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token DEDENT END ERROR INDENT STRING SYMBOL
+%token DEDENT DOUBLE_QUOTED END ERROR INDENT SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
 %left ANDF       /* && */
@@ -9,7 +9,6 @@
 %left SUBSTITUTE /* <(,>( */
 %left "^"
 %right "@"
-%right "'"
 %right "`"
 %left CONS
 
@@ -167,10 +166,6 @@ expression: "@" expression {
     $$.c = List(NewSymbol("splice"), $2.c)
 };
 
-expression: "'" expression {
-    $$.c = List(NewSymbol("quote"), $2.c)
-};
-
 expression: "`" expression {
     $$.c = List(NewSymbol("backtick"), $2.c)
 };
@@ -227,7 +222,13 @@ expression: "(" ")" { $$.c = Null };
 
 expression: word { $$ = $1 };
 
-word: STRING { $$.c = NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1]) };
+word: DOUBLE_QUOTED {
+    $$.c = NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+};
+
+word: SINGLE_QUOTED {
+    $$.c = NewRawString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+};
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };
 

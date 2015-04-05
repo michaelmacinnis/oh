@@ -5,7 +5,7 @@
 public next-prime: channel
 
 define number: integer 2
-define list-of-primes = '(1)
+define list-of-primes: quote: 1
 
 spawn: while true {
     define previous = list-of-primes
@@ -18,7 +18,7 @@ spawn: while true {
     }
 
     if prime {
-        set-cdr previous: cons number '()
+        set-cdr previous: cons number ()
 
         echo number
     }

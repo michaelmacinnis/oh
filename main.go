@@ -202,7 +202,7 @@ define $connect: syntax (type out close) as {
     syntax e (left right) as {
         define p: type
         spawn {
-            eval: list 'dynamic out 'p
+            eval: list (quote dynamic) out (quote p)
             e::eval left
             if close: p::writer-close
         }
@@ -216,14 +216,14 @@ define $connect: syntax (type out close) as {
 define $redirect: syntax (chan mode mthd) as {
     syntax e (c cmd) as {
         define c: e::eval c
-        define f = '()
+        define f = ()
         if (not: or (is-channel c) (is-pipe c)) {
             set f: open mode c
             set c = f
         }
-        eval: list 'dynamic chan 'c
+        eval: list (quote dynamic) chan (quote c)
         e::eval cmd
-        if (not: is-null f): eval: cons 'f mthd
+        if (not: is-null f): eval: cons (quote f) mthd
     }
 }
 define and: syntax e (: lst) as {
@@ -245,11 +245,11 @@ define backtick: syntax e (cmd) as {
         e::eval cmd
         p::writer-close
     }
-    define r: cons '() '()
+    define r: cons () ()
     define c = r
     define l: p::readline
     while l {
-	set-cdr c: cons l '()
+	set-cdr c: cons l ()
 	set c: cdr c
         set l: p::readline
     }
@@ -261,10 +261,10 @@ define channel-stdout: $connect channel $stdout true
 define echo: builtin (: args) as: $stdout::write @(for args symbol)
 define error: builtin (: args) as: $stderr::write @args
 define for: method (l m) as {
-    define r: cons '() '()
+    define r: cons () ()
     define c = r
     while (not: is-null l) {
-        set-cdr c: cons (m: car l) '()
+        set-cdr c: cons (m: car l) ()
         set c: cdr c
         set l: cdr l
     }
@@ -277,9 +277,9 @@ define import: syntax e (name) as {
         return m
     }
 
-    define l: list 'source name
-    set l: cons 'object: cons l '()
-    set l: list '$root::define m l
+    define l: list (quote source) name
+    set l: cons (quote object): cons l ()
+    set l: list (quote $root::define) m l
     e::eval l
 }
 define is-list: method (l) as {
@@ -290,7 +290,7 @@ define is-list: method (l) as {
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
 define object: syntax e (: body) as {
-    e::eval: cons 'block: append body '(context)
+    e::eval: cons (quote block): append body (quote: context)
 }
 define or: syntax e (: lst) as {
     define r = false
@@ -318,7 +318,7 @@ define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
 define source: syntax e (name) as {
 	define basename: e::eval name
-	define paths = '()
+	define paths = ()
 	define name = basename
 
 	if (has $OHPATH): set paths: (string $OHPATH)::split ":"
@@ -329,12 +329,12 @@ define source: syntax e (name) as {
 
 	if (not: exists name): set name = basename
 
-        define r: cons '() '()
+        define r: cons () ()
         define c = r
 	define f: open "r-" name
 	define l: f::read
 	while l {
-		set-cdr c: cons l '()
+		set-cdr c: cons l ()
 		set c: cdr c
 		set l: f::read
 	}

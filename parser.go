@@ -34,10 +34,11 @@ const (
 	ssBangGreater
 	ssColon
 	ssComment
+	ssDoubleQuoted
 	ssGreater
 	ssLess
 	ssPipe
-	ssString
+	ssSingleQuoted
 	ssSymbol
 )
 
@@ -127,7 +128,7 @@ main:
 			default:
 				s.state = ssSymbol
 				continue main
-			case '\n', '%', '\'', '(', ')', ';', '@', '^', '`', '{', '}':
+			case '\n', '%', '(', ')', ';', '@', '^', '`', '{', '}':
 				s.token = s.line[s.cursor]
 			case '&':
 				s.state = ssAmpersand
@@ -140,9 +141,11 @@ main:
 			case '!':
 				s.state = ssBang
 			case '"':
-				s.state = ssString
+				s.state = ssDoubleQuoted
 			case '#':
 				s.state = ssComment
+			case '\'':
+				s.state = ssSingleQuoted
 			case ':':
 				s.state = ssColon
 			case '>':
@@ -196,6 +199,19 @@ main:
 			s.cursor--
 			s.state = ssStart
 
+		case ssDoubleQuoted:
+			for s.cursor < len(s.line) && s.line[s.cursor] != '"' ||
+				s.cursor > 0 && s.line[s.cursor-1] == '\\' {
+				s.cursor++
+			}
+			if s.cursor >= len(s.line) {
+				if s.line[s.cursor-1] == '\n' {
+					s.line = append(s.line[0:s.cursor-1], []rune("\\n")...)
+				}
+				continue main
+			}
+			s.token = DOUBLE_QUOTED
+
 		case ssGreater:
 			s.token = REDIRECT
 			if s.line[s.cursor] == '(' {
@@ -223,9 +239,8 @@ main:
 				continue main
 			}
 
-		case ssString:
-			for s.cursor < len(s.line) && s.line[s.cursor] != '"' ||
-				s.cursor > 0 && s.line[s.cursor-1] == '\\' {
+		case ssSingleQuoted:
+			for s.cursor < len(s.line) && s.line[s.cursor] != '\'' {
 				s.cursor++
 			}
 			if s.cursor >= len(s.line) {
@@ -234,7 +249,7 @@ main:
 				}
 				continue main
 			}
-			s.token = STRING
+			s.token = SINGLE_QUOTED
 
 		case ssSymbol:
 			switch s.line[s.cursor] {

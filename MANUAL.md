@@ -311,17 +311,16 @@ produce the output,
 
 Lists, in oh, are formed by chaining cons cells. The cdr of each cons cell
 is set to the next cons cell in the list. The cdr of the last element in
-the list is set to empty list, which is written as `'()`.
-
-(The single quote before the parentheses is a short hand for the `quote`
-command, which tells oh not to evaluate the following expression).
+the list is set to empty list, which is written as `()`.
 
 The following commands are equivalent:
 
-    write: cons 1 (cons 2 (cons 3 '()))
-    write: cons 1: cons 2: cons 3 '()
+    write: cons 1 (cons 2 (cons 3 ()))
+    write: cons 1: cons 2: cons 3 ()
     write: list 1 2 3
-    write '(1 2 3)
+    write: quote: 1 2 3
+
+(The `quote` command tells oh not to evaluate the following expression).
 
 ### Control Structures
 
