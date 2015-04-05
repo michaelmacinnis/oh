@@ -247,11 +247,9 @@ define backtick: syntax e (cmd) as {
     }
     define r: cons () ()
     define c = r
-    define l: p::readline
-    while l {
+    while (define l: p::readline) {
 	set-cdr c: cons l ()
 	set c: cdr c
-        set l: p::readline
     }
     p::reader-close
     return: cdr r
@@ -332,11 +330,9 @@ define source: syntax e (name) as {
         define r: cons () ()
         define c = r
 	define f: open "r-" name
-	define l: f::read
-	while l {
+	while (define l: f::read) {
 		set-cdr c: cons l ()
 		set c: cdr c
-		set l: f::read
 	}
 	set c: cdr r
 	f::close
