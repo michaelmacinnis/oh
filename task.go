@@ -1182,6 +1182,29 @@ func RootScope() *Scope {
 		return t.Return(acc)
 	})
 
+	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
+		r := raw(Car(args))
+
+		l := Car(t.Scratch).(Binding).Self()
+		if t.Lexical == l.Expose() {
+			l = t.Lexical
+		}
+
+                f := func(old string) string {
+                        name := old[2:len(old)-1]
+			sym := NewSymbol(name)
+			c := Resolve(l, t.Dynamic, sym)
+			if c == nil {
+                            return "${" + name + "}"
+			}
+                        return raw(c.Get())
+		}
+
+		s := regexp.MustCompile("\\${.*}").ReplaceAllStringFunc(r, f)
+
+		return t.Return(NewString(t, s))
+	})
+
 	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
