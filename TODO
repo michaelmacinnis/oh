@@ -1,12 +1,7 @@
-- Strings should be objects (with join, split, etc. methods).
 - Signal handing:
   - 'trap' builtin (trap <signal1> [... <signalN>] <method>)
 - Improve completion suggestions and use WordCompleter for mid-line completion.
-- Use go generate to replace Makefile and reduce duplication.
 - Parameter substitution (for environment variables)
 - Improve error checking and error messages.
-- User's manual.
-- Tests.
 - Detection and formatting/parsing of recursive structures
-- Behave nicely on non-Unix systems.
 

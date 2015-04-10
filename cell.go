@@ -246,10 +246,24 @@ func IsAtom(c Cell) bool {
 	return false
 }
 
-func IsCons(c Cell) bool {
+func IsContext(c Cell) bool {
 	switch c.(type) {
-	case *Pair:
+	case Context:
 		return true
+	}
+	return false
+}
+
+func IsNull(c Cell) bool {
+	return c == Null
+}
+
+func IsNumber(c Cell) bool {
+	switch t := c.(type) {
+	case Number:
+		return true
+	case *Symbol:
+		return t.isFloat() || t.isInt()
 	}
 	return false
 }
@@ -375,6 +389,14 @@ func SetCdr(c, value Cell) {
 
 type Boolean bool
 
+func IsBoolean(c Cell) bool {
+	switch c.(type) {
+	case *Boolean:
+		return true
+	}
+	return false
+}
+
 func NewBoolean(v bool) *Boolean {
 	if v {
 		return True
@@ -468,6 +490,19 @@ func (b *Bound) Self() Context {
 
 type Builtin struct {
 	Command
+}
+
+func IsBuiltin(c Cell) bool {
+	b, ok := c.(Binding)
+	if !ok {
+            return false
+        }
+
+	switch b.Ref().(type) {
+	case *Builtin:
+		return true
+	}
+	return false
 }
 
 func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
@@ -626,6 +661,14 @@ func (e *Env) Remove(key Cell) bool {
 
 type Float float64
 
+func IsFloat(c Cell) bool {
+	switch c.(type) {
+	case *Float:
+		return true
+	}
+	return false
+}
+
 func NewFloat(v float64) *Float {
 	f := Float(v)
 	return &f
@@ -689,6 +732,14 @@ func (f *Float) Subtract(c Cell) Number {
 /* Integer cell definition. */
 
 type Integer int64
+
+func IsInteger(c Cell) bool {
+	switch c.(type) {
+	case *Integer:
+		return true
+	}
+	return false
+}
 
 func NewInteger(v int64) *Integer {
 	if -256 <= v && v <= 255 {
@@ -770,6 +821,19 @@ type Method struct {
 	Command
 }
 
+func IsMethod(c Cell) bool {
+	b, ok := c.(Binding)
+	if !ok {
+            return false
+        }
+
+	switch b.Ref().(type) {
+	case *Method:
+		return true
+	}
+	return false
+}
+
 func NewMethod(a Function, b, l, p Cell, s Context) Closure {
 	return &Method{
 		Command{applier: a, body: b, label: l, params: p, scope: s},
@@ -843,6 +907,14 @@ func (o *Object) Define(key Cell, value Cell) {
 type Pair struct {
 	car Cell
 	cdr Cell
+}
+
+func IsCons(c Cell) bool {
+	switch c.(type) {
+	case *Pair:
+		return true
+	}
+	return false
 }
 
 func Cons(h, t Cell) Cell {
@@ -1001,6 +1073,14 @@ func (s *Scope) PublicSyntax(k string, a Function) {
 
 type Status int64
 
+func IsStatus(c Cell) bool {
+	switch c.(type) {
+	case *Status:
+		return true
+	}
+	return false
+}
+
 func NewStatus(v int64) *Status {
 	if 0 <= v && v <= 255 {
 		p := res[v]
@@ -1077,6 +1157,14 @@ func (s *Status) Subtract(c Cell) Number {
 /* Symbol cell definition. */
 
 type Symbol string
+
+func IsSymbol(c Cell) bool {
+	switch c.(type) {
+	case *Symbol:
+		return true
+	}
+	return false
+}
 
 func NewSymbol(v string) *Symbol {
 	p, ok := sym[v]
@@ -1210,6 +1298,19 @@ func (s *Symbol) isInt() bool {
 
 type Syntax struct {
 	Command
+}
+
+func IsSyntax(c Cell) bool {
+	b, ok := c.(Binding)
+	if !ok {
+            return false
+        }
+
+	switch b.Ref().(type) {
+	case *Syntax:
+		return true
+	}
+	return false
 }
 
 func NewSyntax(a Function, b, l, p Cell, s Context) Closure {

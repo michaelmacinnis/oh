@@ -862,115 +862,7 @@ func RootScope() *Scope {
 		return t.Return(list)
 	})
 
-	/* Predicates. */
-	scope0.DefineMethod("is-atom", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(IsAtom(Car(args))))
-	})
-	scope0.DefineMethod("is-boolean", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Boolean)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-builtin", func(t *Task, args Cell) bool {
-		b, ok := Car(args).(Binding)
-		if ok {
-			_, ok = b.Ref().(*Builtin)
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-channel", func(t *Task, args Cell) bool {
-		c, ok := Car(args).(Context)
-		if ok {
-			conduit := as_conduit(c.(Context))
-			if conduit != nil {
-				_, ok = conduit.(*Channel)
-			} else {
-				ok = false
-			}
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-cons", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(IsCons(Car(args))))
-	})
-	scope0.DefineMethod("is-float", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Float)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-integer", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Integer)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-method", func(t *Task, args Cell) bool {
-		b, ok := Car(args).(Binding)
-		if ok {
-			_, ok = b.Ref().(*Method)
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-null", func(t *Task, args Cell) bool {
-		ok := Car(args) == Null
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-number", func(t *Task, args Cell) bool {
-		arg := Car(args)
-
-		s, ok := arg.(*Symbol)
-		if ok {
-			ok = s.isFloat() || s.isInt()
-		} else {
-			_, ok = arg.(Number)
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-object", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(Context)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
-		c, ok := Car(args).(Context)
-		if ok {
-			conduit := as_conduit(c.(Context))
-			if conduit != nil {
-				_, ok = conduit.(*Pipe)
-			} else {
-				ok = false
-			}
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-status", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Status)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-string", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*String)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-symbol", func(t *Task, args Cell) bool {
-		_, ok := Car(args).(*Symbol)
-
-		return t.Return(NewBoolean(ok))
-	})
-	scope0.DefineMethod("is-syntax", func(t *Task, args Cell) bool {
-		b, ok := Car(args).(Binding)
-		if ok {
-			_, ok = b.Ref().(*Syntax)
-		}
-
-		return t.Return(NewBoolean(ok))
-	})
+	bind_predicates(scope0)
 
 	/* Generators. */
 	scope0.DefineMethod("boolean", func(t *Task, args Cell) bool {
@@ -1535,6 +1427,24 @@ type Channel struct {
 	v chan Cell
 }
 
+func IsChannel(c Cell) bool {
+	context, ok := c.(Context)
+	if !ok {
+		return false
+	}
+
+	conduit := as_conduit(context)
+        if conduit == nil {
+		return false
+	}
+
+	switch conduit.(type) {
+	case *Channel:
+		return true
+	}
+	return false
+}
+
 func NewChannel(t *Task, cap int) Context {
 	return &Channel{
 		NewScope(t.Lexical.Expose(), envc),
@@ -1632,6 +1542,24 @@ type Pipe struct {
 	d chan bool
 	r *os.File
 	w *os.File
+}
+
+func IsPipe(c Cell) bool {
+	context, ok := c.(Context)
+	if !ok {
+		return false
+	}
+
+	conduit := as_conduit(context)
+        if conduit == nil {
+		return false
+	}
+
+	switch conduit.(type) {
+	case *Pipe:
+		return true
+	}
+	return false
 }
 
 func NewPipe(l Context, r *os.File, w *os.File) Context {
@@ -1900,6 +1828,14 @@ func (r *Registers) Return(rv Cell) bool {
 type String struct {
 	*Scope
 	v string
+}
+
+func IsString(c Cell) bool {
+	switch c.(type) {
+	case *String:
+		return true
+	}
+	return false
 }
 
 func NewRawString(t *Task, v string) *String {
