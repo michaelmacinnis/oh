@@ -256,7 +256,13 @@ define backtick: syntax e (cmd) as {
 }
 define channel-stderr: $connect channel $stderr true
 define channel-stdout: $connect channel $stdout true
-define echo: builtin (: args) as: $stdout::write @(for args symbol)
+define echo: builtin (: args) as {
+    if (is-null args) {
+        $stdout::write: symbol ""
+    } else {
+        $stdout::write @(for args symbol)
+    }
+}
 define error: builtin (: args) as: $stderr::write @args
 define for: method (l m) as {
     define r: cons () ()
@@ -307,7 +313,7 @@ define substitute-stdout: syntax () as {
 }
 define pipe-stderr: $connect pipe $stderr true
 define pipe-stdout: $connect pipe $stdout true
-define printf: method (: args) as: echo: (car args)::sprintf @(cdr args)
+define printf: method (f: args) as: echo: f::sprintf @args
 define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
@@ -370,6 +376,9 @@ exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 
 	os.Exit(0)
 }
+
+//go:generate generate/predicates.oh
+//go:generate go fmt predicates.go
 
 //go:generate doctest/test.oh
 //go:generate doctest/doc.oh manual MANUAL.md

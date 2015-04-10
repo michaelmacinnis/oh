@@ -460,7 +460,7 @@ func RootScope() *Scope {
 
 		s := fmt.Sprintf(f, argv...)
 
-		return t.Return(NewString(t, s))
+		return t.Return(NewRawString(t, s))
 	})
 
 	runnable = make(chan bool)
@@ -1307,29 +1307,6 @@ func RootScope() *Scope {
 		}
 
 		return t.Return(r)
-	})
-	text.PublicMethod("sprintf", func(t *Task, args Cell) bool {
-		f := raw(Car(args))
-
-		argv := []interface{}{}
-		for l := Cdr(args); l != Null; l = Cdr(l) {
-			switch t := Car(l).(type) {
-			case *Boolean:
-				argv = append(argv, *t)
-			case *Integer:
-				argv = append(argv, *t)
-			case *Status:
-				argv = append(argv, *t)
-			case *Float:
-				argv = append(argv, *t)
-			default:
-				argv = append(argv, raw(t))
-			}
-		}
-
-		s := fmt.Sprintf(f, argv...)
-
-		return t.Return(NewString(t, s))
 	})
 	text.PublicMethod("substring", func(t *Task, args Cell) bool {
 		var r Cell
