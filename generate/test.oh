@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-define $dir: "/"::join $origin scripts
+define $dir: "/"::join $origin .. doctest
 
 # Run tests.
 find $dir -name "[0-9]*.oh" | grep -Fv unused |

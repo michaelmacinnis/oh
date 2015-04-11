@@ -377,9 +377,9 @@ exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 	os.Exit(0)
 }
 
-//go:generate generate/predicates.oh
+//go:generate generate/go.oh
 //go:generate go fmt predicates.go
 
-//go:generate doctest/test.oh
-//go:generate doctest/doc.oh manual MANUAL.md
-//go:generate doctest/doc.oh readme README.md
+//go:generate generate/test.oh
+//go:generate generate/doc.oh manual MANUAL.md
+//go:generate generate/doc.oh readme README.md

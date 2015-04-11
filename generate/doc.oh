@@ -5,7 +5,7 @@ if (ne 2: length $args) {
     exit 1
 }
 
-define $dir: "/"::join $origin scripts
+define $dir: "/"::join $origin .. doctest
 define $pattern = $1
 define $output = $2
 
