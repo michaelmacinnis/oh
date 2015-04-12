@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/peterh/liner"
+	"math/big"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -345,6 +346,10 @@ func Interactive() bool {
 
 func Interface() *Liner {
 	return cli
+}
+
+func IsSimple(c Cell) bool {
+	return IsAtom(c) || IsCons(c)
 }
 
 func JobControlEnabled() bool {
@@ -1876,6 +1881,14 @@ func (s *String) Int() (i int64) {
 		panic(err)
 	}
 	return i
+}
+
+func (s *String) Rat() *big.Rat {
+	r := new(big.Rat)
+	if _, err := fmt.Sscan(string(s.v), r); err != nil {
+		panic(err)
+	}
+	return r
 }
 
 func (s *String) Status() (i int64) {

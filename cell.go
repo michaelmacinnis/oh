@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -13,6 +14,7 @@ type Atom interface {
 
 	Float() float64
 	Int() int64
+	Rat() *big.Rat
 	Status() int64
 }
 
@@ -90,13 +92,26 @@ var (
 	False *Boolean
 	True  *Boolean
 
+	max *big.Int
+	min *big.Int
 	num [512]*Integer
+	one *big.Rat
+	rat [512]*Rational
 	res [256]*Status
 	str map[string]*String
 	sym map[string]*Symbol
+	zero *big.Rat
 )
 
 func init() {
+	max = big.NewInt(255)
+	min = big.NewInt(-256)
+
+	one = big.NewRat(1, 1)
+	zero = big.NewRat(0, 1)
+	rat[257] = &Rational{one}
+	rat[256] = &Rational{zero}
+
 	pair := new(Pair)
 	pair.car = pair
 	pair.cdr = pair
@@ -268,10 +283,6 @@ func IsNumber(c Cell) bool {
 	return false
 }
 
-func IsSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
-}
-
 func Join(list Cell, elements ...Cell) Cell {
 	var pair, prev, start Cell
 
@@ -434,6 +445,13 @@ func (b *Boolean) Int() int64 {
 		return 1
 	}
 	return 0
+}
+
+func (b *Boolean) Rat() *big.Rat {
+	if b == True {
+		return one
+	}
+	return zero
 }
 
 func (b *Boolean) Status() int64 {
@@ -697,6 +715,10 @@ func (f *Float) Int() int64 {
 	return int64(*f)
 }
 
+func (f *Float) Rat() *big.Rat {
+	return new(big.Rat).SetFloat64(float64(*f))
+}
+
 func (f *Float) Status() int64 {
 	return int64(*f)
 }
@@ -781,6 +803,10 @@ func (i *Integer) Float() float64 {
 
 func (i *Integer) Int() int64 {
 	return int64(*i)
+}
+
+func (i *Integer) Rat() *big.Rat {
+	return big.NewRat(int64(*i), 1)
 }
 
 func (i *Integer) Status() int64 {
@@ -962,6 +988,112 @@ func (p *Pair) String() (s string) {
 	return s
 }
 
+/* Rational cell definition. */
+
+type Rational struct {
+	v *big.Rat
+}
+
+func IsRational(c Cell) bool {
+	switch c.(type) {
+	case *Rational:
+		return true
+	}
+	return false
+}
+
+func NewRational(v *big.Rat) *Rational {
+	if !v.IsInt() {
+		return &Rational{v}
+	}
+
+	iv := v.Num()
+	if iv.Cmp(min) >= 0 && iv.Cmp(max) <= 0 {
+		n := iv.Int64() + 256
+		p := rat[n]
+
+		if p.v == nil {
+			p := &Rational{v}
+
+			rat[n] = p
+		}
+
+		return p
+	}
+
+	return &Rational{v}
+}
+
+func (r *Rational) Bool() bool {
+	return r.v.Cmp(zero) != 0
+}
+
+func (r *Rational) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return r.v.Cmp(a.Rat()) == 0
+	}
+	return false
+}
+
+func (r *Rational) String() string {
+	return r.v.RatString()
+}
+
+func (r *Rational) Float() float64 {
+	f, _ := r.v.Float64()
+	return f
+}
+
+func (r *Rational) Int() int64 {
+	n := r.v.Num()
+	d := r.v.Denom()
+	return new(big.Int).Div(n, d).Int64()
+}
+
+func (r *Rational) Rat() *big.Rat {
+	return r.v
+}
+
+func (r *Rational) Status() int64 {
+	return r.Int()
+}
+
+func (r *Rational) Greater(c Cell) bool {
+	return r.v.Cmp(c.(Atom).Rat()) > 0
+}
+
+func (r *Rational) Less(c Cell) bool {
+	return r.v.Cmp(c.(Atom).Rat()) < 0
+}
+
+func (r *Rational) Add(c Cell) Number {
+	return NewRational(new(big.Rat).Add(r.v, c.(Atom).Rat()))
+}
+
+func (r *Rational) Divide(c Cell) Number {
+	return NewRational(new(big.Rat).Quo(r.v, c.(Atom).Rat()))
+}
+
+func (r *Rational) Modulo(c Cell) Number {
+        x := r.v
+	y := c.(Atom).Rat()
+
+	if x.IsInt() && y.IsInt() {
+		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
+		return NewRational(z)
+	}
+
+	panic("operation not permitted")
+}
+
+func (r *Rational) Multiply(c Cell) Number {
+	return NewRational(new(big.Rat).Mul(r.v, c.(Atom).Rat()))
+}
+
+func (r *Rational) Subtract(c Cell) Number {
+	return NewRational(new(big.Rat).Sub(r.v, c.(Atom).Rat()))
+}
+
 /*
  * Scope cell definition.
  * (A scope cell allows access to a context's public and private members).
@@ -1122,6 +1254,10 @@ func (s *Status) Int() int64 {
 	return int64(*s)
 }
 
+func (s *Status) Rat() *big.Rat {
+	return big.NewRat(int64(*s), 1)
+}
+
 func (s *Status) Status() int64 {
 	return int64(*s)
 }
@@ -1216,6 +1352,14 @@ func (s *Symbol) Int() (i int64) {
 		panic(err)
 	}
 	return i
+}
+
+func (s *Symbol) Rat() *big.Rat {
+	r := new(big.Rat)
+	if _, err := fmt.Sscan(string(*s), r); err != nil {
+		panic(err)
+	}
+	return r
 }
 
 func (s *Symbol) Status() (i int64) {
