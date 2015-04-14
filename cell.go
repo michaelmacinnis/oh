@@ -92,8 +92,8 @@ var (
 	False *Boolean
 	True  *Boolean
 
-	max *big.Int
-	min *big.Int
+	max *big.Rat
+	min *big.Rat
 	num [512]*Integer
 	one *big.Rat
 	rat [512]*Rational
@@ -104,8 +104,8 @@ var (
 )
 
 func init() {
-	max = big.NewInt(255)
-	min = big.NewInt(-256)
+	max = big.NewRat(255, 1)
+	min = big.NewRat(-256, 1)
 
 	one = big.NewRat(1, 1)
 	zero = big.NewRat(0, 1)
@@ -278,7 +278,7 @@ func IsNumber(c Cell) bool {
 	case Number:
 		return true
 	case *Symbol:
-		return t.isFloat() || t.isInt()
+		return t.isNumeric()
 	}
 	return false
 }
@@ -1002,26 +1002,28 @@ func IsRational(c Cell) bool {
 	return false
 }
 
-func NewRational(v *big.Rat) *Rational {
-	if !v.IsInt() {
-		return &Rational{v}
+func NewRational(r *big.Rat) *Rational {
+	return &Rational{r}
+
+/*
+TODO: Fix caching
+
+	if !r.IsInt() || r.Cmp(min) < 0 || r.Cmp(max) > 0 {
+		return &Rational{r}
 	}
 
-	iv := v.Num()
-	if iv.Cmp(min) >= 0 && iv.Cmp(max) <= 0 {
-		n := iv.Int64() + 256
-		p := rat[n]
+	n := r.Num().Int64() + 256
+	p := rat[n]
 
-		if p.v == nil {
-			p := &Rational{v}
+	if p == nil {
+                println("Allocating:", r.Num().Int64())
+		p := &Rational{r}
 
-			rat[n] = p
-		}
-
-		return p
+		rat[n] = p
 	}
 
-	return &Rational{v}
+	return p
+*/
 }
 
 func (r *Rational) Bool() bool {
@@ -1379,62 +1381,38 @@ func (s *Symbol) Less(c Cell) bool {
 }
 
 func (s *Symbol) Add(c Cell) Number {
-	if s.isInt() {
-		return NewInteger(s.Int() + c.(Atom).Int())
-	} else if s.isFloat() {
-		return NewFloat(s.Float() + c.(Atom).Float())
-	}
-
-	panic("type 'symbol' does not implement 'add'")
+	return NewRational(new(big.Rat).Add(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Symbol) Divide(c Cell) Number {
-	if s.isInt() {
-		return NewInteger(s.Int() / c.(Atom).Int())
-	} else if s.isFloat() {
-		return NewFloat(s.Float() / c.(Atom).Float())
-	}
-
-	panic("type 'symbol' does not implement 'div'")
+	return NewRational(new(big.Rat).Quo(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Symbol) Modulo(c Cell) Number {
-	if s.isInt() {
-		return NewInteger(s.Int() % c.(Atom).Int())
+        x := s.Rat()
+	y := c.(Atom).Rat()
+
+	if x.IsInt() && y.IsInt() {
+		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
+		return NewRational(z)
 	}
 
-	panic("type 'symbol' does not implement 'mod'")
+	panic("operation not permitted")
 }
 
 func (s *Symbol) Multiply(c Cell) Number {
-	if s.isInt() {
-		return NewInteger(s.Int() * c.(Atom).Int())
-	} else if s.isFloat() {
-		return NewFloat(s.Float() * c.(Atom).Float())
-	}
-
-	panic("type 'symbol' does not implement 'multiply'")
+	return NewRational(new(big.Rat).Mul(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Symbol) Subtract(c Cell) Number {
-	if s.isInt() {
-		return NewInteger(s.Int() - c.(Atom).Int())
-	} else if s.isFloat() {
-		return NewFloat(s.Float() - c.(Atom).Float())
-	}
-
-	panic("type 'symbol' does not implement 'subtract'")
+	return NewRational(new(big.Rat).Sub(s.Rat(), c.(Atom).Rat()))
 }
 
 /* Symbol-specific functions. */
 
-func (s *Symbol) isFloat() bool {
-	_, err := strconv.ParseFloat(string(*s), 64)
-	return err == nil
-}
-
-func (s *Symbol) isInt() bool {
-	_, err := strconv.ParseInt(string(*s), 0, 64)
+func (s *Symbol) isNumeric() bool {
+	r := new(big.Rat)
+	_, err := fmt.Sscan(string(*s), r)
 	return err == nil
 }
 

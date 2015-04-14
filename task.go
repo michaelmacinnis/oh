@@ -890,6 +890,9 @@ func RootScope() *Scope {
 	scope0.DefineMethod("pipe", func(t *Task, args Cell) bool {
 		return t.Return(NewPipe(t.Lexical, nil, nil))
 	})
+	scope0.DefineMethod("rational", func(t *Task, args Cell) bool {
+		return t.Return(NewRational(Car(args).(Atom).Rat()))
+	})
 	scope0.DefineMethod("status", func(t *Task, args Cell) bool {
 		return t.Return(NewStatus(Car(args).(Atom).Status()))
 	})

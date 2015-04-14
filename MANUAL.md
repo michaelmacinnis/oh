@@ -232,7 +232,7 @@ appropriate. For example,
 
 produces the output,
 
-    14.44
+    361/25
 
 #### Booleans
 
@@ -610,7 +610,7 @@ with Mice").
     define line = ""
     while count {
         define p: car: read
-        set line = line ^ ("%7d"::sprintf p)
+        set line = line ^ ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {
             echo line

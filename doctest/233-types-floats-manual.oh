@@ -30,7 +30,7 @@ write: add 3.14 2.72 1.41 2.50 4.67
 ##
 ## produces the output,
 ##
-#+     14.44
+#+     361/25
 ##
 
 define x: float -1

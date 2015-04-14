@@ -41,6 +41,9 @@ func bind_predicates(s *Scope) {
 	s.DefineMethod("is-pipe", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsPipe(Car(args))))
 	})
+	s.DefineMethod("is-rational", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(IsRational(Car(args))))
+	})
 	s.DefineMethod("is-status", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsStatus(Car(args))))
 	})
