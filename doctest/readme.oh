@@ -1,7 +1,7 @@
 #!/usr/bin/env oh
 
 # KEYWORD: readme
-# PROVIDE: intro
+# PROVIDE: readme
 
 ## # oh
 ##
@@ -63,3 +63,23 @@ rm -r greeting junk || echo "rm failed!"
 #-     20 21 22 23 24 25 26  
 #-     27 28 29 30 31        
 #-                           
+
+## ## Installing
+##
+## Until Go 1.5 is released, building oh requires building Go from source,
+## after switching to the master (development) branch. For instructions on
+## how to do this see:
+## [Installing Go from source](http://golang.org/doc/install/source)
+##
+## After building Go, you can install oh by typing:
+##
+##     go get github.com/michaelmacinnis/oh
+##
+## Oh compiles and runs, but should be considered experimental, on Windows.
+##
+
+## ## License
+##
+## Oh is released under an MIT-style license.
+##
+

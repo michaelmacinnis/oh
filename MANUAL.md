@@ -1,6 +1,6 @@
 # Using oh
 
-## Command-Line Interface
+## Using oh Interactively
 
 The oh shell provides a command-line interface to Unix and Unix-like
 systems.
@@ -140,7 +140,7 @@ contain newlines, which are preserved.
     echo "Hello,
     World!"
 
-## Programming Language
+## Using oh Programmatically
 
 In addition to providing a command-line interface to Unix and Unix-like
 systems, oh is also a programming language.
@@ -228,11 +228,11 @@ Again, like integers, oh will try to help by converting symbols that will
 parse correctly as a float when used in a context where that would be
 appropriate. For example,
 
-    write: add 3.14 2.72 1.41 2.50 4.67
+    write: float: add 3.14 2.72 1.41 2.50 4.67
 
 produces the output,
 
-    361/25
+    14.44
 
 #### Booleans
 

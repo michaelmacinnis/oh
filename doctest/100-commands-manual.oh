@@ -4,7 +4,7 @@
 # PROVIDE: commands
 # REQUIRE: intro
 
-## ## Command-Line Interface
+## ## Using oh Interactively
 ##
 ## The oh shell provides a command-line interface to Unix and Unix-like
 ## systems.

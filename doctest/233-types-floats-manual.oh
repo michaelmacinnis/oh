@@ -25,12 +25,12 @@ write: float "3.14"
 ## appropriate. For example,
 ##
 #{
-write: add 3.14 2.72 1.41 2.50 4.67
+write: float: add 3.14 2.72 1.41 2.50 4.67
 #}
 ##
 ## produces the output,
 ##
-#+     361/25
+#+     14.44
 ##
 
 define x: float -1
