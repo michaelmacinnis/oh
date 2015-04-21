@@ -732,23 +732,31 @@ func (f *Float) Less(c Cell) bool {
 }
 
 func (f *Float) Add(c Cell) Number {
-	return NewFloat(float64(*f) + c.(Atom).Float())
+	return NewRational(new(big.Rat).Add(f.Rat(), c.(Atom).Rat()))
 }
 
 func (f *Float) Divide(c Cell) Number {
-	return NewFloat(float64(*f) / c.(Atom).Float())
+	return NewRational(new(big.Rat).Quo(f.Rat(), c.(Atom).Rat()))
 }
 
 func (f *Float) Modulo(c Cell) Number {
-	panic("type 'float' does not implement 'mod'")
+        x := f.Rat()
+	y := c.(Atom).Rat()
+
+	if x.IsInt() && y.IsInt() {
+		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
+		return NewRational(z)
+	}
+
+	panic("operation not permitted")
 }
 
 func (f *Float) Multiply(c Cell) Number {
-	return NewFloat(float64(*f) * c.(Atom).Float())
+	return NewRational(new(big.Rat).Mul(f.Rat(), c.(Atom).Rat()))
 }
 
 func (f *Float) Subtract(c Cell) Number {
-	return NewFloat(float64(*f) - c.(Atom).Float())
+	return NewRational(new(big.Rat).Sub(f.Rat(), c.(Atom).Rat()))
 }
 
 /* Integer cell definition. */
@@ -822,23 +830,31 @@ func (i *Integer) Less(c Cell) bool {
 }
 
 func (i *Integer) Add(c Cell) Number {
-	return NewInteger(int64(*i) + c.(Atom).Int())
+	return NewRational(new(big.Rat).Add(i.Rat(), c.(Atom).Rat()))
 }
 
 func (i *Integer) Divide(c Cell) Number {
-	return NewInteger(int64(*i) / c.(Atom).Int())
+	return NewRational(new(big.Rat).Quo(i.Rat(), c.(Atom).Rat()))
 }
 
 func (i *Integer) Modulo(c Cell) Number {
-	return NewInteger(int64(*i) % c.(Atom).Int())
+        x := i.Rat()
+	y := c.(Atom).Rat()
+
+	if x.IsInt() && y.IsInt() {
+		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
+		return NewRational(z)
+	}
+
+	panic("operation not permitted")
 }
 
 func (i *Integer) Multiply(c Cell) Number {
-	return NewInteger(int64(*i) * c.(Atom).Int())
+	return NewRational(new(big.Rat).Mul(i.Rat(), c.(Atom).Rat()))
 }
 
 func (i *Integer) Subtract(c Cell) Number {
-	return NewInteger(int64(*i) - c.(Atom).Int())
+	return NewRational(new(big.Rat).Sub(i.Rat(), c.(Atom).Rat()))
 }
 
 /* Method cell definition. */

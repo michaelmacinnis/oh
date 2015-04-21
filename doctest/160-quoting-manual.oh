@@ -11,7 +11,7 @@
 ## their special meaning.
 ##
 #{
-echo "?"
+echo '?'
 #}
 ##
 ## will echo a single `?',
@@ -29,8 +29,9 @@ echo "xx**\"**xx"
 ##
 #+     xx**"**xx
 ##
-## The quoted string may not contain an unescaped double quote but may contain
-## contain newlines, which are preserved.
+## A double quoted string may not contain an unescaped double quote but may
+## contain newlines, which are preserved, and escape sequences which are
+## interpreted. A single quoted string may not contain a single quote.
 ##
 #{
 echo "Hello,

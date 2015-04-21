@@ -11,7 +11,8 @@ touch a.1 b.2 3.go 4 .hidden
 ## ### File Name Generation
 ##
 ## The oh shell provides a mechanism for generating a list of file names that
-## match a pattern.
+## match a pattern. The patterns are called globs. The glob, `*.go` in the
+## command,
 ##
 #{
 ls *.go

@@ -13,4 +13,4 @@ s/\(^			yychar = yylex1(yylex, &yylval)$\)/\1\
 				goto start\
 			}\
 /g
-s/""\(.\)""/"\1"/g
+s/""\(.\{1,2\}\)""/"\1"/g

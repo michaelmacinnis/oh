@@ -63,12 +63,6 @@ effect is the same as,
 except that no file is used. Instead the two processes are connected by a
 pipe and are run in parallel.
 
-A filter is a command that reads its standard input, transforms it in some
-way, and sends the result to standard output. One such filter `grep` selects
-from its input those lines that contain some specified string.
-
-    ls | grep old
-
 A pipeline may consist of more than two commands.
 
     ls | grep old | wc -l
@@ -76,7 +70,8 @@ A pipeline may consist of more than two commands.
 ### File Name Generation
 
 The oh shell provides a mechanism for generating a list of file names that
-match a pattern.
+match a pattern. The patterns are called globs. The glob, `*.go` in the
+command,
 
     ls *.go
 
@@ -122,7 +117,7 @@ Characters that have a special meaning to the shell, such as `<` and `>`,
 are called metacharacters. These characters must be quoted to strip them of
 their special meaning.
 
-    echo "?"
+    echo '?'
 
 will echo a single `?',
 
@@ -134,8 +129,9 @@ will echo,
 
     xx**"**xx
 
-The quoted string may not contain an unescaped double quote but may contain
-contain newlines, which are preserved.
+A double quoted string may not contain an unescaped double quote but may
+contain newlines, which are preserved, and escape sequences which are
+interpreted. A single quoted string may not contain a single quote.
 
     echo "Hello,
     World!"
