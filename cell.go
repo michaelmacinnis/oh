@@ -96,7 +96,7 @@ var (
 	min *big.Rat
 	num [512]*Integer
 	one *big.Rat
-	rat [512]*Rational
+	rat [512]Rational
 	res [256]*Status
 	str map[string]*String
 	sym map[string]*Symbol
@@ -109,8 +109,8 @@ func init() {
 
 	one = big.NewRat(1, 1)
 	zero = big.NewRat(0, 1)
-	rat[257] = &Rational{one}
-	rat[256] = &Rational{zero}
+	rat[257] = Rational{one}
+	rat[256] = Rational{zero}
 
 	pair := new(Pair)
 	pair.car = pair
@@ -1012,14 +1012,14 @@ type Rational struct {
 
 func IsRational(c Cell) bool {
 	switch c.(type) {
-	case *Rational:
+	case Rational:
 		return true
 	}
 	return false
 }
 
-func NewRational(r *big.Rat) *Rational {
-	return &Rational{r}
+func NewRational(r *big.Rat) Rational {
+	return Rational{r}
 
 /*
 TODO: Fix caching
@@ -1042,57 +1042,57 @@ TODO: Fix caching
 */
 }
 
-func (r *Rational) Bool() bool {
+func (r Rational) Bool() bool {
 	return r.v.Cmp(zero) != 0
 }
 
-func (r *Rational) Equal(c Cell) bool {
+func (r Rational) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
 		return r.v.Cmp(a.Rat()) == 0
 	}
 	return false
 }
 
-func (r *Rational) String() string {
+func (r Rational) String() string {
 	return r.v.RatString()
 }
 
-func (r *Rational) Float() float64 {
+func (r Rational) Float() float64 {
 	f, _ := r.v.Float64()
 	return f
 }
 
-func (r *Rational) Int() int64 {
+func (r Rational) Int() int64 {
 	n := r.v.Num()
 	d := r.v.Denom()
 	return new(big.Int).Div(n, d).Int64()
 }
 
-func (r *Rational) Rat() *big.Rat {
+func (r Rational) Rat() *big.Rat {
 	return r.v
 }
 
-func (r *Rational) Status() int64 {
+func (r Rational) Status() int64 {
 	return r.Int()
 }
 
-func (r *Rational) Greater(c Cell) bool {
+func (r Rational) Greater(c Cell) bool {
 	return r.v.Cmp(c.(Atom).Rat()) > 0
 }
 
-func (r *Rational) Less(c Cell) bool {
+func (r Rational) Less(c Cell) bool {
 	return r.v.Cmp(c.(Atom).Rat()) < 0
 }
 
-func (r *Rational) Add(c Cell) Number {
+func (r Rational) Add(c Cell) Number {
 	return NewRational(new(big.Rat).Add(r.v, c.(Atom).Rat()))
 }
 
-func (r *Rational) Divide(c Cell) Number {
+func (r Rational) Divide(c Cell) Number {
 	return NewRational(new(big.Rat).Quo(r.v, c.(Atom).Rat()))
 }
 
-func (r *Rational) Modulo(c Cell) Number {
+func (r Rational) Modulo(c Cell) Number {
         x := r.v
 	y := c.(Atom).Rat()
 
@@ -1104,11 +1104,11 @@ func (r *Rational) Modulo(c Cell) Number {
 	panic("operation not permitted")
 }
 
-func (r *Rational) Multiply(c Cell) Number {
+func (r Rational) Multiply(c Cell) Number {
 	return NewRational(new(big.Rat).Mul(r.v, c.(Atom).Rat()))
 }
 
-func (r *Rational) Subtract(c Cell) Number {
+func (r Rational) Subtract(c Cell) Number {
 	return NewRational(new(big.Rat).Sub(r.v, c.(Atom).Rat()))
 }
 
