@@ -378,7 +378,7 @@ If statements can be chained:
 
 The command,
 
-    define count = 0
+    define x = 0
     while (lt x 10) {
         write x
         set x: add x 1
