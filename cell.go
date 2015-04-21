@@ -698,7 +698,7 @@ func (f *Float) Bool() bool {
 
 func (f *Float) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return float64(*f) == a.Float()
+		return f.Rat().Cmp(a.Rat()) == 0
 	}
 	return false
 }
@@ -724,11 +724,11 @@ func (f *Float) Status() int64 {
 }
 
 func (f *Float) Greater(c Cell) bool {
-	return float64(*f) > c.(Atom).Float()
+	return f.Rat().Cmp(c.(Atom).Rat()) > 0
 }
 
 func (f *Float) Less(c Cell) bool {
-	return float64(*f) < c.(Atom).Float()
+	return f.Rat().Cmp(c.(Atom).Rat()) < 0
 }
 
 func (f *Float) Add(c Cell) Number {
@@ -796,7 +796,7 @@ func (i *Integer) Bool() bool {
 
 func (i *Integer) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return int64(*i) == a.Int()
+		return i.Rat().Cmp(a.Rat()) == 0
 	}
 	return false
 }
@@ -822,11 +822,11 @@ func (i *Integer) Status() int64 {
 }
 
 func (i *Integer) Greater(c Cell) bool {
-	return int64(*i) > c.(Atom).Int()
+	return i.Rat().Cmp(c.(Atom).Rat()) > 0
 }
 
 func (i *Integer) Less(c Cell) bool {
-	return int64(*i) < c.(Atom).Int()
+	return i.Rat().Cmp(c.(Atom).Rat()) < 0
 }
 
 func (i *Integer) Add(c Cell) Number {
@@ -1019,27 +1019,20 @@ func IsRational(c Cell) bool {
 }
 
 func NewRational(r *big.Rat) Rational {
-	return Rational{r}
-
-/*
-TODO: Fix caching
-
 	if !r.IsInt() || r.Cmp(min) < 0 || r.Cmp(max) > 0 {
-		return &Rational{r}
+		return Rational{r}
 	}
 
-	n := r.Num().Int64() + 256
-	p := rat[n]
+	n := r.Num().Int64()
+	i := n + 256
+	p := rat[i]
 
-	if p == nil {
-                println("Allocating:", r.Num().Int64())
-		p := &Rational{r}
-
-		rat[n] = p
+	if p.v == nil {
+		p = Rational{r}
+		rat[i] = p
 	}
 
 	return p
-*/
 }
 
 func (r Rational) Bool() bool {
