@@ -244,7 +244,7 @@ The command,
 
 produces the output,
 
-    false
+    true
 
 Oh provides short-circuit `and` and `or` commands as well as the `not`
 command.
@@ -462,7 +462,7 @@ Arguments allow a method to be parameterized.
     define sum3: method (a b c) as {
         add a b c
     }
-    sum3 1 2 3
+    write: sum3 1 2 3
 
 Methods may have a self parameter. The name for the self parameter must
 appear before the list of arguments.

@@ -2,9 +2,9 @@
 
 define $dir: "/"::join $origin .. doctest
 
-define prefix-line: method ($prefix) as {
+define prefix-lines: method ($prefix) as {
 	while (define $line: readline) {
-		echo $prefix $line
+		echo: ": "::join $prefix $line
 	}
 }
 
@@ -14,8 +14,8 @@ while (define $path: readline) {
         define $file = @`(basename $path)
 	grep "^#[+-]     " $path |
 	sed -e "s/^#[+-]     //g" |
-	prefix-line $file
+	prefix-lines $file
 
-	$path | prefix-line $file
+	$path | prefix-lines $file
 } | sort | uniq -u
 
