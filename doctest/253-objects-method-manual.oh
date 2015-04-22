@@ -33,7 +33,7 @@ hello
 define sum3: method (a b c) as {
     add a b c
 }
-sum3 1 2 3
+write: sum3 1 2 3
 #}
 ##
 

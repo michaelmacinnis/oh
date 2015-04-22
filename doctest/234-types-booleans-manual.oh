@@ -20,7 +20,7 @@ write: boolean 0
 ##
 ## produces the output,
 ##
-#+     false
+#+     true
 ##
 ## Oh provides short-circuit `and` and `or` commands as well as the `not`
 ## command.

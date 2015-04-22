@@ -165,6 +165,14 @@ func init() {
 	}
 }
 
+func ratmod(x, y *big.Rat) *big.Rat {
+	if x.IsInt() && y.IsInt() {
+		return new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
+	}
+
+	panic("operation not permitted")
+}
+
 func AppendTo(list Cell, elements ...Cell) Cell {
 	var pair, prev, start Cell
 
@@ -740,15 +748,7 @@ func (f *Float) Divide(c Cell) Number {
 }
 
 func (f *Float) Modulo(c Cell) Number {
-        x := f.Rat()
-	y := c.(Atom).Rat()
-
-	if x.IsInt() && y.IsInt() {
-		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
-		return NewRational(z)
-	}
-
-	panic("operation not permitted")
+	return NewRational(ratmod(f.Rat(), c.(Atom).Rat()))
 }
 
 func (f *Float) Multiply(c Cell) Number {
@@ -838,15 +838,7 @@ func (i *Integer) Divide(c Cell) Number {
 }
 
 func (i *Integer) Modulo(c Cell) Number {
-        x := i.Rat()
-	y := c.(Atom).Rat()
-
-	if x.IsInt() && y.IsInt() {
-		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
-		return NewRational(z)
-	}
-
-	panic("operation not permitted")
+	return NewRational(ratmod(i.Rat(), c.(Atom).Rat()))
 }
 
 func (i *Integer) Multiply(c Cell) Number {
@@ -1086,15 +1078,7 @@ func (r Rational) Divide(c Cell) Number {
 }
 
 func (r Rational) Modulo(c Cell) Number {
-        x := r.v
-	y := c.(Atom).Rat()
-
-	if x.IsInt() && y.IsInt() {
-		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
-		return NewRational(z)
-	}
-
-	panic("operation not permitted")
+	return NewRational(ratmod(r.v, c.(Atom).Rat()))
 }
 
 func (r Rational) Multiply(c Cell) Number {
@@ -1274,31 +1258,31 @@ func (s *Status) Status() int64 {
 }
 
 func (s *Status) Greater(c Cell) bool {
-	return int64(*s) > c.(Atom).Status()
+	return s.Rat().Cmp(c.(Atom).Rat()) > 0
 }
 
 func (s *Status) Less(c Cell) bool {
-	return int64(*s) < c.(Atom).Status()
+	return s.Rat().Cmp(c.(Atom).Rat()) < 0
 }
 
 func (s *Status) Add(c Cell) Number {
-	return NewStatus(int64(*s) + c.(Atom).Status())
+	return NewRational(new(big.Rat).Add(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Status) Divide(c Cell) Number {
-	return NewStatus(int64(*s) / c.(Atom).Status())
+	return NewRational(new(big.Rat).Quo(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Status) Modulo(c Cell) Number {
-	return NewStatus(int64(*s) % c.(Atom).Status())
+	return NewRational(ratmod(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Status) Multiply(c Cell) Number {
-	return NewStatus(int64(*s) * c.(Atom).Status())
+	return NewRational(new(big.Rat).Mul(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Status) Subtract(c Cell) Number {
-	return NewStatus(int64(*s) - c.(Atom).Status())
+	return NewRational(new(big.Rat).Sub(s.Rat(), c.(Atom).Rat()))
 }
 
 /* Symbol cell definition. */
@@ -1398,15 +1382,7 @@ func (s *Symbol) Divide(c Cell) Number {
 }
 
 func (s *Symbol) Modulo(c Cell) Number {
-        x := s.Rat()
-	y := c.(Atom).Rat()
-
-	if x.IsInt() && y.IsInt() {
-		z := new(big.Rat).SetInt(new(big.Int).Mod(x.Num(), y.Num()))
-		return NewRational(z)
-	}
-
-	panic("operation not permitted")
+	return NewRational(ratmod(s.Rat(), c.(Atom).Rat()))
 }
 
 func (s *Symbol) Multiply(c Cell) Number {

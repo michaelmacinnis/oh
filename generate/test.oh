@@ -2,10 +2,20 @@
 
 define $dir: "/"::join $origin .. doctest
 
+define prefix-line: method ($prefix) as {
+	while (define $line: readline) {
+		echo $prefix $line
+	}
+}
+
 # Run tests.
 find $dir -name "[0-9]*.oh" | grep -Fv unused |
-while (define $file: readline) {
-	grep "^#[+-]     " $file | sed -e "s/^#[+-]     //g"
-	$file
+while (define $path: readline) {
+        define $file = @`(basename $path)
+	grep "^#[+-]     " $path |
+	sed -e "s/^#[+-]     //g" |
+	prefix-line $file
+
+	$path | prefix-line $file
 } | sort | uniq -u
 
