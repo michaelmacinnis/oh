@@ -15,9 +15,6 @@ define hello: method () as {
 }
 #}
 ##
-
-#-     Hello, World!
-
 ## Once defined, a method can be called in the same way as other commands.
 ##
 #{

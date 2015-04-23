@@ -10,7 +10,7 @@
 ## makes sense as there are many ways to fail but typicaly only one way to
 ## succeed. As a result, most Unix shells treat the zero value as true and
 ## non-zero values as false - unlike most other mainstream programming
-## languages. To solve this problem, oh introduces a status type. The status
+## languages. To cause less confusion, oh introduces a status type. The status
 ## type is an integer that evaluates to true only when it has the value 0.
 ##
 ## The command,

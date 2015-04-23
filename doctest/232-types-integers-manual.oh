@@ -29,6 +29,7 @@ write (integer -1)
 #{
 write: integer -1
 #}
+#-     -1
 ##
 ## This shorthand is used often to avoid lots of irritating and
 ## superfluous parentheses when constructing more compilcated commands:

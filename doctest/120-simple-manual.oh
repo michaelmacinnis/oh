@@ -21,10 +21,10 @@ rm 1 2 3
 cd $origin
 rmdir /tmp/simple-commands
 
+#-     total 
 #-     -rw-rw-r-- 1
 #-     -rw-rw-r-- 2
 #-     -rw-rw-r-- 3
-#-     total 
 
 ## is a command that prints a list of files in the current directory. The
 ## argument `-l` tells `ls` to print status information, the size and the

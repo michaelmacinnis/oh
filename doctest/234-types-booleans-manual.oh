@@ -28,16 +28,20 @@ write: boolean 0
 ## The commands below,
 ##
 #{
-echo "short-circuit and =>": and false (echo this will never be evaluated)
-echo "short-circuit or =>": or true (echo this will never be evaluated)
-echo "boolean not =>": not false
+echo "short-circuit and (with false and something) =>" {
+    and false (echo never be evaluated)
+}
+echo "short-circuit or (with true and something) =>" {
+    or true (echo never be evaluated)
+}
+echo "not false =>": not false
 #}
 ##
 ## produce the output,
 ##
-#+     short-circuit and => false
-#+     short-circuit or => true
-#+     boolean not => true
+#+     short-circuit and (with false and something) => false
+#+     short-circuit or (with true and something) => true
+#+     not false => true
 ##
 ## Oh also provides a set of relational operators:
 ##
@@ -52,10 +56,10 @@ echo "3 is not equal to 2 =>": ne 3 2
 ##
 
 #-     3 is equal to 2 => false
-#-     3 is greater than 2 => true
 #-     3 is greater than or equal to 2 => true
-#-     3 is less than 2 => false
+#-     3 is greater than 2 => true
 #-     3 is less than or equal to 2 => false
+#-     3 is less than 2 => false
 #-     3 is not equal to 2 => true
 
 define x: boolean ""

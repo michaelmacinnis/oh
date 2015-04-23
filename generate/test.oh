@@ -3,8 +3,10 @@
 define $dir: "/"::join $origin .. doctest
 
 define prefix-lines: method ($prefix) as {
+        define $count = 1
 	while (define $line: readline) {
-		echo: ": "::join $prefix $line
+		echo: ": "::join $prefix $count $line
+                set $count: add $count 1
 	}
 }
 

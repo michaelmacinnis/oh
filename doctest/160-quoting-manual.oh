@@ -31,7 +31,9 @@ echo "xx**\"**xx"
 ##
 ## A double quoted string may not contain an unescaped double quote but may
 ## contain newlines, which are preserved, and escape sequences which are
-## interpreted. A single quoted string may not contain a single quote.
+## interpreted. Escape sequences are not interpreted in a single quoted
+## string. A single quoted string may not contain a single quote as there is
+## no way to escape it.
 ##
 #{
 echo "Hello,

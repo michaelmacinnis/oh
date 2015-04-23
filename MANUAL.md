@@ -131,7 +131,9 @@ will echo,
 
 A double quoted string may not contain an unescaped double quote but may
 contain newlines, which are preserved, and escape sequences which are
-interpreted. A single quoted string may not contain a single quote.
+interpreted. Escape sequences are not interpreted in a single quoted
+string. A single quoted string may not contain a single quote as there is
+no way to escape it.
 
     echo "Hello,
     World!"
@@ -251,15 +253,19 @@ command.
 
 The commands below,
 
-    echo "short-circuit and =>": and false (echo this will never be evaluated)
-    echo "short-circuit or =>": or true (echo this will never be evaluated)
-    echo "boolean not =>": not false
+    echo "short-circuit and (with false and something) =>" {
+        and false (echo never be evaluated)
+    }
+    echo "short-circuit or (with true and something) =>" {
+        or true (echo never be evaluated)
+    }
+    echo "not false =>": not false
 
 produce the output,
 
-    short-circuit and => false
-    short-circuit or => true
-    boolean not => true
+    short-circuit and (with false and something) => false
+    short-circuit or (with true and something) => true
+    not false => true
 
 Oh also provides a set of relational operators:
 
@@ -276,7 +282,7 @@ Typical Unix commands return 0 on success and non-zero on failure. This
 makes sense as there are many ways to fail but typicaly only one way to
 succeed. As a result, most Unix shells treat the zero value as true and
 non-zero values as false - unlike most other mainstream programming
-languages. To solve this problem, oh introduces a status type. The status
+languages. To cause less confusion, oh introduces a status type. The status
 type is an integer that evaluates to true only when it has the value 0.
 
 The command,

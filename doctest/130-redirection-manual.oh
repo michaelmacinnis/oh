@@ -28,15 +28,11 @@ ls >> file
 ##
 ## Standard error may be redirected,
 ##
-#{
-ls -l !>errors
-#}
+##     ls -l !>errors
 ##
 ## or appended to a file.
 ##
-#{
-ls -l !>>errors
-#}
+##     ls -l !>>errors
 ##
 ## Standard input may also be redirected.
 ##
@@ -45,13 +41,14 @@ wc -l <file
 #}
 ##
 
+ls -l >/dev/null !>errors
+ls -l >/dev/null !>>errors
 sort file | awk "{ print \"redirection\" FS count++ FS $0 }"
 rm errors file 1 2 3
 cd $origin
 rmdir /tmp/redirection
 
 #-     8
-#-     redirection 0 1
 #-     redirection 0 1
 #-     redirection 1 1
 #-     redirection 2 2
