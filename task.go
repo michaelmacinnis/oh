@@ -213,6 +213,14 @@ func files(line, prefix string) []string {
 	}
 	max := strings.Count(root, "/")
 
+	stat, err := os.Stat(root)
+	if err != nil || os.IsNotExist(err) {
+		return completions
+	}
+	if strings.HasSuffix(root, "/") && !stat.IsDir() {
+		return completions
+	}
+
 	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
 		depth := strings.Count(p, "/")
 		if depth > max {
@@ -221,10 +229,20 @@ func files(line, prefix string) []string {
 			}
 			return nil
 		} else if depth == max {
+			if i.IsDir() && !strings.HasSuffix(p, "/") {
+				p += "/"
+			}
 			full := path.Join(root, prfx)
 			if len(prfx) == 0 {
+				if p == root {
+					return nil
+				}
 				full += "/"
 			} else if !strings.HasPrefix(p, full) {
+				return nil
+			}
+
+			if len(full) >= len(p) {
 				return nil
 			}
 
@@ -1419,7 +1437,7 @@ func IsChannel(c Cell) bool {
 	}
 
 	conduit := as_conduit(context)
-        if conduit == nil {
+	if conduit == nil {
 		return false
 	}
 
@@ -1536,7 +1554,7 @@ func IsPipe(c Cell) bool {
 	}
 
 	conduit := as_conduit(context)
-        if conduit == nil {
+	if conduit == nil {
 		return false
 	}
 

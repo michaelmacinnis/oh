@@ -92,14 +92,14 @@ var (
 	False *Boolean
 	True  *Boolean
 
-	max *big.Rat
-	min *big.Rat
-	num [512]*Integer
-	one *big.Rat
-	rat [512]Rational
-	res [256]*Status
-	str map[string]*String
-	sym map[string]*Symbol
+	max  *big.Rat
+	min  *big.Rat
+	num  [512]*Integer
+	one  *big.Rat
+	rat  [512]Rational
+	res  [256]*Status
+	str  map[string]*String
+	sym  map[string]*Symbol
 	zero *big.Rat
 )
 
@@ -521,8 +521,8 @@ type Builtin struct {
 func IsBuiltin(c Cell) bool {
 	b, ok := c.(Binding)
 	if !ok {
-            return false
-        }
+		return false
+	}
 
 	switch b.Ref().(type) {
 	case *Builtin:
@@ -858,8 +858,8 @@ type Method struct {
 func IsMethod(c Cell) bool {
 	b, ok := c.(Binding)
 	if !ok {
-            return false
-        }
+		return false
+	}
 
 	switch b.Ref().(type) {
 	case *Method:
@@ -1410,8 +1410,8 @@ type Syntax struct {
 func IsSyntax(c Cell) bool {
 	b, ok := c.(Binding)
 	if !ok {
-            return false
-        }
+		return false
+	}
 
 	switch b.Ref().(type) {
 	case *Syntax:
