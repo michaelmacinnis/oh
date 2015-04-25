@@ -199,29 +199,35 @@ func expand(t *Task, args Cell) Cell {
 func files(line, prefix string) []string {
 	completions := []string{}
 
-	prfx := path.Clean(prefix)
-	if !path.IsAbs(prfx) {
+	candidate := path.Clean(prefix)
+	if !path.IsAbs(candidate) {
 		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
 		cwd := ref.Get().String()
 
-		prfx = path.Join(cwd, prfx)
+		candidate = path.Join(cwd, candidate)
 	}
 
-	root, prfx := filepath.Split(prfx)
+	dirname, basename := filepath.Split(candidate)
 	if strings.HasSuffix(prefix, "/") {
-		root, prfx = path.Join(root, prfx)+"/", ""
+		dirname, basename = path.Join(dirname, basename)+"/", ""
+	} else if stat, err := os.Stat(candidate); err == nil {
+		if stat.IsDir() {
+			return append(completions, line + prefix + "/")
+		}
 	}
-	max := strings.Count(root, "/")
 
-	stat, err := os.Stat(root)
+	max := strings.Count(dirname, "/")
+
+	stat, err := os.Stat(dirname)
 	if err != nil || os.IsNotExist(err) {
 		return completions
 	}
-	if strings.HasSuffix(root, "/") && !stat.IsDir() {
+
+	if strings.HasSuffix(dirname, "/") && !stat.IsDir() {
 		return completions
 	}
 
-	filepath.Walk(root, func(p string, i os.FileInfo, err error) error {
+	filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 		depth := strings.Count(p, "/")
 		if depth > max {
 			if i.IsDir() {
@@ -229,12 +235,9 @@ func files(line, prefix string) []string {
 			}
 			return nil
 		} else if depth == max {
-			if i.IsDir() && !strings.HasSuffix(p, "/") {
-				p += "/"
-			}
-			full := path.Join(root, prfx)
-			if len(prfx) == 0 {
-				if p == root {
+			full := path.Join(dirname, basename)
+			if len(basename) == 0 {
+				if p == dirname {
 					return nil
 				}
 				full += "/"
