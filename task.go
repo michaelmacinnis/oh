@@ -199,6 +199,10 @@ func expand(t *Task, args Cell) Cell {
 func files(line, prefix string) []string {
 	completions := []string{}
 
+	if prefix[:1] == "~" {
+		prefix = filepath.Join(os.Getenv("HOME"), prefix[1:])
+	}
+
 	candidate := path.Clean(prefix)
 	if !path.IsAbs(candidate) {
 		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
@@ -210,22 +214,16 @@ func files(line, prefix string) []string {
 	dirname, basename := filepath.Split(candidate)
 	if strings.HasSuffix(prefix, "/") {
 		dirname, basename = path.Join(dirname, basename)+"/", ""
-	} else if stat, err := os.Stat(candidate); err == nil {
-		if stat.IsDir() {
-			return append(completions, line + prefix + "/")
-		}
+	}
+
+	stat, err := os.Stat(dirname)
+	if err != nil {
+		return completions
+	} else if len(basename) == 0 && !stat.IsDir() {
+		return completions
 	}
 
 	max := strings.Count(dirname, "/")
-
-	stat, err := os.Stat(dirname)
-	if err != nil || os.IsNotExist(err) {
-		return completions
-	}
-
-	if strings.HasSuffix(dirname, "/") && !stat.IsDir() {
-		return completions
-	}
 
 	filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 		depth := strings.Count(p, "/")
@@ -234,24 +232,30 @@ func files(line, prefix string) []string {
 				return filepath.SkipDir
 			}
 			return nil
-		} else if depth == max {
-			full := path.Join(dirname, basename)
-			if len(basename) == 0 {
-				if p == dirname {
-					return nil
-				}
-				full += "/"
-			} else if !strings.HasPrefix(p, full) {
-				return nil
-			}
-
-			if len(full) >= len(p) {
-				return nil
-			}
-
-			completion := line + prefix + p[len(full):]
-			completions = append(completions, completion)
+		} else if depth < max {
+			return nil
 		}
+
+		full := path.Join(dirname, basename)
+		if len(basename) == 0 {
+			if p == dirname {
+				return nil
+			}
+			full += "/"
+		} else if !strings.HasPrefix(p, full) {
+			return nil
+		}
+
+		if i.IsDir() {
+			p += "/"
+		}
+
+		if len(full) >= len(p) {
+			return nil
+		}
+
+		completion := line + prefix + p[len(full):]
+		completions = append(completions, completion)
 
 		return nil
 	})
@@ -279,6 +283,7 @@ func init() {
 
 		cli.SetCtrlCAborts(true)
 		cli.SetCompleter(complete)
+		cli.SetTabCompletionStyle(liner.TabPrints)
 
 		signal.Notify(incoming, signals...)
 	}
