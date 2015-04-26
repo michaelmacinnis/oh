@@ -49,7 +49,7 @@ type Context interface {
 
 	Access(key Cell) Reference
 	Copy() Context
-	Complete(line, prefix string) []string
+	Complete(word string) []string
 	Define(key, value Cell)
 	Expose() Context
 	Faces() *Env
@@ -636,17 +636,17 @@ func (e *Env) Add(key Cell, value Cell) {
 	e.hash[key.String()] = NewVariable(value)
 }
 
-func (e *Env) Complete(line, prefix string) []string {
+func (e *Env) Complete(word string) []string {
 	cl := []string{}
 
 	for k := range e.hash {
-		if strings.HasPrefix(k, prefix) {
-			cl = append(cl, line+k)
+		if strings.HasPrefix(k, word) {
+			cl = append(cl, k)
 		}
 	}
 
 	if e.prev != nil {
-		cl = append(cl, e.prev.Complete(line, prefix)...)
+		cl = append(cl, e.prev.Complete(word)...)
 	}
 
 	return cl
@@ -1128,12 +1128,12 @@ func (s *Scope) Access(key Cell) Reference {
 	return nil
 }
 
-func (s *Scope) Complete(line, prefix string) []string {
+func (s *Scope) Complete(word string) []string {
 	cl := []string{}
 
 	var obj Context
 	for obj = s; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Complete(line, prefix)...)
+		cl = append(cl, obj.Faces().Complete(word)...)
 	}
 
 	return cl

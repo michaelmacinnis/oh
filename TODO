@@ -1,6 +1,5 @@
 - Signal handing:
   - 'trap' builtin (trap <signal1> [... <signalN>] <method>)
-- Improve completion suggestions and use WordCompleter for mid-line completion.
 - Parameter substitution (for environment variables)
 - Improve error checking and error messages.
 - Detection and formatting/parsing of recursive structures

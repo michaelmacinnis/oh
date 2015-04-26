@@ -135,28 +135,31 @@ func as_conduit(o Context) Conduit {
 	return nil
 }
 
-func complete(line string) []string {
-	fields := strings.Fields(line)
+func complete(line string, pos int) (string, []string, string) {
+	head := line[:pos]
+	tail := line[pos:]
+
+	fields := strings.Fields(head)
 
 	if len(fields) == 0 {
-		return []string{"    " + line}
+		return head, []string{"    "}, tail
 	}
 
-	prefix := fields[len(fields)-1]
-	if !strings.HasSuffix(line, prefix) {
-		return []string{line}
+	word := fields[len(fields)-1]
+	if !strings.HasSuffix(head, word) {
+		return head, []string{}, tail
 	}
 
-	trimmed := line[0 : len(line)-len(prefix)]
+	head = head[0 : len(head)-len(word)]
 
-	completions := files(trimmed, prefix)
-	completions = append(completions, task0.Complete(trimmed, prefix)...)
+	completions := files(word)
+	completions = append(completions, task0.Complete(word)...)
 
 	if len(completions) == 0 {
-		return []string{line}
+		return head, []string{word}, tail
 	}
 
-	return completions
+	return head, completions, tail
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -196,14 +199,15 @@ func expand(t *Task, args Cell) Cell {
 	return list
 }
 
-func files(line, prefix string) []string {
+func files(word string) []string {
 	completions := []string{}
 
-	if prefix[:1] == "~" {
-		prefix = filepath.Join(os.Getenv("HOME"), prefix[1:])
+	candidate := word
+	if candidate[:1] == "~" {
+		candidate = filepath.Join(os.Getenv("HOME"), candidate[1:])
 	}
 
-	candidate := path.Clean(prefix)
+	candidate = path.Clean(candidate)
 	if !path.IsAbs(candidate) {
 		ref := Resolve(task0.Lexical, task0.Dynamic, NewSymbol("$cwd"))
 		cwd := ref.Get().String()
@@ -212,7 +216,7 @@ func files(line, prefix string) []string {
 	}
 
 	dirname, basename := filepath.Split(candidate)
-	if strings.HasSuffix(prefix, "/") {
+	if strings.HasSuffix(word, "/") {
 		dirname, basename = path.Join(dirname, basename)+"/", ""
 	}
 
@@ -254,7 +258,7 @@ func files(line, prefix string) []string {
 			return nil
 		}
 
-		completion := line + prefix + p[len(full):]
+		completion := word + p[len(full):]
 		completions = append(completions, completion)
 
 		return nil
@@ -282,8 +286,8 @@ func init() {
 		uncooked, _ = liner.TerminalMode()
 
 		cli.SetCtrlCAborts(true)
-		cli.SetCompleter(complete)
 		cli.SetTabCompletionStyle(liner.TabPrints)
+		cli.SetWordCompleter(complete)
 
 		signal.Notify(incoming, signals...)
 	}
@@ -1714,9 +1718,9 @@ func (r *Registers) Arguments() Cell {
 	return l
 }
 
-func (r *Registers) Complete(line, prefix string) []string {
-	completions := r.Lexical.Complete(line, prefix)
-	return append(completions, r.Dynamic.Complete(line, prefix)...)
+func (r *Registers) Complete(word string) []string {
+	completions := r.Lexical.Complete(word)
+	return append(completions, r.Dynamic.Complete(word)...)
 }
 
 func (r *Registers) GetState() int64 {
