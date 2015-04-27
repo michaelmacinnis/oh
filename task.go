@@ -152,14 +152,72 @@ func complete(line string, pos int) (string, []string, string) {
 
 	head = head[0 : len(head)-len(word)]
 
-	completions := files(word)
-	completions = append(completions, task0.Complete(word)...)
+	completions := task0.Complete(word)
+	completions = append(completions, files(word)...)
+        if len(fields) == 1 {
+		completions = append(completions, executables(word)...)
+	}
 
 	if len(completions) == 0 {
 		return head, []string{word}, tail
 	}
 
+	unique := make(map[string]bool)
+	for _, completion := range completions {
+		unique[completion] = true
+	}
+
+	completions = make([]string, 0, len(unique))
+	for completion := range unique {
+		completions = append(completions, completion)
+	}
+
 	return head, completions, tail
+}
+
+func executables(word string) []string {
+        completions := []string{}
+
+	if strings.Contains(word, string(os.PathSeparator)) {
+		return completions
+	}
+
+	pathenv := os.Getenv("PATH")
+	for _, dir := range strings.Split(pathenv, string(os.PathListSeparator)) {
+		if dir == "" {
+			dir = "."
+		} else {
+			dir = path.Clean(dir)
+		}
+
+		stat, err := os.Stat(dir)
+		if err != nil || !stat.IsDir() {
+			continue
+		}
+	
+		max := strings.Count(dir, "/") + 1
+		filepath.Walk(dir, func(p string, i os.FileInfo, err error) error {
+			depth := strings.Count(p, "/")
+			if depth > max {
+				if i.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			} else if depth < max {
+				return nil
+			}
+
+			_, basename := filepath.Split(p)
+
+			if strings.HasPrefix(basename, word) {
+				completions = append(completions, basename)
+			}
+
+			return nil
+		})
+	}
+
+	return completions
 }
 
 func expand(t *Task, args Cell) Cell {
