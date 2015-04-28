@@ -65,8 +65,8 @@ echo "3 is not equal to 2 =>": ne 3 2
 define x: boolean ""
 define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
                           is-float is-integer is-method is-null is-number \
-                          is-object is-pipe is-status is-string is-symbol \
-                          is-syntax
+                          is-object is-pipe is-rational is-status is-string \
+                          is-symbol is-syntax
 for predicates: method (name) as {
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x
@@ -83,7 +83,8 @@ for predicates: method (name) as {
 #-     is-null "x => false"
 #-     is-number "x => false"
 #-     is-object "x => false"
-#-     is-pipe "x => false"
+#-     is-pipe "x => false" 
+#-     is-rational "x => false" 
 #-     is-status "x => false"
 #-     is-string "x => false"
 #-     is-symbol "x => false"

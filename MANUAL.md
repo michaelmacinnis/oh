@@ -232,6 +232,28 @@ produces the output,
 
     14.44
 
+#### Rationals
+
+Without the `float` command in the previous example the command,
+
+    write: add 3.14 2.72 1.41 2.50 4.67
+
+produces the output,
+
+    361/25
+
+All arithmetic operations in oh are performed by first converting all
+operands to rational numbers. The result is a rational number which can
+be explicitly converted with the `float`, `integer` or `status` commands.
+
+A rational number can be explicitly declared with the `rational` command,
+
+    define r: rational 100/3
+    write: is-rational r
+    write: float r
+    write: integer r
+    write: status r
+
 #### Booleans
 
 Oh has a boolean type and the boolean values `true` and `false`.
