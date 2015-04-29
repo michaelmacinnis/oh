@@ -154,7 +154,7 @@ func complete(line string, pos int) (string, []string, string) {
 
 	completions := task0.Complete(word)
 	completions = append(completions, files(word)...)
-        if len(fields) == 1 {
+	if len(fields) == 1 {
 		completions = append(completions, executables(word)...)
 	}
 
@@ -176,7 +176,7 @@ func complete(line string, pos int) (string, []string, string) {
 }
 
 func executables(word string) []string {
-        completions := []string{}
+	completions := []string{}
 
 	if strings.Contains(word, string(os.PathSeparator)) {
 		return completions
@@ -194,7 +194,7 @@ func executables(word string) []string {
 		if err != nil || !stat.IsDir() {
 			continue
 		}
-	
+
 		max := strings.Count(dir, "/") + 1
 		filepath.Walk(dir, func(p string, i os.FileInfo, err error) error {
 			depth := strings.Count(p, "/")
@@ -428,20 +428,12 @@ func Incoming() chan os.Signal {
 	return incoming
 }
 
-func Interactive() bool {
-	return interactive
-}
-
-func Interface() *Liner {
-	return cli
-}
-
 func IsSimple(c Cell) bool {
 	return IsAtom(c) || IsCons(c)
 }
 
 func JobControlEnabled() bool {
-	return Interactive() && JobControlSupported()
+	return interactive && JobControlSupported()
 }
 
 func NewForegroundTask() *Task {
@@ -1491,6 +1483,21 @@ func RootScope() *Scope {
 
 func SetForegroundTask(t *Task) {
 	task0 = t
+}
+
+func Start(eval func(c Cell)) {
+	if interactive {
+		Parse(nil, cli, eval)
+
+		cli.Close()
+		fmt.Printf("\n")
+	} else if len(os.Args) > 1 {
+		eval(List(NewSymbol("source"), NewSymbol(os.Args[1])))
+	} else {
+		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
+	}
+
+	os.Exit(0)
 }
 
 /* Channel cell definition. */

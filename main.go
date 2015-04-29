@@ -361,20 +361,7 @@ define list-tail: method (k x) as {
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 `)), evaluate)
 
-	if Interactive() {
-		cli := Interface()
-
-		Parse(nil, cli, evaluate)
-
-		cli.Close()
-		fmt.Printf("\n")
-	} else if len(os.Args) > 1 {
-		evaluate(List(NewSymbol("source"), NewSymbol(os.Args[1])))
-	} else {
-		evaluate(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
-	}
-
-	os.Exit(0)
+	Start(evaluate)
 }
 
 //go:generate generate/go.oh

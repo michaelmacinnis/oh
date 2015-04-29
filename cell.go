@@ -92,15 +92,15 @@ var (
 	False *Boolean
 	True  *Boolean
 
-	max  *big.Rat
-	min  *big.Rat
-	num  [512]*Integer
-	one  *big.Rat
-	rat  [512]Rational
-	res  [256]*Status
-	str  map[string]*String
-	sym  map[string]*Symbol
-	zero *big.Rat
+	max *big.Rat
+	min *big.Rat
+	num [512]*Integer
+	one *big.Rat
+	rat [512]Rational
+	res [256]*Status
+	str map[string]*String
+	sym map[string]*Symbol
+	zip *big.Rat
 )
 
 func init() {
@@ -108,9 +108,9 @@ func init() {
 	min = big.NewRat(-256, 1)
 
 	one = big.NewRat(1, 1)
-	zero = big.NewRat(0, 1)
+	zip = big.NewRat(0, 1)
 	rat[257] = Rational{one}
-	rat[256] = Rational{zero}
+	rat[256] = Rational{zip}
 
 	pair := new(Pair)
 	pair.car = pair
@@ -459,7 +459,7 @@ func (b *Boolean) Rat() *big.Rat {
 	if b == True {
 		return one
 	}
-	return zero
+	return zip
 }
 
 func (b *Boolean) Status() int64 {
@@ -1028,7 +1028,7 @@ func NewRational(r *big.Rat) Rational {
 }
 
 func (r Rational) Bool() bool {
-	return r.v.Cmp(zero) != 0
+	return r.v.Cmp(zip) != 0
 }
 
 func (r Rational) Equal(c Cell) bool {
