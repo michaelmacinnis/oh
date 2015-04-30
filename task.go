@@ -436,13 +436,13 @@ func JobControlEnabled() bool {
 	return interactive && JobControlSupported()
 }
 
-func NewForegroundTask() *Task {
+func LaunchForegroundTask() {
 	if task0 != nil {
 		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
 	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
-	return task0
+	go task0.Listen()
 }
 
 func Pid() int {

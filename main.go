@@ -38,7 +38,7 @@ var (
 func broker() {
 	irq := Incoming()
 
-	go NewForegroundTask().Listen()
+	LaunchForegroundTask()
 
 	var c Cell
 	for c == nil && ForegroundTask().Stack != Null {
@@ -74,7 +74,7 @@ func broker() {
 					}
 					fmt.Printf("\n")
 
-					go NewForegroundTask().Listen()
+					LaunchForegroundTask()
 					c = nil
 				}
 

@@ -70,7 +70,6 @@ func Monitor(active chan bool, notify chan Notification) {
 			monitoring = <-active
 		}
 	}
-	panic("unreachable")
 }
 
 func Registrar(active chan bool, notify chan Notification) {
