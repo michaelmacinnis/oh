@@ -107,8 +107,7 @@ func init() {
 func main() {
 	go broker()
 
-	scope0 = RootScope()
-	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
+	DefineBuiltin("fg", func(t *Task, args Cell) bool {
 		if !JobControlEnabled() || t != ForegroundTask() {
 			return false
 		}
@@ -146,7 +145,8 @@ func main() {
 
 		return true
 	})
-	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
+
+	DefineBuiltin("jobs", func(t *Task, args Cell) bool {
 		if !JobControlEnabled() || t != ForegroundTask() ||
 			len(jobs) == 0 {
 			return false

@@ -356,100 +356,7 @@ func init() {
 
 	go Monitor(active, notify)
 	go Registrar(active, notify)
-}
 
-func module(f string) (string, error) {
-	i, err := os.Stat(f)
-	if err != nil {
-		return "", err
-	}
-
-	m := "$" + i.Name() + "-" + strconv.FormatInt(i.Size(), 10) + "-" +
-		strconv.Itoa(i.ModTime().Second()) + "." +
-		strconv.Itoa(i.ModTime().Nanosecond())
-
-	return m, nil
-}
-
-func number(s string) bool {
-	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
-	return err == nil && m
-}
-
-func raw(c Cell) string {
-	if s, ok := c.(*String); ok {
-		return s.Raw()
-	}
-
-	return c.String()
-}
-
-func rpipe(c Cell) *os.File {
-	return to_conduit(c.(Context)).(*Pipe).ReadFd()
-
-}
-
-func status(c Cell) int {
-	a, ok := c.(Atom)
-	if !ok {
-		return 0
-	}
-	return int(a.Status())
-}
-
-/* Convert Context into a Conduit. */
-func to_conduit(o Context) Conduit {
-	conduit := as_conduit(o)
-	if conduit == nil {
-		panic("not a conduit")
-	}
-
-	return conduit
-}
-
-/* Convert Context into a String. */
-func to_string(o Context) *String {
-	if s, ok := o.(*String); ok {
-		return s
-	}
-
-	panic("not a string")
-}
-
-func wpipe(c Cell) *os.File {
-	return to_conduit(c.(Context)).(*Pipe).WriteFd()
-}
-
-func ForegroundTask() *Task {
-	return task0
-}
-
-func Incoming() chan os.Signal {
-	return incoming
-}
-
-func IsSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
-}
-
-func JobControlEnabled() bool {
-	return interactive && JobControlSupported()
-}
-
-func LaunchForegroundTask() {
-	if task0 != nil {
-		mode, _ := liner.TerminalMode()
-		task0.Job.mode = mode
-	}
-	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
-	go task0.Listen()
-}
-
-func Pid() int {
-	return pid
-}
-
-func RootScope() *Scope {
 	external = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
 
 	envc = NewEnv(nil)
@@ -691,7 +598,7 @@ func RootScope() *Scope {
 	})
 
 	/* Builtins. */
-	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
+	DefineBuiltin("cd", func(t *Task, args Cell) bool {
 		err := os.Chdir(raw(Car(args)))
 		status := 0
 		if err != nil {
@@ -704,12 +611,12 @@ func RootScope() *Scope {
 
 		return t.Return(NewStatus(int64(status)))
 	})
-	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
+	DefineBuiltin("debug", func(t *Task, args Cell) bool {
 		t.Debug("debug")
 
 		return false
 	})
-	scope0.DefineBuiltin("exists", func(t *Task, args Cell) bool {
+	DefineBuiltin("exists", func(t *Task, args Cell) bool {
 		count := 0
 		for ; args != Null; args = Cdr(args) {
 			count++
@@ -720,7 +627,7 @@ func RootScope() *Scope {
 
 		return t.Return(NewBoolean(count > 0))
 	})
-	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
+	DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
 
 		if err != nil {
@@ -736,7 +643,7 @@ func RootScope() *Scope {
 
 		return t.Return(c.Get())
 	})
-	scope0.DefineBuiltin("run", func(t *Task, args Cell) bool {
+	DefineBuiltin("run", func(t *Task, args Cell) bool {
 		if args == Null {
 			SetCar(t.Scratch, False)
 			return false
@@ -1477,8 +1384,101 @@ func RootScope() *Scope {
 	})
 
 	scope0.Public(NewSymbol("$root"), scope0)
+}
 
-	return scope0
+func module(f string) (string, error) {
+	i, err := os.Stat(f)
+	if err != nil {
+		return "", err
+	}
+
+	m := "$" + i.Name() + "-" + strconv.FormatInt(i.Size(), 10) + "-" +
+		strconv.Itoa(i.ModTime().Second()) + "." +
+		strconv.Itoa(i.ModTime().Nanosecond())
+
+	return m, nil
+}
+
+func number(s string) bool {
+	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
+	return err == nil && m
+}
+
+func raw(c Cell) string {
+	if s, ok := c.(*String); ok {
+		return s.Raw()
+	}
+
+	return c.String()
+}
+
+func rpipe(c Cell) *os.File {
+	return to_conduit(c.(Context)).(*Pipe).ReadFd()
+
+}
+
+func status(c Cell) int {
+	a, ok := c.(Atom)
+	if !ok {
+		return 0
+	}
+	return int(a.Status())
+}
+
+/* Convert Context into a Conduit. */
+func to_conduit(o Context) Conduit {
+	conduit := as_conduit(o)
+	if conduit == nil {
+		panic("not a conduit")
+	}
+
+	return conduit
+}
+
+/* Convert Context into a String. */
+func to_string(o Context) *String {
+	if s, ok := o.(*String); ok {
+		return s
+	}
+
+	panic("not a string")
+}
+
+func wpipe(c Cell) *os.File {
+	return to_conduit(c.(Context)).(*Pipe).WriteFd()
+}
+
+func DefineBuiltin(k string, a Function) {
+	scope0.DefineBuiltin(k, a)
+}
+
+func ForegroundTask() *Task {
+	return task0
+}
+
+func Incoming() chan os.Signal {
+	return incoming
+}
+
+func IsSimple(c Cell) bool {
+	return IsAtom(c) || IsCons(c)
+}
+
+func JobControlEnabled() bool {
+	return interactive && JobControlSupported()
+}
+
+func LaunchForegroundTask() {
+	if task0 != nil {
+		mode, _ := liner.TerminalMode()
+		task0.Job.mode = mode
+	}
+	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
+	go task0.Listen()
+}
+
+func Pid() int {
+	return pid
 }
 
 func SetForegroundTask(t *Task) {
