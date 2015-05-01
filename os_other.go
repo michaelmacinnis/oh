@@ -15,6 +15,11 @@ var (
 	Platform         string    = "other"
 )
 
+func BecomeProcessGroupLeader() int {
+	// TODO: Not sure what to do on non-Unix platforms.
+	return 0
+}
+
 func ContinueProcess(pid int) {}
 
 func InitSignalHandling() {}
@@ -37,11 +42,6 @@ func Monitor(active chan bool, notify chan Notification) {}
 func Registrar(active chan bool, notify chan Notification) {}
 
 func SetForegroundGroup(group int) {}
-
-func SetProcessGroup() int {
-	// TODO: Not sure what to do on non-Unix platforms.
-	return 0
-}
 
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	return nil

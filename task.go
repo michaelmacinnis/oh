@@ -326,7 +326,7 @@ func files(word string) []string {
 }
 
 func init() {
-	pid = SetProcessGroup()
+	pid = BecomeProcessGroupLeader()
 	pgid = pid
 
 	signals := []os.Signal{InterruptRequest, StopRequest}

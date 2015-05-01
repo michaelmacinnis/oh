@@ -17,6 +17,16 @@ var (
 	Platform         string    = "unix"
 )
 
+func BecomeProcessGroupLeader() int {
+	pid := syscall.Getpid()
+	pgid := syscall.Getpgrp()
+	if pid != pgid {
+		syscall.Setpgid(0, 0)
+	}
+
+	return pid
+}
+
 func ContinueProcess(pid int) {
 	syscall.Kill(pid, syscall.SIGCONT)
 }
@@ -103,16 +113,6 @@ func Registrar(active chan bool, notify chan Notification) {
 func SetForegroundGroup(group int) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
 		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-}
-
-func SetProcessGroup() int {
-	pid := syscall.Getpid()
-	pgid := syscall.Getpgrp()
-	if pid != pgid {
-		syscall.Setpgid(0, 0)
-	}
-
-	return pid
 }
 
 func SysProcAttr(group int) *syscall.SysProcAttr {
