@@ -1,4 +1,4 @@
-// Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
+// Released under an MIT-style license. See LICENSE.
 
 package main
 
