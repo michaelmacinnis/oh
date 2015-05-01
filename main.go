@@ -131,11 +131,6 @@ func main() {
 			return false
 		}
 
-		if found.Job.group != 0 {
-			SetForegroundGroup(found.Job.group)
-			found.Job.mode.ApplyMode()
-		}
-
 		delete(jobs, index)
 
 		SetForegroundTask(found)

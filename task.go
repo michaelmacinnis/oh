@@ -1482,6 +1482,10 @@ func Pid() int {
 }
 
 func SetForegroundTask(t *Task) {
+        if t.Job.group != 0 {
+		SetForegroundGroup(t.Job.group)
+		t.Job.mode.ApplyMode()
+	}
 	task0 = t
 }
 
