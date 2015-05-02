@@ -175,45 +175,10 @@ expression: expression CONS expression {
 };
 
 expression: "%" SYMBOL SYMBOL "%" {
-	kind := $2.s
+	name := $2.s
 	value, _ := strconv.ParseUint($3.s, 0, 64)
 
-	addr := uintptr(value)
-
-	switch {
-	case kind == "bound":
-		$$.c = (*Bound)(unsafe.Pointer(addr))
-	case kind == "builtin":
-		$$.c = (*Builtin)(unsafe.Pointer(addr))
-	case kind == "channel":
-		$$.c = (*Channel)(unsafe.Pointer(addr))
-	case kind == "constant":
-		$$.c = (*Constant)(unsafe.Pointer(addr))
-	case kind == "continuation":
-		$$.c = (*Continuation)(unsafe.Pointer(addr))
-	case kind == "env":
-		$$.c = (*Env)(unsafe.Pointer(addr))
-	case kind == "method":
-		$$.c = (*Method)(unsafe.Pointer(addr))
-	case kind == "object":
-		$$.c = (*Object)(unsafe.Pointer(addr))
-	case kind == "pipe":
-		$$.c = (*Pipe)(unsafe.Pointer(addr))
-	case kind == "scope":
-		$$.c = (*Scope)(unsafe.Pointer(addr))
-	case kind == "syntax":
-		$$.c = (*Syntax)(unsafe.Pointer(addr))
-	case kind == "task":
-		$$.c = (*Task)(unsafe.Pointer(addr))
-	case kind == "unbound":
-		$$.c = (*Unbound)(unsafe.Pointer(addr))
-	case kind == "variable":
-		$$.c = (*Variable)(unsafe.Pointer(addr))
-
-	default:
-		$$.c = Null
-	}
-
+	$$.c = yylex.(*scanner).deref(name, uintptr(value))
 };
 
 expression: "(" command ")" { $$ = $2 };

@@ -19,6 +19,7 @@ import (
 	"sync"
 	"syscall"
 	"unicode"
+	"unsafe"
 )
 
 type Liner struct {
@@ -218,6 +219,41 @@ func executables(word string) []string {
 	}
 
 	return completions
+}
+
+func deref(name string, addr uintptr) Cell {
+	switch {
+	case name == "bound":
+		return (*Bound)(unsafe.Pointer(addr))
+	case name == "builtin":
+		return (*Builtin)(unsafe.Pointer(addr))
+	case name == "channel":
+		return (*Channel)(unsafe.Pointer(addr))
+	case name == "constant":
+		return (*Constant)(unsafe.Pointer(addr))
+	case name == "continuation":
+		return (*Continuation)(unsafe.Pointer(addr))
+	case name == "env":
+		return (*Env)(unsafe.Pointer(addr))
+	case name == "method":
+		return (*Method)(unsafe.Pointer(addr))
+	case name == "object":
+		return (*Object)(unsafe.Pointer(addr))
+	case name == "pipe":
+		return (*Pipe)(unsafe.Pointer(addr))
+	case name == "scope":
+		return (*Scope)(unsafe.Pointer(addr))
+	case name == "syntax":
+		return (*Syntax)(unsafe.Pointer(addr))
+	case name == "task":
+		return (*Task)(unsafe.Pointer(addr))
+	case name == "unbound":
+		return (*Unbound)(unsafe.Pointer(addr))
+	case name == "variable":
+		return (*Variable)(unsafe.Pointer(addr))
+	}
+
+	return Null
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -1482,7 +1518,7 @@ func Pid() int {
 }
 
 func SetForegroundTask(t *Task) {
-        if t.Job.group != 0 {
+	if t.Job.group != 0 {
 		SetForegroundGroup(t.Job.group)
 		t.Job.mode.ApplyMode()
 	}
@@ -1492,10 +1528,10 @@ func SetForegroundTask(t *Task) {
 }
 
 func Start(definitions string, eval func(c Cell)) {
-	Parse(nil, bufio.NewReader(strings.NewReader(definitions)), eval)
+	Parse(nil, bufio.NewReader(strings.NewReader(definitions)), deref, eval)
 
 	if interactive {
-		Parse(nil, cli, eval)
+		Parse(nil, cli, deref, eval)
 
 		cli.Close()
 		fmt.Printf("\n")
@@ -1715,7 +1751,7 @@ func (p *Pipe) Read(t *Task) Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			Parse(t, p.reader(), func(c Cell) {
+			Parse(t, p.reader(), deref, func(c Cell) {
 				p.c <- c
 				<-p.d
 			})
