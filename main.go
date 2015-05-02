@@ -157,12 +157,12 @@ func main() {
 		return false
 	})
 
-	Start(evaluate)
+	Start(boot, evaluate)
 }
 
-//go:generate generate/go.oh
+//go:generate generators/go.oh
 //go:generate go fmt predicates.go
 
-//go:generate generate/test.oh
-//go:generate generate/doc.oh manual MANUAL.md
-//go:generate generate/doc.oh readme README.md
+//go:generate scripts/test.oh
+//go:generate generators/doc.oh manual MANUAL.md
+//go:generate generators/doc.oh readme README.md

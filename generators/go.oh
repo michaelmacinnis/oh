@@ -17,7 +17,7 @@ define introduction: method (name) as {
 	echo
 }
 
-dynamic $stdout: open "w": "/"::join $origin ".." predicates.go
+dynamic $stdout: open "w": "/"::join $origin .. predicates.go
 
 introduction @`(basename $0)
 
@@ -30,4 +30,12 @@ for t: method (l) as {
 	printf "\t})"
 }
 echo "}"
+
+dynamic $stdout: open "w": "/"::join $origin .. boot.go
+
+introduction @`(basename $0)
+
+echo "var boot string = `"
+cat: "/"::join $origin .. scripts boot.oh
+echo "`"
 
