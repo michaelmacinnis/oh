@@ -279,7 +279,7 @@ func (s *scanner) Error(msg string) {
 	println(msg)
 }
 
-func Parse(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell)) {
+func parse(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell)) {
 	s := new(scanner)
 
 	s.deref = d

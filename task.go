@@ -111,6 +111,7 @@ var (
 	external    Cell
 	incoming    chan os.Signal
 	interactive bool
+	parser      func(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell))
 	pgid        int
 	pid         int
 	register    chan Registration
@@ -1530,11 +1531,13 @@ func SetForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func Start(definitions string, eval func(c Cell)) {
-	Parse(nil, bufio.NewReader(strings.NewReader(definitions)), deref, eval)
+func Start(definitions string, eval func(c Cell), parse func(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell))) {
+	parser = parse
+
+	parser(nil, bufio.NewReader(strings.NewReader(definitions)), deref, eval)
 
 	if interactive {
-		Parse(nil, cli, deref, eval)
+		parser(nil, cli, deref, eval)
 
 		cli.Close()
 		fmt.Printf("\n")
@@ -1754,7 +1757,7 @@ func (p *Pipe) Read(t *Task) Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			Parse(t, p.reader(), deref, func(c Cell) {
+			parser(t, p.reader(), deref, func(c Cell) {
 				p.c <- c
 				<-p.d
 			})

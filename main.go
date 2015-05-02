@@ -157,7 +157,7 @@ func main() {
 		return false
 	})
 
-	Start(boot, evaluate)
+	Start(boot, evaluate, parse)
 }
 
 //go:generate generators/go.oh
