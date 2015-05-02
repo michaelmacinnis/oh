@@ -221,36 +221,39 @@ func executables(word string) []string {
 	return completions
 }
 
-func deref(name string, addr uintptr) Cell {
+func deref(name, ref string) Cell {
+	value, _ := strconv.ParseUint(ref, 0, 64)
+	address := uintptr(value)
+
 	switch {
 	case name == "bound":
-		return (*Bound)(unsafe.Pointer(addr))
+		return (*Bound)(unsafe.Pointer(address))
 	case name == "builtin":
-		return (*Builtin)(unsafe.Pointer(addr))
+		return (*Builtin)(unsafe.Pointer(address))
 	case name == "channel":
-		return (*Channel)(unsafe.Pointer(addr))
+		return (*Channel)(unsafe.Pointer(address))
 	case name == "constant":
-		return (*Constant)(unsafe.Pointer(addr))
+		return (*Constant)(unsafe.Pointer(address))
 	case name == "continuation":
-		return (*Continuation)(unsafe.Pointer(addr))
+		return (*Continuation)(unsafe.Pointer(address))
 	case name == "env":
-		return (*Env)(unsafe.Pointer(addr))
+		return (*Env)(unsafe.Pointer(address))
 	case name == "method":
-		return (*Method)(unsafe.Pointer(addr))
+		return (*Method)(unsafe.Pointer(address))
 	case name == "object":
-		return (*Object)(unsafe.Pointer(addr))
+		return (*Object)(unsafe.Pointer(address))
 	case name == "pipe":
-		return (*Pipe)(unsafe.Pointer(addr))
+		return (*Pipe)(unsafe.Pointer(address))
 	case name == "scope":
-		return (*Scope)(unsafe.Pointer(addr))
+		return (*Scope)(unsafe.Pointer(address))
 	case name == "syntax":
-		return (*Syntax)(unsafe.Pointer(addr))
+		return (*Syntax)(unsafe.Pointer(address))
 	case name == "task":
-		return (*Task)(unsafe.Pointer(addr))
+		return (*Task)(unsafe.Pointer(address))
 	case name == "unbound":
-		return (*Unbound)(unsafe.Pointer(addr))
+		return (*Unbound)(unsafe.Pointer(address))
 	case name == "variable":
-		return (*Variable)(unsafe.Pointer(addr))
+		return (*Variable)(unsafe.Pointer(address))
 	}
 
 	return Null

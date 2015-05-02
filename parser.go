@@ -9,7 +9,7 @@ type ReadStringer interface {
 }
 
 type scanner struct {
-	deref   func(string, uintptr) Cell
+	deref   func(string, string) Cell
 	process func(Cell)
 	task    *Task
 
@@ -279,7 +279,7 @@ func (s *scanner) Error(msg string) {
 	println(msg)
 }
 
-func Parse(t *Task, r ReadStringer, d func(string, uintptr) Cell, p func(Cell)) {
+func Parse(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell)) {
 	s := new(scanner)
 
 	s.deref = d

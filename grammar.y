@@ -15,11 +15,6 @@
 %{
 package main
 
-import (
-	"strconv"
-	"unsafe"
-)
-
 type yySymType struct {
 	yys int
 	c Cell
@@ -175,10 +170,7 @@ expression: expression CONS expression {
 };
 
 expression: "%" SYMBOL SYMBOL "%" {
-	name := $2.s
-	value, _ := strconv.ParseUint($3.s, 0, 64)
-
-	$$.c = yylex.(*scanner).deref(name, uintptr(value))
+	$$.c = yylex.(*scanner).deref($2.s, $3.s)
 };
 
 expression: "(" command ")" { $$ = $2 };
