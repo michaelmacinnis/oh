@@ -9,7 +9,7 @@ type ReadStringer interface {
 }
 
 type scanner struct {
-	deref func(string, uintptr) Cell
+	deref   func(string, uintptr) Cell
 	process func(Cell)
 	task    *Task
 
