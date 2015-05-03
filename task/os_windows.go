@@ -1,8 +1,8 @@
 // Released under an MIT-style license. See LICENSE.
 
-// +build !linux,!darwin,!dragonfly,!freebsd,!openbsd,!netbsd,!solaris,!windows
+// +build windows
 
-package main
+package task
 
 import (
 	"os"
@@ -12,7 +12,7 @@ import (
 var (
 	InterruptRequest os.Signal = os.Interrupt
 	StopRequest      os.Signal = os.Kill
-	Platform         string    = "other"
+	Platform         string    = "windows"
 )
 
 func BecomeProcessGroupLeader() int {

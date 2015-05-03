@@ -1,19 +1,20 @@
 // Released under an MIT-style license. See LICENSE.
 
-package main
+package parser
 
-import "github.com/peterh/liner"
-
-type ReadStringer interface {
-	ReadString(delim byte) (line string, err error)
-}
+import (
+	. "github.com/michaelmacinnis/oh/cell"
+	"github.com/michaelmacinnis/oh/common"
+	"github.com/michaelmacinnis/oh/task"
+	"github.com/peterh/liner"
+)
 
 type scanner struct {
 	deref   func(string, string) Cell
 	process func(Cell)
-	task    *Task
+	task    *task.Task
 
-	input ReadStringer
+	input common.ReadStringer
 	line  []rune
 
 	state  int
@@ -279,7 +280,11 @@ func (s *scanner) Error(msg string) {
 	println(msg)
 }
 
-func parse(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell)) {
+func Parse(t *task.Task,
+	r common.ReadStringer,
+	d func(string, string) Cell,
+	p func(Cell)) {
+
 	s := new(scanner)
 
 	s.deref = d
@@ -302,6 +307,6 @@ func parse(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell)) {
 }
 
 //go:generate go tool yacc -o grammar.go grammar.y
-//go:generate sed -i.save -f scripts/grammar.sed grammar.go
+//go:generate sed -i.save -f ../scripts/grammar.sed grammar.go
 //go:generate go fmt grammar.go
 //go:generate rm -f y.output grammar.go.save

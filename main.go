@@ -23,6 +23,9 @@ package main
 
 import (
 	"fmt"
+	. "github.com/michaelmacinnis/oh/cell"
+	"github.com/michaelmacinnis/oh/parser"
+	"github.com/michaelmacinnis/oh/task"
 	"os"
 	"sort"
 )
@@ -30,31 +33,31 @@ import (
 var (
 	done0 chan Cell
 	eval0 chan Cell
-	jobs  = map[int]*Task{}
+	jobs  = map[int]*task.Task{}
 )
 
 func broker() {
-	irq := Incoming()
+	irq := task.Incoming()
 
-	LaunchForegroundTask()
+	task.LaunchForegroundTask()
 
 	var c Cell
-	for c == nil && ForegroundTask().Stack != Null {
+	for c == nil && task.ForegroundTask().Stack != Null {
 		for c == nil {
 			select {
 			case <-irq:
 			case c = <-eval0:
 			}
 		}
-		ForegroundTask().Eval <- c
+		task.ForegroundTask().Eval <- c
 		for c != nil {
-			prev := ForegroundTask()
+			prev := task.ForegroundTask()
 			select {
 			case sig := <-irq:
 				// Handle signals.
 				switch sig {
-				case StopRequest:
-					ForegroundTask().Suspend()
+				case task.StopRequest:
+					task.ForegroundTask().Suspend()
 					last := 0
 					for k := range jobs {
 						if k > last {
@@ -63,21 +66,21 @@ func broker() {
 					}
 					last++
 
-					jobs[last] = ForegroundTask()
+					jobs[last] = task.ForegroundTask()
 
 					fallthrough
-				case InterruptRequest:
-					if sig == InterruptRequest {
-						ForegroundTask().Stop()
+				case task.InterruptRequest:
+					if sig == task.InterruptRequest {
+						task.ForegroundTask().Stop()
 					}
 					fmt.Printf("\n")
 
-					LaunchForegroundTask()
+					task.LaunchForegroundTask()
 					c = nil
 				}
 
-			case c = <-ForegroundTask().Done:
-				if ForegroundTask() != prev {
+			case c = <-task.ForegroundTask().Done:
+				if task.ForegroundTask() != prev {
 					c = Null
 					continue
 				}
@@ -85,16 +88,16 @@ func broker() {
 		}
 		done0 <- c
 	}
-	os.Exit(status(Car(ForegroundTask().Scratch)))
+	os.Exit(status(Car(task.ForegroundTask().Scratch)))
 }
 
 func evaluate(c Cell) {
 	eval0 <- c
 	<-done0
 
-	task := ForegroundTask()
-	task.Job.command = ""
-	task.Job.group = 0
+	task := task.ForegroundTask()
+	task.Job.Command = ""
+	task.Job.Group = 0
 }
 
 func init() {
@@ -105,8 +108,8 @@ func init() {
 func main() {
 	go broker()
 
-	DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != ForegroundTask() {
+	task.DefineBuiltin("fg", func(t *task.Task, args Cell) bool {
+		if !task.JobControlEnabled() || t != task.ForegroundTask() {
 			return false
 		}
 
@@ -131,13 +134,13 @@ func main() {
 
 		delete(jobs, index)
 
-		SetForegroundTask(found)
+		task.SetForegroundTask(found)
 
 		return true
 	})
 
-	DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != ForegroundTask() ||
+	task.DefineBuiltin("jobs", func(t *task.Task, args Cell) bool {
+		if !task.JobControlEnabled() || t != task.ForegroundTask() ||
 			len(jobs) == 0 {
 			return false
 		}
@@ -149,19 +152,27 @@ func main() {
 		sort.Ints(i)
 		for k, v := range i {
 			if k != len(jobs)-1 {
-				fmt.Printf("[%d] \t%d\t%s\n", v, jobs[v].Job.group, jobs[v].Job.command)
+				fmt.Printf("[%d] \t%d\t%s\n", v, jobs[v].Job.Group, jobs[v].Job.Command)
 			} else {
-				fmt.Printf("[%d]+\t%d\t%s\n", v, jobs[v].Job.group, jobs[v].Job.command)
+				fmt.Printf("[%d]+\t%d\t%s\n", v, jobs[v].Job.Group, jobs[v].Job.Command)
 			}
 		}
 		return false
 	})
 
-	Start(boot, evaluate, parse)
+	task.Start(boot, evaluate, parser.Parse)
 }
 
-//go:generate generators/go.oh
-//go:generate go fmt predicates.go
+func status(c Cell) int {
+	a, ok := c.(Atom)
+	if !ok {
+		return 0
+	}
+	return int(a.Status())
+}
+
+//go:generate generators/create-boot.oh
+//go:generate go fmt boot.go
 
 //go:generate scripts/test.oh
 //go:generate generators/doc.oh manual MANUAL.md

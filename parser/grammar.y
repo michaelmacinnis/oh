@@ -13,7 +13,12 @@
 %left CONS
 
 %{
-package main
+package parser
+
+import (
+	. "github.com/michaelmacinnis/oh/cell"
+	"github.com/michaelmacinnis/oh/task"
+)
 
 type yySymType struct {
 	yys int
@@ -153,7 +158,7 @@ list: expression { $$.c = Cons($1.c, Null) };
 list: list expression { $$.c = AppendTo($1.c, $2.c) };
 
 expression: expression "^" expression {
-	s := Cons(NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+	s := Cons(task.NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
 	$$.c = List(s, $1.c, $3.c)
 };
 
@@ -180,11 +185,11 @@ expression: "(" ")" { $$.c = Null };
 expression: word { $$ = $1 };
 
 word: DOUBLE_QUOTED {
-	$$.c = NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+	$$.c = task.NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
 };
 
 word: SINGLE_QUOTED {
-	$$.c = NewRawString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+	$$.c = task.NewRawString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
 };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };

@@ -1,10 +1,12 @@
 // Released under an MIT-style license. See LICENSE.
 
-package main
+package task
 
 import (
 	"bufio"
 	"fmt"
+	. "github.com/michaelmacinnis/oh/cell"
+	"github.com/michaelmacinnis/oh/common"
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
@@ -22,6 +24,17 @@ import (
 	"unsafe"
 )
 
+type Conduit interface {
+	Context
+
+	Close()
+	ReaderClose()
+	Read(t *Task) Cell
+	ReadLine(t *Task) Cell
+	WriterClose()
+	Write(c Cell)
+}
+
 type Liner struct {
 	*liner.State
 }
@@ -34,23 +47,12 @@ func (cli *Liner) ReadString(delim byte) (line string, err error) {
 
 	if line, err = cli.State.Prompt("> "); err == nil {
 		cli.AppendHistory(line)
-		if task0.Job.command == "" {
-			task0.Job.command = line
+		if task0.Job.Command == "" {
+			task0.Job.Command = line
 		}
 		line += "\n"
 	}
 	return
-}
-
-type Conduit interface {
-	Context
-
-	Close()
-	ReaderClose()
-	Read(t *Task) Cell
-	ReadLine(t *Task) Cell
-	WriterClose()
-	Write(c Cell)
 }
 
 type Notification struct {
@@ -111,12 +113,13 @@ var (
 	external    Cell
 	incoming    chan os.Signal
 	interactive bool
-	parser      func(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell))
+	parser      func(t *Task, r common.ReadStringer, d func(string, string) Cell, p func(Cell))
 	pgid        int
 	pid         int
 	register    chan Registration
 	runnable    chan bool
 	scope0      *Scope
+	str         map[string]*String
 	task0       *Task
 	uncooked    liner.ModeApplier
 )
@@ -366,6 +369,8 @@ func files(word string) []string {
 }
 
 func init() {
+	str = make(map[string]*String)
+
 	pid = BecomeProcessGroupLeader()
 	pgid = pid
 
@@ -1457,14 +1462,6 @@ func rpipe(c Cell) *os.File {
 
 }
 
-func status(c Cell) int {
-	a, ok := c.(Atom)
-	if !ok {
-		return 0
-	}
-	return int(a.Status())
-}
-
 /* Convert Context into a Conduit. */
 func to_conduit(o Context) Conduit {
 	conduit := as_conduit(o)
@@ -1522,8 +1519,8 @@ func Pid() int {
 }
 
 func SetForegroundTask(t *Task) {
-	if t.Job.group != 0 {
-		SetForegroundGroup(t.Job.group)
+	if t.Job.Group != 0 {
+		SetForegroundGroup(t.Job.Group)
 		t.Job.mode.ApplyMode()
 	}
 	task0, t = t, task0
@@ -1531,7 +1528,11 @@ func SetForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func Start(definitions string, eval func(c Cell), parse func(t *Task, r ReadStringer, d func(string, string) Cell, p func(Cell))) {
+func Start(definitions string,
+	eval func(c Cell),
+	parse func(t *Task,
+		r common.ReadStringer, d func(string, string) Cell, p func(Cell))) {
+
 	parser = parse
 
 	parser(nil, bufio.NewReader(strings.NewReader(definitions)), deref, eval)
@@ -1653,8 +1654,8 @@ func (ct *Continuation) String() string {
 
 type Job struct {
 	*sync.Mutex
-	command string
-	group   int
+	Command string
+	Group   int
 	mode    liner.ModeApplier
 }
 
@@ -2231,7 +2232,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	t.Lock()
 
 	if JobControlEnabled() {
-		attr.Sys = SysProcAttr(t.group)
+		attr.Sys = SysProcAttr(t.Group)
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -2241,8 +2242,8 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 
 	if JobControlEnabled() {
-		if t.group == 0 {
-			t.group = proc.Pid
+		if t.Group == 0 {
+			t.Group = proc.Pid
 		}
 	}
 
@@ -2253,8 +2254,8 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	status := JoinProcess(proc)
 
 	if JobControlEnabled() {
-		if t.group == t.pid {
-			t.group = 0
+		if t.Group == t.pid {
+			t.Group = 0
 		}
 	}
 	t.pid = 0
@@ -2682,3 +2683,6 @@ func (t *Task) Wait() {
 		delete(t.children, k)
 	}
 }
+
+//go:generate ../generators/create-predicates.oh
+//go:generate go fmt predicates.go

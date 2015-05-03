@@ -2,7 +2,7 @@
 
 // +build linux darwin dragonfly freebsd openbsd netbsd solaris
 
-package main
+package task
 
 import (
 	"os"
@@ -62,7 +62,7 @@ func Monitor(active chan bool, notify chan Notification) {
 			}
 
 			if status.Stopped() {
-				if pid == ForegroundTask().Job.group {
+				if pid == ForegroundTask().Job.Group {
 					incoming <- syscall.SIGTSTP
 				}
 				continue
@@ -70,7 +70,7 @@ func Monitor(active chan bool, notify chan Notification) {
 
 			if status.Signaled() {
 				if status.Signal() == syscall.SIGINT &&
-					pid == ForegroundTask().Job.group {
+					pid == ForegroundTask().Job.Group {
 					incoming <- syscall.SIGINT
 				}
 				status += 128
