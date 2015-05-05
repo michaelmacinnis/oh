@@ -13,7 +13,7 @@ other Unix shells. The following commands behave as expected:
     cc *.c &
     mkdir junk && cd junk
     cd ..
-    rm -r junk || echo "rm failed!"
+    rm -r junk || echo 'rm failed!'
 
 For more detail, see: https://github.com/michaelmacinnis/oh
 
@@ -24,7 +24,7 @@ package main
 import (
 	"fmt"
 	"github.com/michaelmacinnis/oh/src/boot"
-	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/parser"
 	"github.com/michaelmacinnis/oh/src/task"
 	"os"
@@ -32,8 +32,8 @@ import (
 )
 
 var (
-	done0 chan Cell
-	eval0 chan Cell
+	done0 chan cell.Cell
+	eval0 chan cell.Cell
 	jobs  = map[int]*task.Task{}
 )
 
@@ -42,8 +42,8 @@ func broker() {
 
 	task.LaunchForegroundTask()
 
-	var c Cell
-	for c == nil && task.ForegroundTask().Stack != Null {
+	var c cell.Cell
+	for c == nil && task.ForegroundTask().Stack != cell.Null {
 		for c == nil {
 			select {
 			case <-irq:
@@ -82,17 +82,17 @@ func broker() {
 
 			case c = <-task.ForegroundTask().Done:
 				if task.ForegroundTask() != prev {
-					c = Null
+					c = cell.Null
 					continue
 				}
 			}
 		}
 		done0 <- c
 	}
-	os.Exit(status(Car(task.ForegroundTask().Scratch)))
+	os.Exit(status(cell.Car(task.ForegroundTask().Scratch)))
 }
 
-func evaluate(c Cell) {
+func evaluate(c cell.Cell) {
 	eval0 <- c
 	<-done0
 
@@ -102,21 +102,21 @@ func evaluate(c Cell) {
 }
 
 func init() {
-	done0 = make(chan Cell)
-	eval0 = make(chan Cell)
+	done0 = make(chan cell.Cell)
+	eval0 = make(chan cell.Cell)
 }
 
 func main() {
 	go broker()
 
-	task.DefineBuiltin("fg", func(t *task.Task, args Cell) bool {
+	task.DefineBuiltin("fg", func(t *task.Task, args cell.Cell) bool {
 		if !task.JobControlEnabled() || t != task.ForegroundTask() {
 			return false
 		}
 
 		index := 0
-		if args != Null {
-			if a, ok := Car(args).(Atom); ok {
+		if args != cell.Null {
+			if a, ok := cell.Car(args).(cell.Atom); ok {
 				index = int(a.Int())
 			}
 		} else {
@@ -140,7 +140,7 @@ func main() {
 		return true
 	})
 
-	task.DefineBuiltin("jobs", func(t *task.Task, args Cell) bool {
+	task.DefineBuiltin("jobs", func(t *task.Task, args cell.Cell) bool {
 		if !task.JobControlEnabled() || t != task.ForegroundTask() ||
 			len(jobs) == 0 {
 			return false
@@ -164,8 +164,8 @@ func main() {
 	task.Start(boot.Script, evaluate, parser.Parse)
 }
 
-func status(c Cell) int {
-	a, ok := c.(Atom)
+func status(c cell.Cell) int {
+	a, ok := c.(cell.Atom)
 	if !ok {
 		return 0
 	}
