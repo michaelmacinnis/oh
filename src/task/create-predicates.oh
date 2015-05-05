@@ -1,12 +1,12 @@
 #!/usr/bin/env oh
 
-define common: import: "/"::join $origin common.oh
+define common: import: "/"::join $origin .. .. bin common.oh
 
-dynamic $stdout: open "w": "/"::join $origin .. task predicates.go
+dynamic $stdout: open "w": "/"::join $origin predicates.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 
-echo 'import . "github.com/michaelmacinnis/oh/cell"'
+echo 'import . "github.com/michaelmacinnis/oh/src/cell"'
 echo
 echo "func bind_predicates(s *Scope) {"
 

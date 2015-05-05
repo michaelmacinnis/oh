@@ -5,8 +5,8 @@ import __yyfmt__ "fmt"
 
 //line grammar.y:16
 import (
-	. "github.com/michaelmacinnis/oh/cell"
-	"github.com/michaelmacinnis/oh/task"
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/task"
 )
 
 type yySymType struct {

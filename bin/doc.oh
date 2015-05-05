@@ -5,11 +5,11 @@ if (ne 2: length $args) {
     exit 1
 }
 
-define $dir: "/"::join $origin .. doctests
+define $dir: "/"::join $origin doctest
 define $pattern = $1
 define $output = $2
 
-set $stdout: open "w": "/"::join $origin .. $output
+set $stdout: open "w": "/"::join $origin $output
 
 # Generate documentation.
 find $dir -name "[0-9]*.oh" |

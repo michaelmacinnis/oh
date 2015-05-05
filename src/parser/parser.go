@@ -3,9 +3,9 @@
 package parser
 
 import (
-	. "github.com/michaelmacinnis/oh/cell"
-	"github.com/michaelmacinnis/oh/common"
-	"github.com/michaelmacinnis/oh/task"
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/common"
+	"github.com/michaelmacinnis/oh/src/task"
 	"github.com/peterh/liner"
 )
 
@@ -307,6 +307,6 @@ func Parse(t *task.Task,
 }
 
 //go:generate go tool yacc -o grammar.go grammar.y
-//go:generate sed -i.save -f ../scripts/grammar.sed grammar.go
+//go:generate sed -i.save -f grammar.sed grammar.go
 //go:generate go fmt grammar.go
 //go:generate rm -f y.output grammar.go.save

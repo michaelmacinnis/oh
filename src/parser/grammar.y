@@ -16,8 +16,8 @@
 package parser
 
 import (
-	. "github.com/michaelmacinnis/oh/cell"
-	"github.com/michaelmacinnis/oh/task"
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/task"
 )
 
 type yySymType struct {

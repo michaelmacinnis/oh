@@ -4,7 +4,7 @@
 
 package task
 
-import . "github.com/michaelmacinnis/oh/cell"
+import . "github.com/michaelmacinnis/oh/src/cell"
 
 func bind_predicates(s *Scope) {
 	s.DefineMethod("is-atom", func(t *Task, args Cell) bool {

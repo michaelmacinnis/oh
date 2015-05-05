@@ -1,0 +1,15 @@
+#!/usr/bin/env oh
+
+define common: import: "/"::join $origin .. .. bin common.oh
+
+dynamic $stdout: open "w": "/"::join $origin boot.go
+
+common::introduction @`(basename $0) $GOPACKAGE
+
+echo "var Script string = `"
+cat: "/"::join $origin boot.oh
+echo "`"
+echo
+echo '//go:generate ./create-boot.oh'
+echo '//go:generate go fmt boot.go'
+

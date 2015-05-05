@@ -23,9 +23,10 @@ package main
 
 import (
 	"fmt"
-	. "github.com/michaelmacinnis/oh/cell"
-	"github.com/michaelmacinnis/oh/parser"
-	"github.com/michaelmacinnis/oh/task"
+	"github.com/michaelmacinnis/oh/src/boot"
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/parser"
+	"github.com/michaelmacinnis/oh/src/task"
 	"os"
 	"sort"
 )
@@ -160,7 +161,7 @@ func main() {
 		return false
 	})
 
-	task.Start(boot, evaluate, parser.Parse)
+	task.Start(boot.Script, evaluate, parser.Parse)
 }
 
 func status(c Cell) int {
@@ -171,9 +172,6 @@ func status(c Cell) int {
 	return int(a.Status())
 }
 
-//go:generate generators/create-boot.oh
-//go:generate go fmt boot.go
-
-//go:generate scripts/test.oh
-//go:generate generators/doc.oh manual MANUAL.md
-//go:generate generators/doc.oh readme README.md
+//go:generate bin/test.oh
+//go:generate bin/doc.oh manual ../MANUAL.md
+//go:generate bin/doc.oh readme ../README.md

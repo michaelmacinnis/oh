@@ -5,8 +5,8 @@ package task
 import (
 	"bufio"
 	"fmt"
-	. "github.com/michaelmacinnis/oh/cell"
-	"github.com/michaelmacinnis/oh/common"
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"github.com/michaelmacinnis/oh/src/common"
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
@@ -2684,5 +2684,5 @@ func (t *Task) Wait() {
 	}
 }
 
-//go:generate ../generators/create-predicates.oh
+//go:generate ./create-predicates.oh
 //go:generate go fmt predicates.go
