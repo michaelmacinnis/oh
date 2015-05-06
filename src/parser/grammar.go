@@ -425,6 +425,10 @@ yynewstate:
 	}
 	if yychar < 0 {
 		yychar, yytoken = yylex1(yylex, &yylval)
+		if yychar == ERROR {
+			goto start
+		}
+
 	}
 	yyn += yytoken
 	if yyn < 0 || yyn >= yyLast {
@@ -448,6 +452,10 @@ yydefault:
 	if yyn == -2 {
 		if yychar < 0 {
 			yychar, yytoken = yylex1(yylex, &yylval)
+			if yychar == ERROR {
+				goto start
+			}
+
 		}
 
 		/* look through exception table */
