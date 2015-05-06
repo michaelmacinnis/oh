@@ -6,7 +6,7 @@ import (
 	. "github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/common"
 	"github.com/michaelmacinnis/oh/src/task"
-	"github.com/peterh/liner"
+	"github.com/michaelmacinnis/oh/src/ui"
 )
 
 type scanner struct {
@@ -89,7 +89,7 @@ main:
 			}
 
 			line, error := s.input.ReadString('\n')
-			if error == liner.ErrPromptAborted {
+			if error == ui.CtrlCPressed {
 				s.start = 0
 				s.token = ERROR
 				break

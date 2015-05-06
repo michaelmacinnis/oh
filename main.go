@@ -27,6 +27,7 @@ import (
 	"github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/parser"
 	"github.com/michaelmacinnis/oh/src/task"
+	"github.com/michaelmacinnis/oh/src/ui"
 	"os"
 	"sort"
 )
@@ -161,7 +162,7 @@ func main() {
 		return false
 	})
 
-	task.Start(boot.Script, evaluate, parser.Parse)
+	task.Start(boot.Script, evaluate, parser.Parse, ui.New())
 }
 
 func status(c cell.Cell) int {

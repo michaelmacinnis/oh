@@ -2,7 +2,11 @@
 
 package common
 
-type ReadStringer interface {
+type CloseReadStringer interface {
+	Close() error
 	ReadString(delim byte) (line string, err error)
 }
 
+type ReadStringer interface {
+	ReadString(delim byte) (line string, err error)
+}
