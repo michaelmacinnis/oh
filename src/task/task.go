@@ -29,8 +29,8 @@ type Conduit interface {
 
 	Close()
 	ReaderClose()
-	Read(t *Task) Cell
-	ReadLine(t *Task) Cell
+	Read(*Task) Cell
+	ReadLine(*Task) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -44,6 +44,10 @@ type Registration struct {
 	pid int
 	cb  chan Notification
 }
+
+type closereadstringer common.CloseReadStringer
+type reader func(*Task, common.ReadStringer,
+	func(string, string) Cell, func(Cell))
 
 const (
 	SaveCarCode = 1 << iota
@@ -91,7 +95,7 @@ var (
 	external    Cell
 	incoming    chan os.Signal
 	interactive bool
-	parser      func(t *Task, r common.ReadStringer, d func(string, string) Cell, p func(Cell))
+	parse       reader
 	pgid        int
 	pid         int
 	register    chan Registration
@@ -497,7 +501,7 @@ func init() {
 			return false
 		}
 		SetCar(t.Scratch, Car(args))
-		t.Scratch = Cons(external, t.Scratch)
+		t.Scratch = Cons(ext, t.Scratch)
 		t.Scratch = Cons(nil, t.Scratch)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
 			t.Scratch = Cons(Car(args), t.Scratch)
@@ -1335,29 +1339,26 @@ func SetForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func Start(definitions string,
-	eval func(c Cell),
-	parse func(t *Task,
-		r common.ReadStringer, d func(string, string) Cell, p func(Cell)),
-	cli common.CloseReadStringer) {
-	parser = parse
+func Start(defns string, eval func(Cell), parser reader, ui closereadstringer) {
+	parse = parser
 
 	signals := []os.Signal{InterruptRequest, StopRequest}
 	incoming = make(chan os.Signal, len(signals))
 
-	parser(nil, bufio.NewReader(strings.NewReader(definitions)), deref, eval)
+	b := bufio.NewReader(strings.NewReader(defns))
+	parse(nil, b, deref, eval)
 
 	interactive = false
 	if len(os.Args) <= 1 {
-		if cli != nil {
+		if ui != nil {
 			interactive = true
 
 			InitSignalHandling()
 			signal.Notify(incoming, signals...)
 
-			parser(nil, cli, deref, eval)
+			parse(nil, ui, deref, eval)
 
-			cli.Close()
+			ui.Close()
 			fmt.Printf("\n")
 		} else {
 			eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
@@ -1576,7 +1577,7 @@ func (p *Pipe) Read(t *Task) Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			parser(t, p.reader(), deref, func(c Cell) {
+			parse(t, p.reader(), deref, func(c Cell) {
 				p.c <- c
 				<-p.d
 			})

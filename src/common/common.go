@@ -3,8 +3,8 @@
 package common
 
 type CloseReadStringer interface {
+	ReadStringer
 	Close() error
-	ReadString(delim byte) (line string, err error)
 }
 
 type ReadStringer interface {
