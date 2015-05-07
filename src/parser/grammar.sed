@@ -4,12 +4,12 @@ s/\(^.*yyS := .*$\)/\1\
 start:\
 	yyVAL = startyyVAL/g
 s/\(^		yychar, yytoken = yylex1(yylex, &yylval)$\)/\1\
-		if yychar == ERROR {\
+		if yychar == CTRLC {\
 			goto start\
 		}\
 /g
 s/\(^			yychar, yytoken = yylex1(yylex, &yylval)$\)/\1\
-			if yychar == ERROR {\
+			if yychar == CTRLC {\
 				goto start\
 			}\
 /g

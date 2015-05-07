@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token DEDENT DOUBLE_QUOTED END ERROR INDENT SINGLE_QUOTED SYMBOL
+%token CTRLC DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF		/* || */
 %left ANDF	   /* && */

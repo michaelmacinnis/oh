@@ -91,7 +91,7 @@ main:
 			line, error := s.input.ReadString('\n')
 			if error == ui.CtrlCPressed {
 				s.start = 0
-				s.token = ERROR
+				s.token = CTRLC
 				break
 			}
 
