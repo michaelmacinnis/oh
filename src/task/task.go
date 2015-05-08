@@ -209,7 +209,8 @@ func init() {
 	go Monitor(active, notify)
 	go Registrar(active, notify)
 
-	external = NewUnbound(NewBuiltin((*Task).External, Null, Null, Null, nil))
+	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
+	external = NewUnbound(builtin)
 
 	envc = NewEnv(nil)
 	envc.Method("child", func(t *Task, args Cell) bool {
@@ -324,7 +325,8 @@ func init() {
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			env0.Add(NewSymbol("$"+strconv.Itoa(i+1)), NewSymbol(v))
+			k := "$"+strconv.Itoa(i+1)
+			env0.Add(NewSymbol(k), NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {
@@ -501,7 +503,7 @@ func init() {
 			return false
 		}
 		SetCar(t.Scratch, Car(args))
-		t.Scratch = Cons(ext, t.Scratch)
+		t.Scratch = Cons(external, t.Scratch)
 		t.Scratch = Cons(nil, t.Scratch)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
 			t.Scratch = Cons(Car(args), t.Scratch)
