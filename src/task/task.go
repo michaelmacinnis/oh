@@ -941,13 +941,17 @@ func init() {
 
 			c := Resolve(l, t.Dynamic, sym)
 			if c == nil {
+				sym := NewSymbol("$" + name)
+				c = Resolve(l, t.Dynamic, sym)
+			}
+			if c == nil {
 				return "${" + name + "}"
 			}
 
 			return raw(c.Get())
 		}
 
-		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.*?})")
+		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
 		modified := r.ReplaceAllStringFunc(original, f)
 
 		return t.Return(NewString(t, modified))
