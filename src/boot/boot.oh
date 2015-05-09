@@ -28,12 +28,17 @@ define $redirect: syntax (chan mode mthd) as {
         if (not: is-null f): eval: cons (quote f) mthd
     }
 }
-define ...: method (o p) as {
-    set $cwd = o
+define ...: method (: args) as {
+    set $cwd = $origin
+    define path: car args
+    if (eq 2: length args) {
+        set $cwd: car args
+        set path: cadr args
+    }
     while true {
-        define abs: symbol: "/"::join $cwd p
+        define abs: symbol: "/"::join $cwd path
         if (exists abs): return abs
-	if (eq $cwd /): return p
+	if (eq $cwd /): return path
         cd ..
     }
 }

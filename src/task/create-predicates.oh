@@ -1,8 +1,8 @@
 #!/usr/bin/env oh
 
-define common: import: ... $origin bin/common.oh
+define common: import: ... bin/common.oh
 
-dynamic $stdout: open w: ... $origin predicates.go
+dynamic $stdout: open w: ... predicates.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 
