@@ -931,12 +931,12 @@ func init() {
 			l = t.Lexical
 		}
 
-		f := func(old string) string {
-			if old == "$$" {
+		f := func(ref string) string {
+			if ref == "$$" {
 				return "$"
 			}
 
-			name := old[2 : len(old)-1]
+			name := ref[2 : len(ref)-1]
 			sym := NewSymbol(name)
 
 			c := Resolve(l, t.Dynamic, sym)

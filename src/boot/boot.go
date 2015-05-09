@@ -5,34 +5,6 @@
 package boot
 
 var Script string = `
-define caar: method (l) as: car: car l
-define cadr: method (l) as: car: cdr l
-define cdar: method (l) as: cdr: car l
-define cddr: method (l) as: cdr: cdr l
-define caaar: method (l) as: car: caar l
-define caadr: method (l) as: car: cadr l
-define cadar: method (l) as: car: cdar l
-define caddr: method (l) as: car: cddr l
-define cdaar: method (l) as: cdr: caar l
-define cdadr: method (l) as: cdr: cadr l
-define cddar: method (l) as: cdr: cdar l
-define cdddr: method (l) as: cdr: cddr l
-define caaaar: method (l) as: caar: caar l
-define caaadr: method (l) as: caar: cadr l
-define caadar: method (l) as: caar: cdar l
-define caaddr: method (l) as: caar: cddr l
-define cadaar: method (l) as: cadr: caar l
-define cadadr: method (l) as: cadr: cadr l
-define caddar: method (l) as: cadr: cdar l
-define cadddr: method (l) as: cadr: cddr l
-define cdaaar: method (l) as: cdar: caar l
-define cdaadr: method (l) as: cdar: cadr l
-define cdadar: method (l) as: cdar: cdar l
-define cdaddr: method (l) as: cdar: cddr l
-define cddaar: method (l) as: cddr: caar l
-define cddadr: method (l) as: cddr: cadr l
-define cdddar: method (l) as: cddr: cdar l
-define cddddr: method (l) as: cddr: cddr l
 define $connect: syntax (type out close) as {
     set type: eval type
     set close: eval close
@@ -63,6 +35,15 @@ define $redirect: syntax (chan mode mthd) as {
         if (not: is-null f): eval: cons (quote f) mthd
     }
 }
+define ...: method (o p) as {
+    set $cwd = o
+    while true {
+        define abs: symbol: "/"::join $cwd p
+        if (exists abs): return abs
+	if (eq $cwd /): return p
+        cd ..
+    }
+}
 define and: syntax e (: lst) as {
     define r = false
     while (not: is-null: car lst) {
@@ -91,6 +72,34 @@ define backtick: syntax e (cmd) as {
     p::reader-close
     return: cdr r
 }
+define caar: method (l) as: car: car l
+define cadr: method (l) as: car: cdr l
+define cdar: method (l) as: cdr: car l
+define cddr: method (l) as: cdr: cdr l
+define caaar: method (l) as: car: caar l
+define caadr: method (l) as: car: cadr l
+define cadar: method (l) as: car: cdar l
+define caddr: method (l) as: car: cddr l
+define cdaar: method (l) as: cdr: caar l
+define cdadr: method (l) as: cdr: cadr l
+define cddar: method (l) as: cdr: cdar l
+define cdddr: method (l) as: cdr: cddr l
+define caaaar: method (l) as: caar: caar l
+define caaadr: method (l) as: caar: cadr l
+define caadar: method (l) as: caar: cdar l
+define caaddr: method (l) as: caar: cddr l
+define cadaar: method (l) as: cadr: caar l
+define cadadr: method (l) as: cadr: cadr l
+define caddar: method (l) as: cadr: cdar l
+define cadddr: method (l) as: cadr: cddr l
+define cdaaar: method (l) as: cdar: caar l
+define cdaadr: method (l) as: cdar: cadr l
+define cdadar: method (l) as: cdar: cdar l
+define cdaddr: method (l) as: cdar: cddr l
+define cddaar: method (l) as: cddr: caar l
+define cddadr: method (l) as: cddr: cadr l
+define cdddar: method (l) as: cddr: cdar l
+define cddddr: method (l) as: cddr: cddr l
 define channel-stderr: $connect channel $stderr true
 define channel-stdout: $connect channel $stdout true
 define echo: builtin (: args) as {
@@ -113,7 +122,8 @@ define for: method (l m) as {
 }
 define glob: builtin (: args) as: return args
 define import: syntax e (name) as {
-    define m: module: e::eval name
+    set name: e::eval name
+    define m: module name
     if (or (is-null m) (is-object m)) {
         return m
     }
@@ -130,6 +140,14 @@ define is-list: method (l) as {
     is-list: cdr l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
+define list-ref: method (k x) as: car: list-tail k x
+define list-tail: method (k x) as {
+    if k {
+        list-tail (sub k 1): cdr x
+    } else {
+        return x
+    }
+}
 define object: syntax e (: body) as {
     e::eval: cons (quote block): append body (quote: context)
 }
@@ -141,12 +159,6 @@ define or: syntax e (: lst) as {
         set lst: cdr lst 
     }
     return r
-}
-define substitute-stdin: syntax () as {
-    echo "process substitution not yet implemented."
-}
-define substitute-stdout: syntax () as {
-    echo "process substitution not yet implemented."
 }
 define pipe-stderr: $connect pipe $stderr true
 define pipe-stdout: $connect pipe $stdout true
@@ -172,7 +184,7 @@ define source: syntax e (name) as {
 
         define r: cons () ()
         define c = r
-	define f: open "r-" name
+	define f: open r- name
 	while (define l: f::read) {
 		set-cdr c: cons l ()
 		set c: cdr c
@@ -185,15 +197,13 @@ define source: syntax e (name) as {
 	}
 	eval-list (status 0) (car c) (cdr c)
 }
-define write: method (: args) as: $stdout::write @args
-define list-ref: method (k x) as: car: list-tail k x
-define list-tail: method (k x) as {
-    if k {
-        list-tail (sub k 1): cdr x
-    } else {
-        return x
-    }
+define substitute-stdin: syntax () as {
+    echo "process substitution not yet implemented."
 }
+define substitute-stdout: syntax () as {
+    echo "process substitution not yet implemented."
+}
+define write: method (: args) as: $stdout::write @args
 
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 
