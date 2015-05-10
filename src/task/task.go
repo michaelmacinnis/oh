@@ -871,57 +871,7 @@ func init() {
 	})
 
 	/* Arithmetic. */
-	scope0.DefineMethod("add", func(t *Task, args Cell) bool {
-		acc := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			acc = acc.Add(Car(args))
-
-		}
-
-		return t.Return(acc)
-	})
-	scope0.DefineMethod("sub", func(t *Task, args Cell) bool {
-		acc := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			acc = acc.Subtract(Car(args))
-		}
-
-		return t.Return(acc)
-	})
-	scope0.DefineMethod("div", func(t *Task, args Cell) bool {
-		acc := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			acc = acc.Divide(Car(args))
-		}
-
-		return t.Return(acc)
-	})
-	scope0.DefineMethod("mod", func(t *Task, args Cell) bool {
-		acc := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			acc = acc.Modulo(Car(args))
-		}
-
-		return t.Return(acc)
-	})
-	scope0.DefineMethod("mul", func(t *Task, args Cell) bool {
-		acc := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			acc = acc.Multiply(Car(args))
-		}
-
-		return t.Return(acc)
-	})
+	bind_arithmetic(scope0)
 
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
@@ -2509,5 +2459,6 @@ func (t *Task) Wait() {
 	}
 }
 
+//go:generate ./create-arithmetic.oh
 //go:generate ./create-predicates.oh
-//go:generate go fmt predicates.go
+//go:generate go fmt arithmetic.go predicates.go

@@ -2,7 +2,7 @@
 
 define common: import: ... bin/common.oh
 
-dynamic $stdout: open w: ... boot.go
+dynamic $stdout: open w: "/"::join $origin boot.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 

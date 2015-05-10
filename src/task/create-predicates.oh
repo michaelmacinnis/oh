@@ -2,7 +2,7 @@
 
 define common: import: ... bin/common.oh
 
-dynamic $stdout: open w: ... predicates.go
+dynamic $stdout: open w: "/"::join $origin predicates.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 
