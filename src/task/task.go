@@ -708,6 +708,7 @@ func init() {
 		return t.Return(list)
 	})
 
+	/* Predicates. */
 	bind_predicates(scope0)
 
 	/* Generators. */
@@ -745,102 +746,8 @@ func init() {
 	})
 
 	/* Relational. */
-	scope0.DefineMethod("eq", func(t *Task, args Cell) bool {
-		prev := Car(args)
+	bind_relational(scope0)
 
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args)
-
-			if !prev.Equal(curr) {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
-	scope0.DefineMethod("ge", func(t *Task, args Cell) bool {
-		prev := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args).(Number)
-
-			if prev.Less(curr) {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
-	scope0.DefineMethod("gt", func(t *Task, args Cell) bool {
-		prev := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args).(Number)
-
-			if !prev.Greater(curr) {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
-	scope0.DefineMethod("is", func(t *Task, args Cell) bool {
-		prev := Car(args)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args)
-
-			if prev != curr {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
-	scope0.DefineMethod("le", func(t *Task, args Cell) bool {
-		prev := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args).(Number)
-
-			if prev.Greater(curr) {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
-	scope0.DefineMethod("lt", func(t *Task, args Cell) bool {
-		prev := Car(args).(Number)
-
-		for Cdr(args) != Null {
-			args = Cdr(args)
-			curr := Car(args).(Number)
-
-			if !prev.Less(curr) {
-				return t.Return(False)
-			}
-
-			prev = curr
-		}
-
-		return t.Return(True)
-	})
 	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
 		pattern := raw(Car(args))
 		text := raw(Cadr(args))
@@ -2461,4 +2368,5 @@ func (t *Task) Wait() {
 
 //go:generate ./create-arithmetic.oh
 //go:generate ./create-predicates.oh
-//go:generate go fmt arithmetic.go predicates.go
+//go:generate ./create-relational.oh
+//go:generate go fmt arithmetic.go predicates.go relational.go
