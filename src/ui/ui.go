@@ -23,7 +23,11 @@ var (
 	uncooked liner.ModeApplier
 )
 
-func New() *Liner {
+func New(args []string) *Liner {
+	if len(args) >= 1 {
+		return nil
+	}
+
 	// We assume the terminal starts in cooked mode.
 	cooked, _ = liner.TerminalMode()
 	if cooked == nil {

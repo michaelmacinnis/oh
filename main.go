@@ -162,7 +162,7 @@ func main() {
 		return false
 	})
 
-	task.Start(boot.Script, evaluate, parser.Parse, ui.New())
+	task.Start(boot.Script, evaluate, parser.Parse, ui.New(os.Args))
 }
 
 func status(c cell.Cell) int {
