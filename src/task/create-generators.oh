@@ -1,0 +1,31 @@
+#!/usr/bin/env oh
+
+define common: import: ... bin/common.oh
+define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
+                 (float "NewFloat(Car(args).(Atom).Float())") \
+                 (integer "NewInteger(Car(args).(Atom).Int())") \
+                 (pipe "NewPipe(t.Lexical, nil, nil)") \
+                 (rational "NewRational(Car(args).(Atom).Rat())") \
+                 (status "NewStatus(Car(args).(Atom).Status())") \
+                 (string "NewString(t, Car(args).String())") \
+                 (symbol "NewSymbol(raw(Car(args)))")
+
+dynamic $stdout: open w: "/"::join $origin generators.go
+
+common::introduction @`(basename $0) $GOPACKAGE
+
+echo 'import . "github.com/michaelmacinnis/oh/src/cell"'
+echo
+echo "func bind_generators(s *Scope) {"
+
+for t: method (l) as {
+	define n: car l
+	define o: cadr l
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		return t.Return(${o})
+	})"
+}
+
+echo "}"
+
