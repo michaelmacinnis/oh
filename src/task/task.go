@@ -712,9 +712,8 @@ func init() {
 	bind_predicates(scope0)
 
 	/* Generators. */
-	scope0.DefineMethod("boolean", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(Car(args).Bool()))
-	})
+	bind_generators(scope0)
+
 	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
 		cap := 0
 		if args != Null {
@@ -722,27 +721,6 @@ func init() {
 		}
 
 		return t.Return(NewChannel(t, cap))
-	})
-	scope0.DefineMethod("float", func(t *Task, args Cell) bool {
-		return t.Return(NewFloat(Car(args).(Atom).Float()))
-	})
-	scope0.DefineMethod("integer", func(t *Task, args Cell) bool {
-		return t.Return(NewInteger(Car(args).(Atom).Int()))
-	})
-	scope0.DefineMethod("pipe", func(t *Task, args Cell) bool {
-		return t.Return(NewPipe(t.Lexical, nil, nil))
-	})
-	scope0.DefineMethod("rational", func(t *Task, args Cell) bool {
-		return t.Return(NewRational(Car(args).(Atom).Rat()))
-	})
-	scope0.DefineMethod("status", func(t *Task, args Cell) bool {
-		return t.Return(NewStatus(Car(args).(Atom).Status()))
-	})
-	scope0.DefineMethod("string", func(t *Task, args Cell) bool {
-		return t.Return(NewString(t, Car(args).String()))
-	})
-	scope0.DefineMethod("symbol", func(t *Task, args Cell) bool {
-		return t.Return(NewSymbol(raw(Car(args))))
 	})
 
 	/* Relational. */
@@ -2367,6 +2345,7 @@ func (t *Task) Wait() {
 }
 
 //go:generate ./create-arithmetic.oh
+//go:generate ./create-generators.oh
 //go:generate ./create-predicates.oh
 //go:generate ./create-relational.oh
-//go:generate go fmt arithmetic.go predicates.go relational.go
+//go:generate go fmt arithmetic.go generators.go predicates.go relational.go
