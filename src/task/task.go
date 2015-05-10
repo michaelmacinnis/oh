@@ -708,8 +708,8 @@ func init() {
 		return t.Return(list)
 	})
 
-	/* Predicates. */
-	bind_predicates(scope0)
+	/* Arithmetic. */
+	bind_arithmetic(scope0)
 
 	/* Generators. */
 	bind_generators(scope0)
@@ -722,6 +722,9 @@ func init() {
 
 		return t.Return(NewChannel(t, cap))
 	})
+
+	/* Predicates. */
+	bind_predicates(scope0)
 
 	/* Relational. */
 	bind_relational(scope0)
@@ -754,9 +757,6 @@ func init() {
 	scope0.DefineMethod("not", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(!Car(args).Bool()))
 	})
-
-	/* Arithmetic. */
-	bind_arithmetic(scope0)
 
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
