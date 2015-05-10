@@ -7,6 +7,7 @@ package task
 import . "github.com/michaelmacinnis/oh/src/cell"
 
 func bind_arithmetic(s *Scope) {
+
 	s.DefineMethod("add", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
@@ -17,6 +18,7 @@ func bind_arithmetic(s *Scope) {
 
 		return t.Return(acc)
 	})
+
 	s.DefineMethod("sub", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
@@ -27,6 +29,7 @@ func bind_arithmetic(s *Scope) {
 
 		return t.Return(acc)
 	})
+
 	s.DefineMethod("div", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
@@ -37,6 +40,7 @@ func bind_arithmetic(s *Scope) {
 
 		return t.Return(acc)
 	})
+
 	s.DefineMethod("mod", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
@@ -47,6 +51,7 @@ func bind_arithmetic(s *Scope) {
 
 		return t.Return(acc)
 	})
+
 	s.DefineMethod("mul", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 

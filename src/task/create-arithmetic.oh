@@ -1,6 +1,8 @@
 #!/usr/bin/env oh
 
 define common: import: ... bin/common.oh
+define t: quote: (add Add) (sub Subtract) (div Divide) \
+                 (mod Modulo) (mul Multiply)
 
 dynamic $stdout: open w: "/"::join $origin arithmetic.go
 
@@ -10,20 +12,21 @@ echo 'import . "github.com/michaelmacinnis/oh/src/cell"'
 echo
 echo "func bind_arithmetic(s *Scope) {"
 
-define t: quote: (add Add) (sub Subtract) (div Divide) \
-                 (mod Modulo) (mul Multiply)
-
 for t: method (l) as {
 	define n: car l
 	define m: cadr l
-	printf "\ts.DefineMethod(\"%s\", func(t *Task, args Cell) bool {" n
-	printf "\t\tacc := Car(args).(Number)\n"
-	printf "\t\tfor Cdr(args) != Null {"
-	printf "\t\t\targs = Cdr(args)"
-	printf "\t\t\tacc = acc.%s(Car(args))" m
-	printf "\t\t}\n"
-	printf "\t\treturn t.Return(acc)"
-	printf "\t})"
+
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		acc := Car(args).(Number)
+
+		for Cdr(args) != Null {
+			args = Cdr(args)
+			acc = acc.${m}(Car(args))
+		}
+
+		return t.Return(acc)
+	})"
 }
 
 echo "}"

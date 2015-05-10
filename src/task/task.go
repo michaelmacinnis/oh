@@ -904,7 +904,7 @@ func init() {
 		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
 		modified := r.ReplaceAllStringFunc(original, f)
 
-		return t.Return(NewString(t, modified))
+		return t.Return(NewRawString(t, modified))
 	})
 
 	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
