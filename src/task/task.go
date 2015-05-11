@@ -2237,6 +2237,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			t.Scratch = Cdr(t.Scratch)
 
 			if !IsCons(l) {
+				t.Scratch = Cons(l, t.Scratch)
 				break
 			}
 
