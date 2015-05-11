@@ -24,7 +24,7 @@ var (
 )
 
 func New(args []string) *Liner {
-	if len(args) >= 1 {
+	if len(args) > 1 {
 		return nil
 	}
 
