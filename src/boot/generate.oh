@@ -10,6 +10,6 @@ echo "var Script string = `"
 cat: ... boot.oh
 echo "`"
 echo
-echo '//go:generate ./create-boot.oh'
-echo '//go:generate go fmt boot.go'
+echo '//go:generate ./generate.oh'
+echo '//go:generate go fmt generated.go'
 

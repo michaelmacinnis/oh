@@ -214,5 +214,5 @@ exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 
 `
 
-//go:generate ./create-boot.oh
-//go:generate go fmt boot.go
+//go:generate ./generate.oh
+//go:generate go fmt generated.go
