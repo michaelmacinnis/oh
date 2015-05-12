@@ -366,15 +366,10 @@ func init() {
 
 		return true
 	})
-	scope0.DefineSyntax("builtin", func(t *Task, args Cell) bool {
-		return t.Closure(NewBuiltin)
-	})
-	scope0.DefineSyntax("define", func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecDefine)
-	})
-	scope0.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
-		return t.DynamicVar(psExecDynamic)
-	})
+
+	/* Simple. */
+	bind_simple(scope0)
+
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
@@ -385,9 +380,6 @@ func init() {
 		t.Scratch = Cdr(t.Scratch)
 
 		return true
-	})
-	scope0.DefineSyntax("method", func(t *Task, args Cell) bool {
-		return t.Closure(NewMethod)
 	})
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
@@ -417,9 +409,6 @@ func init() {
 		t.Code = s
 		return true
 	})
-	scope0.DefineSyntax("setenv", func(t *Task, args Cell) bool {
-		return t.DynamicVar(psExecSetenv)
-	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		child := NewTask(t.Code, NewEnv(t.Dynamic),
 			NewScope(t.Lexical, nil), t)
@@ -438,17 +427,10 @@ func init() {
 
 		return true
 	})
-	scope0.DefineSyntax("syntax", func(t *Task, args Cell) bool {
-		return t.Closure(NewSyntax)
-	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
 
 		return true
-	})
-
-	scope0.PublicSyntax("public", func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecPublic)
 	})
 
 	/* Builtins. */
@@ -593,15 +575,6 @@ func init() {
 
 		return t.Return(s)
 	})
-	scope0.DefineMethod("car", func(t *Task, args Cell) bool {
-		return t.Return(Caar(args))
-	})
-	scope0.DefineMethod("cdr", func(t *Task, args Cell) bool {
-		return t.Return(Cdar(args))
-	})
-	scope0.DefineMethod("cons", func(t *Task, args Cell) bool {
-		return t.Return(Cons(Car(args), Cadr(args)))
-	})
 	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
 		scope := Car(t.Scratch).(Binding).Self().Expose()
 		t.RemoveState()
@@ -626,9 +599,6 @@ func init() {
 		}
 
 		return t.Return(NewInteger(l))
-	})
-	scope0.DefineMethod("list", func(t *Task, args Cell) bool {
-		return t.Return(args)
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		mode := raw(Car(args))
@@ -681,9 +651,6 @@ func init() {
 		}
 
 		return t.Return(NewPipe(t.Lexical, r, w))
-	})
-	scope0.DefineMethod("reverse", func(t *Task, args Cell) bool {
-		return t.Return(Reverse(Car(args)))
 	})
 	scope0.DefineMethod("set-car", func(t *Task, args Cell) bool {
 		SetCar(Car(args), Cadr(args))
@@ -2349,4 +2316,6 @@ func (t *Task) Wait() {
 //go:generate ./create-generators.oh
 //go:generate ./create-predicates.oh
 //go:generate ./create-relational.oh
+//go:generate ./create-simple.oh
 //go:generate go fmt arithmetic.go generators.go predicates.go relational.go
+//go:generate go fmt simple.go
