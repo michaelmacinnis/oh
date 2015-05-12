@@ -2312,10 +2312,5 @@ func (t *Task) Wait() {
 	}
 }
 
-//go:generate ./create-arithmetic.oh
-//go:generate ./create-generators.oh
-//go:generate ./create-predicates.oh
-//go:generate ./create-relational.oh
-//go:generate ./create-simple.oh
-//go:generate go fmt arithmetic.go generators.go predicates.go relational.go
-//go:generate go fmt simple.go
+//go:generate ./generate.oh
+//go:generate go fmt generated.go

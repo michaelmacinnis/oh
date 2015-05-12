@@ -1,0 +1,129 @@
+#!/usr/bin/env oh
+
+define common: import: ... bin/common.oh
+
+dynamic $stdout: open w: "/"::join $origin generated.go
+
+common::introduction @`(basename $0) $GOPACKAGE
+
+echo 'import . "github.com/michaelmacinnis/oh/src/cell"'
+echo
+
+define t: quote: (add Add) (sub Subtract) (div Divide) \
+                 (mod Modulo) (mul Multiply)
+
+echo "func bind_arithmetic(s *Scope) {"
+for t: method (l) as {
+	define n: car l
+	define m: cadr l
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		acc := Car(args).(Number)
+
+		for Cdr(args) != Null {
+			args = Cdr(args)
+			acc = acc.${m}(Car(args))
+		}
+
+		return t.Return(acc)
+	})"
+}
+echo "}\n"
+
+define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
+                 (float "NewFloat(Car(args).(Atom).Float())") \
+                 (integer "NewInteger(Car(args).(Atom).Int())") \
+                 (pipe "NewPipe(t.Lexical, nil, nil)") \
+                 (rational "NewRational(Car(args).(Atom).Rat())") \
+                 (status "NewStatus(Car(args).(Atom).Status())") \
+                 (string "NewString(t, Car(args).String())") \
+                 (symbol "NewSymbol(raw(Car(args)))")
+
+echo "func bind_generators(s *Scope) {"
+for t: method (l) as {
+	define n: car l
+	define o: cadr l
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		return t.Return(${o})
+	})"
+}
+echo "}\n"
+
+define t: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
+                 (is-builtin IsBuiltin) (is-channel IsChannel) \
+                 (is-cons IsCons) (is-float IsFloat) (is-integer IsInteger) \
+                 (is-method IsMethod) (is-null IsNull) (is-number IsNumber) \
+                 (is-object IsContext) (is-pipe IsPipe) \
+                 (is-rational IsRational) (is-status IsStatus) \
+                 (is-string IsString) (is-symbol IsSymbol) (is-syntax IsSyntax)
+
+echo "func bind_predicates(s *Scope) {"
+for t: method (l) as {
+	define n: car l
+	define m: cadr l
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(${m}(Car(args))))
+	})"
+}
+echo "}\n"
+
+define t: quote: \
+        (eq "!prev.Equal(curr)" "") \
+        (ge "prev.Less(curr)" ".(Number)") \
+        (gt "!prev.Greater(curr)" ".(Number)") \
+        (is "prev != curr" "") \
+        (le "prev.Greater(curr)" ".(Number)") \
+        (lt "!prev.Less(curr)" ".(Number)")
+
+echo "func bind_relational(s *Scope) {"
+for t: method (l) as {
+	define n: car l
+	define o: cadr l
+	define t: caddr l
+	echo: interpolate "
+	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
+		prev := Car(args)${t}
+
+		for Cdr(args) != Null {
+			args = Cdr(args)
+			curr := Car(args)${t}
+
+			if ${o} {
+				return t.Return(False)
+			}
+
+			prev = curr
+		}
+
+		return t.Return(True)
+	})"
+}
+echo "}\n"
+
+define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
+                 (DefineSyntax define "t.LexicalVar(psExecDefine)") \
+                 (DefineSyntax dynamic "t.DynamicVar(psExecDynamic)") \
+                 (DefineSyntax method "t.Closure(NewMethod)") \
+                 (DefineSyntax setenv "t.DynamicVar(psExecSetenv)") \
+                 (DefineSyntax syntax "t.Closure(NewSyntax)") \
+                 (PublicSyntax public "t.LexicalVar(psExecPublic)") \
+                 (DefineMethod car "t.Return(Caar(args))") \
+                 (DefineMethod cdr "t.Return(Cdar(args))") \
+                 (DefineMethod cons "t.Return(Cons(Car(args), Cadr(args)))") \
+                 (DefineMethod list "t.Return(args)") \
+                 (DefineMethod reverse "t.Return(Reverse(Car(args)))")
+
+echo "func bind_simple(s *Scope) {"
+for t: method (l) as {
+	define d: car l
+	define n: cadr l
+	define o: caddr l
+	echo: interpolate "
+	s.${d}(\"${n}\", func(t *Task, args Cell) bool {
+		return ${o}
+	})"
+}
+echo "}"
+
