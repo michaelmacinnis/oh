@@ -4,7 +4,11 @@
 
 package task
 
-import . "github.com/michaelmacinnis/oh/src/cell"
+import (
+	. "github.com/michaelmacinnis/oh/src/cell"
+	"strings"
+	"unicode"
+)
 
 func bind_arithmetic(s *Scope) {
 
@@ -323,5 +327,170 @@ func bind_simple(s *Scope) {
 
 	s.DefineMethod("reverse", func(t *Task, args Cell) bool {
 		return t.Return(Reverse(Car(args)))
+	})
+}
+
+func bind_string_predicates(e *Env) {
+
+	e.Method("is-control", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsControl(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-digit", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsDigit(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-graphic", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsGraphic(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-letter", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsLetter(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-lower", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsLower(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-mark", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsMark(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-print", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsPrint(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-punct", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsPunct(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-space", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsSpace(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-symbol", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsSymbol(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-title", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsTitle(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("is-upper", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.IsUpper(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})
+
+	e.Method("to-lower", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		return t.Return(NewString(t, strings.ToLower(s)))
+	})
+
+	e.Method("to-title", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		return t.Return(NewString(t, strings.ToTitle(s)))
+	})
+
+	e.Method("to-upper", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		return t.Return(NewString(t, strings.ToUpper(s)))
 	})
 }

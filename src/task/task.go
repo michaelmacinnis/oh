@@ -20,7 +20,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"unicode"
 	"unsafe"
 )
 
@@ -307,6 +306,30 @@ func init() {
 
 		return t.Return(NewRawString(t, s))
 	})
+	envs.Method("substring", func(t *Task, args Cell) bool {
+		s := []rune(raw(to_string(Car(t.Scratch).(Binding).Self())))
+
+		start := int(Car(args).(Atom).Int())
+		end := len(s)
+
+		if Cdr(args) != Null {
+			end = int(Cadr(args).(Atom).Int())
+		}
+
+		return t.Return(NewString(t, string(s[start:end])))
+	})
+	envs.Method("to-list", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		l := Null
+		for _, char := range s {
+			l = Cons(NewInteger(int64(char)), l)
+		}
+
+		return t.Return(Reverse(l))
+	})
+
+
+	bind_string_predicates(envs)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -366,10 +389,6 @@ func init() {
 
 		return true
 	})
-
-	/* Simple. */
-	bind_simple(scope0)
-
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
@@ -725,6 +744,9 @@ func init() {
 		return t.Return(NewBoolean(!Car(args).Bool()))
 	})
 
+	/* Simple. */
+	bind_simple(scope0)
+
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
 
@@ -774,273 +796,6 @@ func init() {
 		}
 
 		return t.Return(NewSymbol(s))
-	})
-
-	/* Standard namespaces. */
-	text := NewObject(NewScope(scope0, nil))
-	scope0.Define(NewSymbol("$text"), text)
-
-	text.PublicMethod("is-control", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsControl(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-digit", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsDigit(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-graphic", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsGraphic(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-letter", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsLetter(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-lower", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsLower(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-mark", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsMark(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-print", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsPrint(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-punct", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsPunct(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-space", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsSpace(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-symbol", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsSymbol(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-title", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsTitle(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("is-upper", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch t := Car(args).(type) {
-		case *Integer:
-			r = NewBoolean(unicode.IsUpper(rune(t.Int())))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("join", func(t *Task, args Cell) bool {
-		str := false
-		sep := Car(args)
-		list := Cdr(args)
-
-		arr := make([]string, Length(list))
-
-		for i := 0; list != Null; i++ {
-			_, str = Car(list).(*String)
-			arr[i] = string(raw(Car(list)))
-			list = Cdr(list)
-		}
-
-		r := strings.Join(arr, string(raw(sep)))
-
-		if str {
-			return t.Return(NewString(t, r))
-		}
-		return t.Return(NewSymbol(r))
-	})
-	text.PublicMethod("split", func(t *Task, args Cell) bool {
-		r := Null
-
-		sep := Car(args)
-		str := Cadr(args)
-
-		l := strings.Split(string(raw(str)), string(raw(sep)))
-
-		for i := len(l) - 1; i >= 0; i-- {
-			switch str.(type) {
-			case *Symbol:
-				r = Cons(NewSymbol(l[i]), r)
-			case *String:
-				r = Cons(NewString(t, l[i]), r)
-			}
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("substring", func(t *Task, args Cell) bool {
-		var r Cell
-
-		s := []rune(raw(Car(args)))
-
-		start := int(Cadr(args).(Atom).Int())
-		end := len(s)
-
-		if Cddr(args) != Null {
-			end = int(Caddr(args).(Atom).Int())
-		}
-
-		switch Car(args).(type) {
-		case *String:
-			r = NewString(t, string(s[start:end]))
-		case *Symbol:
-			r = NewSymbol(string(s[start:end]))
-		default:
-			r = Null
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("to-list", func(t *Task, args Cell) bool {
-		l := Null
-		for _, char := range raw(Car(args)) {
-			l = Cons(NewInteger(int64(char)), l)
-		}
-
-		return t.Return(Reverse(l))
-	})
-	text.PublicMethod("lower", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch k := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToLower(rune(k.Int()))))
-		case *String:
-			r = NewString(t, strings.ToLower(raw(k)))
-		case *Symbol:
-			r = NewSymbol(strings.ToLower(raw(k)))
-		default:
-			r = NewInteger(0)
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("title", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch k := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToTitle(rune(k.Int()))))
-		case *String:
-			r = NewString(t, strings.ToTitle(raw(k)))
-		case *Symbol:
-			r = NewSymbol(strings.ToTitle(raw(k)))
-		default:
-			r = NewInteger(0)
-		}
-
-		return t.Return(r)
-	})
-	text.PublicMethod("upper", func(t *Task, args Cell) bool {
-		var r Cell
-
-		switch k := Car(args).(type) {
-		case *Integer:
-			r = NewInteger(int64(unicode.ToUpper(rune(k.Int()))))
-		case *String:
-			r = NewString(t, strings.ToUpper(raw(k)))
-		case *Symbol:
-			r = NewSymbol(strings.ToUpper(raw(k)))
-		default:
-			r = NewInteger(0)
-		}
-
-		return t.Return(r)
 	})
 
 	scope0.Public(NewSymbol("$root"), scope0)

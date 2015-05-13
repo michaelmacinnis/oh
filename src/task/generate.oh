@@ -6,13 +6,16 @@ dynamic $stdout: open w: "/"::join $origin generated.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 
-echo 'import . "github.com/michaelmacinnis/oh/src/cell"'
-echo
+echo "import (
+	. \"github.com/michaelmacinnis/oh/src/cell\"
+	\"strings\"
+	\"unicode\"
+)"
 
 define t: quote: (add Add) (sub Subtract) (div Divide) \
                  (mod Modulo) (mul Multiply)
 
-echo "func bind_arithmetic(s *Scope) {"
+echo "\nfunc bind_arithmetic(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define m: cadr l
@@ -28,7 +31,7 @@ for t: method (l) as {
 		return t.Return(acc)
 	})"
 }
-echo "}\n"
+echo "}"
 
 define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (float "NewFloat(Car(args).(Atom).Float())") \
@@ -39,7 +42,7 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (string "NewString(t, Car(args).String())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
-echo "func bind_generators(s *Scope) {"
+echo "\nfunc bind_generators(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define o: cadr l
@@ -48,7 +51,7 @@ for t: method (l) as {
 		return t.Return(${o})
 	})"
 }
-echo "}\n"
+echo "}"
 
 define t: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
                  (is-builtin IsBuiltin) (is-channel IsChannel) \
@@ -58,7 +61,7 @@ define t: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
                  (is-rational IsRational) (is-status IsStatus) \
                  (is-string IsString) (is-symbol IsSymbol) (is-syntax IsSyntax)
 
-echo "func bind_predicates(s *Scope) {"
+echo "\nfunc bind_predicates(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define m: cadr l
@@ -67,7 +70,7 @@ for t: method (l) as {
 		return t.Return(NewBoolean(${m}(Car(args))))
 	})"
 }
-echo "}\n"
+echo "}"
 
 define t: quote: \
         (eq "!prev.Equal(curr)" "") \
@@ -77,7 +80,7 @@ define t: quote: \
         (le "prev.Greater(curr)" ".(Number)") \
         (lt "!prev.Less(curr)" ".(Number)")
 
-echo "func bind_relational(s *Scope) {"
+echo "\nfunc bind_relational(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define o: cadr l
@@ -100,7 +103,7 @@ for t: method (l) as {
 		return t.Return(True)
 	})"
 }
-echo "}\n"
+echo "}"
 
 define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineSyntax define "t.LexicalVar(psExecDefine)") \
@@ -115,7 +118,7 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineMethod list "t.Return(args)") \
                  (DefineMethod reverse "t.Return(Reverse(Car(args)))")
 
-echo "func bind_simple(s *Scope) {"
+echo "\nfunc bind_simple(s *Scope) {"
 for t: method (l) as {
 	define d: car l
 	define n: cadr l
@@ -125,5 +128,45 @@ for t: method (l) as {
 		return ${o}
 	})"
 }
+echo "}"
+
+echo "\nfunc bind_string_predicates(e *Env) {"
+
+define t: quote: (is-control IsControl) (is-digit IsDigit) \
+                 (is-graphic IsGraphic) (is-letter IsLetter) \
+                 (is-lower IsLower) (is-mark IsMark) (is-print IsPrint) \
+                 (is-punct IsPunct) (is-space IsSpace) (is-symbol IsSymbol) \
+                 (is-title IsTitle) (is-upper IsUpper)
+
+for t: method (l) as {
+	define n: car l
+	define m: cadr l
+	echo: interpolate "
+	e.Method(\"${n}\", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		for _, c := range s {
+			if !unicode.${m}(c) {
+				return t.Return(False)
+			}
+		}
+
+		return t.Return(True)
+	})"
+}
+
+define t: quote: (to-lower ToLower) (to-title ToTitle) (to-upper ToUpper)
+
+for t: method (l) as {
+	define n: car l
+	define m: cadr l
+	echo: interpolate "
+	e.Method(\"${n}\", func(t *Task, args Cell) bool {
+		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+
+		return t.Return(NewString(t, strings.${m}(s)))
+	})"
+}
+
 echo "}"
 
