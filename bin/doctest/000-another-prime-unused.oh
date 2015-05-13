@@ -1,6 +1,7 @@
 #!/usr/bin/env oh
 
-# This script doesn't do much on its own. It is imported by import-prime.oh.
+# This script doesn't do much on its own.
+# It used to be imported by import-prime.oh.
 
 public next-prime: channel
 
