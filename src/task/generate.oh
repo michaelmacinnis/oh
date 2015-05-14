@@ -15,7 +15,7 @@ echo "import (
 define t: quote: (add Add) (sub Subtract) (div Divide) \
                  (mod Modulo) (mul Multiply)
 
-echo "\nfunc bind_arithmetic(s *Scope) {"
+echo "\nfunc bindArithmetic(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define m: cadr l
@@ -42,7 +42,7 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (string "NewString(t, Car(args).String())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
-echo "\nfunc bind_generators(s *Scope) {"
+echo "\nfunc bindGenerators(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define o: cadr l
@@ -61,7 +61,7 @@ define t: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
                  (is-rational IsRational) (is-status IsStatus) \
                  (is-string IsString) (is-symbol IsSymbol) (is-syntax IsSyntax)
 
-echo "\nfunc bind_predicates(s *Scope) {"
+echo "\nfunc bindPredicates(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define m: cadr l
@@ -80,7 +80,7 @@ define t: quote: \
         (le "prev.Greater(curr)" ".(Number)") \
         (lt "!prev.Less(curr)" ".(Number)")
 
-echo "\nfunc bind_relational(s *Scope) {"
+echo "\nfunc bindRelational(s *Scope) {"
 for t: method (l) as {
 	define n: car l
 	define o: cadr l
@@ -118,7 +118,7 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineMethod list "t.Return(args)") \
                  (DefineMethod reverse "t.Return(Reverse(Car(args)))")
 
-echo "\nfunc bind_simple(s *Scope) {"
+echo "\nfunc bindSimple(s *Scope) {"
 for t: method (l) as {
 	define d: car l
 	define n: cadr l
@@ -130,7 +130,7 @@ for t: method (l) as {
 }
 echo "}"
 
-echo "\nfunc bind_string_predicates(e *Env) {"
+echo "\nfunc bindStringPredicates(e *Env) {"
 
 define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-graphic IsGraphic) (is-letter IsLetter) \
@@ -143,7 +143,7 @@ for t: method (l) as {
 	define m: cadr l
 	echo: interpolate "
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.${m}(c) {
@@ -162,7 +162,7 @@ for t: method (l) as {
 	define m: cadr l
 	echo: interpolate "
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.${m}(s)))
 	})"

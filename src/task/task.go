@@ -10,7 +10,6 @@ import (
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -42,6 +41,15 @@ type Notification struct {
 type Registration struct {
 	pid int
 	cb  chan Notification
+}
+
+type pathError struct {
+	Path string
+	Err string
+}
+
+func (e *pathError) Error() string {
+	return strconv.Quote(e.Path) + ": " + e.Err
 }
 
 type reader func(*Task, common.ReadStringer,
@@ -111,7 +119,7 @@ var next = map[int64][]int64{
 }
 
 /* Convert Context into a Conduit. (Return nil if not possible). */
-func as_conduit(o Context) Conduit {
+func asConduit(o Context) Conduit {
 	if c, ok := o.(Conduit); ok {
 		return c
 	}
@@ -194,6 +202,17 @@ func expand(t *Task, args Cell) Cell {
 	return list
 }
 
+func findExecutable(file string) error {
+	d, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
+	if m := d.Mode(); !m.IsDir() && m&0111 != 0 {
+		return nil
+	}
+	return os.ErrPermission
+}
+
 func init() {
 	str = make(map[string]*String)
 
@@ -221,27 +240,27 @@ func init() {
 		panic("private members cannot be added to a conduit")
 	})
 	envc.Method("close", func(t *Task, args Cell) bool {
-		to_conduit(Car(t.Scratch).(Binding).Self()).Close()
+		toConduit(Car(t.Scratch).(Binding).Self()).Close()
 		return t.Return(True)
 	})
 	envc.Method("reader-close", func(t *Task, args Cell) bool {
-		to_conduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
+		toConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
 		return t.Return(True)
 	})
 	envc.Method("read", func(t *Task, args Cell) bool {
-		r := to_conduit(Car(t.Scratch).(Binding).Self()).Read(t)
+		r := toConduit(Car(t.Scratch).(Binding).Self()).Read(t)
 		return t.Return(r)
 	})
 	envc.Method("readline", func(t *Task, args Cell) bool {
-		r := to_conduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
+		r := toConduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
 		return t.Return(r)
 	})
 	envc.Method("writer-close", func(t *Task, args Cell) bool {
-		to_conduit(Car(t.Scratch).(Binding).Self()).WriterClose()
+		toConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
 		return t.Return(True)
 	})
 	envc.Method("write", func(t *Task, args Cell) bool {
-		to_conduit(Car(t.Scratch).(Binding).Self()).Write(args)
+		toConduit(Car(t.Scratch).(Binding).Self()).Write(args)
 		return t.Return(True)
 	})
 
@@ -256,7 +275,7 @@ func init() {
 		panic("private members cannot be added to a string")
 	})
 	envs.Method("join", func(t *Task, args Cell) bool {
-		sep := to_string(Car(t.Scratch).(Binding).Self())
+		sep := toString(Car(t.Scratch).(Binding).Self())
 		arr := make([]string, Length(args))
 
 		for i := 0; args != Null; i++ {
@@ -272,7 +291,7 @@ func init() {
 		r := Null
 
 		sep := Car(args)
-		str := to_string(Car(t.Scratch).(Binding).Self())
+		str := toString(Car(t.Scratch).(Binding).Self())
 
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
@@ -283,7 +302,7 @@ func init() {
 		return t.Return(r)
 	})
 	envs.Method("sprintf", func(t *Task, args Cell) bool {
-		f := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		f := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		argv := []interface{}{}
 		for l := args; l != Null; l = Cdr(l) {
@@ -306,7 +325,7 @@ func init() {
 		return t.Return(NewRawString(t, s))
 	})
 	envs.Method("substring", func(t *Task, args Cell) bool {
-		s := []rune(raw(to_string(Car(t.Scratch).(Binding).Self())))
+		s := []rune(raw(toString(Car(t.Scratch).(Binding).Self())))
 
 		start := int(Car(args).(Atom).Int())
 		end := len(s)
@@ -318,7 +337,7 @@ func init() {
 		return t.Return(NewString(t, string(s[start:end])))
 	})
 	envs.Method("to-list", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 		l := Null
 		for _, char := range s {
 			l = Cons(NewInteger(int64(char)), l)
@@ -328,7 +347,7 @@ func init() {
 	})
 
 
-	bind_string_predicates(envs)
+	bindStringPredicates(envs)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -666,10 +685,10 @@ func init() {
 	})
 
 	/* Arithmetic. */
-	bind_arithmetic(scope0)
+	bindArithmetic(scope0)
 
 	/* Generators. */
-	bind_generators(scope0)
+	bindGenerators(scope0)
 
 	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
 		cap := 0
@@ -681,10 +700,10 @@ func init() {
 	})
 
 	/* Predicates. */
-	bind_predicates(scope0)
+	bindPredicates(scope0)
 
 	/* Relational. */
-	bind_relational(scope0)
+	bindRelational(scope0)
 
 	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
 		pattern := raw(Car(args))
@@ -716,7 +735,7 @@ func init() {
 	})
 
 	/* Simple. */
-	bind_simple(scope0)
+	bindSimple(scope0)
 
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
@@ -772,6 +791,31 @@ func init() {
 	scope0.Public(NewSymbol("$root"), scope0)
 }
 
+func lookPath(file string) (string, error) {
+	nf := "not found"
+
+	// Only bypass the path if file begins with / or ./ or ../
+	prefix := file + "   "
+	if prefix[0:1] == "/" || prefix[0:2] == "./" || prefix[0:3] == "../" {
+		err := findExecutable(file)
+		if err == nil {
+			return file, nil
+		}
+		return "", &pathError{file, err.Error()}
+	}
+	pathenv := os.Getenv("PATH")
+	if pathenv == "" {
+		return "", &pathError{file, nf}
+	}
+	for _, dir := range strings.Split(pathenv, ":") {
+		path := dir + "/" + file
+		if err := findExecutable(path); err == nil {
+			return path, nil
+		}
+	}
+	return "", &pathError{file, nf}
+}
+
 func module(f string) (string, error) {
 	i, err := os.Stat(f)
 	if err != nil {
@@ -799,13 +843,13 @@ func raw(c Cell) string {
 }
 
 func rpipe(c Cell) *os.File {
-	return to_conduit(c.(Context)).(*Pipe).ReadFd()
+	return toConduit(c.(Context)).(*Pipe).ReadFd()
 
 }
 
 /* Convert Context into a Conduit. */
-func to_conduit(o Context) Conduit {
-	conduit := as_conduit(o)
+func toConduit(o Context) Conduit {
+	conduit := asConduit(o)
 	if conduit == nil {
 		panic("not a conduit")
 	}
@@ -814,7 +858,7 @@ func to_conduit(o Context) Conduit {
 }
 
 /* Convert Context into a String. */
-func to_string(o Context) *String {
+func toString(o Context) *String {
 	if s, ok := o.(*String); ok {
 		return s
 	}
@@ -823,7 +867,7 @@ func to_string(o Context) *String {
 }
 
 func wpipe(c Cell) *os.File {
-	return to_conduit(c.(Context)).(*Pipe).WriteFd()
+	return toConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
 func DefineBuiltin(k string, a Function) {
@@ -943,7 +987,7 @@ func IsChannel(c Cell) bool {
 		return false
 	}
 
-	conduit := as_conduit(context)
+	conduit := asConduit(context)
 	if conduit == nil {
 		return false
 	}
@@ -1060,7 +1104,7 @@ func IsPipe(c Cell) bool {
 		return false
 	}
 
-	conduit := as_conduit(context)
+	conduit := asConduit(context)
 	if conduit == nil {
 		return false
 	}
@@ -1645,7 +1689,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Scratch = Cdr(t.Scratch)
 
-	arg0, problem := exec.LookPath(raw(Car(t.Scratch)))
+	arg0, problem := lookPath(raw(Car(t.Scratch)))
 
 	SetCar(t.Scratch, False)
 

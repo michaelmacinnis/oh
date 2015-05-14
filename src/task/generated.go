@@ -10,7 +10,7 @@ import (
 	"unicode"
 )
 
-func bind_arithmetic(s *Scope) {
+func bindArithmetic(s *Scope) {
 
 	s.DefineMethod("add", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
@@ -68,7 +68,7 @@ func bind_arithmetic(s *Scope) {
 	})
 }
 
-func bind_generators(s *Scope) {
+func bindGenerators(s *Scope) {
 
 	s.DefineMethod("boolean", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(Car(args).Bool()))
@@ -103,7 +103,7 @@ func bind_generators(s *Scope) {
 	})
 }
 
-func bind_predicates(s *Scope) {
+func bindPredicates(s *Scope) {
 
 	s.DefineMethod("is-atom", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsAtom(Car(args))))
@@ -174,7 +174,7 @@ func bind_predicates(s *Scope) {
 	})
 }
 
-func bind_relational(s *Scope) {
+func bindRelational(s *Scope) {
 
 	s.DefineMethod("eq", func(t *Task, args Cell) bool {
 		prev := Car(args)
@@ -279,7 +279,7 @@ func bind_relational(s *Scope) {
 	})
 }
 
-func bind_simple(s *Scope) {
+func bindSimple(s *Scope) {
 
 	s.DefineSyntax("builtin", func(t *Task, args Cell) bool {
 		return t.Closure(NewBuiltin)
@@ -330,10 +330,10 @@ func bind_simple(s *Scope) {
 	})
 }
 
-func bind_string_predicates(e *Env) {
+func bindStringPredicates(e *Env) {
 
 	e.Method("is-control", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsControl(c) {
@@ -345,7 +345,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-digit", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsDigit(c) {
@@ -357,7 +357,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-graphic", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsGraphic(c) {
@@ -369,7 +369,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-letter", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLetter(c) {
@@ -381,7 +381,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-lower", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLower(c) {
@@ -393,7 +393,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-mark", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsMark(c) {
@@ -405,7 +405,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-print", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPrint(c) {
@@ -417,7 +417,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-punct", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPunct(c) {
@@ -429,7 +429,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-space", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSpace(c) {
@@ -441,7 +441,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-symbol", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSymbol(c) {
@@ -453,7 +453,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-title", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsTitle(c) {
@@ -465,7 +465,7 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("is-upper", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsUpper(c) {
@@ -477,19 +477,19 @@ func bind_string_predicates(e *Env) {
 	})
 
 	e.Method("to-lower", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToLower(s)))
 	})
 
 	e.Method("to-title", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToTitle(s)))
 	})
 
 	e.Method("to-upper", func(t *Task, args Cell) bool {
-		s := raw(to_string(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToUpper(s)))
 	})
