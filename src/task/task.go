@@ -49,7 +49,7 @@ type pathError struct {
 }
 
 func (e *pathError) Error() string {
-	return strconv.Quote(e.Path) + ": " + e.Err
+	return e.Path + ": " + e.Err
 }
 
 type reader func(*Task, common.ReadStringer,
@@ -792,7 +792,7 @@ func init() {
 }
 
 func lookPath(file string) (string, error) {
-	nf := "not found"
+	cnf := "command not found"
 
 	// Only bypass the path if file begins with / or ./ or ../
 	prefix := file + "   "
@@ -805,7 +805,7 @@ func lookPath(file string) (string, error) {
 	}
 	pathenv := os.Getenv("PATH")
 	if pathenv == "" {
-		return "", &pathError{file, nf}
+		return "", &pathError{file, cnf}
 	}
 	for _, dir := range strings.Split(pathenv, ":") {
 		path := dir + "/" + file
@@ -813,7 +813,7 @@ func lookPath(file string) (string, error) {
 			return path, nil
 		}
 	}
-	return "", &pathError{file, nf}
+	return "", &pathError{file, cnf}
 }
 
 func module(f string) (string, error) {
