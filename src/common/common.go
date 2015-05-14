@@ -2,9 +2,10 @@
 
 package common
 
-type CloseReadStringer interface {
+type UI interface {
 	ReadStringer
 	Close() error
+	Exists() bool
 }
 
 type ReadStringer interface {

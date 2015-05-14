@@ -44,7 +44,6 @@ type Registration struct {
 	cb  chan Notification
 }
 
-type closereadstringer common.CloseReadStringer
 type reader func(*Task, common.ReadStringer,
 	func(string, string) Cell, func(Cell))
 
@@ -340,35 +339,7 @@ func init() {
 	env0.Add(NewSymbol("false"), False)
 	env0.Add(NewSymbol("true"), True)
 
-	/* Command-line arguments */
-	args := Null
-	origin := ""
-	if len(os.Args) > 1 {
-		origin = filepath.Dir(os.Args[1])
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
-
-		for i, v := range os.Args[2:] {
-			k := "$"+strconv.Itoa(i+1)
-			env0.Add(NewSymbol(k), NewSymbol(v))
-		}
-
-		for i := len(os.Args) - 1; i > 1; i-- {
-			args = Cons(NewSymbol(os.Args[i]), args)
-		}
-	} else {
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
-	}
-	env0.Add(NewSymbol("$args"), args)
-
 	env0.Add(NewSymbol("$$"), NewInteger(int64(syscall.Getpid())))
-
-	if wd, err := os.Getwd(); err == nil {
-		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
-		if !filepath.IsAbs(origin) {
-			origin = filepath.Join(wd, origin)
-		}
-		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
-	}
 
 	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
 
@@ -902,7 +873,7 @@ func SetForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func Start(defns string, eval func(Cell), parser reader, ui closereadstringer) {
+func Start(defns string, eval func(Cell), parser reader, cli common.UI) {
 	parse = parser
 
 	signals := []os.Signal{InterruptRequest, StopRequest}
@@ -911,23 +882,49 @@ func Start(defns string, eval func(Cell), parser reader, ui closereadstringer) {
 	b := bufio.NewReader(strings.NewReader(defns))
 	parse(nil, b, deref, eval)
 
-	interactive = false
-	if len(os.Args) <= 1 {
-		if ui != nil {
-			interactive = true
+	/* Command-line arguments */
+	args := Null
+	origin := ""
+	if len(os.Args) > 1 {
+		origin = filepath.Dir(os.Args[1])
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
-			InitSignalHandling()
-			signal.Notify(incoming, signals...)
+		for i, v := range os.Args[2:] {
+			k := "$"+strconv.Itoa(i+1)
+			env0.Add(NewSymbol(k), NewSymbol(v))
+		}
 
-			parse(nil, ui, deref, eval)
-
-			ui.Close()
-			fmt.Printf("\n")
-		} else {
-			eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
+		for i := len(os.Args) - 1; i > 1; i-- {
+			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
+		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+	}
+	env0.Add(NewSymbol("$args"), args)
+
+	if wd, err := os.Getwd(); err == nil {
+		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
+		if !filepath.IsAbs(origin) {
+			origin = filepath.Join(wd, origin)
+		}
+		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
+	}
+
+	interactive = false
+	if len(os.Args) > 1 {
 		eval(List(NewSymbol("source"), NewSymbol(os.Args[1])))
+	} else if cli.Exists() {
+		interactive = true
+
+		InitSignalHandling()
+		signal.Notify(incoming, signals...)
+
+		parse(nil, cli, deref, eval)
+
+		cli.Close()
+		fmt.Printf("\n")
+	} else {
+		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
 
 	os.Exit(0)

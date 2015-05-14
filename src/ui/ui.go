@@ -45,6 +45,10 @@ func New(args []string) *Liner {
 	return cli
 }
 
+func (cli *Liner) Exists() bool {
+	return cli != nil
+}
+
 func (cli *Liner) ReadString(delim byte) (line string, err error) {
 	task.SetForegroundGroup(task.Pgid())
 
