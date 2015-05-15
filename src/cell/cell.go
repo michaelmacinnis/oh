@@ -465,7 +465,7 @@ func (f *Float) Rat() *big.Rat {
 }
 
 func (f *Float) Status() int64 {
-	return int64(*f)
+	return f.Int()
 }
 
 func (f *Float) Greater(c Cell) bool {
@@ -555,7 +555,7 @@ func (i *Integer) Rat() *big.Rat {
 }
 
 func (i *Integer) Status() int64 {
-	return int64(*i)
+	return i.Int()
 }
 
 func (i *Integer) Greater(c Cell) bool {
@@ -797,7 +797,7 @@ func (s *Status) Rat() *big.Rat {
 }
 
 func (s *Status) Status() int64 {
-	return int64(*s)
+	return s.Int()
 }
 
 func (s *Status) Greater(c Cell) bool {
@@ -901,11 +901,7 @@ func (s *Symbol) Rat() *big.Rat {
 }
 
 func (s *Symbol) Status() (i int64) {
-	var err error
-	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
-		panic(err)
-	}
-	return i
+	return s.Int()
 }
 
 func (s *Symbol) Greater(c Cell) bool {
