@@ -45,7 +45,7 @@ type Registration struct {
 
 type pathError struct {
 	Path string
-	Err string
+	Err  string
 }
 
 func (e *pathError) Error() string {
@@ -219,6 +219,9 @@ func init() {
 	pid = BecomeProcessGroupLeader()
 	pgid = pid
 
+	runnable = make(chan bool)
+	close(runnable)
+
 	active := make(chan bool)
 	notify := make(chan Notification)
 	register = make(chan Registration)
@@ -346,101 +349,13 @@ func init() {
 		return t.Return(Reverse(l))
 	})
 
-
 	bindStringPredicates(envs)
 
-	runnable = make(chan bool)
-	close(runnable)
-
-	env0 = NewEnv(nil)
+	/* Root Scope. */
 	scope0 = NewScope(nil, nil)
 
-	env0.Add(NewSymbol("false"), False)
-	env0.Add(NewSymbol("true"), True)
-
-	env0.Add(NewSymbol("$$"), NewInteger(int64(syscall.Getpid())))
-
-	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
-
-	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
-	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
-	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
-
-	/* Environment variables. */
-	for _, s := range os.Environ() {
-		kv := strings.SplitN(s, "=", 2)
-		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
-	}
-
-	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
-
-		t.NewBlock(t.Dynamic, t.Lexical)
-
-		return true
-	})
-	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical,
-			psExecIf, SaveCode, psEvalElement)
-
-		t.NewBlock(t.Dynamic, t.Lexical)
-
-		t.Code = Car(t.Code)
-		t.Scratch = Cdr(t.Scratch)
-
-		return true
-	})
-	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
-		t.Scratch = Cdr(t.Scratch)
-
-		s := Null
-		if Length(t.Code) == 3 {
-			if raw(Cadr(t.Code)) != "=" {
-				panic("expected '='")
-			}
-			s = Caddr(t.Code)
-		} else {
-			s = Cadr(t.Code)
-		}
-
-		t.Code = Car(t.Code)
-		if !IsCons(t.Code) {
-			t.ReplaceStates(psExecSet, SaveCode)
-		} else {
-			t.ReplaceStates(SaveDynamic|SaveLexical,
-				psExecSet, SaveCdrCode,
-				psChangeContext, psEvalElement,
-				SaveCarCode)
-		}
-
-		t.NewStates(psEvalElement)
-
-		t.Code = s
-		return true
-	})
-	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(t.Code, NewEnv(t.Dynamic),
-			NewScope(t.Lexical, nil), t)
-
-		go child.Launch()
-
-		SetCar(t.Scratch, child)
-
-		return false
-	})
-	scope0.DefineSyntax("splice", func(t *Task, args Cell) bool {
-		t.ReplaceStates(psExecSplice, psEvalElement)
-
-		t.Code = Car(t.Code)
-		t.Scratch = Cdr(t.Scratch)
-
-		return true
-	})
-	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
-
-		return true
-	})
+	/* Arithmetic. */
+	bindArithmetic(scope0)
 
 	/* Builtins. */
 	DefineBuiltin("cd", func(t *Task, args Cell) bool {
@@ -503,73 +418,57 @@ func init() {
 		return true
 	})
 
-	scope0.PublicMethod("child", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self().Expose()
+	/* Generators. */
+	bindGenerators(scope0)
 
-		return t.Return(NewObject(NewScope(o, nil)))
-	})
-	scope0.PublicMethod("clone", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self().Expose()
-
-		return t.Return(NewObject(o.Copy()))
-	})
-	scope0.PublicMethod("context", func(t *Task, args Cell) bool {
-		self := Car(t.Scratch).(Binding).Self()
-		bare := self.Expose()
-		if self == bare {
-			self = NewObject(bare)
+	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
+		cap := 0
+		if args != Null {
+			cap = int(Car(args).(Atom).Int())
 		}
-		return t.Return(self)
+
+		return t.Return(NewChannel(t, cap))
 	})
-	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
-		t.Scratch = List(Car(args))
 
-		t.Stop()
+	/* Predicates. */
+	bindPredicates(scope0)
 
-		return true
-	})
-	scope0.PublicMethod("get-slot", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
+	/* Relational. */
+	bindRelational(scope0)
 
-		s := raw(Car(args))
-		k := NewSymbol(s)
+	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
+		pattern := raw(Car(args))
+		text := raw(Cadr(args))
 
-		c := Resolve(o, nil, k)
-		if c == nil {
-			panic(s + " undefined")
-		} else if a, ok := c.Get().(Binding); ok {
-			return t.Return(a.Bind(t.Lexical))
-		} else {
-			return t.Return(c.Get())
+		ok, err := path.Match(pattern, text)
+		if err != nil {
+			panic(err)
 		}
+
+		return t.Return(NewBoolean(ok))
 	})
-	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		l := Car(t.Scratch).(Binding).Self()
-		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
+	scope0.DefineMethod("ne", func(t *Task, args Cell) bool {
+		for l1 := args; l1 != Null; l1 = Cdr(l1) {
+			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
+				v1 := Car(l1)
+				v2 := Car(l2)
 
-		return t.Return(NewBoolean(c != nil))
+				if v1.Equal(v2) {
+					return t.Return(False)
+				}
+			}
+		}
+
+		return t.Return(True)
 	})
-	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
-
-		s := raw(Car(args))
-		v := Cadr(args)
-
-		k := NewSymbol(s)
-
-		o.Public(k, v)
-		return t.Return(v)
-	})
-	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
-		l := Car(t.Scratch).(Binding).Self()
-		r := l.Remove(NewSymbol(raw(Car(args))))
-
-		return t.Return(NewBoolean(r))
+	scope0.DefineMethod("not", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(!Car(args).Bool()))
 	})
 
+	/* Standard Functions. */
 	scope0.DefineMethod("append", func(t *Task, args Cell) bool {
 		/*
-		 * NOTE: Our append works differently than Scheme's append.
+		 * NOTE: oh's append works differently than Scheme's append.
 		 *       To mimic Scheme's behavior use: append l1 @l2 ... @ln
 		 */
 
@@ -584,16 +483,10 @@ func init() {
 
 		return t.Return(s)
 	})
-	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
-		scope := Car(t.Scratch).(Binding).Self().Expose()
-		t.RemoveState()
-		if t.Lexical != scope {
-			t.NewStates(SaveLexical)
-			t.Lexical = scope
-		}
-		t.NewStates(psEvalElement)
-		t.Code = Car(args)
-		t.Scratch = Cdr(t.Scratch)
+	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
+		t.Scratch = List(Car(args))
+
+		t.Stop()
 
 		return true
 	})
@@ -608,6 +501,22 @@ func init() {
 		}
 
 		return t.Return(NewInteger(l))
+	})
+	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
+		s := ""
+		for l := Car(args); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+		return t.Return(NewRawString(t, s))
+	})
+	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
+		s := ""
+		for l := Car(args); l != Null; l = Cdr(l) {
+			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		}
+
+		return t.Return(NewSymbol(s))
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		mode := raw(Car(args))
@@ -684,59 +593,59 @@ func init() {
 		return t.Return(list)
 	})
 
-	/* Arithmetic. */
-	bindArithmetic(scope0)
+	/* Standard Methods. */
+	scope0.PublicMethod("child", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self().Expose()
 
-	/* Generators. */
-	bindGenerators(scope0)
+		return t.Return(NewObject(NewScope(o, nil)))
+	})
+	scope0.PublicMethod("clone", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self().Expose()
 
-	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
-		cap := 0
-		if args != Null {
-			cap = int(Car(args).(Atom).Int())
+		return t.Return(NewObject(o.Copy()))
+	})
+	scope0.PublicMethod("context", func(t *Task, args Cell) bool {
+		self := Car(t.Scratch).(Binding).Self()
+		bare := self.Expose()
+		if self == bare {
+			self = NewObject(bare)
 		}
-
-		return t.Return(NewChannel(t, cap))
+		return t.Return(self)
 	})
-
-	/* Predicates. */
-	bindPredicates(scope0)
-
-	/* Relational. */
-	bindRelational(scope0)
-
-	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
-		pattern := raw(Car(args))
-		text := raw(Cadr(args))
-
-		ok, err := path.Match(pattern, text)
-		if err != nil {
-			panic(err)
+	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
+		scope := Car(t.Scratch).(Binding).Self().Expose()
+		t.RemoveState()
+		if t.Lexical != scope {
+			t.NewStates(SaveLexical)
+			t.Lexical = scope
 		}
+		t.NewStates(psEvalElement)
+		t.Code = Car(args)
+		t.Scratch = Cdr(t.Scratch)
 
-		return t.Return(NewBoolean(ok))
+		return true
 	})
-	scope0.DefineMethod("ne", func(t *Task, args Cell) bool {
-		for l1 := args; l1 != Null; l1 = Cdr(l1) {
-			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
-				v1 := Car(l1)
-				v2 := Car(l2)
+	scope0.PublicMethod("get-slot", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
 
-				if v1.Equal(v2) {
-					return t.Return(False)
-				}
-			}
+		s := raw(Car(args))
+		k := NewSymbol(s)
+
+		c := Resolve(o, nil, k)
+		if c == nil {
+			panic(s + " undefined")
+		} else if a, ok := c.Get().(Binding); ok {
+			return t.Return(a.Bind(t.Lexical))
+		} else {
+			return t.Return(c.Get())
 		}
-
-		return t.Return(True)
 	})
-	scope0.DefineMethod("not", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(!Car(args).Bool()))
+	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
+		l := Car(t.Scratch).(Binding).Self()
+		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(c != nil))
 	})
-
-	/* Simple. */
-	bindSimple(scope0)
-
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
 
@@ -770,25 +679,118 @@ func init() {
 
 		return t.Return(NewRawString(t, modified))
 	})
+	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
+		o := Car(t.Scratch).(Binding).Self()
 
-	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		s := raw(Car(args))
+		v := Cadr(args)
+
+		k := NewSymbol(s)
+
+		o.Public(k, v)
+		return t.Return(v)
+	})
+	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
+		l := Car(t.Scratch).(Binding).Self()
+		r := l.Remove(NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(r))
+	})
+
+	/* Syntax. */
+	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+
+		t.NewBlock(t.Dynamic, t.Lexical)
+
+		return true
+	})
+	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical,
+			psExecIf, SaveCode, psEvalElement)
+
+		t.NewBlock(t.Dynamic, t.Lexical)
+
+		t.Code = Car(t.Code)
+		t.Scratch = Cdr(t.Scratch)
+
+		return true
+	})
+	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
+		t.Scratch = Cdr(t.Scratch)
+
+		s := Null
+		if Length(t.Code) == 3 {
+			if raw(Cadr(t.Code)) != "=" {
+				panic("expected '='")
+			}
+			s = Caddr(t.Code)
+		} else {
+			s = Cadr(t.Code)
 		}
 
-		return t.Return(NewRawString(t, s))
-	})
-	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
+		t.Code = Car(t.Code)
+		if !IsCons(t.Code) {
+			t.ReplaceStates(psExecSet, SaveCode)
+		} else {
+			t.ReplaceStates(SaveDynamic|SaveLexical,
+				psExecSet, SaveCdrCode,
+				psChangeContext, psEvalElement,
+				SaveCarCode)
 		}
 
-		return t.Return(NewSymbol(s))
+		t.NewStates(psEvalElement)
+
+		t.Code = s
+		return true
 	})
+	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
+		child := NewTask(t.Code, NewEnv(t.Dynamic),
+			NewScope(t.Lexical, nil), t)
+
+		go child.Launch()
+
+		SetCar(t.Scratch, child)
+
+		return false
+	})
+	scope0.DefineSyntax("splice", func(t *Task, args Cell) bool {
+		t.ReplaceStates(psExecSplice, psEvalElement)
+
+		t.Code = Car(t.Code)
+		t.Scratch = Cdr(t.Scratch)
+
+		return true
+	})
+	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
+
+		return true
+	})
+
+	/* The rest. */
+	bindTheRest(scope0)
 
 	scope0.Public(NewSymbol("$root"), scope0)
+
+	/* Root Environment. */
+	env0 = NewEnv(nil)
+
+	env0.Add(NewSymbol("false"), False)
+	env0.Add(NewSymbol("true"), True)
+
+	env0.Add(NewSymbol("$$"), NewInteger(int64(syscall.Getpid())))
+	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
+	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
+	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
+	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
+
+	/* Environment variables. */
+	for _, s := range os.Environ() {
+		kv := strings.SplitN(s, "=", 2)
+		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+	}
+
 }
 
 func lookPath(file string) (string, error) {
@@ -934,7 +936,7 @@ func Start(defns string, eval func(Cell), parser reader, cli common.UI) {
 		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			k := "$"+strconv.Itoa(i+1)
+			k := "$" + strconv.Itoa(i+1)
 			env0.Add(NewSymbol(k), NewSymbol(v))
 		}
 

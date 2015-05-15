@@ -279,7 +279,7 @@ func bindRelational(s *Scope) {
 	})
 }
 
-func bindSimple(s *Scope) {
+func bindTheRest(s *Scope) {
 
 	s.DefineSyntax("builtin", func(t *Task, args Cell) bool {
 		return t.Closure(NewBuiltin)

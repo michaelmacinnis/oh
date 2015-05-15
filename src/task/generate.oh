@@ -118,7 +118,7 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineMethod list "t.Return(args)") \
                  (DefineMethod reverse "t.Return(Reverse(Car(args)))")
 
-echo "\nfunc bindSimple(s *Scope) {"
+echo "\nfunc bindTheRest(s *Scope) {"
 for t: method (l) as {
 	define d: car l
 	define n: cadr l
