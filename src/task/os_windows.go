@@ -9,11 +9,7 @@ import (
 	"syscall"
 )
 
-var (
-	InterruptRequest os.Signal = os.Interrupt
-	StopRequest      os.Signal = os.Kill
-	Platform         string    = "windows"
-)
+var Platform string = "windows"
 
 func BecomeProcessGroupLeader() int {
 	// TODO: Not sure what to do on non-Unix platforms.
@@ -48,3 +44,8 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 }
 
 func TerminateProcess(pid int) {}
+
+func evaluate(c Cell) {
+	task0.Eval <- c
+	<-task0.Done
+}

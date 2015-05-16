@@ -5,6 +5,8 @@
 package task
 
 import (
+	"fmt"
+	. "github.com/michaelmacinnis/oh/src/cell"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,9 +14,10 @@ import (
 )
 
 var (
-	InterruptRequest os.Signal = os.Interrupt
-	StopRequest      os.Signal = syscall.SIGTSTP
-	Platform         string    = "unix"
+	Platform string = "unix"
+	done0    chan Cell
+	eval0    chan Cell
+	incoming chan os.Signal
 )
 
 func BecomeProcessGroupLeader() int {
@@ -33,6 +36,13 @@ func ContinueProcess(pid int) {
 
 func InitSignalHandling() {
 	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
+
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	incoming = make(chan os.Signal, len(signals))
+
+	signal.Notify(incoming, signals...)
+
+	go broker()
 }
 
 func JobControlSupported() bool {
@@ -131,4 +141,68 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 
 func TerminateProcess(pid int) {
 	syscall.Kill(pid, syscall.SIGTERM)
+}
+
+func broker() {
+	var c Cell
+	for c == nil && task0.Stack != Null {
+		for c == nil {
+			select {
+			case <-incoming:
+			case c = <-eval0:
+			}
+		}
+		task0.Eval <- c
+		for c != nil {
+			prev := task0
+			select {
+			case sig := <-incoming:
+				// Handle signals.
+				switch sig {
+				case syscall.SIGTSTP:
+					task0.Suspend()
+					last := 0
+					for k := range jobs {
+						if k > last {
+							last = k
+						}
+					}
+					last++
+
+					jobs[last] = task0
+
+					fallthrough
+				case syscall.SIGINT:
+					if sig == syscall.SIGINT {
+						task0.Stop()
+					}
+					fmt.Printf("\n")
+
+					LaunchForegroundTask()
+					c = nil
+				}
+
+			case c = <-task0.Done:
+				if task0 != prev {
+					c = Null
+					continue
+				}
+			}
+		}
+		done0 <- c
+	}
+	os.Exit(status(Car(task0.Scratch)))
+}
+
+func evaluate(c Cell) {
+	eval0 <- c
+	<-done0
+
+	task0.Job.Command = ""
+	task0.Job.Group = 0
+}
+
+func init() {
+	done0 = make(chan Cell)
+	eval0 = make(chan Cell)
 }

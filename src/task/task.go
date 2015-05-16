@@ -10,7 +10,6 @@ import (
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -96,13 +95,10 @@ const (
 )
 
 var (
-	done0       chan Cell
 	env0        *Env
 	envc        *Env
 	envs        *Env
-	eval0       chan Cell
 	external    Cell
-	incoming    chan os.Signal
 	interactive bool
 	jobs        = map[int]*Task{}
 	parse       reader
@@ -129,57 +125,6 @@ func asConduit(o Context) Conduit {
 	}
 
 	return nil
-}
-
-func broker() {
-	var c Cell
-	for c == nil && task0.Stack != Null {
-		for c == nil {
-			select {
-			case <-incoming:
-			case c = <-eval0:
-			}
-		}
-		task0.Eval <- c
-		for c != nil {
-			prev := task0
-			select {
-			case sig := <-incoming:
-				// Handle signals.
-				switch sig {
-				case StopRequest:
-					task0.Suspend()
-					last := 0
-					for k := range jobs {
-						if k > last {
-							last = k
-						}
-					}
-					last++
-
-					jobs[last] = task0
-
-					fallthrough
-				case InterruptRequest:
-					if sig == InterruptRequest {
-						task0.Stop()
-					}
-					fmt.Printf("\n")
-
-					LaunchForegroundTask()
-					c = nil
-				}
-
-			case c = <-task0.Done:
-				if task0 != prev {
-					c = Null
-					continue
-				}
-			}
-		}
-		done0 <- c
-	}
-	os.Exit(status(Car(task0.Scratch)))
 }
 
 func deref(name, ref string) Cell {
@@ -218,14 +163,6 @@ func deref(name, ref string) Cell {
 	}
 
 	return Null
-}
-
-func evaluate(c Cell) {
-	eval0 <- c
-	<-done0
-
-	task0.Job.Command = ""
-	task0.Job.Group = 0
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -278,9 +215,6 @@ func findExecutable(file string) error {
 
 func init() {
 	str = make(map[string]*String)
-
-	done0 = make(chan Cell)
-	eval0 = make(chan Cell)
 
 	runnable = make(chan bool)
 	close(runnable)
@@ -423,7 +357,7 @@ func init() {
 	bindArithmetic(scope0)
 
 	/* Builtins. */
-	DefineBuiltin("cd", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
 		err := os.Chdir(raw(Car(args)))
 		status := 0
 		if err != nil {
@@ -436,12 +370,12 @@ func init() {
 
 		return t.Return(NewStatus(int64(status)))
 	})
-	DefineBuiltin("debug", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
 		t.Debug("debug")
 
 		return false
 	})
-	DefineBuiltin("exists", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("exists", func(t *Task, args Cell) bool {
 		count := 0
 		for ; args != Null; args = Cdr(args) {
 			count++
@@ -452,7 +386,7 @@ func init() {
 
 		return t.Return(NewBoolean(count > 0))
 	})
-	DefineBuiltin("fg", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
 		if !JobControlEnabled() || t != task0 {
 			return false
 		}
@@ -482,7 +416,7 @@ func init() {
 
 		return true
 	})
-	DefineBuiltin("jobs", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
 		if !JobControlEnabled() || t != task0 ||
 			len(jobs) == 0 {
 			return false
@@ -506,7 +440,7 @@ func init() {
 		}
 		return false
 	})
-	DefineBuiltin("module", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
 
 		if err != nil {
@@ -522,7 +456,7 @@ func init() {
 
 		return t.Return(c.Get())
 	})
-	DefineBuiltin("run", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("run", func(t *Task, args Cell) bool {
 		if args == Null {
 			SetCar(t.Scratch, False)
 			return false
@@ -1009,16 +943,8 @@ func wpipe(c Cell) *os.File {
 	return toConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
-func DefineBuiltin(k string, a Function) {
-	scope0.DefineBuiltin(k, a)
-}
-
 func ForegroundTask() *Task {
 	return task0
-}
-
-func Incoming() chan os.Signal {
-	return incoming
 }
 
 func IsSimple(c Cell) bool {
@@ -1050,9 +976,6 @@ func Start(defns string, parser reader, cli common.UI) {
 		task0.Eval <- c
 		<-task0.Done
 	}
-
-	signals := []os.Signal{InterruptRequest, StopRequest}
-	incoming = make(chan os.Signal, len(signals))
 
 	b := bufio.NewReader(strings.NewReader(defns))
 	parse(nil, b, deref, eval)
@@ -1092,9 +1015,6 @@ func Start(defns string, parser reader, cli common.UI) {
 		interactive = true
 
 		InitSignalHandling()
-		signal.Notify(incoming, signals...)
-
-		go broker()
 		parse(nil, cli, deref, evaluate)
 
 		cli.Close()
