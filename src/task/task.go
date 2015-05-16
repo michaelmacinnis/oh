@@ -133,22 +133,22 @@ func asConduit(o Context) Conduit {
 
 func broker() {
 	var c Cell
-	for c == nil && ForegroundTask().Stack != Null {
+	for c == nil && task0.Stack != Null {
 		for c == nil {
 			select {
 			case <-incoming:
 			case c = <-eval0:
 			}
 		}
-		ForegroundTask().Eval <- c
+		task0.Eval <- c
 		for c != nil {
-			prev := ForegroundTask()
+			prev := task0
 			select {
 			case sig := <-incoming:
 				// Handle signals.
 				switch sig {
 				case StopRequest:
-					ForegroundTask().Suspend()
+					task0.Suspend()
 					last := 0
 					for k := range jobs {
 						if k > last {
@@ -157,12 +157,12 @@ func broker() {
 					}
 					last++
 
-					jobs[last] = ForegroundTask()
+					jobs[last] = task0
 
 					fallthrough
 				case InterruptRequest:
 					if sig == InterruptRequest {
-						ForegroundTask().Stop()
+						task0.Stop()
 					}
 					fmt.Printf("\n")
 
@@ -170,8 +170,8 @@ func broker() {
 					c = nil
 				}
 
-			case c = <-ForegroundTask().Done:
-				if ForegroundTask() != prev {
+			case c = <-task0.Done:
+				if task0 != prev {
 					c = Null
 					continue
 				}
@@ -179,7 +179,7 @@ func broker() {
 		}
 		done0 <- c
 	}
-	os.Exit(status(Car(ForegroundTask().Scratch)))
+	os.Exit(status(Car(task0.Scratch)))
 }
 
 func deref(name, ref string) Cell {
@@ -224,9 +224,8 @@ func evaluate(c Cell) {
 	eval0 <- c
 	<-done0
 
-	task := ForegroundTask()
-	task.Job.Command = ""
-	task.Job.Group = 0
+	task0.Job.Command = ""
+	task0.Job.Group = 0
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -286,8 +285,7 @@ func init() {
 	runnable = make(chan bool)
 	close(runnable)
 
-	pid = BecomeProcessGroupLeader()
-	pgid = pid
+	pgid = BecomeProcessGroupLeader()
 
 	active := make(chan bool)
 	notify := make(chan Notification)
@@ -455,7 +453,7 @@ func init() {
 		return t.Return(NewBoolean(count > 0))
 	})
 	DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != ForegroundTask() {
+		if !JobControlEnabled() || t != task0 {
 			return false
 		}
 
@@ -480,12 +478,12 @@ func init() {
 
 		delete(jobs, index)
 
-		SetForegroundTask(found)
+		setForegroundTask(found)
 
 		return true
 	})
 	DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != ForegroundTask() ||
+		if !JobControlEnabled() || t != task0 ||
 			len(jobs) == 0 {
 			return false
 		}
@@ -970,6 +968,16 @@ func rpipe(c Cell) *os.File {
 
 }
 
+func setForegroundTask(t *Task) {
+	if t.Job.Group != 0 {
+		SetForegroundGroup(t.Job.Group)
+		t.Job.mode.ApplyMode()
+	}
+	task0, t = t, task0
+	t.Stop()
+	task0.Continue()
+}
+
 func status(c Cell) int {
 	a, ok := c.(Atom)
 	if !ok {
@@ -1034,27 +1042,13 @@ func Pgid() int {
 	return pgid
 }
 
-func Pid() int {
-	return pid
-}
-
-func SetForegroundTask(t *Task) {
-	if t.Job.Group != 0 {
-		SetForegroundGroup(t.Job.Group)
-		t.Job.mode.ApplyMode()
-	}
-	task0, t = t, task0
-	t.Stop()
-	task0.Continue()
-}
-
 func Start(defns string, parser reader, cli common.UI) {
 	LaunchForegroundTask()
 
 	parse = parser
 	eval := func(c Cell) {
-		ForegroundTask().Eval <- c
-		<-ForegroundTask().Done
+		task0.Eval <- c
+		<-task0.Done
 	}
 
 	signals := []os.Signal{InterruptRequest, StopRequest}

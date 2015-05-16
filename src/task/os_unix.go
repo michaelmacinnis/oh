@@ -62,7 +62,7 @@ func Monitor(active chan bool, notify chan Notification) {
 			}
 
 			if status.Stopped() {
-				if pid == ForegroundTask().Job.Group {
+				if pid == task0.Job.Group {
 					incoming <- syscall.SIGTSTP
 				}
 				continue
@@ -70,7 +70,7 @@ func Monitor(active chan bool, notify chan Notification) {
 
 			if status.Signaled() {
 				if status.Signal() == syscall.SIGINT &&
-					pid == ForegroundTask().Job.Group {
+					pid == task0.Job.Group {
 					incoming <- syscall.SIGINT
 				}
 				status += 128
