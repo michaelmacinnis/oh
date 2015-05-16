@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -95,12 +96,15 @@ const (
 )
 
 var (
+	done0 chan Cell
 	env0        *Env
 	envc        *Env
 	envs        *Env
+	eval0 chan Cell
 	external    Cell
 	incoming    chan os.Signal
 	interactive bool
+	jobs = map[int]*Task{}
 	parse       reader
 	pgid        int
 	pid         int
@@ -125,6 +129,57 @@ func asConduit(o Context) Conduit {
 	}
 
 	return nil
+}
+
+func broker() {
+	var c Cell
+	for c == nil && ForegroundTask().Stack != Null {
+		for c == nil {
+			select {
+			case <-incoming:
+			case c = <-eval0:
+			}
+		}
+		ForegroundTask().Eval <- c
+		for c != nil {
+			prev := ForegroundTask()
+			select {
+			case sig := <-incoming:
+				// Handle signals.
+				switch sig {
+				case StopRequest:
+					ForegroundTask().Suspend()
+					last := 0
+					for k := range jobs {
+						if k > last {
+							last = k
+						}
+					}
+					last++
+
+					jobs[last] = ForegroundTask()
+
+					fallthrough
+				case InterruptRequest:
+					if sig == InterruptRequest {
+						ForegroundTask().Stop()
+					}
+					fmt.Printf("\n")
+
+					LaunchForegroundTask()
+					c = nil
+				}
+
+			case c = <-ForegroundTask().Done:
+				if ForegroundTask() != prev {
+					c = Null
+					continue
+				}
+			}
+		}
+		done0 <- c
+	}
+	os.Exit(status(Car(ForegroundTask().Scratch)))
 }
 
 func deref(name, ref string) Cell {
@@ -163,6 +218,15 @@ func deref(name, ref string) Cell {
 	}
 
 	return Null
+}
+
+func evaluate(c Cell) {
+	eval0 <- c
+	<-done0
+
+	task := ForegroundTask()
+	task.Job.Command = ""
+	task.Job.Group = 0
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -216,11 +280,14 @@ func findExecutable(file string) error {
 func init() {
 	str = make(map[string]*String)
 
-	pid = BecomeProcessGroupLeader()
-	pgid = pid
+	done0 = make(chan Cell)
+	eval0 = make(chan Cell)
 
 	runnable = make(chan bool)
 	close(runnable)
+
+	pid = BecomeProcessGroupLeader()
+	pgid = pid
 
 	active := make(chan bool)
 	notify := make(chan Notification)
@@ -386,6 +453,60 @@ func init() {
 		}
 
 		return t.Return(NewBoolean(count > 0))
+	})
+	DefineBuiltin("fg", func(t *Task, args Cell) bool {
+		if !JobControlEnabled() || t != ForegroundTask() {
+			return false
+		}
+
+		index := 0
+		if args != Null {
+			if a, ok := Car(args).(Atom); ok {
+				index = int(a.Int())
+			}
+		} else {
+			for k := range jobs {
+				if k > index {
+					index = k
+				}
+			}
+		}
+
+		found, ok := jobs[index]
+
+		if !ok {
+			return false
+		}
+
+		delete(jobs, index)
+
+		SetForegroundTask(found)
+
+		return true
+	})
+	DefineBuiltin("jobs", func(t *Task, args Cell) bool {
+		if !JobControlEnabled() || t != ForegroundTask() ||
+			len(jobs) == 0 {
+			return false
+		}
+
+		i := make([]int, 0, len(jobs))
+		for k := range jobs {
+			i = append(i, k)
+		}
+		sort.Ints(i)
+		for k, v := range i {
+			if k != len(jobs)-1 {
+				fmt.Printf("[%d] \t%d\t%s\n", v,
+                                           jobs[v].Job.Group,
+                                           jobs[v].Job.Command)
+			} else {
+				fmt.Printf("[%d]+\t%d\t%s\n", v,
+                                           jobs[v].Job.Group,
+                                           jobs[v].Job.Command)
+			}
+		}
+		return false
 	})
 	DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
@@ -849,6 +970,14 @@ func rpipe(c Cell) *os.File {
 
 }
 
+func status(c Cell) int {
+	a, ok := c.(Atom)
+	if !ok {
+		return 0
+	}
+	return int(a.Status())
+}
+
 /* Convert Context into a Conduit. */
 func toConduit(o Context) Conduit {
 	conduit := asConduit(o)
@@ -919,8 +1048,14 @@ func SetForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func Start(defns string, eval func(Cell), parser reader, cli common.UI) {
+func Start(defns string, parser reader, cli common.UI) {
+	LaunchForegroundTask()
+
 	parse = parser
+	eval := func (c Cell) {
+		ForegroundTask().Eval <- c
+		<-ForegroundTask().Done
+	}
 
 	signals := []os.Signal{InterruptRequest, StopRequest}
 	incoming = make(chan os.Signal, len(signals))
@@ -965,7 +1100,8 @@ func Start(defns string, eval func(Cell), parser reader, cli common.UI) {
 		InitSignalHandling()
 		signal.Notify(incoming, signals...)
 
-		parse(nil, cli, deref, eval)
+		go broker()
+		parse(nil, cli, deref, evaluate)
 
 		cli.Close()
 		fmt.Printf("\n")
