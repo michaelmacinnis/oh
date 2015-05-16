@@ -22,7 +22,6 @@ Oh is released under an MIT-style license.
 package main
 
 import (
-	"github.com/michaelmacinnis/oh/src/boot"
 	"github.com/michaelmacinnis/oh/src/parser"
 	"github.com/michaelmacinnis/oh/src/task"
 	"github.com/michaelmacinnis/oh/src/ui"
@@ -30,7 +29,7 @@ import (
 )
 
 func main() {
-	task.Start(boot.Script, parser.Parse, ui.New(os.Args))
+	task.Start(parser.Parse, ui.New(os.Args))
 }
 
 //go:generate bin/test.oh

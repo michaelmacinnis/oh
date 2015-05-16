@@ -5,6 +5,7 @@ package task
 import (
 	"bufio"
 	"fmt"
+	"github.com/michaelmacinnis/oh/src/boot"
 	. "github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/common"
 	"github.com/peterh/liner"
@@ -968,7 +969,7 @@ func Pgid() int {
 	return pgid
 }
 
-func Start(defns string, parser reader, cli common.UI) {
+func Start(parser reader, cli common.UI) {
 	LaunchForegroundTask()
 
 	parse = parser
@@ -977,7 +978,7 @@ func Start(defns string, parser reader, cli common.UI) {
 		<-task0.Done
 	}
 
-	b := bufio.NewReader(strings.NewReader(defns))
+	b := bufio.NewReader(strings.NewReader(boot.Script))
 	parse(nil, b, deref, eval)
 
 	/* Command-line arguments */
