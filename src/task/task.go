@@ -96,15 +96,15 @@ const (
 )
 
 var (
-	done0 chan Cell
+	done0       chan Cell
 	env0        *Env
 	envc        *Env
 	envs        *Env
-	eval0 chan Cell
+	eval0       chan Cell
 	external    Cell
 	incoming    chan os.Signal
 	interactive bool
-	jobs = map[int]*Task{}
+	jobs        = map[int]*Task{}
 	parse       reader
 	pgid        int
 	pid         int
@@ -498,12 +498,12 @@ func init() {
 		for k, v := range i {
 			if k != len(jobs)-1 {
 				fmt.Printf("[%d] \t%d\t%s\n", v,
-                                           jobs[v].Job.Group,
-                                           jobs[v].Job.Command)
+					jobs[v].Job.Group,
+					jobs[v].Job.Command)
 			} else {
 				fmt.Printf("[%d]+\t%d\t%s\n", v,
-                                           jobs[v].Job.Group,
-                                           jobs[v].Job.Command)
+					jobs[v].Job.Group,
+					jobs[v].Job.Command)
 			}
 		}
 		return false
@@ -1052,7 +1052,7 @@ func Start(defns string, parser reader, cli common.UI) {
 	LaunchForegroundTask()
 
 	parse = parser
-	eval := func (c Cell) {
+	eval := func(c Cell) {
 		ForegroundTask().Eval <- c
 		<-ForegroundTask().Done
 	}
