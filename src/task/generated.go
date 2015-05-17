@@ -125,6 +125,10 @@ func bindPredicates(s *Scope) {
 		return t.Return(NewBoolean(IsCons(Car(args))))
 	})
 
+	s.DefineMethod("is-continuation", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(IsContinuation(Car(args))))
+	})
+
 	s.DefineMethod("is-float", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsFloat(Car(args))))
 	})

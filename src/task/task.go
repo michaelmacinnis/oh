@@ -1116,6 +1116,14 @@ type Continuation struct {
 	Stack   Cell
 }
 
+func IsContinuation(c Cell) bool {
+	switch c.(type) {
+	case *Continuation:
+		return true
+	}
+	return false
+}
+
 func NewContinuation(scratch Cell, stack Cell) *Continuation {
 	return &Continuation{Scratch: scratch, Stack: stack}
 }
