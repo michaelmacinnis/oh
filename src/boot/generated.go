@@ -5,25 +5,24 @@
 package boot
 
 var Script string = `
-define $connect: syntax (type out close) as {
+define $connect: syntax (type out) as {
     set type: eval type
-    set close: eval close
     syntax e (left right) as {
         define p: type
         spawn {
             eval: list (quote dynamic) out (quote p)
             e::eval left
-            if close: p::writer-close
+            p::writer-close
         }
 	block {
             dynamic $stdin = p
             e::eval right
-            if close: p::reader-close
+            p::reader-close
 	}
     }
 }
 define $redirect: syntax (chan mode mthd) as {
-    syntax e (c cmd) as {
+    syntax e (c cmd) as: block {
         define c: e::eval c
         define f = ()
         if (not: or (is-channel c) (is-pipe c)) {
@@ -105,8 +104,8 @@ define cddaar: method (l) as: cddr: caar l
 define cddadr: method (l) as: cddr: cadr l
 define cdddar: method (l) as: cddr: cdar l
 define cddddr: method (l) as: cddr: cddr l
-define channel-stderr: $connect channel $stderr true
-define channel-stdout: $connect channel $stdout true
+define channel-stderr: $connect channel $stderr
+define channel-stdout: $connect channel $stdout
 define echo: builtin (: args) as {
     if (is-null args) {
         $stdout::write: symbol ""
@@ -165,8 +164,8 @@ define or: syntax e (: lst) as {
     }
     return r
 }
-define pipe-stderr: $connect pipe $stderr true
-define pipe-stdout: $connect pipe $stdout true
+define pipe-stderr: $connect pipe $stderr
+define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) as: echo: f::sprintf @args
 define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read

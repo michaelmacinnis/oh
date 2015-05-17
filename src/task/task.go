@@ -1620,10 +1620,15 @@ func (t *Task) Equal(c Cell) bool {
 func (t *Task) Apply(args Cell) bool {
 	m := Car(t.Scratch).(Binding)
 
-	t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+	if t.GetState() == psExecSyntax {
+		t.ReplaceStates(SaveLexical, psEvalBlock)
+		t.Lexical = NewScope(m.Ref().Scope(), nil)
+	} else {
+		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+		t.NewBlock(t.Dynamic, m.Ref().Scope())
+	}
 
 	t.Code = m.Ref().Body()
-	t.NewBlock(t.Dynamic, m.Ref().Scope())
 
 	label := m.Ref().Label()
 	if label != Null {
