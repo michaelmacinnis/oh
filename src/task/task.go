@@ -34,6 +34,12 @@ type Conduit interface {
 	Write(c Cell)
 }
 
+type ui interface {
+	ReadString(delim byte) (line string, err error)
+	Close() error
+	Exists() bool
+}
+
 type Notification struct {
 	pid    int
 	status syscall.WaitStatus
@@ -388,7 +394,7 @@ func init() {
 		return t.Return(NewBoolean(count > 0))
 	})
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != task0 {
+		if !jobControlEnabled() || t != task0 {
 			return false
 		}
 
@@ -418,7 +424,7 @@ func init() {
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !JobControlEnabled() || t != task0 ||
+		if !jobControlEnabled() || t != task0 ||
 			len(jobs) == 0 {
 			return false
 		}
@@ -847,6 +853,14 @@ func init() {
 
 }
 
+func isSimple(c Cell) bool {
+	return IsAtom(c) || IsCons(c)
+}
+
+func jobControlEnabled() bool {
+	return interactive && JobControlSupported()
+}
+
 func lookPath(file string) (string, error) {
 	cnf := "command not found"
 
@@ -948,14 +962,6 @@ func ForegroundTask() *Task {
 	return task0
 }
 
-func IsSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
-}
-
-func JobControlEnabled() bool {
-	return interactive && JobControlSupported()
-}
-
 func LaunchForegroundTask() {
 	if task0 != nil {
 		mode, _ := liner.TerminalMode()
@@ -969,7 +975,7 @@ func Pgid() int {
 	return pgid
 }
 
-func Start(parser reader, cli common.UI) {
+func Start(parser reader, cli ui) {
 	LaunchForegroundTask()
 
 	parse = parser
@@ -1707,7 +1713,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Lock()
 
-	if JobControlEnabled() {
+	if jobControlEnabled() {
 		attr.Sys = SysProcAttr(t.Group)
 	}
 
@@ -1717,7 +1723,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 		return nil, err
 	}
 
-	if JobControlEnabled() {
+	if jobControlEnabled() {
 		if t.Group == 0 {
 			t.Group = proc.Pid
 		}
@@ -1729,7 +1735,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	status := JoinProcess(proc)
 
-	if JobControlEnabled() {
+	if jobControlEnabled() {
 		if t.Group == t.pid {
 			t.Group = 0
 		}
@@ -1844,7 +1850,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 			return false, r + " undefined"
 		}
 		t.Scratch = Cons(sym, t.Scratch)
-	} else if simple && !IsSimple(c.Get()) {
+	} else if simple && !isSimple(c.Get()) {
 		t.Scratch = Cons(sym, t.Scratch)
 	} else if a, ok := c.Get().(Binding); ok {
 		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
