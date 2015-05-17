@@ -201,7 +201,21 @@ define substitute-stdin: syntax () as {
 define substitute-stdout: syntax () as {
     echo "process substitution not yet implemented."
 }
+define throw: method (ex: args) as {
+	define handlers = $handlers
+	while (not: is-null handlers) {
+		define entry: car handlers
+		define pattern: car entry
+		define handler: cdr entry
+		if (and (match pattern ex) (handler ex @args)) {
+			return true
+		}
+		set handlers: cdr handlers
+	}
+	return false
+}
 define write: method (: args) as: $stdout::write @args
+dynamic $handlers = ()
 
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 
