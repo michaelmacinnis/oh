@@ -22,7 +22,7 @@ define $connect: syntax (type out) as {
     }
 }
 define $redirect: syntax (chan mode mthd) as {
-    syntax e (c cmd) as: block {
+    syntax e (c cmd) as: make-env {
         define c: e::eval c
         define f = ()
         if (not: or (is-channel c) (is-pipe c)) {

@@ -776,6 +776,20 @@ func init() {
 
 		return true
 	})
+	scope0.DefineSyntax("make-env", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveDynamic, psEvalBlock)
+
+		t.Dynamic = NewEnv(t.Dynamic)
+
+		return true
+	})
+	scope0.DefineSyntax("make-scope", func(t *Task, args Cell) bool {
+		t.ReplaceStates(SaveLexical, psEvalBlock)
+
+		t.Lexical = NewScope(t.Lexical, nil)
+
+		return true
+	})
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Scratch = Cdr(t.Scratch)
 
