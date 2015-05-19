@@ -184,36 +184,8 @@ func Cddr(c Cell) Cell {
 	return c.(*Pair).cdr.(*Pair).cdr
 }
 
-func Caaar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).car.(*Pair).car
-}
-
-func Caadr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).car.(*Pair).car
-}
-
-func Cadar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).cdr.(*Pair).car
-}
-
 func Caddr(c Cell) Cell {
 	return c.(*Pair).cdr.(*Pair).cdr.(*Pair).car
-}
-
-func Cdaar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).car.(*Pair).cdr
-}
-
-func Cdadr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).car.(*Pair).cdr
-}
-
-func Cddar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).cdr.(*Pair).cdr
-}
-
-func Cdddr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).cdr.(*Pair).cdr
 }
 
 func IsAtom(c Cell) bool {
@@ -236,34 +208,6 @@ func IsNumber(c Cell) bool {
 		return t.isNumeric()
 	}
 	return false
-}
-
-func Join(list Cell, elements ...Cell) Cell {
-	var pair, prev, start Cell
-
-	if list != nil && list != Null {
-		start = Cons(Car(list), Null)
-
-		for list = Cdr(list); list != Null; list = Cdr(list) {
-			pair = Cons(Car(list), Null)
-			SetCdr(prev, pair)
-			prev = pair
-		}
-	} else if len(elements) > 0 {
-		return Join(elements[0], elements[1:]...)
-	} else {
-		return Null
-	}
-
-	for index := 0; index < len(elements); index++ {
-		for list = elements[index]; list != Null; list = Cdr(list) {
-			pair = Cons(Car(list), Null)
-			SetCdr(prev, pair)
-			prev = pair
-		}
-	}
-
-	return start
 }
 
 func JoinTo(list Cell, elements ...Cell) Cell {
