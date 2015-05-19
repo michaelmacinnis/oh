@@ -1112,7 +1112,7 @@ func (ch *Channel) ReadLine(t *Task) Cell {
 	if v == nil {
 		return False
 	}
-	return NewString(t, v.String())
+	return NewRawString(t, v.String())
 }
 
 func (ch *Channel) WriterClose() {
@@ -1282,7 +1282,7 @@ func (p *Pipe) ReadLine(t *Task) Cell {
 		return Null
 	}
 
-	return NewString(t, strings.TrimRight(s, "\n"))
+	return NewRawString(t, strings.TrimRight(s, "\n"))
 }
 
 func (p *Pipe) WriterClose() {
