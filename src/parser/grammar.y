@@ -35,8 +35,6 @@ top_block: opt_evaluate_command;
 
 top_block: top_block "\n" opt_evaluate_command;
 
-opt_evaluate_command: error;
-
 opt_evaluate_command: { $$.c = Null }; /* Empty */
 
 opt_evaluate_command: command {
