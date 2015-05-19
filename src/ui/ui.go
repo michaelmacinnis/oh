@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-type Liner struct {
+type cli struct {
 	*liner.State
 }
 
@@ -23,7 +23,7 @@ var (
 	uncooked liner.ModeApplier
 )
 
-func New(args []string) *Liner {
+func New(args []string) *cli {
 	if len(args) > 1 {
 		return nil
 	}
@@ -34,22 +34,22 @@ func New(args []string) *Liner {
 		return nil
 	}
 
-	cli := &Liner{liner.NewLiner()}
+	r := &cli{liner.NewLiner()}
 
 	uncooked, _ = liner.TerminalMode()
 
-	cli.SetCtrlCAborts(true)
-	cli.SetTabCompletionStyle(liner.TabPrints)
-	cli.SetWordCompleter(complete)
+	r.SetCtrlCAborts(true)
+	r.SetTabCompletionStyle(liner.TabPrints)
+	r.SetWordCompleter(complete)
 
-	return cli
+	return r
 }
 
-func (cli *Liner) Exists() bool {
+func (cli *cli) Exists() bool {
 	return cli != nil
 }
 
-func (cli *Liner) ReadString(delim byte) (line string, err error) {
+func (cli *cli) ReadString(delim byte) (line string, err error) {
 	task.SetForegroundGroup(task.Pgid())
 
 	uncooked.ApplyMode()
