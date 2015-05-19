@@ -28,10 +28,10 @@ define $redirect: syntax (chan mode mthd) as {
     }
 }
 define ...: method (: args) as {
-    set $cwd = $origin
+    cd $origin
     define path: car args
     if (eq 2: length args) {
-        set $cwd: car args
+        cd: car args
         set path: cadr args
     }
     while true {
