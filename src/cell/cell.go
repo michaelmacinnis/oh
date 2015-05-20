@@ -202,10 +202,10 @@ func IsNull(c Cell) bool {
 
 func IsNumber(c Cell) bool {
 	switch t := c.(type) {
-	case Number:
-		return true
 	case *Symbol:
 		return t.isNumeric()
+	case Number:
+		return true
 	}
 	return false
 }

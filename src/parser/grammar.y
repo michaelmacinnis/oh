@@ -156,7 +156,8 @@ list: expression { $$.c = Cons($1.c, Null) };
 list: list expression { $$.c = AppendTo($1.c, $2.c) };
 
 expression: expression "^" expression {
-	s := Cons(task.NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+	t := yylex.(*scanner).task
+	s := Cons(task.NewRawString(t, ""), NewSymbol("join"))
 	$$.c = List(s, $1.c, $3.c)
 };
 

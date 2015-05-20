@@ -59,7 +59,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line grammar.y:195
+//line grammar.y:196
 
 
 
@@ -711,60 +711,61 @@ yydefault:
 		yyDollar = yyS[yypt-3:yypt+1]
 		//line grammar.y:158
 		{
-		s := Cons(task.NewString(yylex.(*scanner).task, ""), NewSymbol("join"))
+		t := yylex.(*scanner).task
+		s := Cons(task.NewRawString(t, ""), NewSymbol("join"))
 		yyVAL.c = List(s, yyDollar[1].c, yyDollar[3].c)
 	}
 	case 38:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:163
+		//line grammar.y:164
 		{
 		yyVAL.c = List(NewSymbol("splice"), yyDollar[2].c)
 	}
 	case 39:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:167
+		//line grammar.y:168
 		{
 		yyVAL.c = List(NewSymbol("backtick"), yyDollar[2].c)
 	}
 	case 40:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:171
+		//line grammar.y:172
 		{
 		yyVAL.c = Cons(yyDollar[1].c, yyDollar[3].c)
 	}
 	case 41:
 		yyDollar = yyS[yypt-4:yypt+1]
-		//line grammar.y:175
+		//line grammar.y:176
 		{
 		yyVAL.c = yylex.(*scanner).deref(yyDollar[2].s, yyDollar[3].s)
 	}
 	case 42:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:179
+		//line grammar.y:180
 		{ yyVAL = yyDollar[2] }
 	case 43:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:181
+		//line grammar.y:182
 		{ yyVAL.c = Null }
 	case 44:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:183
+		//line grammar.y:184
 		{ yyVAL = yyDollar[1] }
 	case 45:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:185
+		//line grammar.y:186
 		{
 		yyVAL.c = task.NewString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
 	}
 	case 46:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:189
+		//line grammar.y:190
 		{
 		yyVAL.c = task.NewRawString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
 	}
 	case 47:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:193
+		//line grammar.y:194
 		{ yyVAL.c = NewSymbol(yyDollar[1].s) }
 	}
 	goto yystack /* stack new state and value */

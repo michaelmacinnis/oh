@@ -95,7 +95,7 @@ func bindGenerators(s *Scope) {
 	})
 
 	s.DefineMethod("string", func(t *Task, args Cell) bool {
-		return t.Return(NewString(t, Car(args).String()))
+		return t.Return(NewRawString(t, Car(args).String()))
 	})
 
 	s.DefineMethod("symbol", func(t *Task, args Cell) bool {
@@ -483,18 +483,18 @@ func bindStringPredicates(e *Env) {
 	e.Method("to-lower", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToLower(s)))
+		return t.Return(NewRawString(t, strings.ToLower(s)))
 	})
 
 	e.Method("to-title", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToTitle(s)))
+		return t.Return(NewRawString(t, strings.ToTitle(s)))
 	})
 
 	e.Method("to-upper", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToUpper(s)))
+		return t.Return(NewRawString(t, strings.ToUpper(s)))
 	})
 }

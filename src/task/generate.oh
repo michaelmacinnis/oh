@@ -39,7 +39,7 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (pipe "NewPipe(t.Lexical, nil, nil)") \
                  (rational "NewRational(Car(args).(Atom).Rat())") \
                  (status "NewStatus(Car(args).(Atom).Status())") \
-                 (string "NewString(t, Car(args).String())") \
+                 (string "NewRawString(t, Car(args).String())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
 echo "\nfunc bindGenerators(s *Scope) {"
@@ -53,17 +53,8 @@ for t: method (l) as {
 }
 echo "}"
 
-define t: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
-                 (is-builtin IsBuiltin) (is-channel IsChannel) \
-                 (is-cons IsCons) (is-continuation IsContinuation) \
-                 (is-float IsFloat) (is-integer IsInteger) \
-                 (is-method IsMethod) (is-null IsNull) (is-number IsNumber) \
-                 (is-object IsContext) (is-pipe IsPipe) \
-                 (is-rational IsRational) (is-status IsStatus) \
-                 (is-string IsString) (is-symbol IsSymbol) (is-syntax IsSyntax)
-
 echo "\nfunc bindPredicates(s *Scope) {"
-for t: method (l) as {
+for common::predicates: method (l) as {
 	define n: car l
 	define m: cadr l
 	echo: interpolate "
@@ -165,7 +156,7 @@ for t: method (l) as {
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.${m}(s)))
+		return t.Return(NewRawString(t, strings.${m}(s)))
 	})"
 }
 

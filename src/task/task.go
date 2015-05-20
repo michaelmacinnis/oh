@@ -200,7 +200,7 @@ func expand(t *Task, args Cell) Cell {
 
 		for _, v := range m {
 			if v[0] != '.' || s[0] == '.' {
-				e := NewString(t, v)
+				e := NewRawString(t, v)
 				list = AppendTo(list, e)
 			}
 		}
@@ -294,7 +294,7 @@ func init() {
 
 		r := strings.Join(arr, string(raw(sep)))
 
-		return t.Return(NewString(t, r))
+		return t.Return(NewRawString(t, r))
 	})
 	envs.Method("split", func(t *Task, args Cell) bool {
 		r := Null
@@ -305,7 +305,7 @@ func init() {
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
 		for i := len(l) - 1; i >= 0; i-- {
-			r = Cons(NewString(t, l[i]), r)
+			r = Cons(NewRawString(t, l[i]), r)
 		}
 
 		return t.Return(r)
@@ -343,7 +343,7 @@ func init() {
 			end = int(Cadr(args).(Atom).Int())
 		}
 
-		return t.Return(NewString(t, string(s[start:end])))
+		return t.Return(NewRawString(t, string(s[start:end])))
 	})
 	envs.Method("to-list", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))

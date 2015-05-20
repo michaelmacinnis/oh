@@ -48,12 +48,11 @@ write _: is-symbol _
 #-     ] true
 #-     _ true
 
+define common: import: ... common.oh
+
 define x this-is-a-symbol
-define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
-                          is-float is-integer is-method is-null is-number \
-                          is-object is-pipe is-rational is-status is-string \
-                          is-symbol is-syntax
-for predicates: method (name) as {
+for common::predicates: method (names) as {
+    define name: car names
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x
 }
@@ -63,6 +62,7 @@ for predicates: method (name) as {
 #-     is-builtin "x => false"
 #-     is-channel "x => false"
 #-     is-cons "x => false"
+#-     is-continuation "x => false"
 #-     is-float "x => false"
 #-     is-integer "x => false"
 #-     is-method "x => false"
