@@ -39,7 +39,7 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (pipe "NewPipe(t.Lexical, nil, nil)") \
                  (rational "NewRational(Car(args).(Atom).Rat())") \
                  (status "NewStatus(Car(args).(Atom).Status())") \
-                 (string "NewRawString(t, Car(args).String())") \
+                 (string "NewString(t, Car(args).String())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
 echo "\nfunc bindGenerators(s *Scope) {"
@@ -156,7 +156,7 @@ for t: method (l) as {
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
 
-		return t.Return(NewRawString(t, strings.${m}(s)))
+		return t.Return(NewString(t, strings.${m}(s)))
 	})"
 }
 

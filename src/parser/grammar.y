@@ -18,6 +18,7 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/task"
+	"strconv"
 )
 
 type yySymType struct {
@@ -157,7 +158,7 @@ list: list expression { $$.c = AppendTo($1.c, $2.c) };
 
 expression: expression "^" expression {
 	t := yylex.(*scanner).task
-	s := Cons(task.NewRawString(t, ""), NewSymbol("join"))
+	s := Cons(task.NewString(t, ""), NewSymbol("join"))
 	$$.c = List(s, $1.c, $3.c)
 };
 
@@ -184,11 +185,12 @@ expression: "(" ")" { $$.c = Null };
 expression: word { $$ = $1 };
 
 word: DOUBLE_QUOTED {
-	$$.c = task.NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+	v, _ := strconv.Unquote($1.s)
+	$$.c = task.NewString(yylex.(*scanner).task, v)
 };
 
 word: SINGLE_QUOTED {
-	$$.c = task.NewRawString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+	$$.c = task.NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
 };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };

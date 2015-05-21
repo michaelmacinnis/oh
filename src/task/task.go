@@ -200,7 +200,7 @@ func expand(t *Task, args Cell) Cell {
 
 		for _, v := range m {
 			if v[0] != '.' || s[0] == '.' {
-				e := NewRawString(t, v)
+				e := NewString(t, v)
 				list = AppendTo(list, e)
 			}
 		}
@@ -294,7 +294,7 @@ func init() {
 
 		r := strings.Join(arr, string(raw(sep)))
 
-		return t.Return(NewRawString(t, r))
+		return t.Return(NewString(t, r))
 	})
 	envs.Method("split", func(t *Task, args Cell) bool {
 		r := Null
@@ -305,7 +305,7 @@ func init() {
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
 		for i := len(l) - 1; i >= 0; i-- {
-			r = Cons(NewRawString(t, l[i]), r)
+			r = Cons(NewString(t, l[i]), r)
 		}
 
 		return t.Return(r)
@@ -331,7 +331,7 @@ func init() {
 
 		s := fmt.Sprintf(f, argv...)
 
-		return t.Return(NewRawString(t, s))
+		return t.Return(NewString(t, s))
 	})
 	envs.Method("substring", func(t *Task, args Cell) bool {
 		s := []rune(raw(toString(Car(t.Scratch).(Binding).Self())))
@@ -343,7 +343,7 @@ func init() {
 			end = int(Cadr(args).(Atom).Int())
 		}
 
-		return t.Return(NewRawString(t, string(s[start:end])))
+		return t.Return(NewString(t, string(s[start:end])))
 	})
 	envs.Method("to-list", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Scratch).(Binding).Self()))
@@ -568,7 +568,7 @@ func init() {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return t.Return(NewRawString(t, s))
+		return t.Return(NewString(t, s))
 	})
 	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
 		s := ""
@@ -737,7 +737,7 @@ func init() {
 		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
 		modified := r.ReplaceAllStringFunc(original, f)
 
-		return t.Return(NewRawString(t, modified))
+		return t.Return(NewString(t, modified))
 	})
 	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
 		o := Car(t.Scratch).(Binding).Self()
@@ -1112,7 +1112,7 @@ func (ch *Channel) ReadLine(t *Task) Cell {
 	if v == nil {
 		return False
 	}
-	return NewRawString(t, v.String())
+	return NewString(t, v.String())
 }
 
 func (ch *Channel) WriterClose() {
@@ -1282,7 +1282,7 @@ func (p *Pipe) ReadLine(t *Task) Cell {
 		return Null
 	}
 
-	return NewRawString(t, strings.TrimRight(s, "\n"))
+	return NewString(t, strings.TrimRight(s, "\n"))
 }
 
 func (p *Pipe) WriterClose() {
@@ -1473,7 +1473,7 @@ func IsString(c Cell) bool {
 	return false
 }
 
-func NewRawString(t *Task, v string) *String {
+func NewString(t *Task, v string) *String {
 	p, ok := str[v]
 
 	if ok {
@@ -1497,12 +1497,6 @@ func NewRawString(t *Task, v string) *String {
 	}
 
 	return p
-}
-
-func NewString(t *Task, q string) Context {
-	v, _ := strconv.Unquote("\"" + q + "\"")
-
-	return NewRawString(t, v)
 }
 
 func (s *String) Bool() bool {

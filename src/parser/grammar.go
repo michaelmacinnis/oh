@@ -7,6 +7,7 @@ import __yyfmt__ "fmt"
 import (
 	. "github.com/michaelmacinnis/oh/src/cell"
 	"github.com/michaelmacinnis/oh/src/task"
+	"strconv"
 )
 
 type yySymType struct {
@@ -59,7 +60,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line grammar.y:196
+//line grammar.y:198
 
 
 
@@ -539,11 +540,11 @@ yydefault:
 
 	case 4:
 		yyDollar = yyS[yypt-0:yypt+1]
-		//line grammar.y:38
+		//line grammar.y:39
 		{ yyVAL.c = Null }
 	case 5:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:40
+		//line grammar.y:41
 		{
 		yyVAL.c = yyDollar[1].c
 		if (yyDollar[1].c != Null) {
@@ -553,51 +554,51 @@ yydefault:
 	}
 	case 6:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:48
+		//line grammar.y:49
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[1].c)
 	}
 	case 7:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:52
+		//line grammar.y:53
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[1].c, yyDollar[3].c)
 	}
 	case 8:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:56
+		//line grammar.y:57
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[1].c, yyDollar[3].c)
 	}
 	case 9:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:60
+		//line grammar.y:61
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[1].c, yyDollar[3].c)
 	}
 	case 10:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:64
+		//line grammar.y:65
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[3].c, yyDollar[1].c)
 	}
 	case 11:
 		yyDollar = yyS[yypt-4:yypt+1]
-		//line grammar.y:68
+		//line grammar.y:69
 		{
 		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[3].c, yyDollar[1].c)
 	}
 	case 12:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:72
+		//line grammar.y:73
 		{ yyVAL.c = yyDollar[1].c }
 	case 13:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:74
+		//line grammar.y:75
 		{ yyVAL.c = Null }
 	case 14:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:76
+		//line grammar.y:77
 		{
 		if yyDollar[3].c == Null {
 			yyVAL.c = yyDollar[2].c
@@ -607,41 +608,41 @@ yydefault:
 	}
 	case 19:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:92
+		//line grammar.y:93
 		{ yyVAL.c = Null }
 	case 20:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:94
+		//line grammar.y:95
 		{ yyVAL.c = yyDollar[2].c }
 	case 21:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:96
+		//line grammar.y:97
 		{ yyVAL.c = Cons(yyDollar[1].c, Null) }
 	case 22:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:98
+		//line grammar.y:99
 		{ yyVAL.c = AppendTo(yyDollar[1].c, yyDollar[3].c) }
 	case 23:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:100
+		//line grammar.y:101
 		{ yyVAL.c = yyDollar[1].c }
 	case 24:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:102
+		//line grammar.y:103
 		{
 		yyVAL.c = JoinTo(yyDollar[1].c, yyDollar[2].c)
 	}
 	case 25:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:106
+		//line grammar.y:107
 		{ yyVAL.c = yyDollar[1].c }
 	case 26:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:108
+		//line grammar.y:109
 		{ yyVAL.c = Cons(yyDollar[2].c, Null) }
 	case 27:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:110
+		//line grammar.y:111
 		{
 		if yyDollar[2].c == Null {
 			yyVAL.c = yyDollar[3].c
@@ -651,21 +652,21 @@ yydefault:
 	}
 	case 28:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:118
+		//line grammar.y:119
 		{
 		yyVAL.c = yyDollar[2].c
 	}
 	case 29:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:122
+		//line grammar.y:123
 		{ yyVAL.c = Null }
 	case 30:
 		yyDollar = yyS[yypt-4:yypt+1]
-		//line grammar.y:124
+		//line grammar.y:125
 		{ yyVAL.c = yyDollar[2].c }
 	case 31:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:126
+		//line grammar.y:127
 		{
 		if yyDollar[1].c == Null {
 			yyVAL.c = yyDollar[1].c
@@ -675,7 +676,7 @@ yydefault:
 	}
 	case 32:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:134
+		//line grammar.y:135
 		{
 		if yyDollar[1].c == Null {
 			if yyDollar[3].c == Null {
@@ -693,79 +694,80 @@ yydefault:
 	}
 	case 33:
 		yyDollar = yyS[yypt-0:yypt+1]
-		//line grammar.y:150
+		//line grammar.y:151
 		{ yyVAL.c = Null }
 	case 34:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:152
+		//line grammar.y:153
 		{ yyVAL.c = yyDollar[1].c }
 	case 35:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:154
+		//line grammar.y:155
 		{ yyVAL.c = Cons(yyDollar[1].c, Null) }
 	case 36:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:156
+		//line grammar.y:157
 		{ yyVAL.c = AppendTo(yyDollar[1].c, yyDollar[2].c) }
 	case 37:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:158
+		//line grammar.y:159
 		{
 		t := yylex.(*scanner).task
-		s := Cons(task.NewRawString(t, ""), NewSymbol("join"))
+		s := Cons(task.NewString(t, ""), NewSymbol("join"))
 		yyVAL.c = List(s, yyDollar[1].c, yyDollar[3].c)
 	}
 	case 38:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:164
+		//line grammar.y:165
 		{
 		yyVAL.c = List(NewSymbol("splice"), yyDollar[2].c)
 	}
 	case 39:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:168
+		//line grammar.y:169
 		{
 		yyVAL.c = List(NewSymbol("backtick"), yyDollar[2].c)
 	}
 	case 40:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:172
+		//line grammar.y:173
 		{
 		yyVAL.c = Cons(yyDollar[1].c, yyDollar[3].c)
 	}
 	case 41:
 		yyDollar = yyS[yypt-4:yypt+1]
-		//line grammar.y:176
+		//line grammar.y:177
 		{
 		yyVAL.c = yylex.(*scanner).deref(yyDollar[2].s, yyDollar[3].s)
 	}
 	case 42:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:180
+		//line grammar.y:181
 		{ yyVAL = yyDollar[2] }
 	case 43:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:182
+		//line grammar.y:183
 		{ yyVAL.c = Null }
 	case 44:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:184
+		//line grammar.y:185
 		{ yyVAL = yyDollar[1] }
 	case 45:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:186
+		//line grammar.y:187
 		{
-		yyVAL.c = task.NewString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
+		v, _ := strconv.Unquote(yyDollar[1].s)
+		yyVAL.c = task.NewString(yylex.(*scanner).task, v)
 	}
 	case 46:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:190
+		//line grammar.y:192
 		{
-		yyVAL.c = task.NewRawString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
+		yyVAL.c = task.NewString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
 	}
 	case 47:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:194
+		//line grammar.y:196
 		{ yyVAL.c = NewSymbol(yyDollar[1].s) }
 	}
 	goto yystack /* stack new state and value */
