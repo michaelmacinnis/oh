@@ -249,27 +249,25 @@ func init() {
 		panic("private members cannot be added to a conduit")
 	})
 	envc.Method("close", func(t *Task, args Cell) bool {
-		toConduit(Car(t.Scratch).(Binding).Self()).Close()
+		toConduit(t.Self()).Close()
 		return t.Return(True)
 	})
 	envc.Method("reader-close", func(t *Task, args Cell) bool {
-		toConduit(Car(t.Scratch).(Binding).Self()).ReaderClose()
+		toConduit(t.Self()).ReaderClose()
 		return t.Return(True)
 	})
 	envc.Method("read", func(t *Task, args Cell) bool {
-		r := toConduit(Car(t.Scratch).(Binding).Self()).Read(t)
-		return t.Return(r)
+		return t.Return(toConduit(t.Self()).Read(t))
 	})
 	envc.Method("readline", func(t *Task, args Cell) bool {
-		r := toConduit(Car(t.Scratch).(Binding).Self()).ReadLine(t)
-		return t.Return(r)
+		return t.Return(toConduit(t.Self()).ReadLine(t))
 	})
 	envc.Method("writer-close", func(t *Task, args Cell) bool {
-		toConduit(Car(t.Scratch).(Binding).Self()).WriterClose()
+		toConduit(t.Self()).WriterClose()
 		return t.Return(True)
 	})
 	envc.Method("write", func(t *Task, args Cell) bool {
-		toConduit(Car(t.Scratch).(Binding).Self()).Write(args)
+		toConduit(t.Self()).Write(args)
 		return t.Return(True)
 	})
 
@@ -284,7 +282,7 @@ func init() {
 		panic("private members cannot be added to a string")
 	})
 	envs.Method("join", func(t *Task, args Cell) bool {
-		sep := toString(Car(t.Scratch).(Binding).Self())
+		sep := toString(t.Self())
 		arr := make([]string, Length(args))
 
 		for i := 0; args != Null; i++ {
@@ -300,7 +298,7 @@ func init() {
 		r := Null
 
 		sep := Car(args)
-		str := toString(Car(t.Scratch).(Binding).Self())
+		str := toString(t.Self())
 
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
@@ -311,7 +309,7 @@ func init() {
 		return t.Return(r)
 	})
 	envs.Method("sprintf", func(t *Task, args Cell) bool {
-		f := raw(toString(Car(t.Scratch).(Binding).Self()))
+		f := raw(toString(t.Self()))
 
 		argv := []interface{}{}
 		for l := args; l != Null; l = Cdr(l) {
@@ -334,7 +332,7 @@ func init() {
 		return t.Return(NewString(t, s))
 	})
 	envs.Method("substring", func(t *Task, args Cell) bool {
-		s := []rune(raw(toString(Car(t.Scratch).(Binding).Self())))
+		s := []rune(raw(toString(t.Self())))
 
 		start := int(Car(args).(Atom).Int())
 		end := len(s)
@@ -346,7 +344,7 @@ func init() {
 		return t.Return(NewString(t, string(s[start:end])))
 	})
 	envs.Method("to-list", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(t.Self()))
 		l := Null
 		for _, char := range s {
 			l = Cons(NewInteger(int64(char)), l)
@@ -655,17 +653,13 @@ func init() {
 
 	/* Standard Methods. */
 	scope0.PublicMethod("child", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self().Expose()
-
-		return t.Return(NewObject(NewScope(o, nil)))
+		return t.Return(NewObject(NewScope(t.Self().Expose(), nil)))
 	})
 	scope0.PublicMethod("clone", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self().Expose()
-
-		return t.Return(NewObject(o.Copy()))
+		return t.Return(NewObject(t.Self().Expose().Copy()))
 	})
 	scope0.PublicMethod("context", func(t *Task, args Cell) bool {
-		self := Car(t.Scratch).(Binding).Self()
+		self := t.Self()
 		bare := self.Expose()
 		if self == bare {
 			self = NewObject(bare)
@@ -673,7 +667,7 @@ func init() {
 		return t.Return(self)
 	})
 	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
-		scope := Car(t.Scratch).(Binding).Self().Expose()
+		scope := t.Self().Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
 			t.NewStates(SaveLexical)
@@ -686,12 +680,10 @@ func init() {
 		return true
 	})
 	scope0.PublicMethod("get-slot", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
-
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
-		c := Resolve(o, nil, k)
+		c := Resolve(t.Self(), nil, k)
 		if c == nil {
 			panic(s + " undefined")
 		} else if a, ok := c.Get().(Binding); ok {
@@ -701,15 +693,14 @@ func init() {
 		}
 	})
 	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		l := Car(t.Scratch).(Binding).Self()
-		c := Resolve(l, t.Dynamic, NewSymbol(raw(Car(args))))
+		c := Resolve(t.Self(), t.Dynamic, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
 	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
 		original := raw(Car(args))
 
-		l := Car(t.Scratch).(Binding).Self()
+		l := t.Self()
 		if t.Lexical == l.Expose() {
 			l = t.Lexical
 		}
@@ -740,19 +731,16 @@ func init() {
 		return t.Return(NewString(t, modified))
 	})
 	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
-		o := Car(t.Scratch).(Binding).Self()
-
 		s := raw(Car(args))
 		v := Cadr(args)
 
 		k := NewSymbol(s)
 
-		o.Public(k, v)
+		t.Self().Public(k, v)
 		return t.Return(v)
 	})
 	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
-		l := Car(t.Scratch).(Binding).Self()
-		r := l.Remove(NewSymbol(raw(Car(args))))
+		r := t.Self().Remove(NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(r))
 	})
@@ -1834,7 +1822,7 @@ func (t *Task) Listen() {
 func (t *Task) LexicalVar(state int64) bool {
 	t.RemoveState()
 
-	l := Car(t.Scratch).(Binding).Self().Expose()
+	l := t.Self().Expose()
 	if t.Lexical != l {
 		t.NewStates(SaveLexical)
 		t.Lexical = l
@@ -2124,6 +2112,10 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 func (t *Task) Runnable() bool {
 	return !<-t.suspended
+}
+
+func (t *Task) Self() Context {
+	return Car(t.Scratch).(Binding).Self()
 }
 
 func (t *Task) Stop() {
