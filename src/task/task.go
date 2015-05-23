@@ -1499,7 +1499,33 @@ func (s *String) Equal(c Cell) bool {
 }
 
 func (s *String) String() string {
-	return strconv.Quote(string(s.v))
+	var retain func(c, v string) string
+	retain = func(c, v string) string {
+		l := len(c)
+
+		if l == 0 {
+			s := strconv.Quote(v)
+			return s[1:len(s)-1]
+		}
+
+		type transform func(string, string) string
+		mapper := func(f transform, c string, s []string) []string {
+			for i, v := range s {
+				s[i] = f(c, v)
+			}
+			return s
+		}
+
+		h := c[0:1]
+		t := c[1:l]
+
+                /*
+		 * Split and join on the current character we want to retain.
+		 * Pass the remaining list of characters along and repeat.
+                */
+		return strings.Join(mapper(retain, t, strings.Split(v, h)), h)
+	}
+	return "\"" + retain("\n\t", s.v) + "\""
 }
 
 func (s *String) Float() (f float64) {
