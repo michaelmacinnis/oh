@@ -1505,7 +1505,7 @@ func (s *String) String() string {
 
 		if l == 0 {
 			s := strconv.Quote(v)
-			return s[1:len(s)-1]
+			return s[1 : len(s)-1]
 		}
 
 		type transform func(string, string) string
@@ -1519,10 +1519,10 @@ func (s *String) String() string {
 		h := c[0:1]
 		t := c[1:l]
 
-                /*
+		/*
 		 * Split and join on the current character we want to retain.
 		 * Pass the remaining list of characters along and repeat.
-                */
+		 */
 		return strings.Join(mapper(retain, t, strings.Split(v, h)), h)
 	}
 	return "\"" + retain("\n\t", s.v) + "\""
