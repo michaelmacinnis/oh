@@ -5,9 +5,9 @@ package task
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/oh/src/boot"
-	. "github.com/michaelmacinnis/oh/src/cell"
-	"github.com/michaelmacinnis/oh/src/common"
+	"github.com/michaelmacinnis/oh/pkg/boot"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/peterh/liner"
 	"math/big"
 	"os"

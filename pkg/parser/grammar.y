@@ -16,8 +16,8 @@
 package parser
 
 import (
-	. "github.com/michaelmacinnis/oh/src/cell"
-	"github.com/michaelmacinnis/oh/src/task"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/task"
 	"strconv"
 )
 

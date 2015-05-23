@@ -7,7 +7,7 @@ dynamic $stdout: open w: "/"::join $origin generated.go
 common::introduction @`(basename $0) $GOPACKAGE
 
 echo "import (
-	. \"github.com/michaelmacinnis/oh/src/cell\"
+	. \"github.com/michaelmacinnis/oh/pkg/cell\"
 	\"strings\"
 	\"unicode\"
 )"

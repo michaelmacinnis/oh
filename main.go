@@ -22,9 +22,9 @@ Oh is released under an MIT-style license.
 package main
 
 import (
-	"github.com/michaelmacinnis/oh/src/parser"
-	"github.com/michaelmacinnis/oh/src/task"
-	"github.com/michaelmacinnis/oh/src/ui"
+	"github.com/michaelmacinnis/oh/pkg/parser"
+	"github.com/michaelmacinnis/oh/pkg/task"
+	"github.com/michaelmacinnis/oh/pkg/ui"
 	"os"
 )
 

@@ -5,7 +5,7 @@
 package task
 
 import (
-	. "github.com/michaelmacinnis/oh/src/cell"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"strings"
 	"unicode"
 )

@@ -3,10 +3,10 @@
 package parser
 
 import (
-	. "github.com/michaelmacinnis/oh/src/cell"
-	"github.com/michaelmacinnis/oh/src/common"
-	"github.com/michaelmacinnis/oh/src/task"
-	"github.com/michaelmacinnis/oh/src/ui"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/common"
+	"github.com/michaelmacinnis/oh/pkg/task"
+	"github.com/michaelmacinnis/oh/pkg/ui"
 )
 
 type scanner struct {
