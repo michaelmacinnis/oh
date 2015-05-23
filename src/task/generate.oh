@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-define common: import: ... bin/common.oh
+define common: import: ... lib/common.oh
 
 dynamic $stdout: open w: "/"::join $origin generated.go
 

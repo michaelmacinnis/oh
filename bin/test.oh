@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-define $dir: "/"::join $origin doctest
+define $dir: ... lib/doctest
 
 define prefix-lines: method ($prefix) as {
         define $count = 1

@@ -277,7 +277,7 @@ for operators: method (name) as {
 #-     sub 4 3 => 1
 #-     sub 4 4 => 0
 
-define common: import: ... common.oh
+define common: import: ... lib/common.oh
 
 define x: integer -1
 for common::predicates: method (names) as {

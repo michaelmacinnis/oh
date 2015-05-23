@@ -33,7 +33,7 @@ write: float: add 3.14 2.72 1.41 2.50 4.67
 #+     14.44
 ##
 
-define common: import: ... common.oh
+define common: import: ... lib/common.oh
 
 define x: float -1
 for common::predicates: method (names) as {

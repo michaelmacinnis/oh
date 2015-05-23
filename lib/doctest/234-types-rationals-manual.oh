@@ -36,7 +36,7 @@ write: status r
 #-     33
 #-     33
 
-define common: import: ... common.oh
+define common: import: ... lib/common.oh
 
 define x: rational -1
 for common::predicates: method (names) as {
