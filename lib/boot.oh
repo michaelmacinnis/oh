@@ -164,6 +164,15 @@ define or: syntax e (: lst) as {
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) as: echo: f::sprintf @args
+define quasiquote: syntax e (cell) as {
+    if (not: is-cons cell): return cell
+    if (is-null cell): return cell
+    if (eq (quote unquote): car cell): return: e::eval: cadr cell
+    cons {
+        e::eval: list (quote quasiquote): car cell
+        e::eval: list (quote quasiquote): cdr cell
+    }
+}
 define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read
 define readline: builtin () as: $stdin::readline
