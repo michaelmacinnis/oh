@@ -136,10 +136,11 @@ define import: syntax e (name) as {
         return m
     }
 
-    define l: list (quote source) name
-    set l: cons (quote object): cons l ()
-    set l: list (quote $root::define) m l
-    e::eval l
+    define l: quasiquote: object {
+        source (unquote name)
+    }
+
+    e::eval: list (quote $root::define) m l
 }
 define is-list: method (l) as {
     if (is-null l): return false
