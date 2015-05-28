@@ -136,7 +136,7 @@ define import: syntax e (name) as {
 		return m
 	}
 
-	e::eval: list (quote $root::define) m: quasiquote: object {
+        e::eval: quasiquote: $root::define (unquote m): object {
 		source (unquote name)
 	}
 }
