@@ -1,73 +1,73 @@
 define $connect: syntax (type out) as {
-    set type: eval type
-    syntax e (left right) as {
-        define p: type
-        spawn {
-            eval: quasiquote: dynamic (unquote out) p
-            e::eval left
-            p::writer-close
-        }
-	block {
-            dynamic $stdin = p
-            e::eval right
-            p::reader-close
+	set type: eval type
+	syntax e (left right) as {
+		define p: type
+		spawn {
+			eval: quasiquote: dynamic (unquote out) p
+			e::eval left
+			p::writer-close
+		}
+		block {
+			dynamic $stdin = p
+			e::eval right
+			p::reader-close
+		}
 	}
-    }
 }
 define $redirect: syntax (chan mode mthd) as {
-    syntax e (c cmd) as: make-env {
-        define c: e::eval c
-        define f = ()
-        if (not: or (is-channel c) (is-pipe c)) {
-            set f: open mode c
-            set c = f
-        }
-        eval: quasiquote: dynamic (unquote chan) c
-        e::eval cmd
-        if (not: is-null f): eval: quasiquote: f::(unquote mthd)
-    }
+	syntax e (c cmd) as: make-env {
+		define c: e::eval c
+		define f = ()
+		if (not: or (is-channel c) (is-pipe c)) {
+			set f: open mode c
+			set c = f
+		}
+		eval: quasiquote: dynamic (unquote chan) c
+		e::eval cmd
+		if (not: is-null f): eval: quasiquote: f::(unquote mthd)
+	}
 }
 define ...: method (: args) as {
-    cd $origin
-    define path: car args
-    if (eq 2: length args) {
-        cd: car args
-        set path: cadr args
-    }
-    while true {
-        define abs: symbol: "/"::join $cwd path
-        if (exists abs): return abs
-	if (eq $cwd /): return path
-        cd ..
-    }
+	cd $origin
+	define path: car args
+	if (eq 2: length args) {
+		cd: car args
+		set path: cadr args
+	}
+	while true {
+		define abs: symbol: "/"::join $cwd path
+		if (exists abs): return abs
+		if (eq $cwd /): return path
+		cd ..
+	}
 }
 define and: syntax e (: lst) as {
-    define r = false
-    while (not: is-null: car lst) {
-        set r: e::eval: car lst
-        if (not r): return r
-        set lst: cdr lst
-    }
-    return r
+	define r = false
+	while (not: is-null: car lst) {
+		set r: e::eval: car lst
+		if (not r): return r
+		set lst: cdr lst
+	}
+	return r
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
 define apply: method (f: args) as: f @args
 define backtick: syntax e (cmd) as {
-    define p: pipe
-    spawn {
-        dynamic $stdout = p
-        e::eval cmd
-        p::writer-close
-    }
-    define r: cons () ()
-    define c = r
-    while (define l: p::readline) {
-	set-cdr c: cons l ()
-	set c: cdr c
-    }
-    p::reader-close
-    return: cdr r
+	define p: pipe
+	spawn {
+		dynamic $stdout = p
+		e::eval cmd
+		p::writer-close
+	}
+	define r: cons () ()
+	define c = r
+	while (define l: p::readline) {
+		set-cdr c: cons l ()
+		set c: cdr c
+	}
+	p::reader-close
+	return: cdr r
 }
 define caar: method (l) as: car: car l
 define cadr: method (l) as: car: cdr l
@@ -104,73 +104,73 @@ define catch: syntax e (pattern handler) as {
 define channel-stderr: $connect channel $stderr
 define channel-stdout: $connect channel $stdout
 define echo: builtin (: args) as {
-    if (is-null args) {
-        $stdout::write: symbol ""
-    } else {
-        $stdout::write @(for args symbol)
-    }
+	if (is-null args) {
+		$stdout::write: symbol ""
+	} else {
+		$stdout::write @(for args symbol)
+	}
 }
 define error: builtin (: args) as: $stderr::write @args
 define for: method (l m) as {
-    define r: cons () ()
-    define c = r
-    while (not: is-null l) {
-        set-cdr c: cons (m: car l) ()
-        set c: cdr c
-        set l: cdr l
-    }
-    return: cdr r
+	define r: cons () ()
+	define c = r
+	while (not: is-null l) {
+		set-cdr c: cons (m: car l) ()
+		set c: cdr c
+		set l: cdr l
+	}
+	return: cdr r
 }
 define glob: builtin (: args) as: return args
 define import: syntax e (name) as {
-    set name: e::eval name
-    define m: module name
-    if (or (is-null m) (is-object m)) {
-        return m
-    }
+	set name: e::eval name
+	define m: module name
+	if (or (is-null m) (is-object m)) {
+		return m
+	}
 
-    e::eval: list (quote $root::define) m: quasiquote: object {
-        source (unquote name)
-    }
+	e::eval: list (quote $root::define) m: quasiquote: object {
+		source (unquote name)
+	}
 }
 define is-list: method (l) as {
-    if (is-null l): return false
-    if (not: is-cons l): return false
-    if (is-null: cdr l): return true
-    is-list: cdr l
+	if (is-null l): return false
+	if (not: is-cons l): return false
+	if (is-null: cdr l): return true
+	is-list: cdr l
 }
 define is-text: method (t) as: or (is-string t) (is-symbol t)
 define list-ref: method (k x) as: car: list-tail k x
 define list-tail: method (k x) as {
-    if k {
-        list-tail (sub k 1): cdr x
-    } else {
-        return x
-    }
+	if k {
+		list-tail (sub k 1): cdr x
+	} else {
+		return x
+	}
 }
 define object: syntax e (: body) as {
-    e::eval: cons (quote block): append body (quote: context)
+	e::eval: cons (quote block): append body (quote: context)
 }
 define or: syntax e (: lst) as {
-    define r = false
-    while (not: is-null: car lst) {
-	set r: e::eval: car lst
-        if r: return r
-        set lst: cdr lst 
-    }
-    return r
+	define r = false
+	while (not: is-null: car lst) {
+		set r: e::eval: car lst
+		if r: return r
+		set lst: cdr lst 
+	}
+	return r
 }
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) as: echo: f::sprintf @args
 define quasiquote: syntax e (cell) as {
-    if (not: is-cons cell): return cell
-    if (is-null cell): return cell
-    if (eq (quote unquote): car cell): return: e::eval: cadr cell
-    cons {
-        e::eval: list (quote quasiquote): car cell
-        e::eval: list (quote quasiquote): cdr cell
-    }
+	if (not: is-cons cell): return cell
+	if (is-null cell): return cell
+	if (eq (quote unquote): car cell): return: e::eval: cadr cell
+	cons {
+		e::eval: list (quote quasiquote): car cell
+		e::eval: list (quote quasiquote): cdr cell
+	}
 }
 define quote: syntax (cell) as: return cell
 define read: builtin () as: $stdin::read
@@ -207,10 +207,10 @@ define source: syntax e (name) as {
 	eval-list (status 0) (car c) (cdr c)
 }
 define substitute-stdin: syntax () as {
-    echo "process substitution not yet implemented."
+	echo "process substitution not yet implemented."
 }
 define substitute-stdout: syntax () as {
-    echo "process substitution not yet implemented."
+	echo "process substitution not yet implemented."
 }
 define throw: method (ex: args) as {
 	define handlers = $handlers
