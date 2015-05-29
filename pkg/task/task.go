@@ -5,6 +5,7 @@ package task
 import (
 	"bufio"
 	"fmt"
+	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
@@ -48,15 +49,6 @@ type Notification struct {
 type Registration struct {
 	pid int
 	cb  chan Notification
-}
-
-type pathError struct {
-	Path string
-	Err  string
-}
-
-func (e *pathError) Error() string {
-	return e.Path + ": " + e.Err
 }
 
 type reader func(*Task, common.ReadStringer,
@@ -1747,7 +1739,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Scratch = Cdr(t.Scratch)
 
-	arg0, problem := lookPath(raw(Car(t.Scratch)))
+	arg0, problem := adapted.LookPath(raw(Car(t.Scratch)))
 
 	SetCar(t.Scratch, False)
 
