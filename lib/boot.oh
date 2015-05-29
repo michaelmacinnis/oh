@@ -14,7 +14,7 @@ define $connect: syntax (type out) as {
 		}
 	}
 }
-define $redirect: syntax (chan mode mthd) as {
+define $redirect: syntax (conduit mode closer) as {
 	syntax e (c cmd) as: make-env {
 		define c: e::eval c
 		define f = ()
@@ -22,9 +22,9 @@ define $redirect: syntax (chan mode mthd) as {
 			set f: open mode c
 			set c = f
 		}
-		eval: quasiquote: dynamic (unquote chan) c
+		eval: quasiquote: dynamic (unquote conduit) c
 		e::eval cmd
-		if (not: is-null f): eval: quasiquote: f::(unquote mthd)
+		if (not: is-null f): eval: quasiquote: f::(unquote closer)
 	}
 }
 define ...: method (: args) as {
