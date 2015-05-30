@@ -29,16 +29,16 @@ type Conduit interface {
 
 	Close()
 	ReaderClose()
-	Read(*Task) Cell
 	ReadLine(*Task) Cell
+	Read(*Task) Cell
 	WriterClose()
 	Write(c Cell)
 }
 
 type ui interface {
-	ReadString(delim byte) (line string, err error)
 	Close() error
 	Exists() bool
+	ReadString(delim byte) (line string, err error)
 }
 
 type Notification struct {
@@ -428,9 +428,8 @@ func init() {
 	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
-
 		if err != nil {
-			return t.Return(Null)
+                        panic(err)
 		}
 
 		sym := NewSymbol(str)
