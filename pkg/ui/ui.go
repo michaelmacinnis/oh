@@ -34,29 +34,29 @@ func New(args []string) *cli {
 		return nil
 	}
 
-	r := &cli{liner.NewLiner()}
+	i := &cli{liner.NewLiner()}
 
 	uncooked, _ = liner.TerminalMode()
 
-	r.SetCtrlCAborts(true)
-	r.SetTabCompletionStyle(liner.TabPrints)
-	r.SetWordCompleter(complete)
+	i.SetCtrlCAborts(true)
+	i.SetTabCompletionStyle(liner.TabPrints)
+	i.SetWordCompleter(complete)
 
-	return r
+	return i
 }
 
-func (cli *cli) Exists() bool {
-	return cli != nil
+func (i *cli) Exists() bool {
+	return i != nil
 }
 
-func (cli *cli) ReadString(delim byte) (line string, err error) {
+func (i *cli) ReadString(delim byte) (line string, err error) {
 	task.SetForegroundGroup(task.Pgid())
 
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = cli.State.Prompt("> "); err == nil {
-		cli.AppendHistory(line)
+	if line, err = i.State.Prompt("> "); err == nil {
+		i.AppendHistory(line)
 		if task.ForegroundTask().Job.Command == "" {
 			task.ForegroundTask().Job.Command = line
 		}
