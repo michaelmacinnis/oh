@@ -108,6 +108,7 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineMethod cdr "t.Return(Cdar(args))") \
                  (DefineMethod cons "t.Return(Cons(Car(args), Cadr(args)))") \
                  (DefineMethod list "t.Return(args)") \
+                 (DefineMethod not "t.Return(NewBoolean(!Car(args).Bool()))") \
                  (DefineMethod reverse "t.Return(Reverse(Car(args)))")
 
 echo "\nfunc bindTheRest(s *Scope) {"

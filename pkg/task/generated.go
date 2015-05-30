@@ -329,6 +329,10 @@ func bindTheRest(s *Scope) {
 		return t.Return(args)
 	})
 
+	s.DefineMethod("not", func(t *Task, args Cell) bool {
+		return t.Return(NewBoolean(!Car(args).Bool()))
+	})
+
 	s.DefineMethod("reverse", func(t *Task, args Cell) bool {
 		return t.Return(Reverse(Car(args)))
 	})

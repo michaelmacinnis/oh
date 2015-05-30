@@ -499,9 +499,6 @@ func init() {
 
 		return t.Return(True)
 	})
-	scope0.DefineMethod("not", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(!Car(args).Bool()))
-	})
 
 	/* Standard Functions. */
 	scope0.DefineMethod("append", func(t *Task, args Cell) bool {
