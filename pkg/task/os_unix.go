@@ -176,7 +176,7 @@ func broker() {
 					if sig == syscall.SIGINT {
 						task0.Stop()
 					}
-					fmt.Printf("\n")
+					fmt.Printf("^Z\n")
 
 					LaunchForegroundTask()
 					c = nil
