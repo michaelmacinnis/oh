@@ -33,10 +33,6 @@ func JoinProcess(proc *os.Process) int {
 	return status.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-func Monitor(active chan bool, notify chan Notification) {}
-
-func Registrar(active chan bool, notify chan Notification) {}
-
 func SetForegroundGroup(group int) {}
 
 func SysProcAttr(group int) *syscall.SysProcAttr {

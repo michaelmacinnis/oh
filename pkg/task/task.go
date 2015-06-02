@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"unsafe"
 )
 
@@ -39,16 +38,6 @@ type ui interface {
 	Close() error
 	Exists() bool
 	ReadString(delim byte) (line string, err error)
-}
-
-type Notification struct {
-	pid    int
-	status syscall.WaitStatus
-}
-
-type Registration struct {
-	pid int
-	cb  chan Notification
 }
 
 type reader func(*Task, common.ReadStringer,
@@ -103,7 +92,6 @@ var (
 	parse       reader
 	pgid        int
 	pid         int
-	register    chan Registration
 	runnable    chan bool
 	scope0      *Scope
 	str         map[string]*String
@@ -208,13 +196,6 @@ func init() {
 	close(runnable)
 
 	pgid = BecomeProcessGroupLeader()
-
-	active := make(chan bool)
-	notify := make(chan Notification)
-	register = make(chan Registration)
-
-	go Monitor(active, notify)
-	go Registrar(active, notify)
 
 	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
@@ -818,7 +799,7 @@ func init() {
 	env0.Add(NewSymbol("false"), False)
 	env0.Add(NewSymbol("true"), True)
 
-	env0.Add(NewSymbol("$$"), NewInteger(int64(syscall.Getpid())))
+	env0.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
 	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
 	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
@@ -2110,10 +2091,6 @@ func (t *Task) Strict() (ok bool) {
 }
 
 func (t *Task) Suspend() {
-	//	if t.pid > 0 {
-	//		syscall.Kill(t.pid, syscall.SIGSTOP)
-	//	}
-
 	for k, v := range t.children {
 		if v {
 			k.Suspend()

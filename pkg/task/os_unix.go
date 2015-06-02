@@ -13,11 +13,22 @@ import (
 	"unsafe"
 )
 
+type notification struct {
+	pid    int
+	status syscall.WaitStatus
+}
+
+type registration struct {
+	pid int
+	cb  chan notification
+}
+
 var (
 	Platform string = "unix"
 	done0    chan Cell
 	eval0    chan Cell
 	incoming chan os.Signal
+	register chan registration
 )
 
 func BecomeProcessGroupLeader() int {
@@ -50,74 +61,10 @@ func JobControlSupported() bool {
 }
 
 func JoinProcess(proc *os.Process) int {
-	response := make(chan Notification)
-	register <- Registration{proc.Pid, response}
+	response := make(chan notification)
+	register <- registration{proc.Pid, response}
 
 	return (<-response).status.ExitStatus()
-}
-
-func Monitor(active chan bool, notify chan Notification) {
-	for {
-		monitoring := <-active
-		for monitoring {
-			var rusage syscall.Rusage
-			var status syscall.WaitStatus
-			options := syscall.WUNTRACED
-			pid, err := syscall.Wait4(-1, &status, options, &rusage)
-			if err != nil {
-				println("Wait4:", err.Error())
-			}
-			if pid <= 0 {
-				break
-			}
-
-			if status.Stopped() {
-				if pid == task0.Job.Group {
-					incoming <- syscall.SIGTSTP
-				}
-				continue
-			}
-
-			if status.Signaled() {
-				if status.Signal() == syscall.SIGINT &&
-					pid == task0.Job.Group {
-					incoming <- syscall.SIGINT
-				}
-				status += 128
-			}
-
-			notify <- Notification{pid, status}
-			monitoring = <-active
-		}
-	}
-}
-
-func Registrar(active chan bool, notify chan Notification) {
-	preregistered := make(map[int]Notification)
-	registered := make(map[int]Registration)
-	for {
-		select {
-		case n := <-notify:
-			r, ok := registered[n.pid]
-			if ok {
-				r.cb <- n
-				delete(registered, n.pid)
-			} else {
-				preregistered[n.pid] = n
-			}
-			active <- len(registered) != 0
-		case r := <-register:
-			if n, ok := preregistered[r.pid]; ok {
-				r.cb <- n
-				delete(preregistered, r.pid)
-			} else {
-				registered[r.pid] = r
-				if len(registered) == 1 {
-					active <- true
-				}
-			}
-		}
-	}
 }
 
 func SetForegroundGroup(group int) {
@@ -205,4 +152,76 @@ func evaluate(c Cell) {
 func init() {
 	done0 = make(chan Cell)
 	eval0 = make(chan Cell)
+
+	active := make(chan bool)
+	notify := make(chan notification)
+	register = make(chan registration)
+
+	go monitor(active, notify)
+	go registrar(active, notify)
 }
+
+func monitor(active chan bool, notify chan notification) {
+	for {
+		monitoring := <-active
+		for monitoring {
+			var rusage syscall.Rusage
+			var status syscall.WaitStatus
+			options := syscall.WUNTRACED
+			pid, err := syscall.Wait4(-1, &status, options, &rusage)
+			if err != nil {
+				println("Wait4:", err.Error())
+			}
+			if pid <= 0 {
+				break
+			}
+
+			if status.Stopped() {
+				if pid == task0.Job.Group {
+					incoming <- syscall.SIGTSTP
+				}
+				continue
+			}
+
+			if status.Signaled() {
+				if status.Signal() == syscall.SIGINT &&
+					pid == task0.Job.Group {
+					incoming <- syscall.SIGINT
+				}
+				status += 128
+			}
+
+			notify <- notification{pid, status}
+			monitoring = <-active
+		}
+	}
+}
+
+func registrar(active chan bool, notify chan notification) {
+	preregistered := make(map[int]notification)
+	registered := make(map[int]registration)
+	for {
+		select {
+		case n := <-notify:
+			r, ok := registered[n.pid]
+			if ok {
+				r.cb <- n
+				delete(registered, n.pid)
+			} else {
+				preregistered[n.pid] = n
+			}
+			active <- len(registered) != 0
+		case r := <-register:
+			if n, ok := preregistered[r.pid]; ok {
+				r.cb <- n
+				delete(preregistered, r.pid)
+			} else {
+				registered[r.pid] = r
+				if len(registered) == 1 {
+					active <- true
+				}
+			}
+		}
+	}
+}
+
