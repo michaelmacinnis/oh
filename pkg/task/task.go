@@ -596,6 +596,14 @@ func init() {
 
 		return t.Return(Cadr(args))
 	})
+	scope0.DefineMethod("temp-fifo", func(t *Task, args Cell) bool {
+		name, err := adapted.TempFifo("fifo-")
+		if err != nil {
+			panic(err)
+		}
+
+		return t.Return(NewSymbol(name))
+	})
 	scope0.DefineMethod("wait", func(t *Task, args Cell) bool {
 		if args == Null {
 			t.Wait()
