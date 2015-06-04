@@ -586,7 +586,7 @@ yydefault:
 		yyDollar = yyS[yypt-4:yypt+1]
 		//line grammar.y:69
 		{
-		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[3].c, yyDollar[1].c)
+		yyVAL.c = List(NewSymbol(yyDollar[2].s), yyDollar[1].c, yyDollar[3].c)
 	}
 	case 12:
 		yyDollar = yyS[yypt-1:yypt+1]

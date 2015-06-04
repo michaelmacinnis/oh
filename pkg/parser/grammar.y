@@ -67,7 +67,7 @@ command: command REDIRECT expression {
 };
 
 command: command SUBSTITUTE command ")" {
-	$$.c = List(NewSymbol($2.s), $3.c, $1.c)
+	$$.c = List(NewSymbol($2.s), $1.c, $3.c)
 };
 
 command: unit { $$.c = $1.c };

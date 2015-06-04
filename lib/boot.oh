@@ -1,9 +1,9 @@
-define $connect: syntax (type out) as {
-	set type: eval type
+define $connect: syntax (conduit name) as {
+	set conduit: eval conduit
 	syntax e (left right) as {
-		define p: type
+		define p: conduit
 		spawn {
-			eval: quasiquote: dynamic (unquote out) p
+			eval: quasiquote: dynamic (unquote name) p
 			e::eval left
 			p::writer-close
 		}
@@ -14,7 +14,7 @@ define $connect: syntax (type out) as {
 		}
 	}
 }
-define $redirect: syntax (conduit mode closer) as {
+define $redirect: syntax (name mode closer) as {
 	syntax e (c cmd) as: make-env {
 		define c: e::eval c
 		define f = ()
@@ -22,7 +22,7 @@ define $redirect: syntax (conduit mode closer) as {
 			set f: open mode c
 			set c = f
 		}
-		eval: quasiquote: dynamic (unquote conduit) c
+		eval: quasiquote: dynamic (unquote name) c
 		e::eval cmd
 		if (not: is-null f): eval: quasiquote: f::(unquote closer)
 	}
@@ -206,11 +206,21 @@ define source: syntax e (name) as {
 	}
 	eval-list (status 0) (car c) (cdr c)
 }
-define substitute-stdin: syntax () as {
-	echo "process substitution not yet implemented."
+define substitute-stdin: syntax (left right) as {
+	# Limited process substitution. (Limit one per command).
+	define fifo: temp-fifo
+	define t: spawn: eval: append left fifo
+	eval right < fifo
+	wait t
+	rm fifo
 }
-define substitute-stdout: syntax () as {
-	echo "process substitution not yet implemented."
+define substitute-stdout: syntax e (left right) as {
+	# Limited process substitution. (Limit one per command).
+	define fifo: temp-fifo
+	define t: spawn: eval: append left fifo
+	eval right > fifo
+	wait t
+	rm fifo
 }
 define throw: method (ex: args) as {
 	define handlers = $handlers
