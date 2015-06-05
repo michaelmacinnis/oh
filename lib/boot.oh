@@ -206,21 +206,8 @@ define source: syntax e (name) as {
 	}
 	eval-list (status 0) (car c) (cdr c)
 }
-define substitute-stdin: syntax (left right) as {
-	# Limited process substitution. (Limit one per command).
-	define fifo: temp-fifo
-	define t: spawn: eval: append left fifo
-	eval right < fifo
-	wait t
-	rm fifo
-}
-define substitute-stdout: syntax e (left right) as {
-	# Limited process substitution. (Limit one per command).
-	define fifo: temp-fifo
-	define t: spawn: eval: append left fifo
-	eval right > fifo
-	wait t
-	rm fifo
+define substitute: syntax e (:args) as {
+	write (symbol "substitute:") @args
 }
 define throw: method (ex: args) as {
 	define handlers = $handlers

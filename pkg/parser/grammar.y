@@ -66,15 +66,11 @@ command: command REDIRECT expression {
 	$$.c = List(NewSymbol($2.s), $3.c, $1.c)
 };
 
-command: command SUBSTITUTE command ")" {
-	$$.c = List(NewSymbol($2.s), $1.c, $3.c)
-};
+command: sequence { $$.c = $1.c };
 
-command: unit { $$.c = $1.c };
+sequence: semicolon { $$.c = Null };
 
-unit: semicolon { $$.c = Null };
-
-unit: opt_semicolon statement opt_clauses {
+sequence: opt_semicolon substitution opt_clauses {
 	if $3.c == Null {
 		$$.c = $2.c
 	} else {
@@ -94,9 +90,34 @@ opt_clauses: opt_semicolon { $$.c = Null };
 
 opt_clauses: semicolon clauses opt_semicolon { $$.c = $2.c };
 
-clauses: statement { $$.c = Cons($1.c, Null) };
+clauses: substitution { $$.c = Cons($1.c, Null) };
 
-clauses: clauses semicolon statement { $$.c = AppendTo($1.c, $3.c) };
+clauses: clauses semicolon substitution { $$.c = AppendTo($1.c, $3.c) };
+
+opt_substitution: { $$.c = Null };
+
+opt_substitution: SUBSTITUTE command ")" opt_statement opt_substitution {
+	lst := List(Cons(NewSymbol($1.s), $2.c))
+	if $4.c != Null {
+		lst = JoinTo(lst, $4.c)
+	}
+	if $5.c != Null {
+		lst = JoinTo(lst, $5.c)
+	}
+	$$.c = lst
+}
+
+substitution: statement opt_substitution {
+	if $2.c != Null {
+		$$.c = JoinTo(Cons(NewSymbol("substitute"), $1.c), $2.c)
+	} else {
+		$$.c = $1.c
+	}
+}
+
+opt_statement: { $$.c = Null };
+
+opt_statement: statement { $$.c = $1.c };
 
 statement: list { $$.c = $1.c };
 
