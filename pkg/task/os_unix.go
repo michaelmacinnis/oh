@@ -224,4 +224,3 @@ func registrar(active chan bool, notify chan notification) {
 		}
 	}
 }
-

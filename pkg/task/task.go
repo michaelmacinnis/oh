@@ -410,7 +410,7 @@ func init() {
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		str, err := module(raw(Car(args)))
 		if err != nil {
-                        panic(err)
+			panic(err)
 		}
 
 		sym := NewSymbol(str)
