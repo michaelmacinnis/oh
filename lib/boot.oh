@@ -207,7 +207,33 @@ define source: syntax e (name) as {
 	eval-list (status 0) (car c) (cdr c)
 }
 define substitute: syntax e (:args) as {
-	write (symbol "substitute:") @args
+	define fifos = ()
+	define procs = ()
+	define cmd: for args: method (arg) as {
+		if (not: is-cons arg): return arg
+		if (eq (symbol "substitute-stdin") (car arg)) {
+			define fifo: temp-fifo
+			define proc: spawn {
+				e::eval: cdr arg < fifo
+			}
+			set fifos: cons fifo fifos
+			set procs: cons proc procs
+			return fifo
+		}
+		if (eq (symbol "substitute-stdout") (car arg)) {
+			define fifo: temp-fifo
+			define proc: spawn {
+				e::eval: cdr arg > fifo
+			}
+			set fifos: cons fifo fifos
+			set procs: cons proc procs
+			return fifo
+		}
+		return arg
+	}
+	e::eval cmd
+	wait @procs
+	rm @fifos
 }
 define throw: method (ex: args) as {
 	define handlers = $handlers
