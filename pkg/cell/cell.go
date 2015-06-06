@@ -104,6 +104,7 @@ func init() {
 		"list-to-symbol",
 		"pipe-stderr",
 		"pipe-stdout",
+		"process-substitution",
 		"reader-close",
 		"redirect-stderr",
 		"redirect-stdin",

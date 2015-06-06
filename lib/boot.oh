@@ -206,7 +206,7 @@ define source: syntax e (name) as {
 	}
 	eval-list (status 0) (car c) (cdr c)
 }
-define substitute: syntax e (:args) as {
+define process-substitution: syntax e (:args) as {
 	define fifos = ()
 	define procs = ()
 	define cmd: for args: method (arg) as {
