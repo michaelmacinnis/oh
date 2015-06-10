@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"unsafe"
 )
 
 type Conduit interface {
@@ -41,7 +40,7 @@ type ui interface {
 }
 
 type reader func(*Task, common.ReadStringer,
-	func(string, string) Cell, func(Cell))
+	func(string, uintptr) Cell, func(Cell))
 
 const (
 	SaveCarCode = 1 << iota
@@ -112,44 +111,6 @@ func asConduit(o Context) Conduit {
 	}
 
 	return nil
-}
-
-func deref(name, ref string) Cell {
-	value, _ := strconv.ParseUint(ref, 0, 64)
-	address := uintptr(value)
-
-	switch {
-	case name == "bound":
-		return (*Bound)(unsafe.Pointer(address))
-	case name == "builtin":
-		return (*Builtin)(unsafe.Pointer(address))
-	case name == "channel":
-		return (*Channel)(unsafe.Pointer(address))
-	case name == "constant":
-		return (*Constant)(unsafe.Pointer(address))
-	case name == "continuation":
-		return (*Continuation)(unsafe.Pointer(address))
-	case name == "env":
-		return (*Env)(unsafe.Pointer(address))
-	case name == "method":
-		return (*Method)(unsafe.Pointer(address))
-	case name == "object":
-		return (*Object)(unsafe.Pointer(address))
-	case name == "pipe":
-		return (*Pipe)(unsafe.Pointer(address))
-	case name == "scope":
-		return (*Scope)(unsafe.Pointer(address))
-	case name == "syntax":
-		return (*Syntax)(unsafe.Pointer(address))
-	case name == "task":
-		return (*Task)(unsafe.Pointer(address))
-	case name == "unbound":
-		return (*Unbound)(unsafe.Pointer(address))
-	case name == "variable":
-		return (*Variable)(unsafe.Pointer(address))
-	}
-
-	return Null
 }
 
 func expand(t *Task, args Cell) Cell {

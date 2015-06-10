@@ -197,7 +197,8 @@ expression: expression CONS expression {
 };
 
 expression: "%" SYMBOL SYMBOL "%" {
-	$$.c = yylex.(*scanner).deref($2.s, $3.s)
+	value, _ := strconv.ParseUint($3.s, 0, 64)
+	$$.c = yylex.(*scanner).deref($2.s, uintptr(value))
 };
 
 expression: "(" command ")" { $$ = $2 };

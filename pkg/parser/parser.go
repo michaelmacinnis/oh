@@ -10,7 +10,7 @@ import (
 )
 
 type scanner struct {
-	deref   func(string, string) Cell
+	deref   func(string, uintptr) Cell
 	process func(Cell)
 	task    *task.Task
 
@@ -282,7 +282,7 @@ func (s *scanner) Error(msg string) {
 
 func Parse(t *task.Task,
 	r common.ReadStringer,
-	d func(string, string) Cell,
+	d func(string, uintptr) Cell,
 	p func(Cell)) {
 
 	s := new(scanner)

@@ -60,7 +60,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line grammar.y:220
+//line grammar.y:221
 
 
 
@@ -770,36 +770,37 @@ yydefault:
 		yyDollar = yyS[yypt-4:yypt+1]
 		//line grammar.y:199
 		{
-		yyVAL.c = yylex.(*scanner).deref(yyDollar[2].s, yyDollar[3].s)
+		value, _ := strconv.ParseUint(yyDollar[3].s, 0, 64)
+		yyVAL.c = yylex.(*scanner).deref(yyDollar[2].s, uintptr(value))
 	}
 	case 46:
 		yyDollar = yyS[yypt-3:yypt+1]
-		//line grammar.y:203
+		//line grammar.y:204
 		{ yyVAL = yyDollar[2] }
 	case 47:
 		yyDollar = yyS[yypt-2:yypt+1]
-		//line grammar.y:205
+		//line grammar.y:206
 		{ yyVAL.c = Null }
 	case 48:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:207
+		//line grammar.y:208
 		{ yyVAL = yyDollar[1] }
 	case 49:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:209
+		//line grammar.y:210
 		{
 		v, _ := strconv.Unquote(yyDollar[1].s)
 		yyVAL.c = task.NewString(yylex.(*scanner).task, v)
 	}
 	case 50:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:214
+		//line grammar.y:215
 		{
 		yyVAL.c = task.NewString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
 	}
 	case 51:
 		yyDollar = yyS[yypt-1:yypt+1]
-		//line grammar.y:218
+		//line grammar.y:219
 		{ yyVAL.c = NewSymbol(yyDollar[1].s) }
 	}
 	goto yystack /* stack new state and value */
