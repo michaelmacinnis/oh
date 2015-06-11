@@ -69,7 +69,132 @@ type Context interface {
 
 type Function func(t *Task, args Cell) bool
 
-var str = map[string]*String{}
+var (
+	envc *Env
+	envs *Env
+	str  = map[string]*String{}
+)
+
+func bindConduitMethods() {
+	envc = NewEnv(nil)
+	envc.Method("child", func(t *Task, args Cell) bool {
+		panic("conduits cannot be parents")
+	})
+	envc.Method("clone", func(t *Task, args Cell) bool {
+		panic("conduits cannot be cloned")
+	})
+	envc.Method("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to a conduit")
+	})
+	envc.Method("close", func(t *Task, args Cell) bool {
+		toConduit(t.Self()).Close()
+		return t.Return(True)
+	})
+	envc.Method("reader-close", func(t *Task, args Cell) bool {
+		toConduit(t.Self()).ReaderClose()
+		return t.Return(True)
+	})
+	envc.Method("read", func(t *Task, args Cell) bool {
+		return t.Return(toConduit(t.Self()).Read(t))
+	})
+	envc.Method("readline", func(t *Task, args Cell) bool {
+		return t.Return(toConduit(t.Self()).ReadLine(t))
+	})
+	envc.Method("writer-close", func(t *Task, args Cell) bool {
+		toConduit(t.Self()).WriterClose()
+		return t.Return(True)
+	})
+	envc.Method("write", func(t *Task, args Cell) bool {
+		toConduit(t.Self()).Write(args)
+		return t.Return(True)
+	})
+}
+
+func bindStringMethods() {
+	envs = NewEnv(nil)
+	envs.Method("child", func(t *Task, args Cell) bool {
+		panic("strings cannot be parents")
+	})
+	envs.Method("clone", func(t *Task, args Cell) bool {
+		panic("strings cannot be cloned")
+	})
+	envs.Method("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to a string")
+	})
+	envs.Method("join", func(t *Task, args Cell) bool {
+		sep := toString(t.Self())
+		arr := make([]string, Length(args))
+
+		for i := 0; args != Null; i++ {
+			arr[i] = string(raw(Car(args)))
+			args = Cdr(args)
+		}
+
+		r := strings.Join(arr, string(raw(sep)))
+
+		return t.Return(NewString(t, r))
+	})
+	envs.Method("split", func(t *Task, args Cell) bool {
+		r := Null
+
+		sep := Car(args)
+		str := toString(t.Self())
+
+		l := strings.Split(string(raw(str)), string(raw(sep)))
+
+		for i := len(l) - 1; i >= 0; i-- {
+			r = Cons(NewString(t, l[i]), r)
+		}
+
+		return t.Return(r)
+	})
+	envs.Method("sprintf", func(t *Task, args Cell) bool {
+		f := raw(toString(t.Self()))
+
+		argv := []interface{}{}
+		for l := args; l != Null; l = Cdr(l) {
+			switch t := Car(l).(type) {
+			case *Boolean:
+				argv = append(argv, *t)
+			case *Integer:
+				argv = append(argv, *t)
+			case *Status:
+				argv = append(argv, *t)
+			case *Float:
+				argv = append(argv, *t)
+			default:
+				argv = append(argv, raw(t))
+			}
+		}
+
+		s := fmt.Sprintf(f, argv...)
+
+		return t.Return(NewString(t, s))
+	})
+	envs.Method("substring", func(t *Task, args Cell) bool {
+		s := []rune(raw(toString(t.Self())))
+
+		start := int(Car(args).(Atom).Int())
+		end := len(s)
+
+		if Cdr(args) != Null {
+			end = int(Cadr(args).(Atom).Int())
+		}
+
+		return t.Return(NewString(t, string(s[start:end])))
+	})
+	envs.Method("to-list", func(t *Task, args Cell) bool {
+		s := raw(toString(t.Self()))
+		l := Null
+		for _, char := range s {
+			l = Cons(NewInteger(int64(char)), l)
+		}
+
+		return t.Return(Reverse(l))
+	})
+
+	bindStringPredicates(envs)
+}
 
 /* Bound cell definition. */
 
