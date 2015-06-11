@@ -142,10 +142,6 @@ func init() {
 	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
 
-	bindConduitMethods()
-
-	bindStringMethods()
-
 	/* Root Scope. */
 	scope0 = NewScope(nil, nil)
 

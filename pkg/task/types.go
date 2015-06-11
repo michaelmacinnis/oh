@@ -75,7 +75,11 @@ var (
 	str  = map[string]*String{}
 )
 
-func bindConduitMethods() {
+func conduitEnv() *Env {
+        if envc != nil {
+		goto created
+	}
+
 	envc = NewEnv(nil)
 	envc.Method("child", func(t *Task, args Cell) bool {
 		panic("conduits cannot be parents")
@@ -108,9 +112,16 @@ func bindConduitMethods() {
 		toConduit(t.Self()).Write(args)
 		return t.Return(True)
 	})
+
+created:
+	return envc
 }
 
-func bindStringMethods() {
+func stringEnv() *Env {
+	if envs != nil {
+		goto created
+	}
+
 	envs = NewEnv(nil)
 	envs.Method("child", func(t *Task, args Cell) bool {
 		panic("strings cannot be parents")
@@ -194,6 +205,9 @@ func bindStringMethods() {
 	})
 
 	bindStringPredicates(envs)
+
+created:
+	return envs
 }
 
 /* Bound cell definition. */
@@ -299,7 +313,7 @@ func IsChannel(c Cell) bool {
 
 func NewChannel(t *Task, cap int) Context {
 	return &Channel{
-		NewScope(t.Lexical.Expose(), envc),
+		NewScope(t.Lexical.Expose(), conduitEnv()),
 		make(chan Cell, cap),
 	}
 }
@@ -631,7 +645,7 @@ func IsPipe(c Cell) bool {
 
 func NewPipe(l Context, r *os.File, w *os.File) Context {
 	p := &Pipe{
-		Scope: NewScope(l.Expose(), envc),
+		Scope: NewScope(l.Expose(), conduitEnv()),
 		b:     nil, c: nil, d: nil, r: r, w: w,
 	}
 
@@ -1019,13 +1033,14 @@ func NewString(t *Task, v string) *String {
 		return p
 	}
 
+	e := stringEnv()
 	l := scope0
 	if t != nil {
-		l = NewScope(t.Lexical.Expose(), envs)
+		l = NewScope(t.Lexical.Expose(), e)
 	} else if task0 != nil {
-		l = NewScope(task0.Lexical.Expose(), envs)
+		l = NewScope(task0.Lexical.Expose(), e)
 	} else {
-		l = NewScope(l, envs)
+		l = NewScope(l, e)
 	}
 
 	s := String{l, v}
