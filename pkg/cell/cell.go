@@ -154,4 +154,3 @@ func SetCar(c, value Cell) {
 func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
 }
-

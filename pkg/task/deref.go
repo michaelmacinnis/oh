@@ -41,4 +41,3 @@ func deref(name string, address uintptr) Cell {
 
 	return Null
 }
-
