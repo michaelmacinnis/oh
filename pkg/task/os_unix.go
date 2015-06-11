@@ -5,7 +5,6 @@
 package task
 
 import (
-	"fmt"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"os"
 	"os/signal"
@@ -123,7 +122,6 @@ func broker() {
 					if sig == syscall.SIGINT {
 						task0.Stop()
 					}
-					fmt.Printf("^Z\n")
 
 					LaunchForegroundTask()
 					c = nil

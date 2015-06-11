@@ -79,7 +79,6 @@ var (
 	pid         int
 	runnable    chan bool
 	scope0      *Scope
-	str         map[string]*String
 	task0       *Task
 )
 
@@ -88,6 +87,15 @@ var next = map[int64][]int64{
 	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
 	psExecIf:               {psEvalBlock},
 	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
+}
+
+/* Convert Context into a Conduit. (Return nil if not possible). */
+func asConduit(o Context) Conduit {
+	if c, ok := o.(Conduit); ok {
+		return c
+	}
+
+	return nil
 }
 
 func expand(t *Task, args Cell) Cell {
@@ -128,8 +136,6 @@ func expand(t *Task, args Cell) Cell {
 }
 
 func init() {
-	str = make(map[string]*String)
-
 	runnable = make(chan bool)
 	close(runnable)
 
@@ -254,7 +260,6 @@ func init() {
 	})
 
 	bindStringPredicates(envs)
-
 	/* Root Scope. */
 	scope0 = NewScope(nil, nil)
 
@@ -816,12 +821,39 @@ func status(c Cell) int {
 	return int(a.Status())
 }
 
+/* Convert Context into a Conduit. */
+func toConduit(o Context) Conduit {
+	conduit := asConduit(o)
+	if conduit == nil {
+		panic("not a conduit")
+	}
+
+	return conduit
+}
+
+/* Convert Context into a String. */
+func toString(o Context) *String {
+	if s, ok := o.(*String); ok {
+		return s
+	}
+
+	panic("not a string")
+}
+
 func wpipe(c Cell) *os.File {
 	return toConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
 func ForegroundTask() *Task {
 	return task0
+}
+
+func IsContext(c Cell) bool {
+	switch c.(type) {
+	case Context:
+		return true
+	}
+	return false
 }
 
 func LaunchForegroundTask() {
@@ -835,6 +867,20 @@ func LaunchForegroundTask() {
 
 func Pgid() int {
 	return pgid
+}
+
+func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
+	v = nil
+
+	if v = s.Access(k); v == nil {
+		if e == nil {
+			return v
+		}
+
+		v = e.Access(k)
+	}
+
+	return v
 }
 
 func Start(parser reader, cli ui) {

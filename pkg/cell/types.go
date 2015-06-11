@@ -55,7 +55,7 @@ var (
 	one *big.Rat
 	rat [512]Rational
 	res [256]*Status
-	sym map[string]*Symbol
+	sym = map[string]*Symbol{}
 	zip *big.Rat
 )
 
@@ -79,8 +79,6 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
-
-	sym = make(map[string]*Symbol)
 
 	for _, v := range [...]string{
 		"$redirect",
