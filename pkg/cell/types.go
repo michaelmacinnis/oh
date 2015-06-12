@@ -610,7 +610,7 @@ func NewSymbol(v string) *Symbol {
 
 	if len(v) <= 3 {
 		sym[v] = p
-        }
+	}
 
 	return p
 }

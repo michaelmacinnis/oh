@@ -11,7 +11,7 @@ var symbols = []string{
 	"catch", "cdaaar", "cdaadr", "cdaar", "cdadar", "cdaddr", "cdadr",
 	"cdar", "cddaar", "cddadr", "cddar", "cdddar", "cddddr", "cdddr",
 	"cddr", "cdr", "cell", "channel", "channel-stderr", "channel-stdout",
-	"child", "clone", "close","closer", "cmd", "conduit", "$connect",
+	"child", "clone", "close", "closer", "cmd", "conduit", "$connect",
 	"cons", "context", "$cwd", "debug", "define", "div", "dynamic",
 	"echo", "else", "entry", "error", "eval", "eval-list", "exists",
 	"exit", "false", "fifo", "fifos", "first", "float", "for",

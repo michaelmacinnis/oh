@@ -76,7 +76,7 @@ var (
 )
 
 func conduitEnv() *Env {
-        if envc != nil {
+	if envc != nil {
 		goto created
 	}
 
