@@ -1,0 +1,38 @@
+// Released under an MIT-style license. See LICENSE.
+
+package task
+
+var symbols = []string{
+	"...", "abs", "add", "and", "append", "append-stderr",
+	"append-stdout", "apply", "arg", "args", "$args", "backtick",
+	"basename", "block", "body", "boolean", "builtin", "caaaar",
+	"caaadr", "caaar", "caadar", "caaddr", "caadr", "caar", "cadaar",
+	"cadadr", "cadar", "caddar", "cadddr", "caddr", "cadr", "car",
+	"catch", "cdaaar", "cdaadr", "cdaar", "cdadar", "cdaddr", "cdadr",
+	"cdar", "cddaar", "cddadr", "cddar", "cdddar", "cddddr", "cdddr",
+	"cddr", "cdr", "cell", "channel", "channel-stderr", "channel-stdout",
+	"child", "clone", "close","closer", "cmd", "conduit", "$connect",
+	"cons", "context", "$cwd", "debug", "define", "div", "dynamic",
+	"echo", "else", "entry", "error", "eval", "eval-list", "exists",
+	"exit", "false", "fifo", "fifos", "first", "float", "for",
+	"get-slot", "glob", "handler", "handlers", "$handlers", "has",
+	"$HOME", "import", "integer", "interpolate", "is-atom", "is-boolean",
+	"is-builtin", "is-channel", "is-cons", "is-continuation", "is-float",
+	"is-integer", "is-list", "is-method", "is-null", "is-number",
+	"is-object", "is-pipe", "is-rational", "is-status", "is-string",
+	"is-symbol", "is-syntax", "is-text", "jobs", "join", "left",
+	"length", "list", "list-ref", "list-tail", "list-to-string",
+	"list-to-symbol", "lst", "make-env", "make-scope", "match", "method",
+	"mod", "mode", "module", "msg", "mul", "name", "not", "object",
+	"$OHPATH", "open", "$origin", "$PATH", "path", "paths", "pattern",
+	"pipe", "pipe-stderr", "pipe-stdout", "$platform", "printf", "proc",
+	"process-substitution", "procs", "public", "quasiquote", "quote",
+	"rational", "read", "reader-close", "readline", "$redirect",
+	"redirect-stderr", "redirect-stdin", "redirect-stdout", "rest",
+	"return", "reverse", "right", "$root", "run", "rval", "set",
+	"set-car", "set-cdr", "setenv", "set-slot", "source", "spawn",
+	"splice", "split", "sprintf", "status", "$stderr", "$stdin",
+	"$stdout", "strict", "string", "sub", "symbol", "syntax",
+	"temp-fifo", "throw", "true", "unquote", "unset", "$USER", "wait",
+	"while", "write", "writer-close",
+}

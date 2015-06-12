@@ -134,6 +134,8 @@ func expand(t *Task, args Cell) Cell {
 }
 
 func init() {
+	CacheSymbols(symbols...)
+
 	runnable = make(chan bool)
 	close(runnable)
 

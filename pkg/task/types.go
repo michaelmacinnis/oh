@@ -1046,10 +1046,6 @@ func NewString(t *Task, v string) *String {
 	s := String{l, v}
 	p = &s
 
-	if len(v) <= 8 {
-		str[v] = p
-	}
-
 	return p
 }
 

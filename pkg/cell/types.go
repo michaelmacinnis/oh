@@ -79,42 +79,10 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
+}
 
-	for _, v := range [...]string{
-		"$redirect",
-		"append-stderr",
-		"append-stdout",
-		"channel-stderr",
-		"channel-stdout",
-		"eval-list",
-		"is-boolean",
-		"is-builtin",
-		"is-channel",
-		"is-integer",
-		"is-method",
-		"is-number",
-		"is-object",
-		"is-status",
-		"is-string",
-		"is-symbol",
-		"is-syntax",
-		"list-to-string",
-		"list-to-symbol",
-		"pipe-stderr",
-		"pipe-stdout",
-		"process-substitution",
-		"reader-close",
-		"redirect-stderr",
-		"redirect-stdin",
-		"redirect-stdout",
-		"substitute-stdin",
-		"substitute-stdout",
-		"substring",
-		"writer-close",
-		"is-control",
-		"is-graphic",
-		"is-letter",
-	} {
+func CacheSymbols(symbols ...string) {
+	for _, v := range symbols {
 		sym[v] = NewSymbol(v)
 	}
 }
@@ -640,9 +608,9 @@ func NewSymbol(v string) *Symbol {
 	s := Symbol(v)
 	p = &s
 
-	if len(v) <= 8 {
+	if len(v) <= 3 {
 		sym[v] = p
-	}
+        }
 
 	return p
 }
