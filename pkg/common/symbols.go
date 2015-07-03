@@ -1,8 +1,8 @@
 // Released under an MIT-style license. See LICENSE.
 
-package task
+package common
 
-var symbols = []string{
+var Symbols = []string{
 	"...", "abs", "add", "and", "append", "append-stderr",
 	"append-stdout", "apply", "arg", "args", "$args", "backtick",
 	"basename", "block", "body", "boolean", "builtin", "caaaar",
