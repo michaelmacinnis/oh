@@ -1251,7 +1251,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	if t.Code == Null {
-		panic("expected 'as'")
+		return t.Throw("error/syntax", "expected 'as'")
 	}
 
 	body := Cddr(t.Code)
@@ -1288,12 +1288,14 @@ func (t *Task) Debug(s string) {
 func (t *Task) DynamicVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
-		panic(r + " cannot be used as a variable name")
+		msg := r + " cannot be used as a variable name"
+		return t.Throw("error/syntax", msg)
 	}
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
-			panic("environment variable names must begin with '$'")
+			msg := "environment variable names must begin with '$'"
+			return t.Throw("error/syntax", msg)
 		}
 	}
 
@@ -1301,7 +1303,8 @@ func (t *Task) DynamicVar(state int64) bool {
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			panic("expected '=' after " + r)
+			msg := "expected '=' after " + r
+			return t.Throw("error/syntax", msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1357,7 +1360,7 @@ func (t *Task) External(args Cell) bool {
 	SetCar(t.Scratch, False)
 
 	if problem != nil {
-		panic(problem)
+		return t.Throw("error/runtime", problem.Error())
 	}
 
 	argv := []string{arg0}
@@ -1379,10 +1382,19 @@ func (t *Task) External(args Cell) bool {
 
 	status, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
-		panic(problem)
+		return t.Throw("error/runtime", problem.Error())
 	}
 
 	return t.Return(status)
+}
+
+func (t *Task) Throw(kind string, msg string) bool {
+	t.Code = List(NewSymbol("throw"), NewString(t, kind), NewString(t, msg))
+	t.Scratch = Null
+
+	t.ReplaceStates(psEvalCommand)
+
+	return true
 }
 
 func (t *Task) Launch() {
@@ -1427,14 +1439,16 @@ func (t *Task) LexicalVar(state int64) bool {
 
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
-		panic(r + " cannot be used as a variable name")
+		msg := r + " cannot be used as a variable name"
+		return t.Throw("error/syntax", msg)
 	}
 
 	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			panic("expected '=' after " + r)
+			msg := "expected '=' after " + r
+			return t.Throw("error/syntax", msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1516,7 +1530,13 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 				if Car(t.Code) != Null &&
 					raw(Car(t.Code)) != "else" {
-					panic("expected 'else'")
+					msg := "expected 'else'"
+					panic(msg)
+					// TODO: Fix things so we can call
+					//       Throw/continue here or panic
+					//       with the same effect.
+					// t.Throw("error/syntax", msg)
+					// continue
 				}
 			}
 
@@ -1588,7 +1608,13 @@ func (t *Task) Run(end Cell) (successful bool) {
 				t.ReplaceStates(psReturn, psEvalArguments)
 
 			default:
-				panic(fmt.Sprintf("can't evaluate: %v", t))
+				msg := fmt.Sprintf("can't evaluate: %v", t)
+				panic(msg)
+				// TODO: Fix things so we can call
+				//       Throw/continue here or panic
+				//       with the same effect.
+				// t.Throw("error/runtime", msg)
+				// continue
 			}
 
 			t.Scratch = Cons(nil, t.Scratch)
@@ -1625,6 +1651,11 @@ func (t *Task) Run(end Cell) (successful bool) {
 				ok, msg := t.Lookup(sym, simple)
 				if !ok {
 					panic(msg)
+					// TODO: Fix things so we can call
+					//       Throw/continue here or panic
+					//       with the same effect.
+					// t.Throw("error/runtime", msg)
+					// continue
 				}
 				break
 			} else {
@@ -1653,7 +1684,13 @@ func (t *Task) Run(end Cell) (successful bool) {
 			k := t.Code.(*Symbol)
 			r := Resolve(t.Lexical, t.Dynamic, k)
 			if r == nil {
-				panic("'" + k.String() + "' undefined")
+				msg := "'" + k.String() + "' undefined"
+				panic(msg)
+				// TODO: Fix things so we can call
+				//       Throw/continue here or panic
+				//       with the same effect.
+				// t.Throw("error/syntax", msg)
+				// continue
 			}
 
 			r.Set(Car(t.Scratch))
@@ -1691,8 +1728,14 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 		default:
 			if state >= SaveMax {
-				panic(fmt.Sprintf("command not found: %s",
-					t.Code))
+				msg := fmt.Sprintf("command not found: %s",
+					t.Code)
+				panic(msg)
+				// TODO: Fix things so we can call
+				//       Throw/continue here or panic
+				//       with the same effect.
+				// t.Throw("error/runtime", msg)
+				// continue
 			} else {
 				t.RestoreState()
 				continue

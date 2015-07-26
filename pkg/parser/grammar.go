@@ -199,6 +199,13 @@ var yyTok3 = [...]int{
 	0,
 }
 
+var yyErrorMessages = [...]struct {
+	state int
+	token int
+	msg   string
+}{
+}
+
 //line yaccpar:1
 
 /*	parser for yacc output	*/
@@ -220,7 +227,6 @@ type yyParser interface {
 
 type yyParserImpl struct {
 	lookahead func() int
-	state     func() int
 }
 
 func (p *yyParserImpl) Lookahead() int {
@@ -230,7 +236,6 @@ func (p *yyParserImpl) Lookahead() int {
 func yyNewParser() yyParser {
 	p := &yyParserImpl{
 		lookahead: func() int { return -1 },
-		state:     func() int { return -1 },
 	}
 	return p
 }
@@ -261,6 +266,13 @@ func yyErrorMessage(state, lookAhead int) string {
 	if !yyErrorVerbose {
 		return "syntax error"
 	}
+
+	for _, e := range yyErrorMessages {
+		if e.state == state && e.token == lookAhead {
+			return "syntax error: " + e.msg
+		}
+	}
+
 	res := "syntax error: unexpected " + yyTokname(lookAhead)
 
 	// To match Bison, suggest at most four expected tokens.
@@ -367,7 +379,6 @@ start:
 	yystate := 0
 	yychar := -1
 	yytoken := -1 // yychar translated into internal numbering
-	yyrcvr.state = func() int { return yystate }
 	yyrcvr.lookahead = func() int { return yychar }
 	defer func() {
 		// Make sure we report no lookahead when not parsing.

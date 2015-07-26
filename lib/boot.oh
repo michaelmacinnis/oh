@@ -241,7 +241,7 @@ define throw: method (ex: args) as {
 		define entry: car handlers
 		define pattern: car entry
 		define handler: cdr entry
-		if (or (eq * pattern) (match pattern ex)) {
+		if (or (eq (symbol "*") pattern) (match pattern ex)) {
 			if (handler ex @args) {
 				return true
 			}
@@ -253,8 +253,8 @@ define throw: method (ex: args) as {
 define write: method (: args) as: $stdout::write @args
 dynamic $handlers = ()
 
-catch *: method (ex: msg) as {
-	error: interpolate "unhandled ${ex}: ${msg}"
+catch *: method (ex: args) as {
+	error: ": "::join "unhandled" ex @args
 	return true
 }
 

@@ -577,7 +577,7 @@ func init() {
 		s := Null
 		if Length(t.Code) == 3 {
 			if raw(Cadr(t.Code)) != "=" {
-				panic("expected '='")
+				return t.Throw("error/syntax", "expected '='")
 			}
 			s = Caddr(t.Code)
 		} else {
