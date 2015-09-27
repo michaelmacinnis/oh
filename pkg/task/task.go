@@ -139,8 +139,6 @@ func init() {
 	runnable = make(chan bool)
 	close(runnable)
 
-	pgid = BecomeProcessGroupLeader()
-
 	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
 
@@ -814,6 +812,9 @@ func Start(parser reader, cli ui) {
 		interactive = true
 
 		InitSignalHandling()
+
+		pgid = BecomeProcessGroupLeader()
+
 		parse(nil, cli, deref, evaluate)
 
 		cli.Close()
