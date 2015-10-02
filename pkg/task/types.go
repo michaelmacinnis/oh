@@ -1498,7 +1498,6 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 		switch state {
 		case psChangeContext:
-			t.Dynamic = nil
 			t.Lexical = Car(t.Scratch).(Context)
 			t.Scratch = Cdr(t.Scratch)
 
