@@ -24,7 +24,7 @@ echo "private member" o::y
 ##
 
 #-     public member 1
-#-     oh: y undefined
+#-     oh: error/runtime: 'y' undefined
 
 ## #### $root
 ##

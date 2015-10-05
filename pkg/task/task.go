@@ -476,7 +476,7 @@ func init() {
 
 		c := Resolve(t.Self(), nil, k)
 		if c == nil {
-			panic(s + " undefined")
+			panic("error/runtime: '" + s + "' undefined")
 		} else if a, ok := c.Get().(Binding); ok {
 			return t.Return(a.Bind(t.Lexical))
 		} else {
@@ -575,7 +575,7 @@ func init() {
 		s := Null
 		if Length(t.Code) == 3 {
 			if raw(Cadr(t.Code)) != "=" {
-				return t.Throw("error/syntax", "expected '='")
+				panic("error/syntax: expected '='")
 			}
 			s = Caddr(t.Code)
 		} else {

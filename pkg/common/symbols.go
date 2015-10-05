@@ -8,7 +8,7 @@ var Symbols = []string{
 	"basename", "block", "body", "boolean", "builtin", "caaaar",
 	"caaadr", "caaar", "caadar", "caaddr", "caadr", "caar", "cadaar",
 	"cadadr", "cadar", "caddar", "cadddr", "caddr", "cadr", "car",
-	"catch", "cdaaar", "cdaadr", "cdaar", "cdadar", "cdaddr", "cdadr",
+	"cdaaar", "cdaadr", "cdaar", "cdadar", "cdaddr", "cdadr",
 	"cdar", "cddaar", "cddadr", "cddar", "cdddar", "cddddr", "cdddr",
 	"cddr", "cdr", "cell", "channel", "channel-stderr", "channel-stdout",
 	"child", "clone", "close", "closer", "cmd", "conduit", "$connect",
@@ -33,6 +33,6 @@ var Symbols = []string{
 	"set-car", "set-cdr", "setenv", "set-slot", "source", "spawn",
 	"splice", "split", "sprintf", "status", "$stderr", "$stdin",
 	"$stdout", "strict", "string", "sub", "symbol", "syntax",
-	"temp-fifo", "throw", "true", "unquote", "unset", "$USER", "wait",
+	"temp-fifo", "true", "unquote", "unset", "$USER", "wait",
 	"while", "write", "writer-close",
 }

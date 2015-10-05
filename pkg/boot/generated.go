@@ -104,10 +104,6 @@ define cddaar: method (l) as: cddr: caar l
 define cddadr: method (l) as: cddr: cadr l
 define cdddar: method (l) as: cddr: cdar l
 define cddddr: method (l) as: cddr: cddr l
-define catch: syntax e (pattern handler) as {
-	define entry: cons (symbol: e::eval pattern) (e::eval handler)
-	dynamic $handlers: cons entry $handlers
-}
 define channel-stderr: $connect channel $stderr
 define channel-stdout: $connect channel $stdout
 define echo: builtin (: args) as {
@@ -242,28 +238,7 @@ define process-substitution: syntax e (:args) as {
 	wait @procs
 	rm @fifos
 }
-define throw: method (ex: args) as {
-	define handlers = $handlers
-	while (not: is-null handlers) {
-		define entry: car handlers
-		define pattern: car entry
-		define handler: cdr entry
-		if (or (eq (symbol "*") pattern) (match pattern ex)) {
-			if (handler ex @args) {
-				return true
-			}
-		}
-		set handlers: cdr handlers
-	}
-	return false
-}
 define write: method (: args) as: $stdout::write @args
-dynamic $handlers = ()
-
-catch *: method (ex: args) as {
-	error: ": "::join "unhandled" ex @args
-	return true
-}
 
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 

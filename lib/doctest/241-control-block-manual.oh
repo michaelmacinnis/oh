@@ -20,7 +20,7 @@ set x = 3
 ##
 ## produces the output,
 ##
-#+     oh: 'x' undefined
+#+     oh: error/runtime: 'x' undefined
 ##
 ## as the variable x is not accessible outside the scope in which it was
 ## defined.

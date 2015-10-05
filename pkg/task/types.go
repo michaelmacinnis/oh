@@ -1251,7 +1251,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	if t.Code == Null {
-		return t.Throw("error/syntax", "expected 'as'")
+		panic("error/syntax: expected 'as'")
 	}
 
 	body := Cddr(t.Code)
@@ -1289,13 +1289,13 @@ func (t *Task) DynamicVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		msg := r + " cannot be used as a variable name"
-		return t.Throw("error/syntax", msg)
+		panic("error/syntax: " + msg)
 	}
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
 			msg := "environment variable names must begin with '$'"
-			return t.Throw("error/syntax", msg)
+			panic("error/syntax: " + msg)
 		}
 	}
 
@@ -1304,7 +1304,7 @@ func (t *Task) DynamicVar(state int64) bool {
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
 			msg := "expected '=' after " + r
-			return t.Throw("error/syntax", msg)
+			panic("error/syntax: " + msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1360,7 +1360,7 @@ func (t *Task) External(args Cell) bool {
 	SetCar(t.Scratch, False)
 
 	if problem != nil {
-		return t.Throw("error/runtime", problem.Error())
+		panic("error/runtime: " + problem.Error())
 	}
 
 	argv := []string{arg0}
@@ -1382,19 +1382,10 @@ func (t *Task) External(args Cell) bool {
 
 	status, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
-		return t.Throw("error/runtime", problem.Error())
+		panic("error/runtime: " + problem.Error())
 	}
 
 	return t.Return(status)
-}
-
-func (t *Task) Throw(kind string, msg string) bool {
-	t.Code = List(NewSymbol("throw"), NewString(t, kind), NewString(t, msg))
-	t.Scratch = Null
-
-	t.ReplaceStates(psEvalCommand)
-
-	return true
 }
 
 func (t *Task) Launch() {
@@ -1440,7 +1431,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		msg := r + " cannot be used as a variable name"
-		return t.Throw("error/syntax", msg)
+		panic("error/syntax: " + msg)
 	}
 
 	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
@@ -1448,7 +1439,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
 			msg := "expected '=' after " + r
-			return t.Throw("error/syntax", msg)
+			panic("error/syntax: " + msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1465,7 +1456,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	if c == nil {
 		r := raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
-			return false, r + " undefined"
+			return false, "'" + r + "' undefined"
 		}
 		t.Scratch = Cons(sym, t.Scratch)
 	} else if simple && !isSimple(c.Get()) {
@@ -1530,12 +1521,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				if Car(t.Code) != Null &&
 					raw(Car(t.Code)) != "else" {
 					msg := "expected 'else'"
-					panic(msg)
-					// TODO: Fix things so we can call
-					//       Throw/continue here or panic
-					//       with the same effect.
-					// t.Throw("error/syntax", msg)
-					// continue
+					panic("error/syntax: " + msg)
 				}
 			}
 
@@ -1608,12 +1594,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 			default:
 				msg := fmt.Sprintf("can't evaluate: %v", t)
-				panic(msg)
-				// TODO: Fix things so we can call
-				//       Throw/continue here or panic
-				//       with the same effect.
-				// t.Throw("error/runtime", msg)
-				// continue
+				panic("error/runtime: " + msg)
 			}
 
 			t.Scratch = Cons(nil, t.Scratch)
@@ -1649,12 +1630,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				simple := t.GetState() == psEvalElementBuiltin
 				ok, msg := t.Lookup(sym, simple)
 				if !ok {
-					panic(msg)
-					// TODO: Fix things so we can call
-					//       Throw/continue here or panic
-					//       with the same effect.
-					// t.Throw("error/runtime", msg)
-					// continue
+					panic("error/runtime: " + msg)
 				}
 				break
 			} else {
@@ -1684,12 +1660,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			r := Resolve(t.Lexical, t.Dynamic, k)
 			if r == nil {
 				msg := "'" + k.String() + "' undefined"
-				panic(msg)
-				// TODO: Fix things so we can call
-				//       Throw/continue here or panic
-				//       with the same effect.
-				// t.Throw("error/syntax", msg)
-				// continue
+				panic("error/runtime: " + msg)
 			}
 
 			r.Set(Car(t.Scratch))
@@ -1729,12 +1700,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			if state >= SaveMax {
 				msg := fmt.Sprintf("command not found: %s",
 					t.Code)
-				panic(msg)
-				// TODO: Fix things so we can call
-				//       Throw/continue here or panic
-				//       with the same effect.
-				// t.Throw("error/runtime", msg)
-				// continue
+				panic("error/runtime: " + msg)
 			} else {
 				t.RestoreState()
 				continue
