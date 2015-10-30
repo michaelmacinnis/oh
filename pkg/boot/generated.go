@@ -203,7 +203,10 @@ define source: syntax e (name) as {
 	}
 	set c: cdr r
 	f::close
-	define eval-list: method (rval first rest) as {
+	define eval-list: syntax o (rval first rest) as {
+                set rval: o::eval rval
+                set first: o::eval first
+                set rest: o::eval rest
 		if (is-null first): return rval
 		eval-list (e::eval first) (car rest) (cdr rest)
 	}
