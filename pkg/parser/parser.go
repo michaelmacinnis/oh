@@ -37,6 +37,7 @@ const (
 	ssColon
 	ssComment
 	ssDoubleQuoted
+	ssDoubleQuotedEscape
 	ssGreater
 	ssLess
 	ssPipe
@@ -201,9 +202,15 @@ main:
 			s.cursor--
 			s.state = ssStart
 
-		case ssDoubleQuoted:
-			for s.cursor < len(s.line) && s.line[s.cursor] != '"' ||
-				s.cursor > 0 && s.line[s.cursor-1] == '\\' {
+		case ssDoubleQuoted, ssDoubleQuotedEscape:
+			for s.cursor < len(s.line) {
+				if s.state == ssDoubleQuotedEscape {
+					s.state = ssDoubleQuoted
+				} else if s.line[s.cursor] == '"' {
+					break
+				} else if s.line[s.cursor] == '\\' {
+					s.state = ssDoubleQuotedEscape
+				}
 				s.cursor++
 			}
 			if s.cursor >= len(s.line) {
