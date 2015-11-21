@@ -8,6 +8,7 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"unsafe"
 )
@@ -42,6 +43,10 @@ func BecomeProcessGroupLeader() int {
 
 func ContinueProcess(pid int) {
 	syscall.Kill(pid, syscall.SIGCONT)
+}
+
+func GetHistoryFilePath() (string, error) {
+	return path.Join(os.Getenv("HOME"), ".oh_history"), nil
 }
 
 func InitSignalHandling() {

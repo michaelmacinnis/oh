@@ -5,7 +5,7 @@
 package task
 
 import (
-        . "github.com/michaelmacinnis/oh/pkg/cell"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"os"
 	"syscall"
 )
@@ -18,6 +18,10 @@ func BecomeProcessGroupLeader() int {
 }
 
 func ContinueProcess(pid int) {}
+
+func GetHistoryFilePath() (string, error) {
+	return "", errors.New("Not implemented")
+}
 
 func InitSignalHandling() {}
 

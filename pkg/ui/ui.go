@@ -36,6 +36,13 @@ func New(args []string) *cli {
 
 	i := &cli{liner.NewLiner()}
 
+	if history_path, err := task.GetHistoryFilePath(); err == nil {
+		if f, err := os.Open(history_path); err == nil {
+			i.ReadHistory(f)
+			f.Close()
+		}
+	}
+
 	uncooked, _ = liner.TerminalMode()
 
 	i.SetCtrlCAborts(true)
@@ -43,6 +50,18 @@ func New(args []string) *cli {
 	i.SetWordCompleter(complete)
 
 	return i
+}
+
+func (i *cli) Close() error {
+	if i.Exists() {
+		if history_path, err := task.GetHistoryFilePath(); err == nil {
+			if f, err := os.Create(history_path); err == nil {
+				i.WriteHistory(f)
+				f.Close()
+			}
+		}
+	}
+	return i.State.Close()
 }
 
 func (i *cli) Exists() bool {
