@@ -3,9 +3,9 @@
 package ui
 
 import (
+	"github.com/michaelmacinnis/liner"
 	"github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/task"
-	"github.com/peterh/liner"
 	"os"
 	"path"
 	"path/filepath"
@@ -74,7 +74,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = i.State.Prompt("> "); err == nil {
+	if line, err = i.State.Prompt(task.Pgid(), "> "); err == nil {
 		i.AppendHistory(line)
 		if task.ForegroundTask().Job.Command == "" {
 			task.ForegroundTask().Job.Command = line
