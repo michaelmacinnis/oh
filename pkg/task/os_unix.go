@@ -27,6 +27,7 @@ var (
 	Platform string = "unix"
 	done0    chan Cell
 	eval0    chan Cell
+	history  string = ""
 	incoming chan os.Signal
 	register chan registration
 )
@@ -46,7 +47,10 @@ func ContinueProcess(pid int) {
 }
 
 func GetHistoryFilePath() (string, error) {
-	return path.Join(os.Getenv("HOME"), ".oh_history"), nil
+	if history == "" {
+		history = path.Join(os.Getenv("HOME"), ".oh_history")
+	}
+	return history, nil
 }
 
 func InitSignalHandling() {
