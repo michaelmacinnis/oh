@@ -838,8 +838,8 @@ func Start(parser reader, cli ui) {
 
 		parse(nil, cli, deref, evaluate)
 
-		cli.Close()
 		fmt.Printf("\n")
+		cli.Close()
 	} else {
 		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
