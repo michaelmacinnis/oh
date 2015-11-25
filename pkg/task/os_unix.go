@@ -76,6 +76,10 @@ func SetForegroundGroup(group int) {
 		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
 }
 
+func SuspendProcess(pid int) {
+	syscall.Kill(pid, syscall.SIGSTOP)
+}
+
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	sys := &syscall.SysProcAttr{}
 

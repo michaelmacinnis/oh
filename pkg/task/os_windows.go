@@ -40,6 +40,8 @@ func JoinProcess(proc *os.Process) int {
 
 func SetForegroundGroup(group int) {}
 
+func SuspendProcess(pid int) {}
+
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	return nil
 }

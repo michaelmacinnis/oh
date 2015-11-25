@@ -96,6 +96,34 @@ func asConduit(o Context) Conduit {
 	return nil
 }
 
+func control(t *Task, args Cell) *Task {
+	if !jobControlEnabled() || t != task0 {
+		return nil
+	}
+
+	index := 0
+	if args != Null {
+		if a, ok := Car(args).(Atom); ok {
+			index = int(a.Int())
+		}
+	} else {
+		for k := range jobs {
+			if k > index {
+				index = k
+			}
+		}
+	}
+
+	found, ok := jobs[index]
+	if !ok {
+		return nil
+	}
+
+	delete(jobs, index)
+
+	return found
+}
+
 func expand(t *Task, args Cell) Cell {
 	list := Null
 
@@ -149,6 +177,20 @@ func init() {
 	bindArithmetic(scope0)
 
 	/* Builtins. */
+	scope0.DefineBuiltin("bg", func(t *Task, args Cell) bool {
+		SetCar(t.Scratch, Null)
+
+		found := control(t, args)
+		if found == nil {
+			return false
+		}
+
+		found.Continue()
+
+		SetCar(t.Scratch, found)
+
+		return false
+	})
 	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
 		err := os.Chdir(raw(Car(args)))
 		status := 0
@@ -179,33 +221,12 @@ func init() {
 		return t.Return(NewBoolean(count > 0))
 	})
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		if !jobControlEnabled() || t != task0 {
+		found := control(t, args)
+		if found == nil {
 			return false
 		}
-
-		index := 0
-		if args != Null {
-			if a, ok := Car(args).(Atom); ok {
-				index = int(a.Int())
-			}
-		} else {
-			for k := range jobs {
-				if k > index {
-					index = k
-				}
-			}
-		}
-
-		found, ok := jobs[index]
-
-		if !ok {
-			return false
-		}
-
-		delete(jobs, index)
 
 		setForegroundTask(found)
-
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {

@@ -1761,6 +1761,10 @@ func (t *Task) Strict() (ok bool) {
 }
 
 func (t *Task) Suspend() {
+	if t.pid > 0 {
+		SuspendProcess(t.pid)
+	}
+
 	for k, v := range t.children {
 		if v {
 			k.Suspend()
