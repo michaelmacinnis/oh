@@ -1146,6 +1146,8 @@ type Task struct {
 	*Registers
 	Done      chan Cell
 	Eval      chan Cell
+	File      string
+	Line      int
 	children  map[*Task]bool
 	parent    *Task
 	pid       int
@@ -1181,6 +1183,8 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 		},
 		Done:      make(chan Cell, 1),
 		Eval:      make(chan Cell, 1),
+		File:      "oh",
+		Line:      0,
 		children:  make(map[*Task]bool),
 		parent:    p,
 		pid:       0,
@@ -1479,7 +1483,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			return
 		}
 
-		fmt.Printf("oh: %v\n", r)
+		fmt.Printf("%s: %d: %v\n", t.File, t.Line, r)
 
 		successful = false
 	}()

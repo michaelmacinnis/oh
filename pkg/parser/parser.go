@@ -7,23 +7,21 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
+	"strconv"
 )
 
 type scanner struct {
 	deref   func(string, uintptr) Cell
+	input   common.ReadStringer
+	line    []rune
 	process func(Cell)
 	task    *task.Task
 
-	input common.ReadStringer
-	line  []rune
-
-	state  int
-	indent int
-
-	cursor int
-	start  int
-
+	cursor   int
+	indent   int
 	previous rune
+	start    int
+	state    int
 	token    rune
 
 	finished bool
@@ -94,6 +92,10 @@ main:
 				s.start = 0
 				s.token = CTRLC
 				break
+			}
+
+			if s.task != nil {
+				s.task.Line++
 			}
 
 			runes := []rune(line)
@@ -284,7 +286,13 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	println(msg)
+	file := "oh"
+	line := 0
+	if s.task != nil {
+		file = s.task.File
+		line = s.task.Line
+	}
+	println(file + ": " + strconv.Itoa(line) + ": " + msg)
 }
 
 func Parse(t *task.Task,
@@ -295,22 +303,24 @@ func Parse(t *task.Task,
 	s := new(scanner)
 
 	s.deref = d
+	s.input = r
 	s.process = p
 	s.task = t
 
-	s.input = r
+restart:
 	s.line = []rune("")
-
-	s.state = ssStart
-	s.indent = 0
-
 	s.cursor = 0
-	s.start = 0
-
 	s.previous = 0
+	s.start = 0
 	s.token = 0
 
-	yyParse(s)
+	s.finished = false
+
+	s.state = ssStart
+
+	if yyParse(s) > 0 {
+		goto restart
+	}
 }
 
 //go:generate go tool yacc -o grammar.go grammar.y

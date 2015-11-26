@@ -795,8 +795,9 @@ func Start(parser reader, cli ui) {
 		<-task0.Done
 	}
 
+	task0.File = "boot.oh"
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(nil, b, deref, eval)
+	parse(task0, b, deref, eval)
 
 	/* Command-line arguments */
 	args := Null
@@ -826,8 +827,11 @@ func Start(parser reader, cli ui) {
 		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
+	task0.Line = 0
+
 	interactive = false
 	if len(os.Args) > 1 {
+		task0.File = path.Base(os.Args[1])
 		eval(List(NewSymbol("source"), NewSymbol(os.Args[1])))
 	} else if cli.Exists() {
 		interactive = true
@@ -836,11 +840,13 @@ func Start(parser reader, cli ui) {
 
 		pgid = BecomeProcessGroupLeader()
 
-		parse(nil, cli, deref, evaluate)
+		task0.File = "oh"
+		parse(task0, cli, deref, evaluate)
 
 		fmt.Printf("\n")
 		cli.Close()
 	} else {
+		task0.File = "/dev/stdin"
 		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
 
