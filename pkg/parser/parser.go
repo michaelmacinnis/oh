@@ -7,7 +7,6 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
-	"strconv"
 )
 
 type scanner struct {
@@ -286,13 +285,7 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	file := "oh"
-	line := 0
-	if s.task != nil {
-		file = s.task.File
-		line = s.task.Line
-	}
-	println(file + ": " + strconv.Itoa(line) + ": " + msg)
+	s.task.PrintError(msg)
 }
 
 func Parse(t *task.Task,

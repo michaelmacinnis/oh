@@ -364,6 +364,12 @@ func init() {
 
 		return t.Return(NewInteger(l))
 	})
+	scope0.DefineMethod("get-line-number", func(t *Task, args Cell) bool {
+		return t.Return(NewInteger(int64(t.Line)))
+	})
+	scope0.DefineMethod("get-source-file", func(t *Task, args Cell) bool {
+		return t.Return(NewSymbol(t.File))
+	})
 	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
 		s := ""
 		for l := Car(args); l != Null; l = Cdr(l) {
@@ -441,6 +447,16 @@ func init() {
 		SetCdr(Car(args), Cadr(args))
 
 		return t.Return(Cadr(args))
+	})
+	scope0.DefineMethod("set-line-number", func(t *Task, args Cell) bool {
+		t.Line = int(Car(args).(Atom).Int())
+
+		return false
+	})
+	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
+		t.File = raw(Car(args))
+
+		return false
 	})
 	scope0.DefineMethod("temp-fifo", func(t *Task, args Cell) bool {
 		name, err := adapted.TempFifo("fifo-")
@@ -831,7 +847,7 @@ func Start(parser reader, cli ui) {
 
 	interactive = false
 	if len(os.Args) > 1 {
-		task0.File = path.Base(os.Args[1])
+		task0.File = os.Args[1]
 		eval(List(NewSymbol("source"), NewSymbol(os.Args[1])))
 	} else if cli.Exists() {
 		interactive = true

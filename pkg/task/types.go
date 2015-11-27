@@ -10,6 +10,7 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"math/big"
 	"os"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1474,6 +1475,27 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
+func (t *Task) PrintError(msg string) {
+	file := "oh"
+	line := 0
+
+	if t != nil {
+		file = path.Base(t.File)
+		line = t.Line
+
+		t.File = "oh"
+		t.Line = 0
+	}
+
+	if line != 0 {
+		msg = fmt.Sprintf("%s: %d: %v\n", file, line, msg)
+	} else {
+		msg = fmt.Sprintf("%s: %v\n", file, msg)
+	}
+
+	fmt.Print(msg)
+}
+
 func (t *Task) Run(end Cell) (successful bool) {
 	successful = true
 
@@ -1483,7 +1505,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			return
 		}
 
-		fmt.Printf("%s: %d: %v\n", t.File, t.Line, r)
+		t.PrintError(fmt.Sprintf("%v", r))
 
 		successful = false
 	}()

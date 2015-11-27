@@ -187,23 +187,31 @@ define source: syntax e (name) as {
 
 	if (not: exists name): set name = basename
 
+	define f: open r- name
+
+	set-line-number: integer 0
+	set-source-file name
+
         define r: cons () ()
         define c = r
-	define f: open r- name
 	while (define l: f::read) {
-		set-cdr c: cons l ()
+		set-cdr c: cons (cons (get-line-number) l) ()
 		set c: cdr c
 	}
 	set c: cdr r
 	f::close
-	define eval-list: syntax o (rval first rest) as {
-                set rval: o::eval rval
+
+	define rval: status 0
+	define eval-list: syntax o (first rest) as {
                 set first: o::eval first
                 set rest: o::eval rest
 		if (is-null first): return rval
-		eval-list (e::eval first) (car rest) (cdr rest)
+		set-line-number: car first
+		set rval: e::eval: cdr first
+		eval-list (car rest) (cdr rest)
 	}
-	eval-list (status 0) (car c) (cdr c)
+	eval-list (car c) (cdr c)
+	return rval
 }
 define process-substitution: syntax e (:args) as {
 	define fifos = ()

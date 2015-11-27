@@ -362,7 +362,7 @@ The command,
 
 produces the output,
 
-    oh: <lineno>: error/runtime: 'x' undefined
+    oh: error/runtime: 'x' undefined
 
 as the variable x is not accessible outside the scope in which it was
 defined.
@@ -450,7 +450,7 @@ The commands,
 produce the output,
 
     public variable 1
-    oh: <lineno>: error/runtime: 'y' undefined
+    oh: error/runtime: 'y' undefined
 
 #### Object
 

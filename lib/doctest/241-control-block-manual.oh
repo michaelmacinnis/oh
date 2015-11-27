@@ -20,8 +20,8 @@ set x = 3
 ##
 ## produces the output,
 ##
-##     oh: <lineno>: error/runtime: 'x' undefined
-#-     241-control-block-manual.oh: 33: error/runtime: 'x' undefined
+##     oh: error/runtime: 'x' undefined
+#-     241-control-block-manual.oh: 18: error/runtime: 'x' undefined
 ##
 ## as the variable x is not accessible outside the scope in which it was
 ## defined.
