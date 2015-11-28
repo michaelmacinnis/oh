@@ -6,6 +6,7 @@ package task
 
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"errors"
 	"os"
 	"syscall"
 )
