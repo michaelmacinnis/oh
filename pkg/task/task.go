@@ -25,7 +25,7 @@ type ui interface {
 	ReadString(delim byte) (line string, err error)
 }
 
-type reader func(*Task, common.ReadStringer,
+type reader func(*Task, common.ReadStringer, string,
 	func(string, uintptr) Cell, func(Cell))
 
 const (
@@ -788,6 +788,11 @@ func Pgid() int {
 	return pgid
 }
 
+func PrintError(file string, line int, msg string) {
+	file = path.Base(file)
+	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
+}
+
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
 	v = nil
 
@@ -811,9 +816,8 @@ func Start(parser reader, cli ui) {
 		<-task0.Done
 	}
 
-	task0.File = "boot.oh"
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(task0, b, deref, eval)
+	parse(task0, b, "boot.oh", deref, eval)
 
 	/* Command-line arguments */
 	args := Null
@@ -856,8 +860,7 @@ func Start(parser reader, cli ui) {
 
 		pgid = BecomeProcessGroupLeader()
 
-		task0.File = "oh"
-		parse(task0, cli, deref, evaluate)
+		parse(task0, cli, "oh", deref, evaluate)
 
 		fmt.Printf("\n")
 		cli.Close()

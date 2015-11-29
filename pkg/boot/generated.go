@@ -196,9 +196,6 @@ define source: syntax e (name) as {
 
 	define f: open r- name
 
-	set-line-number: integer 0
-	set-source-file name
-
         define r: cons () ()
         define c = r
 	while (define l: f::read) {

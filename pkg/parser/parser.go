@@ -17,7 +17,8 @@ type scanner struct {
 	task    *task.Task
 
 	cursor   int
-	indent   int
+	lineno   int
+	filename string
 	previous rune
 	start    int
 	state    int
@@ -93,9 +94,9 @@ main:
 				break
 			}
 
-			if s.task != nil {
-				s.task.Line++
-			}
+			s.lineno++
+			s.task.File = s.filename
+			s.task.Line = s.lineno
 
 			runes := []rune(line)
 			last := len(runes) - 2
@@ -285,19 +286,21 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	s.task.PrintError(msg)
+	task.PrintError(s.filename, s.lineno, msg)
 }
 
 func Parse(t *task.Task,
 	r common.ReadStringer,
+	f string,
 	d func(string, uintptr) Cell,
-	p func(Cell)) {
+	c func(Cell)) {
 
 	s := new(scanner)
 
 	s.deref = d
+	s.filename = f
 	s.input = r
-	s.process = p
+	s.process = c
 	s.task = t
 
 restart:

@@ -10,7 +10,6 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"math/big"
 	"os"
-	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -647,7 +646,11 @@ func IsPipe(c Cell) bool {
 func NewPipe(l Context, r *os.File, w *os.File) Context {
 	p := &Pipe{
 		Scope: NewScope(l.Expose(), conduitEnv()),
-		b:     nil, c: nil, d: nil, r: r, w: w,
+		b:     nil,
+		c:     nil,
+		d:     nil,
+		r:     r,
+		w:     w,
 	}
 
 	if r == nil && w == nil {
@@ -709,7 +712,7 @@ func (p *Pipe) Read(t *Task) Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			parse(t, p.reader(), deref, func(c Cell) {
+			parse(t, p.reader(), p.r.Name(), deref, func(c Cell) {
 				p.c <- c
 				<-p.d
 			})
@@ -1475,27 +1478,6 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) PrintError(msg string) {
-	file := "oh"
-	line := 0
-
-	if t != nil {
-		file = path.Base(t.File)
-		line = t.Line
-
-		t.File = "oh"
-		t.Line = 0
-	}
-
-	if line != 0 {
-		msg = fmt.Sprintf("%s: %d: %v\n", file, line, msg)
-	} else {
-		msg = fmt.Sprintf("%s: %v\n", file, msg)
-	}
-
-	fmt.Print(msg)
-}
-
 func (t *Task) Run(end Cell) (successful bool) {
 	successful = true
 
@@ -1505,7 +1487,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			return
 		}
 
-		t.PrintError(fmt.Sprintf("%v", r))
+		PrintError(t.File, t.Line, fmt.Sprintf("%v", r))
 
 		successful = false
 	}()
