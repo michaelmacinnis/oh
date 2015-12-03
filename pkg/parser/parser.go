@@ -293,7 +293,7 @@ func Parse(t *task.Task,
 	r common.ReadStringer,
 	f string,
 	d func(string, uintptr) Cell,
-	c func(Cell)) {
+	c func(Cell)) bool {
 
 	s := new(scanner)
 
@@ -314,9 +314,12 @@ restart:
 
 	s.state = ssStart
 
-	if yyParse(s) > 0 {
+	rval := yyParse(s)
+	if rval > 0 {
 		goto restart
 	}
+
+	return rval == 0
 }
 
 //go:generate go tool yacc -o grammar.go grammar.y

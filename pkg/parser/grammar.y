@@ -41,7 +41,11 @@ opt_evaluate_command: { $$.c = Null }; /* Empty */
 opt_evaluate_command: command {
 	$$.c = $1.c
 	if ($1.c != Null) {
-		yylex.(*scanner).process($1.c)
+		s := yylex.(*scanner)
+		s.process($1.c)
+		if s.task.Stack == Null {
+			return -1
+		}
 	}
 	goto start
 };

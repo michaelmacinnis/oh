@@ -26,7 +26,7 @@ type ui interface {
 }
 
 type reader func(*Task, common.ReadStringer, string,
-	func(string, uintptr) Cell, func(Cell))
+	func(string, uintptr) Cell, func(Cell)) bool
 
 const (
 	SaveCarCode = 1 << iota
@@ -860,16 +860,16 @@ func Start(parser reader, cli ui) {
 
 		pgid = BecomeProcessGroupLeader()
 
-		parse(task0, cli, "oh", deref, evaluate)
-
-		fmt.Printf("\n")
+		if parse(task0, cli, "oh", deref, evaluate) {
+			fmt.Printf("\n")
+		}
 		cli.Close()
 	} else {
 		task0.File = "/dev/stdin"
 		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
 
-	os.Exit(0)
+	os.Exit(status(Car(task0.Scratch)))
 }
 
 //go:generate ./generate.oh

@@ -149,7 +149,6 @@ func broker() {
 		}
 		done0 <- c
 	}
-	os.Exit(status(Car(task0.Scratch)))
 }
 
 func evaluate(c Cell) {

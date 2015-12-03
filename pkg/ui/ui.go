@@ -40,8 +40,6 @@ func New(args []string) *cli {
 		if f, err := os.Open(history_path); err == nil {
 			i.ReadHistory(f)
 			f.Close()
-		} else {
-			println("Error reading history: " + err.Error())
 		}
 	}
 
