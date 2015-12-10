@@ -303,20 +303,19 @@ func Parse(t *task.Task,
 	s.process = c
 	s.task = t
 
-restart:
-	s.line = []rune("")
-	s.cursor = 0
-	s.previous = 0
-	s.start = 0
-	s.token = 0
+	rval := 1
+	for rval > 0 {
+		s.line = []rune("")
+		s.cursor = 0
+		s.previous = 0
+		s.start = 0
+		s.token = 0
 
-	s.finished = false
+		s.finished = false
 
-	s.state = ssStart
+		s.state = ssStart
 
-	rval := yyParse(s)
-	if rval > 0 {
-		goto restart
+		rval = yyParse(s)
 	}
 
 	return rval == 0

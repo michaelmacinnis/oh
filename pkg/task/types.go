@@ -77,7 +77,7 @@ var (
 
 func conduitEnv() *Env {
 	if envc != nil {
-		goto created
+		return envc
 	}
 
 	envc = NewEnv(nil)
@@ -113,13 +113,12 @@ func conduitEnv() *Env {
 		return t.Return(True)
 	})
 
-created:
 	return envc
 }
 
 func stringEnv() *Env {
 	if envs != nil {
-		goto created
+		return envs
 	}
 
 	envs = NewEnv(nil)
@@ -206,7 +205,6 @@ func stringEnv() *Env {
 
 	bindStringPredicates(envs)
 
-created:
 	return envs
 }
 

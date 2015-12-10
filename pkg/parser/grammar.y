@@ -2,9 +2,9 @@
 
 %token CTRLC DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
-%left ORF		/* || */
-%left ANDF	   /* && */
-%left PIPE	   /* |,|+,!|,!|+ */
+%left ORF        /* || */
+%left ANDF       /* && */
+%left PIPE	 /* |,|+,!|,!|+ */
 %left REDIRECT   /* <,>,!>,>>,!>> */
 %left SUBSTITUTE /* <(,>( */
 %left "^"
