@@ -103,23 +103,25 @@ func TerminateProcess(pid int) {
 }
 
 func broker() {
-	var c Cell
-	for c == nil && task0.Stack != Null {
-		for c == nil {
+	for task0.Stack != Null {
+		for reading := true; reading; {
 			select {
-			case <-incoming:
-			case c = <-eval0:
+			case <-incoming: // Discard signals.
+			case c := <-eval0:
+				task0.Eval <- c
+				reading = false
 			}
 		}
-		task0.Eval <- c
-		for c != nil {
+
+		for evaluating := true; evaluating; {
 			prev := task0
+
 			select {
-			case sig := <-incoming:
-				// Handle signals.
+			case sig := <-incoming: // Handle signals.
 				switch sig {
 				case syscall.SIGTSTP:
 					task0.Suspend()
+
 					last := 0
 					for k := range jobs {
 						if k > last {
@@ -127,27 +129,24 @@ func broker() {
 						}
 					}
 					last++
-
 					jobs[last] = task0
 
-					fallthrough
 				case syscall.SIGINT:
-					if sig == syscall.SIGINT {
-						task0.Stop()
-					}
-
-					LaunchForegroundTask()
-					c = nil
+					task0.Stop()
 				}
 
-			case c = <-task0.Done:
+				LaunchForegroundTask()
+
+			case <-task0.Done:
 				if task0 != prev {
-					c = Null
 					continue
 				}
 			}
+
+			evaluating = false
 		}
-		done0 <- c
+
+		done0 <- nil
 	}
 }
 
