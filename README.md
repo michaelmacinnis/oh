@@ -1,9 +1,9 @@
-# oh
-
-Oh is a Unix shell. If you've used other Unix shells, oh should feel
-familiar.
-
 ![gif](img/oh.gif)
+
+## About
+
+**Oh** is a Unix shell. If you've used other Unix shells, oh should feel
+familiar.
 
 Where oh diverges from traditional Unix shells is in its programming
 language features.
@@ -22,17 +22,24 @@ used interchangeably. This homoiconic nature also allows oh to support
 fexprs which, in turn, allow oh to be easily extended. In fact, much of
 oh is written in oh.
 
-For more detail see: [Using oh](MANUAL.md)
-
 ## Installing
+
+> Oh compiles and runs, but should be considered experimental, on Windows.
 
 With Go 1.5 or greater installed,
 
-    go get github.com/michaelmacinnis/oh
+```
+go get github.com/michaelmacinnis/oh
+```
 
-Oh compiles and runs, but should be considered experimental, on Windows.
+## Using
 
-## License
+After installing **Oh**,
 
-Oh is released under an MIT-style license.
+```
+oh
+```
 
+## Help
+
+For documentation [see the guide](MANUAL.md).
