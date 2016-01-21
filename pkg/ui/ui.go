@@ -76,7 +76,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = i.State.Prompt(task.Pgid(), "> "); err == nil {
+	if line, err = i.State.Prompt(task.Pgid(), task.Prompt()); err == nil {
 		i.AppendHistory(line)
 		if task.ForegroundTask().Job.Command == "" {
 			task.ForegroundTask().Job.Command = line

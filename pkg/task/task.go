@@ -793,6 +793,16 @@ func PrintError(file string, line int, msg string) {
 	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
 }
 
+func Prompt() string {
+  ps1 := os.Getenv("PS1")
+
+  if ps1 == "" {
+    ps1 = "> "
+  }
+
+  return ps1
+}
+
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
 	v = nil
 
