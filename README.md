@@ -1,4 +1,4 @@
-# oh
+# oh: a surprisingly powerful Unix shell
 
 Oh is a Unix shell. If you've used other Unix shells, oh should feel
 familiar.
