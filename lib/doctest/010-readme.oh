@@ -27,7 +27,21 @@
 ## fexprs which, in turn, allow oh to be easily extended. In fact, much of
 ## oh is written in oh.
 ##
+## ## Installing
+##
+## With Go 1.5 or greater installed,
+##
+##     go get github.com/michaelmacinnis/oh
+##
+## (Oh compiles and runs, but should be considered experimental, on Windows.)
+##
+## ## Using
+##
 ## For more detail see: [Using oh](MANUAL.md)
+##
+## ## License
+##
+## Oh is released under an MIT-style license.
 ##
 
 echo "Hello, World!"
@@ -63,18 +77,4 @@ rm -r greeting junk || echo "rm failed!"
 #-     20 21 22 23 24 25 26  
 #-     27 28 29 30 31        
 #-                           
-
-## ## Installing
-##
-## With Go 1.5 or greater installed,
-##
-##     go get github.com/michaelmacinnis/oh
-##
-## Oh compiles and runs, but should be considered experimental, on Windows.
-##
-
-## ## License
-##
-## Oh is released under an MIT-style license.
-##
 

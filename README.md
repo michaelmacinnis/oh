@@ -22,15 +22,17 @@ used interchangeably. This homoiconic nature also allows oh to support
 fexprs which, in turn, allow oh to be easily extended. In fact, much of
 oh is written in oh.
 
-For more detail see: [Using oh](MANUAL.md)
-
 ## Installing
 
 With Go 1.5 or greater installed,
 
     go get github.com/michaelmacinnis/oh
 
-Oh compiles and runs, but should be considered experimental, on Windows.
+(Oh compiles and runs, but should be considered experimental, on Windows.)
+
+## Using
+
+For more detail see: [Using oh](MANUAL.md)
 
 ## License
 
