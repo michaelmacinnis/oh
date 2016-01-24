@@ -6,10 +6,13 @@ import (
 	"github.com/michaelmacinnis/liner"
 	"github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/task"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"unsafe"
 )
 
 type cli struct {
@@ -47,6 +50,7 @@ func New(args []string) *cli {
 
 	i.SetCtrlCAborts(true)
 	i.SetTabCompletionStyle(liner.TabPrints)
+	i.SetShouldRestart(restart)
 	i.SetWordCompleter(complete)
 
 	return i
@@ -76,7 +80,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = i.State.Prompt(task.Pgid(), "> "); err == nil {
+	if line, err = i.State.Prompt("> "); err == nil {
 		i.AppendHistory(line)
 		if task.ForegroundTask().Job.Command == "" {
 			task.ForegroundTask().Job.Command = line
@@ -239,4 +243,20 @@ func files(word string) []string {
 	})
 
 	return completions
+}
+
+func restart(err error) bool {
+	if err == io.EOF {
+		return false
+	}
+
+	g := task.Pgid()
+	if g > 0 {
+		syscall.Syscall(syscall.SYS_IOCTL,
+			uintptr(syscall.Stdin),
+			syscall.TIOCSPGRP,
+			uintptr(unsafe.Pointer(&g)))
+	}
+
+	return true
 }
