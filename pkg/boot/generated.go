@@ -166,6 +166,11 @@ define or: syntax e (: lst) as {
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) as: echo: f::sprintf @args
+define prompt: method (suffix) as {
+	define folders: (string $cwd)::split "/"
+	define last: sub (length folders) 1
+	return (list-ref last folders) ^ suffix
+}
 define quasiquote: syntax e (cell) as {
 	if (not: is-cons cell): return cell
 	if (is-null cell): return cell

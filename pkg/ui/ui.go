@@ -80,10 +80,15 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
 
-	if line, err = i.State.Prompt("> "); err == nil {
+	t := task.ForegroundTask()
+
+	command := cell.List(cell.NewSymbol("prompt"), cell.NewSymbol("> "))
+	prompt := t.Call(command)
+
+	if line, err = i.State.Prompt(prompt); err == nil {
 		i.AppendHistory(line)
-		if task.ForegroundTask().Job.Command == "" {
-			task.ForegroundTask().Job.Command = line
+		if t.Job.Command == "" {
+			t.Job.Command = line
 		}
 		line += "\n"
 	}

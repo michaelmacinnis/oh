@@ -780,7 +780,7 @@ func LaunchForegroundTask() {
 		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(Cons(nil, Null), nil, nil, nil)
+	task0 = NewTask(nil, nil, nil, nil)
 	go task0.Listen()
 }
 

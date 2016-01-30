@@ -1247,6 +1247,22 @@ func (t *Task) Apply(args Cell) bool {
 	return true
 }
 
+func (t *Task) Call(c Cell) string {
+	saved := *(t.Registers)
+
+	t.Code = c
+	t.Scratch = List(NewStatus(0))
+	t.Stack = List(NewInteger(psEvalCommand))
+
+	t.Run(nil)
+
+	status := Car(t.Scratch)
+
+	*(t.Registers) = saved
+
+	return raw(status)
+}
+
 func (t *Task) Closure(n ClosureGenerator) bool {
 	label := Null
 	params := Car(t.Code)
@@ -1400,6 +1416,8 @@ func (t *Task) Launch() {
 }
 
 func (t *Task) Listen() {
+	t.Code = Cons(nil, Null)
+
 	for c := range t.Eval {
 		saved := *(t.Registers)
 
