@@ -3,9 +3,9 @@
 package ui
 
 import (
-	"github.com/michaelmacinnis/liner"
 	"github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/task"
+	"github.com/peterh/liner"
 	"io"
 	"os"
 	"path"
