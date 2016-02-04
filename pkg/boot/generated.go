@@ -5,6 +5,34 @@
 package boot
 
 var Script string = `
+define caar: method (l) as: car: car l
+define cadr: method (l) as: car: cdr l
+define cdar: method (l) as: cdr: car l
+define cddr: method (l) as: cdr: cdr l
+define caaar: method (l) as: car: caar l
+define caadr: method (l) as: car: cadr l
+define cadar: method (l) as: car: cdar l
+define caddr: method (l) as: car: cddr l
+define cdaar: method (l) as: cdr: caar l
+define cdadr: method (l) as: cdr: cadr l
+define cddar: method (l) as: cdr: cdar l
+define cdddr: method (l) as: cdr: cddr l
+define caaaar: method (l) as: caar: caar l
+define caaadr: method (l) as: caar: cadr l
+define caadar: method (l) as: caar: cdar l
+define caaddr: method (l) as: caar: cddr l
+define cadaar: method (l) as: cadr: caar l
+define cadadr: method (l) as: cadr: cadr l
+define caddar: method (l) as: cadr: cdar l
+define cadddr: method (l) as: cadr: cddr l
+define cdaaar: method (l) as: cdar: caar l
+define cdaadr: method (l) as: cdar: cadr l
+define cdadar: method (l) as: cdar: cdar l
+define cdaddr: method (l) as: cdar: cddr l
+define cddaar: method (l) as: cddr: caar l
+define cddadr: method (l) as: cddr: cadr l
+define cdddar: method (l) as: cddr: cdar l
+define cddddr: method (l) as: cddr: cddr l
 define $connect: syntax (conduit name) as {
 	set conduit: eval conduit
 	syntax e (left right) as {
@@ -76,34 +104,16 @@ define backtick: syntax e (cmd) as {
 	p::reader-close
 	return: cdr r
 }
-define caar: method (l) as: car: car l
-define cadr: method (l) as: car: cdr l
-define cdar: method (l) as: cdr: car l
-define cddr: method (l) as: cdr: cdr l
-define caaar: method (l) as: car: caar l
-define caadr: method (l) as: car: cadr l
-define cadar: method (l) as: car: cdar l
-define caddr: method (l) as: car: cddr l
-define cdaar: method (l) as: cdr: caar l
-define cdadr: method (l) as: cdr: cadr l
-define cddar: method (l) as: cdr: cdar l
-define cdddr: method (l) as: cdr: cddr l
-define caaaar: method (l) as: caar: caar l
-define caaadr: method (l) as: caar: cadr l
-define caadar: method (l) as: caar: cdar l
-define caaddr: method (l) as: caar: cddr l
-define cadaar: method (l) as: cadr: caar l
-define cadadr: method (l) as: cadr: cadr l
-define caddar: method (l) as: cadr: cdar l
-define cadddr: method (l) as: cadr: cddr l
-define cdaaar: method (l) as: cdar: caar l
-define cdaadr: method (l) as: cdar: cadr l
-define cdadar: method (l) as: cdar: cdar l
-define cdaddr: method (l) as: cdar: cddr l
-define cddaar: method (l) as: cddr: caar l
-define cddadr: method (l) as: cddr: cadr l
-define cdddar: method (l) as: cddr: cdar l
-define cddddr: method (l) as: cddr: cddr l
+define catch: syntax e (_name _block) as {
+	define _args: list _name (symbol "throw")
+	define _mthd: list (symbol "method") _args (symbol "as") _block
+	define _handler: e::eval _mthd
+	define _return: e::eval (symbol "return")
+	define _throw = throw
+	dynamic throw: method (condition) as {
+		_return: _handler condition _throw
+	}
+}
 define channel-stderr: $connect channel $stderr
 define channel-stdout: $connect channel $stdout
 define echo: builtin (: args) as {
@@ -114,6 +124,13 @@ define echo: builtin (: args) as {
 	}
 }
 define error: builtin (: args) as: $stderr::write @args
+define exception: method (_type _status _message) as {
+	object {
+		public message = _message
+		public status = _status
+		public type = _type
+	}
+}
 define for: method (l m) as {
 	define r: cons () ()
 	define c = r
@@ -166,6 +183,35 @@ define or: syntax e (: lst) as {
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) as: echo: f::sprintf @args
+define process-substitution: syntax e (:args) as {
+	define fifos = ()
+	define procs = ()
+	define cmd: for args: method (arg) as {
+		if (not: is-cons arg): return arg
+		if (eq (symbol "substitute-stdin") (car arg)) {
+			define fifo: temp-fifo
+			define proc: spawn {
+				e::eval: cdr arg < fifo
+			}
+			set fifos: cons fifo fifos
+			set procs: cons proc procs
+			return fifo
+		}
+		if (eq (symbol "substitute-stdout") (car arg)) {
+			define fifo: temp-fifo
+			define proc: spawn {
+				e::eval: cdr arg > fifo
+			}
+			set fifos: cons fifo fifos
+			set procs: cons proc procs
+			return fifo
+		}
+		return arg
+	}
+	e::eval cmd
+	wait @procs
+	rm @fifos
+}
 define prompt: method (suffix) as {
 	define folders: (string $cwd)::split "/"
 	define last: sub (length folders) 1
@@ -222,34 +268,9 @@ define source: syntax e (name) as {
 	eval-list (car c) (cdr c)
 	return rval
 }
-define process-substitution: syntax e (:args) as {
-	define fifos = ()
-	define procs = ()
-	define cmd: for args: method (arg) as {
-		if (not: is-cons arg): return arg
-		if (eq (symbol "substitute-stdin") (car arg)) {
-			define fifo: temp-fifo
-			define proc: spawn {
-				e::eval: cdr arg < fifo
-			}
-			set fifos: cons fifo fifos
-			set procs: cons proc procs
-			return fifo
-		}
-		if (eq (symbol "substitute-stdout") (car arg)) {
-			define fifo: temp-fifo
-			define proc: spawn {
-				e::eval: cdr arg > fifo
-			}
-			set fifos: cons fifo fifos
-			set procs: cons proc procs
-			return fifo
-		}
-		return arg
-	}
-	e::eval cmd
-	wait @procs
-	rm @fifos
+dynamic throw: method (condition) as {
+    error: ": "::join condition::type condition::message
+    exit condition::status
 }
 define write: method (: args) as: $stdout::write @args
 
