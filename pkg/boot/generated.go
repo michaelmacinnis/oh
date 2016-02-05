@@ -104,14 +104,21 @@ define backtick: syntax e (cmd) as {
 	p::reader-close
 	return: cdr r
 }
-define catch: syntax e (_name _block) as {
-	define _args: list _name (symbol "throw")
-	define _mthd: list (symbol "method") _args (symbol "as") _block
-	define _handler: e::eval _mthd
+define catch: syntax e (name: clause) as {
+	define args: list name (symbol "throw")
+	define body: list (symbol "throw") name
+	if (is-null clause) {
+		set body: list body
+	} else {
+		set body: append clause body
+	}
+	define handler: e::eval {
+		list (symbol "method") args (symbol "as") @body
+	}
 	define _return: e::eval (symbol "return")
 	define _throw = throw
 	dynamic throw: method (condition) as {
-		_return: _handler condition _throw
+		_return: handler condition _throw
 	}
 }
 define channel-stderr: $connect channel $stderr
