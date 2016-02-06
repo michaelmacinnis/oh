@@ -10,6 +10,7 @@ import (
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1273,7 +1274,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	if t.Code == Null {
-		panic("error/syntax: expected 'as'")
+		panic("oh: 1: error/syntax: expected 'as'")
 	}
 
 	body := Cddr(t.Code)
@@ -1310,14 +1311,14 @@ func (t *Task) Debug(s string) {
 func (t *Task) DynamicVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
-		msg := r + " cannot be used as a variable name"
-		panic("error/syntax: " + msg)
+		msg := "oh: 1: error/syntax: '" + r + "' cannot be used as a variable name"
+		panic(msg)
 	}
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
-			msg := "environment variable names must begin with '$'"
-			panic("error/syntax: " + msg)
+			msg := "oh: 1: error/syntax: environment variable names must begin with '$'"
+			panic(msg)
 		}
 	}
 
@@ -1325,8 +1326,8 @@ func (t *Task) DynamicVar(state int64) bool {
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			msg := "expected '=' after " + r
-			panic("error/syntax: " + msg)
+			msg := "oh: 1: error/syntax: expected '=' after '" + r + "'"
+			panic(msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1382,7 +1383,7 @@ func (t *Task) External(args Cell) bool {
 	SetCar(t.Scratch, False)
 
 	if problem != nil {
-		panic("error/runtime: " + problem.Error())
+		panic("oh: 127: error/runtime: " + problem.Error())
 	}
 
 	argv := []string{arg0}
@@ -1404,7 +1405,7 @@ func (t *Task) External(args Cell) bool {
 
 	status, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
-		panic("error/runtime: " + problem.Error())
+		panic("oh: 126: error/runtime: " + problem.Error())
 	}
 
 	return t.Return(status)
@@ -1455,15 +1456,15 @@ func (t *Task) LexicalVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		msg := r + " cannot be used as a variable name"
-		panic("error/syntax: " + msg)
+		panic(msg)
 	}
 
 	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			msg := "expected '=' after " + r
-			panic("error/syntax: " + msg)
+			msg := "oh: 1: error/syntax: expected '=' after " + r + "'"
+			panic(msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1503,7 +1504,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			return
 		}
 
-		PrintError(t.File, t.Line, fmt.Sprintf("%v", r))
+		t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
 
 		successful = false
 	}()
@@ -1544,8 +1545,8 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 				if Car(t.Code) != Null &&
 					raw(Car(t.Code)) != "else" {
-					msg := "expected 'else'"
-					panic("error/syntax: " + msg)
+					msg := "oh: 1: error/syntax: expected 'else'"
+					panic(msg)
 				}
 			}
 
@@ -1618,7 +1619,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 			default:
 				msg := fmt.Sprintf("can't evaluate: %v", t)
-				panic("error/runtime: " + msg)
+				panic(msg)
 			}
 
 			t.Scratch = Cons(nil, t.Scratch)
@@ -1654,7 +1655,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				simple := t.GetState() == psEvalElementBuiltin
 				ok, msg := t.Lookup(sym, simple)
 				if !ok {
-					panic("error/runtime: " + msg)
+					panic(msg)
 				}
 				break
 			} else {
@@ -1684,7 +1685,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			r := Resolve(t.Lexical, t.Dynamic, k)
 			if r == nil {
 				msg := "'" + k.String() + "' undefined"
-				panic("error/runtime: " + msg)
+				panic(msg)
 			}
 
 			r.Set(Car(t.Scratch))
@@ -1720,11 +1721,14 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 			break
 
+		case psExecFatal:
+			return false
+
 		default:
 			if state >= SaveMax {
-				msg := fmt.Sprintf("command not found: %s",
+				msg := fmt.Sprintf("invalid state: %s",
 					t.Code)
-				panic("error/runtime: " + msg)
+				panic(msg)
 			} else {
 				t.RestoreState()
 				continue
@@ -1796,6 +1800,29 @@ func (t *Task) Suspend() {
 	}
 
 	t.suspended = make(chan bool)
+}
+
+func (t *Task) Throw(file string, line int, text string) {
+	kind := "error/runtime"
+	code := "1"
+
+	if strings.HasPrefix(text, "oh: ") {
+		args := strings.SplitN(text, ": ", 4)
+		code = args[1]
+		kind = args[2]
+		text = args[3]
+	}
+	c := List(
+		NewSymbol("throw"), List(
+			NewSymbol("exception"),
+			NewSymbol(kind),
+			NewSymbol(text),
+			NewStatus(NewSymbol(code).Int()),
+			NewSymbol(path.Base(file)),
+			NewInteger(int64(line)),
+		),
+	)
+	t.Call(c)
 }
 
 func (t *Task) Wait() {

@@ -131,11 +131,13 @@ define echo: builtin (: args) as {
 	}
 }
 define error: builtin (: args) as: $stderr::write @args
-define exception: method (_type _status _message) as {
+dynamic exception: method (_type _message _status _file _line) as {
 	object {
-		public message = _message
-		public status = _status
 		public type = _type
+		public status = _status
+		public message = _message
+		public line = _line
+		public file = _file
 	}
 }
 define for: method (l m) as {
@@ -275,9 +277,9 @@ define source: syntax e (name) as {
 	eval-list (car c) (cdr c)
 	return rval
 }
-dynamic throw: method (condition) as {
-    error: ": "::join condition::type condition::message
-    exit condition::status
+dynamic throw: method (c) as {
+    error: ": "::join c::file c::line c::type c::message
+    fatal c::status
 }
 define write: method (: args) as: $stdout::write @args
 

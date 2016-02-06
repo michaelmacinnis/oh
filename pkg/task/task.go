@@ -52,6 +52,7 @@ const (
 	psExecCommand
 	psExecDefine
 	psExecDynamic
+	psExecFatal
 	psExecIf
 	psExecMethod
 	psExecPublic
@@ -352,6 +353,13 @@ func init() {
 
 		return true
 	})
+	scope0.DefineMethod("fatal", func(t *Task, args Cell) bool {
+		t.Scratch = List(Car(args))
+
+		t.ReplaceStates(psExecFatal)
+
+		return true
+	})
 	scope0.DefineMethod("length", func(t *Task, args Cell) bool {
 		var l int64
 
@@ -513,7 +521,7 @@ func init() {
 
 		c := Resolve(t.Self(), nil, k)
 		if c == nil {
-			panic("error/runtime: '" + s + "' undefined")
+			panic("'" + s + "' undefined")
 		} else if a, ok := c.Get().(Binding); ok {
 			return t.Return(a.Bind(t.Lexical))
 		} else {
@@ -612,7 +620,7 @@ func init() {
 		s := Null
 		if Length(t.Code) == 3 {
 			if raw(Cadr(t.Code)) != "=" {
-				panic("error/syntax: expected '='")
+				panic("oh: 1: error/syntax: expected '='")
 			}
 			s = Caddr(t.Code)
 		} else {
@@ -784,13 +792,13 @@ func LaunchForegroundTask() {
 	go task0.Listen()
 }
 
-func Pgid() int {
-	return pgid
-}
-
 func PrintError(file string, line int, msg string) {
 	file = path.Base(file)
 	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
+}
+
+func Pgid() int {
+	return pgid
 }
 
 func Resolve(s Context, e *Env, k *Symbol) (v Reference) {

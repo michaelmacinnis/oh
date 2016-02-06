@@ -286,7 +286,7 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	task.PrintError(s.filename, s.lineno, msg)
+	s.task.Throw(s.filename, s.lineno, msg)
 }
 
 func Parse(t *task.Task,
