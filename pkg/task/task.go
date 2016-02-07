@@ -52,7 +52,6 @@ const (
 	psExecCommand
 	psExecDefine
 	psExecDynamic
-	psExecFatal
 	psExecIf
 	psExecMethod
 	psExecPublic
@@ -62,6 +61,8 @@ const (
 	psExecSyntax
 	psExecWhileBody
 	psExecWhileTest
+
+	psFatal
 	psReturn
 
 	psMax
@@ -356,7 +357,7 @@ func init() {
 	scope0.DefineMethod("fatal", func(t *Task, args Cell) bool {
 		t.Scratch = List(Car(args))
 
-		t.ReplaceStates(psExecFatal)
+		t.ReplaceStates(psFatal)
 
 		return true
 	})
@@ -620,7 +621,7 @@ func init() {
 		s := Null
 		if Length(t.Code) == 3 {
 			if raw(Cadr(t.Code)) != "=" {
-				panic("oh: 1: error/syntax: expected '='")
+				panic(common.ErrSyntax + "expected '='")
 			}
 			s = Caddr(t.Code)
 		} else {

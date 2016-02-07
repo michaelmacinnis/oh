@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/michaelmacinnis/adapted"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/peterh/liner"
 	"math/big"
 	"os"
@@ -1274,7 +1275,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	if t.Code == Null {
-		panic("oh: 1: error/syntax: expected 'as'")
+		panic(common.ErrSyntax + "expected 'as'")
 	}
 
 	body := Cddr(t.Code)
@@ -1311,14 +1312,14 @@ func (t *Task) Debug(s string) {
 func (t *Task) DynamicVar(state int64) bool {
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
-		msg := "oh: 1: error/syntax: '" + r + "' cannot be used as a variable name"
-		panic(msg)
+		msg := "'" + r + "' cannot be used as a variable name"
+		panic(common.ErrSyntax + msg)
 	}
 
 	if state == psExecSetenv {
 		if !strings.HasPrefix(r, "$") {
-			msg := "oh: 1: error/syntax: environment variable names must begin with '$'"
-			panic(msg)
+			msg := "environment variable names must begin with '$'"
+			panic(common.ErrSyntax + msg)
 		}
 	}
 
@@ -1326,8 +1327,8 @@ func (t *Task) DynamicVar(state int64) bool {
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			msg := "oh: 1: error/syntax: expected '=' after '" + r + "'"
-			panic(msg)
+			msg := "expected '=' after '" + r + "'"
+			panic(common.ErrSyntax + msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1383,7 +1384,7 @@ func (t *Task) External(args Cell) bool {
 	SetCar(t.Scratch, False)
 
 	if problem != nil {
-		panic("oh: 127: error/runtime: " + problem.Error())
+		panic(common.ErrNotFound + problem.Error())
 	}
 
 	argv := []string{arg0}
@@ -1405,7 +1406,7 @@ func (t *Task) External(args Cell) bool {
 
 	status, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
-		panic("oh: 126: error/runtime: " + problem.Error())
+		panic(common.ErrNotExecutable + problem.Error())
 	}
 
 	return t.Return(status)
@@ -1463,8 +1464,8 @@ func (t *Task) LexicalVar(state int64) bool {
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
-			msg := "oh: 1: error/syntax: expected '=' after " + r + "'"
-			panic(msg)
+			msg := "expected '=' after " + r + "'"
+			panic(common.ErrSyntax + msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1545,8 +1546,8 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 				if Car(t.Code) != Null &&
 					raw(Car(t.Code)) != "else" {
-					msg := "oh: 1: error/syntax: expected 'else'"
-					panic(msg)
+					msg := "expected 'else'"
+					panic(common.ErrSyntax + msg)
 				}
 			}
 
@@ -1713,6 +1714,9 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 			continue
 
+		case psFatal:
+			return false
+
 		case psReturn:
 			args := t.Arguments()
 
@@ -1720,9 +1724,6 @@ func (t *Task) Run(end Cell) (successful bool) {
 			t.Scratch = Cons(Car(args), t.Scratch)
 
 			break
-
-		case psExecFatal:
-			return false
 
 		default:
 			if state >= SaveMax {
