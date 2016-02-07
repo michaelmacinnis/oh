@@ -158,7 +158,7 @@ define import: syntax e (name) as {
 		return m
 	}
 
-        e::eval: quasiquote: $root::define (unquote m): object {
+	e::eval: quasiquote: $root::define (unquote m): object {
 		source (unquote name)
 	}
 }
@@ -221,7 +221,7 @@ define process-substitution: syntax e (:args) as {
 	wait @procs
 	rm @fifos
 }
-define prompt: method (suffix) as {
+dynamic prompt: method (suffix) as {
 	define folders: (string $cwd)::split "/"
 	define last: sub (length folders) 1
 	return (list-ref last folders) ^ suffix
@@ -256,8 +256,8 @@ define source: syntax e (name) as {
 
 	define f: open r- name
 
-        define r: cons () ()
-        define c = r
+	define r: cons () ()
+	define c = r
 	while (define l: f::read) {
 		set-cdr c: cons (cons (get-line-number) l) ()
 		set c: cdr c
@@ -267,8 +267,8 @@ define source: syntax e (name) as {
 
 	define rval: status 0
 	define eval-list: syntax o (first rest) as {
-                set first: o::eval first
-                set rest: o::eval rest
+		set first: o::eval first
+		set rest: o::eval rest
 		if (is-null first): return rval
 		set-line-number: car first
 		set rval: e::eval: cdr first
@@ -278,10 +278,18 @@ define source: syntax e (name) as {
 	return rval
 }
 dynamic throw: method (c) as {
-    error: ": "::join c::file c::line c::type c::message
-    fatal c::status
+	error: ": "::join c::file c::line c::type c::message
+	fatal c::status
 }
 define write: method (: args) as: $stdout::write @args
+define sys: object {
+	public get-prompt: method (suffix) as {
+		catch unused {
+			return suffix
+		}
+		prompt suffix
+	}
+}
 
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
 

@@ -82,7 +82,9 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 
 	t := task.ForegroundTask()
 
-	command := cell.List(cell.NewSymbol("prompt"), cell.NewSymbol("> "))
+	command := cell.List(
+		cell.Cons(cell.NewSymbol("sys"), cell.NewSymbol("get-prompt")),
+		cell.NewSymbol("> "))
 	prompt := t.Call(command)
 
 	if line, err = i.State.Prompt(prompt); err == nil {
