@@ -98,17 +98,17 @@ define backtick: syntax e (cmd) as {
 	return: cdr r
 }
 define catch: syntax e (name: clause) as {
-	define args: list name (symbol "throw")
-	define body: list (symbol "throw") name
+	define args: list name (quote throw)
+	define body: list (quote throw) name
 	if (is-null clause) {
 		set body: list body
 	} else {
 		set body: append clause body
 	}
 	define handler: e::eval {
-		list (symbol "method") args (symbol "as") @body
+		list (quote method) args (quote as) @body
 	}
-	define _return: e::eval (symbol "return")
+	define _return: e::eval (quote return)
 	define _throw = throw
 	dynamic throw: method (condition) as {
 		_return: handler condition _throw
@@ -190,7 +190,7 @@ define process-substitution: syntax e (:args) as {
 	define procs = ()
 	define cmd: for args: method (arg) as {
 		if (not: is-cons arg): return arg
-		if (eq (symbol "substitute-stdin") (car arg)) {
+		if (eq (quote substitute-stdin) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
 				e::eval: cdr arg < fifo
@@ -199,7 +199,7 @@ define process-substitution: syntax e (:args) as {
 			set procs: cons proc procs
 			return fifo
 		}
-		if (eq (symbol "substitute-stdout") (car arg)) {
+		if (eq (quote substitute-stdout) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
 				e::eval: cdr arg > fifo
