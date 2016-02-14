@@ -136,7 +136,7 @@ for t: method (l) as {
 	define m: cadr l
 	echo: interpolate "
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.${m}(c) {
@@ -155,7 +155,7 @@ for t: method (l) as {
 	define m: cadr l
 	echo: interpolate "
 	e.Method(\"${n}\", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.${m}(s)))
 	})"

@@ -399,8 +399,8 @@ func (c *Command) Scope() Context {
 /* Continuation cell definition. */
 
 type Continuation struct {
-	Scratch Cell
-	Stack   Cell
+	Dump  Cell
+	Stack Cell
 }
 
 func IsContinuation(c Cell) bool {
@@ -411,8 +411,8 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(scratch Cell, stack Cell) *Continuation {
-	return &Continuation{Scratch: scratch, Stack: stack}
+func NewContinuation(dump Cell, stack Cell) *Continuation {
+	return &Continuation{Dump: dump, Stack: stack}
 }
 
 func (ct *Continuation) Bool() bool {
@@ -773,17 +773,17 @@ type Registers struct {
 /* Registers-specific functions. */
 
 func (r *Registers) Arguments() Cell {
-	e := Car(r.Scratch)
+	e := Car(r.Dump)
 	l := Null
 
 	for e != nil {
 		l = Cons(e, l)
 
-		r.Scratch = Cdr(r.Scratch)
-		e = Car(r.Scratch)
+		r.Dump = Cdr(r.Dump)
+		e = Car(r.Dump)
 	}
 
-	r.Scratch = Cdr(r.Scratch)
+	r.Dump = Cdr(r.Dump)
 
 	return l
 }
@@ -826,16 +826,16 @@ func (r *Registers) NewStates(l ...int64) {
 			}
 		}
 
+		if f&SaveDump > 0 {
+			r.Stack = Cons(r.Dump, r.Stack)
+		}
+
 		if f&SaveDynamic > 0 {
 			r.Stack = Cons(r.Dynamic, r.Stack)
 		}
 
 		if f&SaveLexical > 0 {
 			r.Stack = Cons(r.Lexical, r.Stack)
-		}
-
-		if f&SaveScratch > 0 {
-			r.Stack = Cons(r.Scratch, r.Stack)
 		}
 
 		r.Stack = Cons(NewInteger(f), r.Stack)
@@ -850,15 +850,15 @@ func (r *Registers) RemoveState() {
 		return
 	}
 
-	if f&SaveScratch > 0 {
-		r.Stack = Cdr(r.Stack)
-	}
-
 	if f&SaveLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
 	if f&SaveDynamic > 0 {
+		r.Stack = Cdr(r.Stack)
+	}
+
+	if f&SaveDump > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
@@ -879,11 +879,6 @@ func (r *Registers) RestoreState() {
 		return
 	}
 
-	if f&SaveScratch > 0 {
-		r.Stack = Cdr(r.Stack)
-		r.Scratch = Car(r.Stack)
-	}
-
 	if f&SaveLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Lexical = Car(r.Stack).(Context)
@@ -892,6 +887,11 @@ func (r *Registers) RestoreState() {
 	if f&SaveDynamic > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Dynamic = Car(r.Stack).(*Env)
+	}
+
+	if f&SaveDump > 0 {
+		r.Stack = Cdr(r.Stack)
+		r.Dump = Car(r.Stack)
 	}
 
 	if f&SaveCode > 0 {
@@ -903,7 +903,7 @@ func (r *Registers) RestoreState() {
 }
 
 func (r *Registers) Return(rv Cell) bool {
-	SetCar(r.Scratch, rv)
+	SetCar(r.Dump, rv)
 
 	return false
 }
@@ -1178,8 +1178,8 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 		Job: j,
 		Registers: &Registers{
 			Continuation: Continuation{
-				Scratch: List(NewStatus(0)),
-				Stack:   List(NewInteger(psEvalBlock)),
+				Dump:  List(NewStatus(0)),
+				Stack: List(NewInteger(psEvalBlock)),
 			},
 			Code:    c,
 			Dynamic: d,
@@ -1217,7 +1217,7 @@ func (t *Task) Equal(c Cell) bool {
 /* Task-specific functions. */
 
 func (t *Task) Apply(args Cell) bool {
-	m := Car(t.Scratch).(Binding)
+	m := Car(t.Dump).(Binding)
 
 	if t.GetState() == psExecSyntax {
 		t.ReplaceStates(SaveLexical, psEvalBlock)
@@ -1243,7 +1243,7 @@ func (t *Task) Apply(args Cell) bool {
 		t.Lexical.Public(Caar(params), args)
 	}
 
-	cc := NewContinuation(Cdr(t.Scratch), t.Stack)
+	cc := NewContinuation(Cdr(t.Dump), t.Stack)
 	t.Lexical.Public(NewSymbol("return"), cc)
 
 	return true
@@ -1253,12 +1253,12 @@ func (t *Task) Call(c Cell) string {
 	saved := *(t.Registers)
 
 	t.Code = c
-	t.Scratch = List(NewStatus(0))
+	t.Dump = List(NewStatus(0))
 	t.Stack = List(NewInteger(psEvalCommand))
 
 	t.Run(nil)
 
-	status := Car(t.Scratch)
+	status := Car(t.Dump)
 
 	*(t.Registers) = saved
 
@@ -1283,9 +1283,9 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 
 	c := n((*Task).Apply, body, label, params, scope)
 	if label == Null {
-		SetCar(t.Scratch, NewUnbound(c))
+		SetCar(t.Dump, NewUnbound(c))
 	} else {
-		SetCar(t.Scratch, NewBound(c, scope))
+		SetCar(t.Dump, NewBound(c, scope))
 	}
 
 	return false
@@ -1306,7 +1306,7 @@ func (t *Task) Continue() {
 }
 
 func (t *Task) Debug(s string) {
-	fmt.Printf("%s: t.Code = %v, t.Scratch = %v\n", s, t.Code, t.Scratch)
+	fmt.Printf("%s: t.Code = %v, t.Dump = %v\n", s, t.Code, t.Dump)
 }
 
 func (t *Task) DynamicVar(state int64) bool {
@@ -1335,7 +1335,7 @@ func (t *Task) DynamicVar(state int64) bool {
 		t.Code = Cadr(t.Code)
 	}
 
-	t.Scratch = Cdr(t.Scratch)
+	t.Dump = Cdr(t.Dump)
 
 	return true
 }
@@ -1377,11 +1377,11 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 }
 
 func (t *Task) External(args Cell) bool {
-	t.Scratch = Cdr(t.Scratch)
+	t.Dump = Cdr(t.Dump)
 
-	arg0, problem := adapted.LookPath(raw(Car(t.Scratch)))
+	arg0, problem := adapted.LookPath(raw(Car(t.Dump)))
 
-	SetCar(t.Scratch, False)
+	SetCar(t.Dump, False)
 
 	if problem != nil {
 		panic(common.ErrNotFound + problem.Error())
@@ -1472,7 +1472,7 @@ func (t *Task) LexicalVar(state int64) bool {
 		t.Code = Cadr(t.Code)
 	}
 
-	t.Scratch = Cdr(t.Scratch)
+	t.Dump = Cdr(t.Dump)
 
 	return true
 }
@@ -1484,13 +1484,13 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, "'" + r + "' undefined"
 		}
-		t.Scratch = Cons(sym, t.Scratch)
+		t.Dump = Cons(sym, t.Dump)
 	} else if simple && !isSimple(c.Get()) {
-		t.Scratch = Cons(sym, t.Scratch)
+		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(Binding); ok {
-		t.Scratch = Cons(a.Bind(t.Lexical), t.Scratch)
+		t.Dump = Cons(a.Bind(t.Lexical), t.Dump)
 	} else {
-		t.Scratch = Cons(c.Get(), t.Scratch)
+		t.Dump = Cons(c.Get(), t.Dump)
 	}
 
 	return true, ""
@@ -1515,8 +1515,8 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 		switch state {
 		case psChangeContext:
-			t.Lexical = Car(t.Scratch).(Context)
-			t.Scratch = Cdr(t.Scratch)
+			t.Lexical = Car(t.Dump).(Context)
+			t.Dump = Cdr(t.Dump)
 
 		case psExecBuiltin, psExecMethod:
 			args := t.Arguments()
@@ -1529,14 +1529,14 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 			fallthrough
 		case psExecSyntax:
-			m := Car(t.Scratch).(Binding)
+			m := Car(t.Dump).(Binding)
 
 			if m.Ref().Applier()(t, t.Code) {
 				continue
 			}
 
 		case psExecIf, psExecWhileBody:
-			if !Car(t.Scratch).Bool() {
+			if !Car(t.Dump).Bool() {
 				t.Code = Cdr(t.Code)
 
 				for Car(t.Code) != Null &&
@@ -1562,7 +1562,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			fallthrough
 		case psEvalBlock:
 			if t.Code == end {
-				t.Scratch = Cdr(t.Scratch)
+				t.Dump = Cdr(t.Dump)
 				return
 			}
 
@@ -1578,12 +1578,12 @@ func (t *Task) Run(end Cell) (successful bool) {
 			}
 
 			t.Code = Car(t.Code)
-			t.Scratch = Cdr(t.Scratch)
+			t.Dump = Cdr(t.Dump)
 
 			fallthrough
 		case psEvalCommand:
 			if t.Code == Null {
-				t.Scratch = Cons(t.Code, t.Scratch)
+				t.Dump = Cons(t.Code, t.Dump)
 				break
 			}
 
@@ -1595,9 +1595,9 @@ func (t *Task) Run(end Cell) (successful bool) {
 			continue
 
 		case psExecCommand:
-			switch k := Car(t.Scratch).(type) {
+			switch k := Car(t.Dump).(type) {
 			case *String, *Symbol:
-				t.Scratch = Cons(external, t.Scratch)
+				t.Dump = Cons(external, t.Dump)
 
 				t.ReplaceStates(psExecBuiltin,
 					psEvalArgumentsBuiltin)
@@ -1623,7 +1623,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				panic(msg)
 			}
 
-			t.Scratch = Cons(nil, t.Scratch)
+			t.Dump = Cons(nil, t.Dump)
 
 			fallthrough
 		case psEvalArguments, psEvalArgumentsBuiltin:
@@ -1638,7 +1638,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			fallthrough
 		case psEvalElement, psEvalElementBuiltin, psEvalMember:
 			if t.Code == Null {
-				t.Scratch = Cons(t.Code, t.Scratch)
+				t.Dump = Cons(t.Code, t.Dump)
 				break
 			} else if IsCons(t.Code) {
 				if IsAtom(Cdr(t.Code)) {
@@ -1660,19 +1660,19 @@ func (t *Task) Run(end Cell) (successful bool) {
 				}
 				break
 			} else {
-				t.Scratch = Cons(t.Code, t.Scratch)
+				t.Dump = Cons(t.Code, t.Dump)
 				break
 			}
 
 		case psExecDefine:
-			t.Lexical.Define(t.Code, Car(t.Scratch))
+			t.Lexical.Define(t.Code, Car(t.Dump))
 
 		case psExecPublic:
-			t.Lexical.Public(t.Code, Car(t.Scratch))
+			t.Lexical.Public(t.Code, Car(t.Dump))
 
 		case psExecDynamic, psExecSetenv:
 			k := t.Code
-			v := Car(t.Scratch)
+			v := Car(t.Dump)
 
 			if state == psExecSetenv {
 				s := raw(v)
@@ -1689,19 +1689,19 @@ func (t *Task) Run(end Cell) (successful bool) {
 				panic(msg)
 			}
 
-			r.Set(Car(t.Scratch))
+			r.Set(Car(t.Dump))
 
 		case psExecSplice:
-			l := Car(t.Scratch)
-			t.Scratch = Cdr(t.Scratch)
+			l := Car(t.Dump)
+			t.Dump = Cdr(t.Dump)
 
 			if !IsCons(l) {
-				t.Scratch = Cons(l, t.Scratch)
+				t.Dump = Cons(l, t.Dump)
 				break
 			}
 
 			for l != Null {
-				t.Scratch = Cons(Car(l), t.Scratch)
+				t.Dump = Cons(Car(l), t.Dump)
 				l = Cdr(l)
 			}
 
@@ -1710,7 +1710,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				SaveCode,
 				psEvalElement)
 			t.Code = Car(t.Code)
-			t.Scratch = Cdr(t.Scratch)
+			t.Dump = Cdr(t.Dump)
 
 			continue
 
@@ -1720,8 +1720,8 @@ func (t *Task) Run(end Cell) (successful bool) {
 		case psReturn:
 			args := t.Arguments()
 
-			t.Continuation = *Car(t.Scratch).(*Continuation)
-			t.Scratch = Cons(Car(args), t.Scratch)
+			t.Continuation = *Car(t.Dump).(*Continuation)
+			t.Dump = Cons(Car(args), t.Dump)
 
 			break
 
@@ -1747,7 +1747,7 @@ func (t *Task) Runnable() bool {
 }
 
 func (t *Task) Self() Context {
-	return Car(t.Scratch).(Binding).Self()
+	return Car(t.Dump).(Binding).Self()
 }
 
 func (t *Task) Stop() {

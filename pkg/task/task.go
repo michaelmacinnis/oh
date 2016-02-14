@@ -31,9 +31,9 @@ type reader func(*Task, common.ReadStringer, string,
 const (
 	SaveCarCode = 1 << iota
 	SaveCdrCode
+	SaveDump
 	SaveDynamic
 	SaveLexical
-	SaveScratch
 	SaveMax
 )
 
@@ -180,7 +180,7 @@ func init() {
 
 	/* Builtins. */
 	scope0.DefineBuiltin("bg", func(t *Task, args Cell) bool {
-		SetCar(t.Scratch, Null)
+		SetCar(t.Dump, Null)
 
 		found := control(t, args)
 		if found == nil {
@@ -189,7 +189,7 @@ func init() {
 
 		found.Continue()
 
-		SetCar(t.Scratch, found)
+		SetCar(t.Dump, found)
 
 		return false
 	})
@@ -272,14 +272,14 @@ func init() {
 	})
 	scope0.DefineBuiltin("run", func(t *Task, args Cell) bool {
 		if args == Null {
-			SetCar(t.Scratch, False)
+			SetCar(t.Dump, False)
 			return false
 		}
-		SetCar(t.Scratch, Car(args))
-		t.Scratch = Cons(external, t.Scratch)
-		t.Scratch = Cons(nil, t.Scratch)
+		SetCar(t.Dump, Car(args))
+		t.Dump = Cons(external, t.Dump)
+		t.Dump = Cons(nil, t.Dump)
 		for args = Cdr(args); args != Null; args = Cdr(args) {
-			t.Scratch = Cons(Car(args), t.Scratch)
+			t.Dump = Cons(Car(args), t.Dump)
 		}
 		t.ReplaceStates(psExecBuiltin)
 		return true
@@ -348,14 +348,14 @@ func init() {
 		return t.Return(s)
 	})
 	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
-		t.Scratch = List(Car(args))
+		t.Dump = List(Car(args))
 
 		t.Stop()
 
 		return true
 	})
 	scope0.DefineMethod("fatal", func(t *Task, args Cell) bool {
-		t.Scratch = List(Car(args))
+		t.Dump = List(Car(args))
 
 		t.ReplaceStates(psFatal)
 
@@ -483,7 +483,7 @@ func init() {
 		for ; args != Null; args = Cdr(args) {
 			child := Car(args).(*Task)
 			<-child.Done
-			SetCar(args, Car(child.Scratch))
+			SetCar(args, Car(child.Dump))
 		}
 		return t.Return(list)
 	})
@@ -512,7 +512,7 @@ func init() {
 		}
 		t.NewStates(psEvalElement)
 		t.Code = Car(args)
-		t.Scratch = Cdr(t.Scratch)
+		t.Dump = Cdr(t.Dump)
 
 		return true
 	})
@@ -597,7 +597,7 @@ func init() {
 		t.NewBlock(t.Dynamic, t.Lexical)
 
 		t.Code = Car(t.Code)
-		t.Scratch = Cdr(t.Scratch)
+		t.Dump = Cdr(t.Dump)
 
 		return true
 	})
@@ -616,7 +616,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
-		t.Scratch = Cdr(t.Scratch)
+		t.Dump = Cdr(t.Dump)
 
 		s := Null
 		if Length(t.Code) == 3 {
@@ -649,7 +649,7 @@ func init() {
 
 		go child.Launch()
 
-		SetCar(t.Scratch, child)
+		SetCar(t.Dump, child)
 
 		return false
 	})
@@ -657,7 +657,7 @@ func init() {
 		t.ReplaceStates(psExecSplice, psEvalElement)
 
 		t.Code = Car(t.Code)
-		t.Scratch = Cdr(t.Scratch)
+		t.Dump = Cdr(t.Dump)
 
 		return true
 	})
@@ -878,7 +878,7 @@ func Start(parser reader, cli ui) {
 		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
 	}
 
-	os.Exit(status(Car(task0.Scratch)))
+	os.Exit(status(Car(task0.Dump)))
 }
 
 //go:generate ./generate.oh

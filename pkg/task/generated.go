@@ -341,7 +341,7 @@ func bindTheRest(s *Scope) {
 func bindStringPredicates(e *Env) {
 
 	e.Method("is-control", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsControl(c) {
@@ -353,7 +353,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-digit", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsDigit(c) {
@@ -365,7 +365,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-graphic", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsGraphic(c) {
@@ -377,7 +377,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-letter", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLetter(c) {
@@ -389,7 +389,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-lower", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLower(c) {
@@ -401,7 +401,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-mark", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsMark(c) {
@@ -413,7 +413,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-print", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPrint(c) {
@@ -425,7 +425,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-punct", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPunct(c) {
@@ -437,7 +437,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-space", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSpace(c) {
@@ -449,7 +449,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-symbol", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSymbol(c) {
@@ -461,7 +461,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-title", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsTitle(c) {
@@ -473,7 +473,7 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("is-upper", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsUpper(c) {
@@ -485,19 +485,19 @@ func bindStringPredicates(e *Env) {
 	})
 
 	e.Method("to-lower", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToLower(s)))
 	})
 
 	e.Method("to-title", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToTitle(s)))
 	})
 
 	e.Method("to-upper", func(t *Task, args Cell) bool {
-		s := raw(toString(Car(t.Scratch).(Binding).Self()))
+		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToUpper(s)))
 	})
