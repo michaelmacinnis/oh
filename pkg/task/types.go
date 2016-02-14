@@ -1642,7 +1642,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 				break
 			} else if IsCons(t.Code) {
 				if IsAtom(Cdr(t.Code)) {
-					t.ReplaceStates(SaveDynamic|SaveLexical,
+					t.ReplaceStates(SaveLexical,
 						psEvalMember,
 						psChangeContext,
 						SaveCdrCode,
