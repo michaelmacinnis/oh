@@ -5,37 +5,37 @@
 package boot
 
 var Script string = `
-define caar: method (l) as: car: car l
-define cadr: method (l) as: car: cdr l
-define cdar: method (l) as: cdr: car l
-define cddr: method (l) as: cdr: cdr l
-define caaar: method (l) as: car: caar l
-define caadr: method (l) as: car: cadr l
-define cadar: method (l) as: car: cdar l
-define caddr: method (l) as: car: cddr l
-define cdaar: method (l) as: cdr: caar l
-define cdadr: method (l) as: cdr: cadr l
-define cddar: method (l) as: cdr: cdar l
-define cdddr: method (l) as: cdr: cddr l
-define caaaar: method (l) as: caar: caar l
-define caaadr: method (l) as: caar: cadr l
-define caadar: method (l) as: caar: cdar l
-define caaddr: method (l) as: caar: cddr l
-define cadaar: method (l) as: cadr: caar l
-define cadadr: method (l) as: cadr: cadr l
-define caddar: method (l) as: cadr: cdar l
-define cadddr: method (l) as: cadr: cddr l
-define cdaaar: method (l) as: cdar: caar l
-define cdaadr: method (l) as: cdar: cadr l
-define cdadar: method (l) as: cdar: cdar l
-define cdaddr: method (l) as: cdar: cddr l
-define cddaar: method (l) as: cddr: caar l
-define cddadr: method (l) as: cddr: cadr l
-define cdddar: method (l) as: cddr: cdar l
-define cddddr: method (l) as: cddr: cddr l
-define $connect: syntax (conduit name) as {
+define caar: method (l) =: car: car l
+define cadr: method (l) =: car: cdr l
+define cdar: method (l) =: cdr: car l
+define cddr: method (l) =: cdr: cdr l
+define caaar: method (l) =: car: caar l
+define caadr: method (l) =: car: cadr l
+define cadar: method (l) =: car: cdar l
+define caddr: method (l) =: car: cddr l
+define cdaar: method (l) =: cdr: caar l
+define cdadr: method (l) =: cdr: cadr l
+define cddar: method (l) =: cdr: cdar l
+define cdddr: method (l) =: cdr: cddr l
+define caaaar: method (l) =: caar: caar l
+define caaadr: method (l) =: caar: cadr l
+define caadar: method (l) =: caar: cdar l
+define caaddr: method (l) =: caar: cddr l
+define cadaar: method (l) =: cadr: caar l
+define cadadr: method (l) =: cadr: cadr l
+define caddar: method (l) =: cadr: cdar l
+define cadddr: method (l) =: cadr: cddr l
+define cdaaar: method (l) =: cdar: caar l
+define cdaadr: method (l) =: cdar: cadr l
+define cdadar: method (l) =: cdar: cdar l
+define cdaddr: method (l) =: cdar: cddr l
+define cddaar: method (l) =: cddr: caar l
+define cddadr: method (l) =: cddr: cadr l
+define cdddar: method (l) =: cddr: cdar l
+define cddddr: method (l) =: cddr: cddr l
+define $connect: syntax (conduit name) = {
 	set conduit: eval conduit
-	syntax e (left right) as {
+	syntax e (left right) = {
 		define p: conduit
 		spawn {
 			eval: quasiquote: dynamic (unquote name) p
@@ -49,8 +49,8 @@ define $connect: syntax (conduit name) as {
 		}
 	}
 }
-define $redirect: syntax (name mode closer) as {
-	syntax e (c cmd) as: make-env {
+define $redirect: syntax (name mode closer) = {
+	syntax e (c cmd) =: make-env {
 		define c: e::eval c
 		define f = ()
 		if (not: or (is-channel c) (is-pipe c)) {
@@ -62,7 +62,7 @@ define $redirect: syntax (name mode closer) as {
 		if (not: is-null f): eval: quasiquote: f::(unquote closer)
 	}
 }
-define ...: method (: args) as {
+define ...: method (: args) = {
 	cd $origin
 	define path: car args
 	if (eq 2: length args) {
@@ -76,7 +76,7 @@ define ...: method (: args) as {
 		cd ..
 	}
 }
-define and: syntax e (: lst) as {
+define and: syntax e (: lst) = {
 	define r = false
 	while (not: is-null: car lst) {
 		set r: e::eval: car lst
@@ -87,8 +87,8 @@ define and: syntax e (: lst) as {
 }
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
-define apply: method (f: args) as: f @args
-define backtick: syntax e (cmd) as {
+define apply: method (f: args) =: f @args
+define backtick: syntax e (cmd) = {
 	define p: pipe
 	spawn {
 		dynamic $stdout = p
@@ -104,7 +104,7 @@ define backtick: syntax e (cmd) as {
 	p::reader-close
 	return: cdr r
 }
-define catch: syntax e (name: clause) as {
+define catch: syntax e (name: clause) = {
 	define args: list name (quote throw)
 	define body: list (quote throw) name
 	if (is-null clause) {
@@ -113,25 +113,25 @@ define catch: syntax e (name: clause) as {
 		set body: append clause body
 	}
 	define handler: e::eval {
-		list (quote method) args (quote as) @body
+		list (quote method) args (quote =) @body
 	}
 	define _return: e::eval (quote return)
 	define _throw = throw
-	dynamic throw: method (condition) as {
+	dynamic throw: method (condition) = {
 		_return: handler condition _throw
 	}
 }
 define channel-stderr: $connect channel $stderr
 define channel-stdout: $connect channel $stdout
-define echo: builtin (: args) as {
+define echo: builtin (: args) = {
 	if (is-null args) {
 		$stdout::write: symbol ""
 	} else {
 		$stdout::write @(for args symbol)
 	}
 }
-define error: builtin (: args) as: $stderr::write @args
-dynamic exception: method (_type _message _status _file _line) as {
+define error: builtin (: args) =: $stderr::write @args
+dynamic exception: method (_type _message _status _file _line) = {
 	object {
 		public type = _type
 		public status = _status
@@ -140,7 +140,7 @@ dynamic exception: method (_type _message _status _file _line) as {
 		public file = _file
 	}
 }
-define for: method (l m) as {
+define for: method (l m) = {
 	define r: cons () ()
 	define c = r
 	while (not: is-null l) {
@@ -150,8 +150,8 @@ define for: method (l m) as {
 	}
 	return: cdr r
 }
-define glob: builtin (: args) as: return args
-define import: syntax e (name) as {
+define glob: builtin (: args) =: return args
+define import: syntax e (name) = {
 	set name: e::eval name
 	define m: module name
 	if (or (is-null m) (is-object m)) {
@@ -162,25 +162,25 @@ define import: syntax e (name) as {
 		source (unquote name)
 	}
 }
-define is-list: method (l) as {
+define is-list: method (l) = {
 	if (is-null l): return false
 	if (not: is-cons l): return false
 	if (is-null: cdr l): return true
 	is-list: cdr l
 }
-define is-text: method (t) as: or (is-string t) (is-symbol t)
-define list-ref: method (k x) as: car: list-tail k x
-define list-tail: method (k x) as {
+define is-text: method (t) =: or (is-string t) (is-symbol t)
+define list-ref: method (k x) =: car: list-tail k x
+define list-tail: method (k x) = {
 	if k {
 		list-tail (sub k 1): cdr x
 	} else {
 		return x
 	}
 }
-define object: syntax e (: body) as {
+define object: syntax e (: body) = {
 	e::eval: cons (quote block): append body (quote: context)
 }
-define or: syntax e (: lst) as {
+define or: syntax e (: lst) = {
 	define r = false
 	while (not: is-null: car lst) {
 		set r: e::eval: car lst
@@ -191,11 +191,11 @@ define or: syntax e (: lst) as {
 }
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
-define printf: method (f: args) as: echo: f::sprintf @args
-define process-substitution: syntax e (:args) as {
+define printf: method (f: args) =: echo: f::sprintf @args
+define process-substitution: syntax e (:args) = {
 	define fifos = ()
 	define procs = ()
-	define cmd: for args: method (arg) as {
+	define cmd: for args: method (arg) = {
 		if (not: is-cons arg): return arg
 		if (eq (quote substitute-stdin) (car arg)) {
 			define fifo: temp-fifo
@@ -221,12 +221,12 @@ define process-substitution: syntax e (:args) as {
 	wait @procs
 	rm @fifos
 }
-dynamic prompt: method (suffix) as {
+dynamic prompt: method (suffix) = {
 	define folders: (string $cwd)::split "/"
 	define last: sub (length folders) 1
 	return (list-ref last folders) ^ suffix
 }
-define quasiquote: syntax e (cell) as {
+define quasiquote: syntax e (cell) = {
 	if (not: is-cons cell): return cell
 	if (is-null cell): return cell
 	if (eq (quote unquote): car cell): return: e::eval: cadr cell
@@ -235,13 +235,13 @@ define quasiquote: syntax e (cell) as {
 		e::eval: list (quote quasiquote): cdr cell
 	}
 }
-define quote: syntax (cell) as: return cell
-define read: builtin () as: $stdin::read
-define readline: builtin () as: $stdin::readline
+define quote: syntax (cell) =: return cell
+define read: builtin () =: $stdin::read
+define readline: builtin () =: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define source: syntax e (name) as {
+define source: syntax e (name) = {
 	define basename: e::eval name
 	define paths = ()
 	define name = basename
@@ -266,7 +266,7 @@ define source: syntax e (name) as {
 	f::close
 
 	define rval: status 0
-	define eval-list: syntax o (first rest) as {
+	define eval-list: syntax o (first rest) = {
 		set first: o::eval first
 		set rest: o::eval rest
 		if (is-null first): return rval
@@ -277,13 +277,13 @@ define source: syntax e (name) as {
 	eval-list (car c) (cdr c)
 	return rval
 }
-dynamic throw: method (c) as {
+dynamic throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message
 	fatal c::status
 }
-define write: method (: args) as: $stdout::write @args
+define write: method (: args) =: $stdout::write @args
 define sys: object {
-	public get-prompt: method (suffix) as {
+	public get-prompt: method (suffix) = {
 		catch unused {
 			return suffix
 		}

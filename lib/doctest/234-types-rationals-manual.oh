@@ -39,7 +39,7 @@ write: status r
 define common: import: ... lib/common.oh
 
 define x: rational -1
-for common::predicates: method (names) as {
+for common::predicates: method (names) = {
     define name: car names
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x

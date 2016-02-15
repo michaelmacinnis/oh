@@ -65,7 +65,7 @@ echo "3 is not equal to 2 =>": ne 3 2
 define common: import: ... lib/common.oh
 
 define x: boolean ""
-for common::predicates: method (names) as {
+for common::predicates: method (names) = {
     define name: car names
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x

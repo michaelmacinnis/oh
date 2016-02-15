@@ -7,8 +7,8 @@
 ## values:
 ##
 #{
-define label: method () as: return return
-define continue: method (label) as: label label
+define label: method () =: return return
+define continue: method (label) =: label label
 
 define count: integer 0
 define loop: label

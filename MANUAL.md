@@ -477,7 +477,7 @@ chained. The top-level environment is called `$root`.
 
 A sequence of actions can be saved with the `method` command.
 
-    define hello: method () as {
+    define hello: method () = {
         echo "Hello, World!"
     }
 
@@ -487,7 +487,7 @@ Once defined, a method can be called in the same way as other commands.
 
 Arguments allow a method to be parameterized.
 
-    define sum3: method (a b c) as {
+    define sum3: method (a b c) = {
         add a b c
     }
     write: sum3 1 2 3
@@ -495,24 +495,24 @@ Arguments allow a method to be parameterized.
 Methods may have a self parameter. The name for the self parameter must
 appear before the list of arguments.
 
-    define point: method (r s) as: object {
+    define point: method (r s) =: object {
         define x: integer r
         define y: integer s
     
-        public get-x: method self () as {
+        public get-x: method self () = {
             return self::x
         }
     
-        public get-y: method self () as {
+        public get-y: method self () = {
             return self::y
         }
     
-        public move: method self (a b) as {
+        public move: method self (a b) = {
             set self::x: add self::x a
             set self::y: add self::y b
         }
     
-        public show: method self () as {
+        public show: method self () = {
             echo self::x self::y
         }
     }
@@ -524,7 +524,7 @@ Shared behavior can be implemented by defining a method in an outer scope.
 
 The following code,
 
-    public me: method self () as: echo "my name is:" self::name
+    public me: method self () =: echo "my name is:" self::name
     
     define x: object {
         define name = "x"
@@ -555,7 +555,7 @@ An object may redirect a call to another object, as shown in the code below,
 
     define z: object {
         define name = "z"
-        public you: method () as: x::me    # Redirection.
+        public you: method () =: x::me    # Redirection.
     }
     
     z::me
@@ -573,7 +573,7 @@ in a pipeline. The example below,
 
     define exit-status: object
     
-    define pipe-fitting: method (label cmd: args) as {
+    define pipe-fitting: method (label cmd: args) = {
         exit-status::set-slot label: cmd @args
     }
     
@@ -599,13 +599,13 @@ allow particularly elegant solutions to some problems, as shown in the prime
 sieve example below (adapted from "Newsqueak: A Language for Communicating
 with Mice").
 
-    define counter: method (n) as {
+    define counter: method (n) = {
         while true {
             write: set n: add n 1
         }
     }
     
-    define filter: method (base) as {
+    define filter: method (base) = {
         while true {
     	define n: car: read
             if (mod n base): write n

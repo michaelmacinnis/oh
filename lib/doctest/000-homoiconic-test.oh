@@ -8,7 +8,7 @@
 ##
 #{
 # The short-circuit and operator is defined using the syntax command.
-define and: syntax e (: lst) as {
+define and: syntax e (: lst) = {
     define r = false
     while (not: is-null: car lst) {
         set r: e::eval: car lst

@@ -50,7 +50,7 @@ define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
                           is-float is-integer is-method is-null is-number \
                           is-object is-pipe is-rational is-status is-string \
                           is-symbol is-syntax
-for predicates: method (name) as {
+for predicates: method (name) = {
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x
 }

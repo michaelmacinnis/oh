@@ -9,7 +9,7 @@
 ## The following code,
 ##
 #{
-public me: method self () as: echo "my name is:" self::name
+public me: method self () =: echo "my name is:" self::name
 
 define x: object {
     define name = "x"
@@ -46,7 +46,7 @@ y::me-too
 #{
 define z: object {
     define name = "z"
-    public you: method () as: x::me    # Redirection.
+    public you: method () =: x::me    # Redirection.
 }
 
 z::me

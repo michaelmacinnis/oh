@@ -4,24 +4,24 @@
 # PROVIDE: point
 
 #{
-define point: method (r s) as: object {
+define point: method (r s) =: object {
     define x: integer r
     define y: integer s
 
-    public get-x: method self () as {
+    public get-x: method self () = {
         return self::x
     }
 
-    public get-y: method self () as {
+    public get-y: method self () = {
         return self::y
     }
 
-    public move: method self (a b) as {
+    public move: method self (a b) = {
         set self::x: add self::x a
         set self::y: add self::y b
     }
 
-    public show: method self () as {
+    public show: method self () = {
         echo self::x self::y
     }
 }

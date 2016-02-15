@@ -2,7 +2,7 @@
 
 define $dir: ... lib/doctest
 
-define prefix-lines: method ($prefix) as {
+define prefix-lines: method ($prefix) = {
         define $count = 1
 	while (define $line: readline) {
 		echo: ": "::join $prefix $count $line

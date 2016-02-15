@@ -11,9 +11,9 @@ define p: pipe
 
 spawn {
     # Save code to create a continuation-based while command.
-    define code: quote: syntax e (condition: body) as {
-        define label: method () as: return return
-        define continue: method (label) as: label label
+    define code: quote: syntax e (condition: body) = {
+        define label: method () =: return return
+        define continue: method (label) =: label label
 
         set body: cons (quote block) body
         define loop: label

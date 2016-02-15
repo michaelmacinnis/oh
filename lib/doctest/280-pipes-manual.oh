@@ -12,7 +12,7 @@
 #{
 define exit-status: object
 
-define pipe-fitting: method (label cmd: args) as {
+define pipe-fitting: method (label cmd: args) = {
     exit-status::set-slot label: cmd @args
 }
 

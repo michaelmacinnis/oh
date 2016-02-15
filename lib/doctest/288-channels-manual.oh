@@ -12,13 +12,13 @@
 ## with Mice").
 ##
 #{
-define counter: method (n) as {
+define counter: method (n) = {
     while true {
         write: set n: add n 1
     }
 }
 
-define filter: method (base) as {
+define filter: method (base) = {
     while true {
 	define n: car: read
         if (mod n base): write n

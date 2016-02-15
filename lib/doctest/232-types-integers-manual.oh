@@ -75,10 +75,10 @@ write: mod 511 256
 
 define operators: quote: add div eq ge gt is le lt mod mul ne sub
 define operands: list 1 2 3 4
-for operators: method (name) as {
+for operators: method (name) = {
     define operator: eval name
-    for operands: method (op1) as {
-        for operands: method (op2) as {
+    for operands: method (op1) = {
+        for operands: method (op2) = {
             echo: "%s %v %v => %v"::sprintf name op1 op2: operator op1 op2
         }
     }
@@ -280,7 +280,7 @@ for operators: method (name) as {
 define common: import: ... lib/common.oh
 
 define x: integer -1
-for common::predicates: method (names) as {
+for common::predicates: method (names) = {
     define name: car names
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x

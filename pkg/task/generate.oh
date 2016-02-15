@@ -16,7 +16,7 @@ define t: quote: (add Add) (sub Subtract) (div Divide) \
                  (mod Modulo) (mul Multiply)
 
 echo "\nfunc bindArithmetic(s *Scope) {"
-for t: method (l) as {
+for t: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo: interpolate "
@@ -43,7 +43,7 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
 echo "\nfunc bindGenerators(s *Scope) {"
-for t: method (l) as {
+for t: method (l) = {
 	define n: car l
 	define o: cadr l
 	echo: interpolate "
@@ -54,7 +54,7 @@ for t: method (l) as {
 echo "}"
 
 echo "\nfunc bindPredicates(s *Scope) {"
-for common::predicates: method (l) as {
+for common::predicates: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo: interpolate "
@@ -73,7 +73,7 @@ define t: quote: \
         (lt "!prev.Less(curr)" ".(Number)")
 
 echo "\nfunc bindRelational(s *Scope) {"
-for t: method (l) as {
+for t: method (l) = {
 	define n: car l
 	define o: cadr l
 	define t: caddr l
@@ -112,7 +112,7 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineMethod reverse "t.Return(Reverse(Car(args)))")
 
 echo "\nfunc bindTheRest(s *Scope) {"
-for t: method (l) as {
+for t: method (l) = {
 	define d: car l
 	define n: cadr l
 	define o: caddr l
@@ -131,7 +131,7 @@ define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-punct IsPunct) (is-space IsSpace) (is-symbol IsSymbol) \
                  (is-title IsTitle) (is-upper IsUpper)
 
-for t: method (l) as {
+for t: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo: interpolate "
@@ -150,7 +150,7 @@ for t: method (l) as {
 
 define t: quote: (to-lower ToLower) (to-title ToTitle) (to-upper ToUpper)
 
-for t: method (l) as {
+for t: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo: interpolate "

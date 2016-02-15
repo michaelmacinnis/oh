@@ -1268,14 +1268,14 @@ func (t *Task) Call(c Cell) string {
 func (t *Task) Closure(n ClosureGenerator) bool {
 	label := Null
 	params := Car(t.Code)
-	for t.Code != Null && raw(Cadr(t.Code)) != "as" {
+	for t.Code != Null && raw(Cadr(t.Code)) != "=" {
 		label = params
 		params = Cadr(t.Code)
 		t.Code = Cdr(t.Code)
 	}
 
 	if t.Code == Null {
-		panic(common.ErrSyntax + "expected 'as'")
+		panic(common.ErrSyntax + "expected '='")
 	}
 
 	body := Cddr(t.Code)

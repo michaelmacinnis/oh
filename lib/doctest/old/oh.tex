@@ -323,7 +323,7 @@ empty list is an exception to this rule as it evaluates to itself.
 The define and method commands allow the creation of named methods.
 
 \begin{lstlisting}
-	define hello: method () as {
+	define hello: method () = {
 		write "Hello, World!"
 	}
 \end{lstlisting}
@@ -337,7 +337,7 @@ Once defined a method can be called in the same way as other commands.
 Methods can take arguments.
 
 \begin{lstlisting}
-	define sum3: method (a b c) as {
+	define sum3: method (a b c) = {
 		add a b c
 	}
 	sum3 1 2 3
@@ -350,7 +350,7 @@ Methods can be saved in a file and then imported. If the function hello
 was defined in the file hello.oh as shown below
 
 \begin{lstlisting}
-	public hello: method () as {
+	public hello: method () = {
 		write "Hello, World!"
 	}
 \end{lstlisting}
@@ -375,15 +375,15 @@ An object can be created explicitly with the object command.
 		define x: integer r
 		define y: integer s
 
-		public get-x: method self () as {
+		public get-x: method self () = {
 			return self::x
 		}
 
-		public get-y: method self () as {
+		public get-y: method self () = {
 			return self::y
 		}
 
-		public move: method self (a b) as {
+		public move: method self (a b) = {
 			set self::x: add self::x a
 			set self::y: add self::y b
 		}
@@ -408,7 +408,7 @@ Dynamic communication patterns are enabled by the fact that public slots
 can be updated or added to any object, at runtime.
 
 \begin{lstlisting}
-	p::public show: method self () as {
+	p::public show: method self () = {
 		echo: add "(" self::x "," self::y ")\n"
 	}
 \end{lstlisting}
@@ -480,15 +480,15 @@ prime number. These processes are strung together like beads on a string.
 #!/usr/bin/env oh
 define strict true
 
-Root::public read-car: method self () as: car: self::read
+Root::public read-car: method self () =: car: self::read
 
-define counter: method (n) as {
+define counter: method (n) = {
     while true {
         write: set n: add n 1
     }
 }
 
-define filter: method (base) as {
+define filter: method (base) = {
     while true {
 	define n: read-car
         if (mod n base): write n
