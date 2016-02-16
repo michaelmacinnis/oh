@@ -55,6 +55,7 @@ type Context interface {
 	Access(key Cell) Reference
 	Copy() Context
 	Complete(word string) []string
+	Condensable() bool
 	Define(key, value Cell)
 	Expose() Context
 	Faces() *Env
@@ -401,6 +402,7 @@ func (c *Command) Scope() Context {
 type Continuation struct {
 	Dump  Cell
 	Stack Cell
+	Frame Cell
 }
 
 func IsContinuation(c Cell) bool {
@@ -411,8 +413,8 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(dump Cell, stack Cell) *Continuation {
-	return &Continuation{Dump: dump, Stack: stack}
+func NewContinuation(dump, stack, frame Cell) *Continuation {
+	return &Continuation{Dump: dump, Stack: stack, Frame: frame}
 }
 
 func (ct *Continuation) Bool() bool {
@@ -454,6 +456,15 @@ func (e *Env) String() string {
 
 func (e *Env) Access(key Cell) Reference {
 	for env := e; env != nil; env = env.prev {
+/*
+    		keys := make([]string, 0, len(env.hash))
+    		for k := range env.hash {
+        		keys = append(keys, k)
+    		}
+		if raw(key) == "x" {
+			println("Env with keys " + strings.Join(keys, ", "))
+		}
+*/
 		if value, ok := env.hash[key.String()]; ok {
 			return value
 		}
@@ -805,6 +816,16 @@ func (r *Registers) NewBlock(dynamic *Env, lexical Context) {
 	r.Lexical = NewScope(lexical, nil)
 }
 
+func (r *Registers) NewFrame(dynamic *Env, lexical Context) {
+	state := int64(SaveDynamic|SaveLexical)
+	if !r.Lexical.Condensable() {
+		state |= SaveFrame
+	}
+	r.ReplaceStates(state, psEvalBlock)
+	r.Dynamic = NewEnv(dynamic)
+	r.Lexical = NewScope(lexical, nil)
+}
+
 func (r *Registers) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= SaveMax {
@@ -812,9 +833,25 @@ func (r *Registers) NewStates(l ...int64) {
 			continue
 		}
 
-		if s := r.GetState(); s < SaveMax && f&s == f {
-			continue
+		n := f
+
+/*
+		s := r.GetState()
+		if s < SaveMax {
+			// Previous state was a save state.
+			c := f&s
+			if c&f == f {
+				// Nothing new to save.
+				continue
+			} else if c&s == s {
+				// Previous save is a subset.
+				// Todo: Condense and combine states.
+				// Elements may need to be reordered.
+				f -= c
+				r.Stack = Cdr(r.Stack)
+			}
 		}
+*/
 
 		if f&SaveCode > 0 {
 			if f&SaveCode == SaveCode {
@@ -838,7 +875,11 @@ func (r *Registers) NewStates(l ...int64) {
 			r.Stack = Cons(r.Lexical, r.Stack)
 		}
 
-		r.Stack = Cons(NewInteger(f), r.Stack)
+		if f&SaveFrame > 0 {
+			r.Frame = Cons(NewObject(r.Lexical), r.Frame)
+		}
+
+		r.Stack = Cons(NewInteger(n), r.Stack)
 	}
 }
 
@@ -848,6 +889,10 @@ func (r *Registers) RemoveState() {
 	r.Stack = Cdr(r.Stack)
 	if f >= SaveMax {
 		return
+	}
+
+	if f&SaveFrame > 0 {
+		r.Frame = Cdr(r.Frame)
 	}
 
 	if f&SaveLexical > 0 {
@@ -877,6 +922,10 @@ func (r *Registers) RestoreState() {
 
 	if f == 0 || f >= SaveMax {
 		return
+	}
+
+	if f&SaveFrame > 0 {
+		r.Frame = Cdr(r.Frame)
 	}
 
 	if f&SaveLexical > 0 {
@@ -956,6 +1005,10 @@ func (s *Scope) Complete(word string) []string {
 	}
 
 	return cl
+}
+
+func (s *Scope) Condensable() bool {
+	return len(s.env.prev.hash) == 0
 }
 
 func (s *Scope) Copy() Context {
@@ -1180,6 +1233,7 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 			Continuation: Continuation{
 				Dump:  List(NewStatus(0)),
 				Stack: List(NewInteger(psEvalBlock)),
+				Frame: Cons(l, Null),
 			},
 			Code:    c,
 			Dynamic: d,
@@ -1223,8 +1277,7 @@ func (t *Task) Apply(args Cell) bool {
 		t.ReplaceStates(SaveLexical, psEvalBlock)
 		t.Lexical = NewScope(m.Ref().Scope(), nil)
 	} else {
-		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
-		t.NewBlock(t.Dynamic, m.Ref().Scope())
+		t.NewFrame(t.Dynamic, m.Ref().Scope())
 	}
 
 	t.Code = m.Ref().Body()
@@ -1243,7 +1296,7 @@ func (t *Task) Apply(args Cell) bool {
 		t.Lexical.Public(Caar(params), args)
 	}
 
-	cc := NewContinuation(Cdr(t.Dump), t.Stack)
+	cc := NewContinuation(Cdr(t.Dump), t.Stack, t.Frame)
 	t.Lexical.Public(NewSymbol("return"), cc)
 
 	return true
@@ -1393,12 +1446,12 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, raw(Car(args)))
 	}
 
-	c := Resolve(t.Lexical, t.Dynamic, NewSymbol("$cwd"))
+	c := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	in := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdin")).Get()
-	out := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stdout")).Get()
-	err := Resolve(t.Lexical, t.Dynamic, NewSymbol("$stderr")).Get()
+	in := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stdin")).Get()
+	out := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stdout")).Get()
+	err := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stderr")).Get()
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
 
@@ -1478,7 +1531,7 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(t.Lexical, t.Dynamic, sym)
+	c := Resolve(t.Lexical, t.Frame, t.Dynamic, sym)
 	if c == nil {
 		r := raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
@@ -1683,7 +1736,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 
 		case psExecSet:
 			k := t.Code.(*Symbol)
-			r := Resolve(t.Lexical, t.Dynamic, k)
+			r := Resolve(t.Lexical, t.Frame, t.Dynamic, k)
 			if r == nil {
 				msg := "'" + k.String() + "' undefined"
 				panic(msg)
@@ -1781,7 +1834,7 @@ func (t *Task) Strict() (ok bool) {
 		ok = false
 	}()
 
-	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
+	c := Resolve(t.Lexical, nil, nil, NewSymbol("strict"))
 	if c == nil {
 		return false
 	}

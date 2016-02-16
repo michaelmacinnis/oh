@@ -34,6 +34,7 @@ const (
 	SaveDump
 	SaveDynamic
 	SaveLexical
+	SaveFrame
 	SaveMax
 )
 
@@ -262,7 +263,7 @@ func init() {
 		}
 
 		sym := NewSymbol(str)
-		c := Resolve(t.Lexical, t.Dynamic, sym)
+		c := Resolve(t.Lexical, t.Frame, t.Dynamic, sym)
 
 		if c == nil {
 			return t.Return(sym)
@@ -520,7 +521,7 @@ func init() {
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
-		c := Resolve(t.Self(), nil, k)
+		c := Resolve(t.Self(), nil, nil, k)
 		if c == nil {
 			panic("'" + s + "' undefined")
 		} else if a, ok := c.Get().(Binding); ok {
@@ -530,7 +531,7 @@ func init() {
 		}
 	})
 	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		c := Resolve(t.Self(), t.Dynamic, NewSymbol(raw(Car(args))))
+		c := Resolve(t.Self(), nil, t.Dynamic, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -550,10 +551,10 @@ func init() {
 			name := ref[2 : len(ref)-1]
 			sym := NewSymbol(name)
 
-			c := Resolve(l, t.Dynamic, sym)
+			c := Resolve(l, t.Frame, t.Dynamic, sym)
 			if c == nil {
 				sym := NewSymbol("$" + name)
-				c = Resolve(l, t.Dynamic, sym)
+				c = Resolve(l, t.Frame, t.Dynamic, sym)
 			}
 			if c == nil {
 				return "${" + name + "}"
@@ -802,18 +803,29 @@ func Pgid() int {
 	return pgid
 }
 
-func Resolve(s Context, e *Env, k *Symbol) (v Reference) {
-	v = nil
-
-	if v = s.Access(k); v == nil {
-		if e == nil {
+func Resolve(s Context, f Cell, e *Env, k *Symbol) (v Reference) {
+	if s != nil {
+		if v := s.Access(k); v != nil {
 			return v
 		}
-
-		v = e.Access(k)
 	}
 
-	return v
+	if f != nil {
+		for f != Null {
+			o := Car(f).(Context)
+			//println("Looking up", raw(k))
+			if v := o.Access(k); v != nil {
+				return v
+			}
+			f = Cdr(f)
+		}
+	}
+
+	if e != nil {
+		return e.Access(k)
+	}
+
+	return nil
 }
 
 func Start(parser reader, cli ui) {
