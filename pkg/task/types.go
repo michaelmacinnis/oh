@@ -817,11 +817,13 @@ func (r *Registers) NewBlock(dynamic *Env, lexical Context) {
 }
 
 func (r *Registers) NewFrame(dynamic *Env, lexical Context) {
-	state := int64(SaveDynamic|SaveLexical)
 	if !r.Lexical.Condensable() {
-		state |= SaveFrame
+		r.ReplaceStates(SaveDynamic|SaveFrame|SaveLexical, psEvalBlock)
+		r.Frame = Cons(NewObject(r.Lexical), r.Frame)
+	} else {
+		r.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
 	}
-	r.ReplaceStates(state, psEvalBlock)
+
 	r.Dynamic = NewEnv(dynamic)
 	r.Lexical = NewScope(lexical, nil)
 }
@@ -833,53 +835,55 @@ func (r *Registers) NewStates(l ...int64) {
 			continue
 		}
 
-		n := f
+		p := *r
 
-/*
 		s := r.GetState()
-		if s < SaveMax {
-			// Previous state was a save state.
+		if s < SaveMax && f < SaveMax {
+			// Previous and current states are save states.
 			c := f&s
+			if f&SaveCode > 0 || s&SaveCode > 0 {
+				c |= SaveCode
+			}
 			if c&f == f {
 				// Nothing new to save.
 				continue
 			} else if c&s == s {
-				// Previous save is a subset.
-				// Todo: Condense and combine states.
-				// Elements may need to be reordered.
-				f -= c
-				r.Stack = Cdr(r.Stack)
+				// Previous save state is a subset.
+				p.RestoreState()
+				r.Stack = p.Stack
+				if c&SaveCode > 0 {
+					f |= SaveCode
+				}
 			}
 		}
-*/
 
 		if f&SaveCode > 0 {
 			if f&SaveCode == SaveCode {
-				r.Stack = Cons(r.Code, r.Stack)
+				r.Stack = Cons(p.Code, r.Stack)
 			} else if f&SaveCarCode > 0 {
-				r.Stack = Cons(Car(r.Code), r.Stack)
+				r.Stack = Cons(Car(p.Code), r.Stack)
 			} else if f&SaveCdrCode > 0 {
-				r.Stack = Cons(Cdr(r.Code), r.Stack)
+				r.Stack = Cons(Cdr(p.Code), r.Stack)
 			}
 		}
 
 		if f&SaveDump > 0 {
-			r.Stack = Cons(r.Dump, r.Stack)
+			r.Stack = Cons(p.Dump, r.Stack)
 		}
 
 		if f&SaveDynamic > 0 {
-			r.Stack = Cons(r.Dynamic, r.Stack)
-		}
-
-		if f&SaveLexical > 0 {
-			r.Stack = Cons(r.Lexical, r.Stack)
+			r.Stack = Cons(p.Dynamic, r.Stack)
 		}
 
 		if f&SaveFrame > 0 {
-			r.Frame = Cons(NewObject(r.Lexical), r.Frame)
+			r.Stack = Cons(p.Frame, r.Stack)
 		}
 
-		r.Stack = Cons(NewInteger(n), r.Stack)
+		if f&SaveLexical > 0 {
+			r.Stack = Cons(p.Lexical, r.Stack)
+		}
+
+		r.Stack = Cons(NewInteger(f), r.Stack)
 	}
 }
 
@@ -891,11 +895,11 @@ func (r *Registers) RemoveState() {
 		return
 	}
 
-	if f&SaveFrame > 0 {
-		r.Frame = Cdr(r.Frame)
+	if f&SaveLexical > 0 {
+		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&SaveLexical > 0 {
+	if f&SaveFrame > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
@@ -924,13 +928,14 @@ func (r *Registers) RestoreState() {
 		return
 	}
 
-	if f&SaveFrame > 0 {
-		r.Frame = Cdr(r.Frame)
-	}
-
 	if f&SaveLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Lexical = Car(r.Stack).(Context)
+	}
+
+	if f&SaveFrame > 0 {
+		r.Stack = Cdr(r.Stack)
+		r.Frame = Car(r.Stack)
 	}
 
 	if f&SaveDynamic > 0 {

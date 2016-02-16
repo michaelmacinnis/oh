@@ -33,8 +33,8 @@ const (
 	SaveCdrCode
 	SaveDump
 	SaveDynamic
-	SaveLexical
 	SaveFrame
+	SaveLexical
 	SaveMax
 )
 
