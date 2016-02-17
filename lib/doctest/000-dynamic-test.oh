@@ -1,17 +1,17 @@
 #!/usr/bin/env oh
 
 define a = "lexical"
-dynamic caller = "top-level"
+public caller = "top-level"
 
 define foo: method () = {
-    echo a caller
+    echo a (upvar caller)
 }
 
 foo
 
 define bar: method () = {
     define a = "local"
-    dynamic caller = "bar"
+    public caller = "bar"
 
     foo
 }
@@ -19,8 +19,8 @@ define bar: method () = {
 bar
 
 define baz: method () = {
-    dynamic a = "nice try"
-    dynamic caller = "baz"
+    public a = "nice try"
+    public caller = "baz"
 
     foo
 }

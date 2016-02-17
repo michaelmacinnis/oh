@@ -591,6 +591,23 @@ func init() {
 
 		return true
 	})
+	scope0.DefineSyntax("upvar", func(t *Task, args Cell) bool {
+		k := Car(args)
+		f := t.Frame
+		for f != Null {
+			o := Car(f).(Context)
+			if v := o.Access(k); v != nil {
+				return t.Return(v.Get())
+			}
+			f = Cdr(f)
+		}
+
+		if v := t.Lexical.Access(k); v != nil {
+			return t.Return(v.Get())
+		}
+
+		panic("'" + raw(k) + "' undefined")
+	})
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveDynamic|SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
@@ -807,17 +824,6 @@ func Resolve(s Context, f Cell, e *Env, k *Symbol) (v Reference) {
 	if s != nil {
 		if v := s.Access(k); v != nil {
 			return v
-		}
-	}
-
-	if f != nil {
-		for f != Null {
-			o := Car(f).(Context)
-			//println("Looking up", raw(k))
-			if v := o.Access(k); v != nil {
-				return v
-			}
-			f = Cdr(f)
 		}
 	}
 
