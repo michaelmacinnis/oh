@@ -55,13 +55,13 @@ type Context interface {
 	Access(key Cell) Reference
 	Copy() Context
 	Complete(word string) []string
-	Condensable() bool
 	Define(key, value Cell)
 	Expose() Context
 	Faces() *Env
 	Prev() Context
 	Public(key, value Cell)
 	Remove(key Cell) bool
+	Visibility() *Env
 
 	DefineBuiltin(k string, f Function)
 	DefineMethod(k string, f Function)
@@ -456,15 +456,6 @@ func (e *Env) String() string {
 
 func (e *Env) Access(key Cell) Reference {
 	for env := e; env != nil; env = env.prev {
-/*
-    		keys := make([]string, 0, len(env.hash))
-    		for k := range env.hash {
-        		keys = append(keys, k)
-    		}
-		if raw(key) == "x" {
-			println("Env with keys " + strings.Join(keys, ", "))
-		}
-*/
 		if value, ok := env.hash[key.String()]; ok {
 			return value
 		}
@@ -817,7 +808,7 @@ func (r *Registers) NewBlock(dynamic *Env, lexical Context) {
 }
 
 func (r *Registers) NewFrame(dynamic *Env, lexical Context) {
-	if !r.Lexical.Condensable() {
+	if r.Lexical.Visibility() != lexical.Visibility() {
 		r.ReplaceStates(SaveDynamic|SaveFrame|SaveLexical, psEvalBlock)
 		r.Frame = Cons(NewObject(r.Lexical), r.Frame)
 	} else {
@@ -840,7 +831,7 @@ func (r *Registers) NewStates(l ...int64) {
 		s := r.GetState()
 		if s < SaveMax && f < SaveMax {
 			// Previous and current states are save states.
-			c := f&s
+			c := f & s
 			if f&SaveCode > 0 || s&SaveCode > 0 {
 				c |= SaveCode
 			}
@@ -1012,10 +1003,6 @@ func (s *Scope) Complete(word string) []string {
 	return cl
 }
 
-func (s *Scope) Condensable() bool {
-	return len(s.env.prev.hash) == 0
-}
-
 func (s *Scope) Copy() Context {
 	return &Scope{s.env.Copy(), s.prev}
 }
@@ -1046,6 +1033,18 @@ func (s *Scope) Remove(key Cell) bool {
 	}
 
 	return true
+}
+
+func (s *Scope) Visibility() *Env {
+	var obj Context
+	for obj = s; obj != nil; obj = obj.Prev() {
+		env := obj.Faces().prev
+		if len(env.hash) != 0 {
+			return env
+		}
+	}
+
+	return nil
 }
 
 func (s *Scope) DefineBuiltin(k string, a Function) {
