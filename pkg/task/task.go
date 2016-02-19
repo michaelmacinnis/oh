@@ -72,6 +72,7 @@ const (
 
 var (
 	env0        *Env
+	frame0      Context
 	external    Cell
 	interactive bool
 	jobs        = map[int]*Task{}
@@ -593,6 +594,11 @@ func init() {
 	})
 	scope0.DefineSyntax("upvar", func(t *Task, args Cell) bool {
 		k := Car(args)
+
+		if v := t.Dynamic.Access(k); v != nil {
+			return t.Return(v.Get())
+		}
+
 		f := t.Frame
 		for f != Null {
 			o := Car(f).(Context)
@@ -662,7 +668,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(t.Code, NewEnv(t.Dynamic),
+		child := NewTask(t.Code, NewEnv(t.Dynamic), t.Frame,
 			NewScope(t.Lexical, nil), t)
 
 		go child.Launch()
@@ -693,21 +699,42 @@ func init() {
 	/* Root Environment. */
 	env0 = NewEnv(nil)
 
+	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
+	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
+	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
+
+/*
 	env0.Add(NewSymbol("false"), False)
 	env0.Add(NewSymbol("true"), True)
 
 	env0.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
-	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
-	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
-	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
 
-	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
 		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
+*/
 
+	frame0 = NewObject(NewScope(nil, nil))
+
+	frame0.Public(NewSymbol("false"), False)
+	frame0.Public(NewSymbol("true"), True)
+
+	frame0.Public(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	frame0.Public(NewSymbol("$platform"), NewSymbol(Platform))
+
+/*
+	frame0.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
+	frame0.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
+	frame0.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
+*/
+
+	/* Environment variables. */
+	for _, s := range os.Environ() {
+		kv := strings.SplitN(s, "=", 2)
+		frame0.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+	}
 }
 
 func isSimple(c Cell) bool {
@@ -807,7 +834,7 @@ func LaunchForegroundTask() {
 		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(nil, nil, nil, nil)
+	task0 = NewTask(nil, nil, nil, nil, nil)
 	go task0.Listen()
 }
 
@@ -824,6 +851,16 @@ func Resolve(s Context, f Cell, e *Env, k *Symbol) (v Reference) {
 	if s != nil {
 		if v := s.Access(k); v != nil {
 			return v
+		}
+	}
+
+	if f != nil {
+		for f != Null {
+			o := Car(f).(Context)
+			if v := o.Access(k); v != nil {
+				return v
+			}
+			f = Cdr(f)
 		}
 	}
 

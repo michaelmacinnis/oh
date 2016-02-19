@@ -1215,9 +1215,13 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
+func NewTask(c Cell, d *Env, f Cell, l Context, p *Task) *Task {
 	if d == nil {
 		d = env0
+	}
+
+	if f == nil {
+		f = Cons(frame0, Null)
 	}
 
 	if l == nil {
@@ -1237,7 +1241,7 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 			Continuation: Continuation{
 				Dump:  List(NewStatus(0)),
 				Stack: List(NewInteger(psEvalBlock)),
-				Frame: Cons(l, Null),
+				Frame: f,
 			},
 			Code:    c,
 			Dynamic: d,
