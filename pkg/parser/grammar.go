@@ -564,7 +564,7 @@ yydefault:
 			if yyDollar[1].c != Null {
 				s := yylex.(*scanner)
 				s.process(yyDollar[1].c)
-				if s.task.Stack == Null {
+				if task.ForegroundTask().Stack == Null {
 					return -1
 				}
 			}

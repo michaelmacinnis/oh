@@ -43,7 +43,7 @@ opt_evaluate_command: command {
 	if ($1.c != Null) {
 		s := yylex.(*scanner)
 		s.process($1.c)
-		if s.task.Stack == Null {
+		if task.ForegroundTask().Stack == Null {
 			return -1
 		}
 	}
