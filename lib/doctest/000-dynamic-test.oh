@@ -1,10 +1,9 @@
 #!/usr/bin/env oh
 
 define a = "lexical"
-public caller = "top-level"
 
 define foo: method () = {
-    echo a (upvar caller)
+    echo a caller
 }
 
 foo
@@ -27,7 +26,7 @@ define baz: method () = {
 
 baz
 
-#-     lexical top-level
+#-     lexical caller
 #-     lexical bar
 #-     lexical baz
 

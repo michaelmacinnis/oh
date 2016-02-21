@@ -400,7 +400,6 @@ func (c *Command) Scope() Context {
 /* Continuation cell definition. */
 
 type Continuation struct {
-	Caller Context
 	Dump  Cell
 	Stack Cell
 	Frame Cell
@@ -414,9 +413,8 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(caller Context, dump, stack, frame Cell) *Continuation {
+func NewContinuation(dump, stack, frame Cell) *Continuation {
 	return &Continuation{
-		Caller: caller,
 		Dump: dump,
 		Stack: stack,
 		Frame: frame,
@@ -774,7 +772,6 @@ type Registers struct {
 	Continuation // Stack and Dump
 
 	Code    Cell // Control
-	Dynamic *Env
 	Lexical Context
 }
 
@@ -797,8 +794,8 @@ func (r *Registers) Arguments() Cell {
 }
 
 func (r *Registers) Complete(word string) []string {
-	completions := r.Lexical.Complete(word)
-	return append(completions, r.Dynamic.Complete(word)...)
+	// TODO: Also look through frames.
+	return r.Lexical.Complete(word)
 }
 
 func (r *Registers) GetState() int64 {
@@ -808,29 +805,21 @@ func (r *Registers) GetState() int64 {
 	return Car(r.Stack).(Atom).Int()
 }
 
-func (r *Registers) NewBlock(dynamic *Env, lexical Context) {
-	r.Dynamic = NewEnv(dynamic)
+func (r *Registers) NewBlock(lexical Context) {
 	r.Lexical = NewScope(lexical, nil)
 }
 
-func (r *Registers) NewFrame(dynamic *Env, lexical Context) {
+func (r *Registers) NewFrame(lexical Context) {
 	var state int64 = SaveLexical
-	if r.GetState() != psExecSyntax {
-		state |= SaveDynamic
-	}
 
-	if r.Caller.Visibility() != Car(r.Frame).(Context).Visibility() {
+	if r.Lexical.Visibility() != Car(r.Frame).(Context).Visibility() {
 		state |= SaveFrame
 	}
 
 	r.ReplaceStates(state, psEvalBlock)
 
-	if state&SaveDynamic > 0 {
-		r.Dynamic = NewEnv(dynamic)
-	}
-
 	if state&SaveFrame > 0 {
-		r.Frame = Cons(NewObject(r.Caller), r.Frame)
+		r.Frame = Cons(NewObject(r.Lexical), r.Frame)
 	}
 
 	r.Lexical = NewScope(lexical, nil)
@@ -875,16 +864,8 @@ func (r *Registers) NewStates(l ...int64) {
 			}
 		}
 
-		if f&SaveCaller > 0 {
-			r.Stack = Cons(p.Caller, r.Stack)
-		}
-
 		if f&SaveDump > 0 {
 			r.Stack = Cons(p.Dump, r.Stack)
-		}
-
-		if f&SaveDynamic > 0 {
-			r.Stack = Cons(p.Dynamic, r.Stack)
 		}
 
 		if f&SaveFrame > 0 {
@@ -915,15 +896,7 @@ func (r *Registers) RemoveState() {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&SaveDynamic > 0 {
-		r.Stack = Cdr(r.Stack)
-	}
-
 	if f&SaveDump > 0 {
-		r.Stack = Cdr(r.Stack)
-	}
-
-	if f&SaveCaller > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
@@ -954,19 +927,9 @@ func (r *Registers) RestoreState() {
 		r.Frame = Car(r.Stack)
 	}
 
-	if f&SaveDynamic > 0 {
-		r.Stack = Cdr(r.Stack)
-		r.Dynamic = Car(r.Stack).(*Env)
-	}
-
 	if f&SaveDump > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Dump = Car(r.Stack)
-	}
-
-	if f&SaveCaller > 0 {
-		r.Stack = Cdr(r.Stack)
-		r.Caller = Car(r.Stack).(Context)
 	}
 
 	if f&SaveCode > 0 {
@@ -1245,24 +1208,17 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
-	if d == nil {
-		d = env0
-	}
-
+func NewTask(c Cell, l Context, p *Task) *Task {
 	if l == nil {
 		l = scope0
 	}
 
-	var caller Context
 	var frame Cell
 	var j *Job
 	if p == nil {
-		caller = frame0
 		frame = Cons(frame0, Null)
 		j = NewJob()
 	} else {
-		caller = p.Caller
 		frame = p.Frame
 		j = p.Job
 	}
@@ -1271,13 +1227,11 @@ func NewTask(c Cell, d *Env, l Context, p *Task) *Task {
 		Job: j,
 		Registers: &Registers{
 			Continuation: Continuation{
-				Caller: caller,
 				Dump:  List(NewStatus(0)),
 				Stack: List(NewInteger(psEvalBlock)),
 				Frame: frame,
 			},
 			Code:    c,
-			Dynamic: d,
 			Lexical: l,
 		},
 		Done:      make(chan Cell, 1),
@@ -1314,7 +1268,7 @@ func (t *Task) Equal(c Cell) bool {
 func (t *Task) Apply(args Cell) bool {
 	m := Car(t.Dump).(Binding)
 
-	t.NewFrame(t.Dynamic, m.Ref().Scope())
+	t.NewFrame(m.Ref().Scope())
 
 	t.Code = m.Ref().Body()
 
@@ -1332,7 +1286,7 @@ func (t *Task) Apply(args Cell) bool {
 		t.Lexical.Public(Caar(params), args)
 	}
 
-	cc := NewContinuation(t.Caller, Cdr(t.Dump), t.Stack, t.Frame)
+	cc := NewContinuation(Cdr(t.Dump), t.Stack, t.Frame)
 	t.Lexical.Public(NewSymbol("return"), cc)
 
 	return true
@@ -1398,37 +1352,6 @@ func (t *Task) Debug(s string) {
 	fmt.Printf("%s: t.Code = %v, t.Dump = %v\n", s, t.Code, t.Dump)
 }
 
-func (t *Task) DynamicVar(state int64) bool {
-	r := raw(Car(t.Code))
-	if t.Strict() && number(r) {
-		msg := "'" + r + "' cannot be used as a variable name"
-		panic(common.ErrSyntax + msg)
-	}
-
-	if state == psExecSetenv {
-		if !strings.HasPrefix(r, "$") {
-			msg := "environment variable names must begin with '$'"
-			panic(common.ErrSyntax + msg)
-		}
-	}
-
-	t.ReplaceStates(state, SaveCarCode|SaveDynamic, psEvalElement)
-
-	if Length(t.Code) == 3 {
-		if raw(Cadr(t.Code)) != "=" {
-			msg := "expected '=' after '" + r + "'"
-			panic(common.ErrSyntax + msg)
-		}
-		t.Code = Caddr(t.Code)
-	} else {
-		t.Code = Cadr(t.Code)
-	}
-
-	t.Dump = Cdr(t.Dump)
-
-	return true
-}
-
 func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
 
 	t.Lock()
@@ -1482,12 +1405,12 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, raw(Car(args)))
 	}
 
-	c := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$cwd"))
+	c := Resolve(t.Lexical, t.Frame, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	in := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stdin")).Get()
-	out := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stdout")).Get()
-	err := Resolve(t.Lexical, t.Frame, t.Dynamic, NewSymbol("$stderr")).Get()
+	in := Resolve(t.Lexical, t.Frame, NewSymbol("$stdin")).Get()
+	out := Resolve(t.Lexical, t.Frame, NewSymbol("$stdout")).Get()
+	err := Resolve(t.Lexical, t.Frame, NewSymbol("$stderr")).Get()
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
 
@@ -1549,6 +1472,13 @@ func (t *Task) LexicalVar(state int64) bool {
 		panic(msg)
 	}
 
+	if state == psExecSetenv {
+		if !strings.HasPrefix(r, "$") {
+			msg := "environment variable names must begin with '$'"
+			panic(common.ErrSyntax + msg)
+		}
+	}
+
 	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
 
 	if Length(t.Code) == 3 {
@@ -1567,7 +1497,7 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(t.Lexical, t.Frame, t.Dynamic, sym)
+	c := Resolve(t.Lexical, t.Frame, sym)
 	if c == nil {
 		r := raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
@@ -1676,7 +1606,6 @@ func (t *Task) Run(end Cell) (successful bool) {
 				break
 			}
 
-			t.Caller = t.Lexical
 			t.ReplaceStates(psExecCommand,
 				SaveCdrCode,
 				psEvalElement)
@@ -1757,10 +1686,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 		case psExecDefine:
 			t.Lexical.Define(t.Code, Car(t.Dump))
 
-		case psExecPublic:
-			t.Lexical.Public(t.Code, Car(t.Dump))
-
-		case psExecDynamic, psExecSetenv:
+		case psExecPublic, psExecSetenv:
 			k := t.Code
 			v := Car(t.Dump)
 
@@ -1769,11 +1695,11 @@ func (t *Task) Run(end Cell) (successful bool) {
 				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
 			}
 
-			t.Dynamic.Add(k, v)
+			t.Lexical.Public(k, v)
 
 		case psExecSet:
 			k := t.Code.(*Symbol)
-			r := Resolve(t.Lexical, t.Frame, t.Dynamic, k)
+			r := Resolve(t.Lexical, t.Frame, k)
 			if r == nil {
 				msg := "'" + k.String() + "' undefined"
 				panic(msg)
@@ -1871,7 +1797,7 @@ func (t *Task) Strict() (ok bool) {
 		ok = false
 	}()
 
-	c := Resolve(t.Lexical, nil, nil, NewSymbol("strict"))
+	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
 	if c == nil {
 		return false
 	}

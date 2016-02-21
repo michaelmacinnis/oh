@@ -293,16 +293,12 @@ func bindTheRest(s *Scope) {
 		return t.LexicalVar(psExecDefine)
 	})
 
-	s.DefineSyntax("dynamic", func(t *Task, args Cell) bool {
-		return t.DynamicVar(psExecDynamic)
-	})
-
 	s.DefineSyntax("method", func(t *Task, args Cell) bool {
 		return t.Closure(NewMethod)
 	})
 
 	s.DefineSyntax("setenv", func(t *Task, args Cell) bool {
-		return t.DynamicVar(psExecSetenv)
+		return t.LexicalVar(psExecSetenv)
 	})
 
 	s.DefineSyntax("syntax", func(t *Task, args Cell) bool {

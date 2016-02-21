@@ -31,9 +31,7 @@ type reader func(*Task, common.ReadStringer, string,
 const (
 	SaveCarCode = 1 << iota
 	SaveCdrCode
-	SaveCaller
 	SaveDump
-	SaveDynamic
 	SaveFrame
 	SaveLexical
 	SaveMax
@@ -53,7 +51,6 @@ const (
 	psExecBuiltin
 	psExecCommand
 	psExecDefine
-	psExecDynamic
 	psExecIf
 	psExecMethod
 	psExecPublic
@@ -72,7 +69,6 @@ const (
 )
 
 var (
-	env0        *Env
 	frame0      Context
 	external    Cell
 	interactive bool
@@ -204,7 +200,7 @@ func init() {
 		}
 
 		if wd, err := os.Getwd(); err == nil {
-			t.Dynamic.Add(NewSymbol("$cwd"), NewSymbol(wd))
+			t.Lexical.Public(NewSymbol("$cwd"), NewSymbol(wd))
 		}
 
 		return t.Return(NewStatus(int64(status)))
@@ -265,7 +261,7 @@ func init() {
 		}
 
 		sym := NewSymbol(str)
-		c := Resolve(t.Lexical, t.Frame, t.Dynamic, sym)
+		c := Resolve(t.Lexical, t.Frame, sym)
 
 		if c == nil {
 			return t.Return(sym)
@@ -523,7 +519,7 @@ func init() {
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
-		c := Resolve(t.Self(), nil, nil, k)
+		c := Resolve(t.Self(), nil, k)
 		if c == nil {
 			panic("'" + s + "' undefined")
 		} else if a, ok := c.Get().(Binding); ok {
@@ -533,7 +529,7 @@ func init() {
 		}
 	})
 	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		c := Resolve(t.Self(), nil, t.Dynamic, NewSymbol(raw(Car(args))))
+		c := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -553,10 +549,10 @@ func init() {
 			name := ref[2 : len(ref)-1]
 			sym := NewSymbol(name)
 
-			c := Resolve(l, t.Frame, t.Dynamic, sym)
+			c := Resolve(l, t.Frame, sym)
 			if c == nil {
 				sym := NewSymbol("$" + name)
-				c = Resolve(l, t.Frame, t.Dynamic, sym)
+				c = Resolve(l, t.Frame, sym)
 			}
 			if c == nil {
 				return "${" + name + "}"
@@ -587,56 +583,20 @@ func init() {
 
 	/* Syntax. */
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical, psEvalBlock)
+		t.ReplaceStates(SaveLexical, psEvalBlock)
 
-		t.NewBlock(t.Dynamic, t.Lexical)
+		t.NewBlock(t.Lexical)
 
 		return true
 	})
-	scope0.DefineSyntax("upvar", func(t *Task, args Cell) bool {
-		k := Car(args)
-
-		if v := t.Dynamic.Access(k); v != nil {
-			return t.Return(v.Get())
-		}
-
-		f := t.Frame
-		for f != Null {
-			o := Car(f).(Context)
-			if v := o.Access(k); v != nil {
-				return t.Return(v.Get())
-			}
-			f = Cdr(f)
-		}
-
-		if v := t.Lexical.Access(k); v != nil {
-			return t.Return(v.Get())
-		}
-
-		panic("'" + raw(k) + "' undefined")
-	})
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical,
+		t.ReplaceStates(SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
 
-		t.NewBlock(t.Dynamic, t.Lexical)
+		t.NewBlock(t.Lexical)
 
 		t.Code = Car(t.Code)
 		t.Dump = Cdr(t.Dump)
-
-		return true
-	})
-	scope0.DefineSyntax("make-env", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic, psEvalBlock)
-
-		t.Dynamic = NewEnv(t.Dynamic)
-
-		return true
-	})
-	scope0.DefineSyntax("make-scope", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveLexical, psEvalBlock)
-
-		t.Lexical = NewScope(t.Lexical, nil)
 
 		return true
 	})
@@ -657,7 +617,7 @@ func init() {
 		if !IsCons(t.Code) {
 			t.ReplaceStates(psExecSet, SaveCode)
 		} else {
-			t.ReplaceStates(SaveDynamic|SaveLexical,
+			t.ReplaceStates(SaveLexical,
 				psExecSet, SaveCdrCode,
 				psChangeContext, psEvalElement,
 				SaveCarCode)
@@ -669,8 +629,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(t.Code, NewEnv(t.Dynamic),
-			NewScope(t.Lexical, nil), t)
+		child := NewTask(t.Code, NewScope(t.Lexical, nil), t)
 
 		go child.Launch()
 
@@ -687,7 +646,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveDynamic|SaveLexical, psExecWhileTest)
+		t.ReplaceStates(SaveLexical, psExecWhileTest)
 
 		return true
 	})
@@ -697,26 +656,6 @@ func init() {
 
 	scope0.Public(NewSymbol("$root"), scope0)
 
-	/* Root Environment. */
-	env0 = NewEnv(nil)
-
-	env0.Add(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
-	env0.Add(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
-	env0.Add(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
-
-/*
-	env0.Add(NewSymbol("false"), False)
-	env0.Add(NewSymbol("true"), True)
-
-	env0.Add(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
-	env0.Add(NewSymbol("$platform"), NewSymbol(Platform))
-
-	for _, s := range os.Environ() {
-		kv := strings.SplitN(s, "=", 2)
-		env0.Add(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
-	}
-*/
-
 	frame0 = NewObject(NewScope(nil, nil))
 
 	frame0.Public(NewSymbol("false"), False)
@@ -725,17 +664,17 @@ func init() {
 	frame0.Public(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 	frame0.Public(NewSymbol("$platform"), NewSymbol(Platform))
 
-/*
 	frame0.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
 	frame0.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
 	frame0.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
-*/
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
 		frame0.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
+
+	scope0.Public(NewSymbol("$env"), frame0)
 }
 
 func isSimple(c Cell) bool {
@@ -835,7 +774,7 @@ func LaunchForegroundTask() {
 		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(nil, nil, nil, nil)
+	task0 = NewTask(nil, nil, nil)
 	go task0.Listen()
 }
 
@@ -848,7 +787,7 @@ func Pgid() int {
 	return pgid
 }
 
-func Resolve(s Context, f Cell, e *Env, k *Symbol) (v Reference) {
+func Resolve(s Context, f Cell, k *Symbol) (v Reference) {
 	if s != nil {
 		if v := s.Access(k); v != nil {
 			return v
@@ -863,10 +802,6 @@ func Resolve(s Context, f Cell, e *Env, k *Symbol) (v Reference) {
 			}
 			f = Cdr(f)
 		}
-	}
-
-	if e != nil {
-		return e.Access(k)
 	}
 
 	return nil
@@ -889,27 +824,27 @@ func Start(parser reader, cli ui) {
 	origin := ""
 	if len(os.Args) > 1 {
 		origin = filepath.Dir(os.Args[1])
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		frame0.Public(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
 			k := "$" + strconv.Itoa(i+1)
-			env0.Add(NewSymbol(k), NewSymbol(v))
+			frame0.Public(NewSymbol(k), NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		env0.Add(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		frame0.Public(NewSymbol("$0"), NewSymbol(os.Args[0]))
 	}
-	env0.Add(NewSymbol("$args"), args)
+	frame0.Public(NewSymbol("$args"), args)
 
 	if wd, err := os.Getwd(); err == nil {
-		env0.Add(NewSymbol("$cwd"), NewSymbol(wd))
+		frame0.Public(NewSymbol("$cwd"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
-		env0.Add(NewSymbol("$origin"), NewSymbol(origin))
+		frame0.Public(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
 	task0.Line = 0
