@@ -9,7 +9,7 @@ define $dir: ... lib/doctest
 define $pattern = $1
 define $output = $2
 
-set $stdout: open "w": "/"::join $origin $output
+public $stdout: open "w": "/"::join $origin $output
 
 # Generate documentation.
 find $dir -name "[0-9]*.oh" |
