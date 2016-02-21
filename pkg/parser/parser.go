@@ -13,7 +13,7 @@ type scanner struct {
 	deref   func(string, uintptr) Cell
 	input   common.ReadStringer
 	line    []rune
-	process func(Cell)
+	process func(Cell, string, int, string) Cell
 	task    *task.Task
 
 	cursor   int
@@ -95,8 +95,6 @@ main:
 			}
 
 			s.lineno++
-			s.task.File = s.filename
-			s.task.Line = s.lineno
 
 			runes := []rune(line)
 			last := len(runes) - 2
@@ -293,7 +291,7 @@ func Parse(t *task.Task,
 	r common.ReadStringer,
 	f string,
 	d func(string, uintptr) Cell,
-	c func(Cell)) bool {
+	c func(Cell, string, int, string) Cell) bool {
 
 	s := new(scanner)
 

@@ -563,7 +563,7 @@ yydefault:
 			yyVAL.c = yyDollar[1].c
 			if yyDollar[1].c != Null {
 				s := yylex.(*scanner)
-				s.process(yyDollar[1].c)
+				s.process(yyDollar[1].c, s.filename, s.lineno, "")
 				if task.ForegroundTask().Stack == Null {
 					return -1
 				}

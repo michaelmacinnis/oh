@@ -26,7 +26,8 @@ type ui interface {
 }
 
 type reader func(*Task, common.ReadStringer, string,
-	func(string, uintptr) Cell, func(Cell)) bool
+	func(string, uintptr) Cell,
+	func(Cell, string, int, string) Cell) bool
 
 const (
 	SaveCarCode = 1 << iota
@@ -656,7 +657,7 @@ func init() {
 
 	scope0.Public(NewSymbol("$root"), scope0)
 
-	frame0 = NewObject(NewScope(nil, nil))
+	frame0 = NewScope(nil, nil)
 
 	frame0.Public(NewSymbol("false"), False)
 	frame0.Public(NewSymbol("true"), True)
@@ -757,6 +758,26 @@ func wpipe(c Cell) *os.File {
 	return toConduit(c.(Context)).(*Pipe).WriteFd()
 }
 
+func Call(t *Task, c Cell, problem string) string {
+	if t == nil {
+		return raw(evaluate(c, "", -1, problem))
+	}
+
+	saved := *(t.Registers)
+
+	t.Code = c
+	t.Dump = List(NewStatus(0))
+	t.Stack = List(NewInteger(psEvalCommand))
+
+	t.Run(nil, problem)
+
+	status := Car(t.Dump)
+
+	*(t.Registers) = saved
+
+	return raw(status)
+}
+
 func ForegroundTask() *Task {
 	return task0
 }
@@ -775,6 +796,7 @@ func LaunchForegroundTask() {
 		task0.Job.mode = mode
 	}
 	task0 = NewTask(nil, nil, nil)
+
 	go task0.Listen()
 }
 
@@ -811,9 +833,10 @@ func Start(parser reader, cli ui) {
 	LaunchForegroundTask()
 
 	parse = parser
-	eval := func(c Cell) {
-		task0.Eval <- c
+	eval := func(c Cell, f string, l int, p string) Cell {
+		task0.Eval <- Message{Cmd: c, File: f, Line: l, Problem: p}
 		<-task0.Done
+		return nil
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
@@ -847,12 +870,12 @@ func Start(parser reader, cli ui) {
 		frame0.Public(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
-	task0.Line = 0
-
 	interactive = false
 	if len(os.Args) > 1 {
-		task0.File = os.Args[1]
-		eval(List(NewSymbol("source"), NewSymbol(os.Args[1])))
+		eval(
+			List(NewSymbol("source"), NewSymbol(os.Args[1])),
+			os.Args[1], 0, "",
+		)
 	} else if cli.Exists() {
 		interactive = true
 
@@ -865,8 +888,9 @@ func Start(parser reader, cli ui) {
 		}
 		cli.Close()
 	} else {
-		task0.File = "/dev/stdin"
-		eval(List(NewSymbol("source"), NewSymbol("/dev/stdin")))
+		eval(
+			List(NewSymbol("source"), NewSymbol("/dev/stdin")),
+			"/dev/stdin", 0, "")
 	}
 
 	os.Exit(status(Car(task0.Dump)))

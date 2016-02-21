@@ -72,6 +72,13 @@ type Context interface {
 
 type Function func(t *Task, args Cell) bool
 
+type Message struct {
+	Cmd     Cell
+	File    string
+	Line    int
+	Problem string
+}
+
 var (
 	envc *Env
 	envs *Env
@@ -415,7 +422,7 @@ func IsContinuation(c Cell) bool {
 
 func NewContinuation(dump, stack, frame Cell) *Continuation {
 	return &Continuation{
-		Dump: dump,
+		Dump:  dump,
 		Stack: stack,
 		Frame: frame,
 	}
@@ -718,10 +725,15 @@ func (p *Pipe) Read(t *Task) Cell {
 		p.c = make(chan Cell)
 		p.d = make(chan bool)
 		go func() {
-			parse(t, p.reader(), p.r.Name(), deref, func(c Cell) {
-				p.c <- c
-				<-p.d
-			})
+			parse(
+				t, p.reader(), p.r.Name(), deref,
+				func(c Cell, f string, l int, u string) Cell {
+					t.Line = l
+					p.c <- c
+					<-p.d
+					return nil
+				},
+			)
 			p.c <- Null
 		}()
 	} else {
@@ -1199,7 +1211,7 @@ type Task struct {
 	*Job
 	*Registers
 	Done      chan Cell
-	Eval      chan Cell
+	Eval      chan Message
 	File      string
 	Line      int
 	children  map[*Task]bool
@@ -1235,7 +1247,7 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 			Lexical: l,
 		},
 		Done:      make(chan Cell, 1),
-		Eval:      make(chan Cell, 1),
+		Eval:      make(chan Message, 1),
 		File:      "oh",
 		Line:      0,
 		children:  make(map[*Task]bool),
@@ -1290,22 +1302,6 @@ func (t *Task) Apply(args Cell) bool {
 	t.Lexical.Public(NewSymbol("return"), cc)
 
 	return true
-}
-
-func (t *Task) Call(c Cell) string {
-	saved := *(t.Registers)
-
-	t.Code = c
-	t.Dump = List(NewStatus(0))
-	t.Stack = List(NewInteger(psEvalCommand))
-
-	t.Run(nil)
-
-	status := Car(t.Dump)
-
-	*(t.Registers) = saved
-
-	return raw(status)
 }
 
 func (t *Task) Closure(n ClosureGenerator) bool {
@@ -1425,33 +1421,50 @@ func (t *Task) External(args Cell) bool {
 }
 
 func (t *Task) Launch() {
-	t.Run(nil)
+	t.Run(nil, "")
 	close(t.Done)
 }
 
 func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
-	for c := range t.Eval {
+	for m := range t.Eval {
 		saved := *(t.Registers)
 
 		end := Cons(nil, Null)
 
-		SetCar(t.Code, c)
+		if t.Code == nil {
+			break
+		}
+
+		if m.File != "" {
+			t.File = m.File
+		}
+		if m.Line != -1 {
+			t.Line = m.Line
+		}
+		SetCar(t.Code, m.Cmd)
 		SetCdr(t.Code, end)
 
 		t.Code = end
 		t.NewStates(SaveCode, psEvalCommand)
 
-		t.Code = c
-		if !t.Run(end) {
+		t.Code = m.Cmd
+		status := t.Run(end, m.Problem)
+		var result Cell = nil
+		if status < 0 {
+			break
+		} else if status > 0 {
 			*(t.Registers) = saved
 
 			SetCar(t.Code, nil)
 			SetCdr(t.Code, Null)
+		} else {
+			result = Car(t.Dump)
+			t.Dump = Cdr(t.Dump)
 		}
 
-		t.Done <- nil
+		t.Done <- result
 	}
 }
 
@@ -1515,8 +1528,8 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) Run(end Cell) (successful bool) {
-	successful = true
+func (t *Task) Run(end Cell, problem string) (status int) {
+	status = 0
 
 	defer func() {
 		r := recover()
@@ -1524,9 +1537,13 @@ func (t *Task) Run(end Cell) (successful bool) {
 			return
 		}
 
-		t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
+		if problem == "" {
+			t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
+		} else {
+			println(problem)
+		}
 
-		successful = false
+		status = 1
 	}()
 
 	for t.Runnable() && t.Stack != Null {
@@ -1581,7 +1598,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			fallthrough
 		case psEvalBlock:
 			if t.Code == end {
-				t.Dump = Cdr(t.Dump)
+				//t.Dump = Cdr(t.Dump)
 				return
 			}
 
@@ -1731,7 +1748,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 			continue
 
 		case psFatal:
-			return false
+			return -1
 
 		case psReturn:
 			args := t.Arguments()
@@ -1755,7 +1772,7 @@ func (t *Task) Run(end Cell) (successful bool) {
 		t.RemoveState()
 	}
 
-	return
+	return -1
 }
 
 func (t *Task) Runnable() bool {
@@ -1839,7 +1856,7 @@ func (t *Task) Throw(file string, line int, text string) {
 			NewInteger(int64(line)),
 		),
 	)
-	t.Call(c)
+	Call(t, c, text)
 }
 
 func (t *Task) Wait() {
