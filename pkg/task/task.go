@@ -31,6 +31,7 @@ type reader func(*Task, common.ReadStringer, string,
 const (
 	SaveCarCode = 1 << iota
 	SaveCdrCode
+	SaveCaller
 	SaveDump
 	SaveDynamic
 	SaveFrame
@@ -668,7 +669,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(t.Code, NewEnv(t.Dynamic), t.Frame,
+		child := NewTask(t.Code, NewEnv(t.Dynamic),
 			NewScope(t.Lexical, nil), t)
 
 		go child.Launch()
@@ -834,7 +835,7 @@ func LaunchForegroundTask() {
 		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(nil, nil, nil, nil, nil)
+	task0 = NewTask(nil, nil, nil, nil)
 	go task0.Listen()
 }
 

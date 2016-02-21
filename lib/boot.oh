@@ -31,27 +31,33 @@ define $connect: syntax (conduit name) = {
 	syntax e (left right) = {
 		define p: conduit
 		spawn {
-			eval: quasiquote: dynamic (unquote name) p
-			e::eval left
+			e::eval: quasiquote: block {
+				public (unquote name) = (unquote p)
+				eval (unquote left)
+			}
 			p::writer-close
 		}
 		block {
-			dynamic $stdin = p
-			e::eval right
+			e::eval: quasiquote: block {
+				public $stdin = (unquote p)
+				eval (unquote right)
+			}
 			p::reader-close
 		}
 	}
 }
 define $redirect: syntax (name mode closer) = {
-	syntax e (c cmd) =: make-env {
+	syntax e (c cmd) = {
 		define c: e::eval c
 		define f = ()
 		if (not: or (is-channel c) (is-pipe c)) {
 			set f: open mode c
 			set c = f
 		}
-		eval: quasiquote: dynamic (unquote name) c
-		e::eval cmd
+		e::eval: quasiquote: block {
+			public (unquote name) (unquote c)
+			eval (unquote cmd)
+		}
 		if (not: is-null f): eval: quasiquote: f::(unquote closer)
 	}
 }
@@ -84,8 +90,10 @@ define apply: method (f: args) =: f @args
 define backtick: syntax e (cmd) = {
 	define p: pipe
 	spawn {
-		dynamic $stdout = p
-		e::eval cmd
+		e::eval: quasiquote: block {
+			public $stdout = (unquote p)
+			eval (unquote cmd)
+		}
 		p::writer-close
 	}
 	define r: cons () ()
@@ -214,7 +222,7 @@ define process-substitution: syntax e (:args) = {
 	wait @procs
 	rm @fifos
 }
-dynamic prompt: method (suffix) = {
+public prompt: method (suffix) = {
 	define folders: (string $cwd)::split "/"
 	define last: sub (length folders) 1
 	return (list-ref last folders) ^ suffix
