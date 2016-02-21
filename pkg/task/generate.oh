@@ -2,7 +2,7 @@
 
 define common: import: ... lib/common.oh
 
-dynamic $stdout: open w: "/"::join $origin generated.go
+public $stdout: open w: "/"::join $origin generated.go
 
 common::introduction @`(basename $0) $GOPACKAGE
 
@@ -99,7 +99,6 @@ echo "}"
 
 define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineSyntax define "t.LexicalVar(psExecDefine)") \
-                 (DefineSyntax dynamic "t.DynamicVar(psExecDynamic)") \
                  (DefineSyntax method "t.Closure(NewMethod)") \
                  (DefineSyntax setenv "t.DynamicVar(psExecSetenv)") \
                  (DefineSyntax syntax "t.Closure(NewSyntax)") \
