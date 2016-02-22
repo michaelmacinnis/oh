@@ -305,10 +305,6 @@ func bindTheRest(s *Scope) {
 		return t.Closure(NewSyntax)
 	})
 
-	s.PublicSyntax("public", func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecPublic)
-	})
-
 	s.DefineMethod("car", func(t *Task, args Cell) bool {
 		return t.Return(Caar(args))
 	})

@@ -1228,7 +1228,7 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 	var frame Cell
 	var j *Job
 	if p == nil {
-		frame = Cons(frame0, Null)
+		frame = frame0
 		j = NewJob()
 	} else {
 		frame = p.Frame
@@ -1401,12 +1401,17 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, raw(Car(args)))
 	}
 
-	c := Resolve(t.Lexical, t.Frame, NewSymbol("$cwd"))
+	c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$cwd"))
 	dir := c.Get().String()
 
-	in := Resolve(t.Lexical, t.Frame, NewSymbol("$stdin")).Get()
-	out := Resolve(t.Lexical, t.Frame, NewSymbol("$stdout")).Get()
-	err := Resolve(t.Lexical, t.Frame, NewSymbol("$stderr")).Get()
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stdin"))
+	in := c.Get()
+
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stdout"))
+	out := c.Get()
+
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stderr"))
+	err := c.Get()
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
 
@@ -1473,8 +1478,8 @@ func (t *Task) LexicalVar(state int64) bool {
 
 	l := t.Self().Expose()
 	if t.Lexical != l {
-		t.NewStates(SaveLexical)
-		t.Lexical = l
+	        t.NewStates(SaveLexical)
+	        t.Lexical = l
 	}
 
 	t.NewStates(state)
@@ -1492,7 +1497,7 @@ func (t *Task) LexicalVar(state int64) bool {
 		}
 	}
 
-	t.NewStates(SaveCarCode|SaveLexical, psEvalElement)
+	t.NewStates(SaveCarCode, psEvalElement)
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
@@ -1510,7 +1515,7 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
-	c := Resolve(t.Lexical, t.Frame, sym)
+	c, s := Resolve(t.Lexical, t.Frame, sym)
 	if c == nil {
 		r := raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
@@ -1520,7 +1525,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	} else if simple && !isSimple(c.Get()) {
 		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(Binding); ok {
-		t.Dump = Cons(a.Bind(t.Lexical), t.Dump)
+		t.Dump = Cons(a.Bind(s), t.Dump)
 	} else {
 		t.Dump = Cons(c.Get(), t.Dump)
 	}
@@ -1716,7 +1721,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 
 		case psExecSet:
 			k := t.Code.(*Symbol)
-			r := Resolve(t.Lexical, t.Frame, k)
+			r, _ := Resolve(t.Lexical, t.Frame, k)
 			if r == nil {
 				msg := "'" + k.String() + "' undefined"
 				panic(msg)
@@ -1814,7 +1819,7 @@ func (t *Task) Strict() (ok bool) {
 		ok = false
 	}()
 
-	c := Resolve(t.Lexical, nil, NewSymbol("strict"))
+	c, _ := Resolve(t.Lexical, nil, NewSymbol("strict"))
 	if c == nil {
 		return false
 	}

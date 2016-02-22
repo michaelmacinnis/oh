@@ -102,7 +102,6 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineSyntax method "t.Closure(NewMethod)") \
                  (DefineSyntax setenv "t.LexicalVar(psExecSetenv)") \
                  (DefineSyntax syntax "t.Closure(NewSyntax)") \
-                 (PublicSyntax public "t.LexicalVar(psExecPublic)") \
                  (DefineMethod car "t.Return(Caar(args))") \
                  (DefineMethod cdr "t.Return(Cdar(args))") \
                  (DefineMethod cons "t.Return(Cons(Car(args), Cadr(args)))") \

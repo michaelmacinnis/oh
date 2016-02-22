@@ -70,7 +70,7 @@ const (
 )
 
 var (
-	frame0      Context
+	frame0      Cell
 	external    Cell
 	interactive bool
 	jobs        = map[int]*Task{}
@@ -79,6 +79,7 @@ var (
 	pid         int
 	runnable    chan bool
 	scope0      *Scope
+	sys         Context
 	task0       *Task
 )
 
@@ -172,8 +173,15 @@ func init() {
 	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
 
+	public := func(t *Task, args Cell) bool {
+		return t.LexicalVar(psExecPublic)
+	}
+
+	object := NewScope(nil, nil)
+	object.PublicSyntax("public", public)
+
 	/* Root Scope. */
-	scope0 = NewScope(nil, nil)
+	scope0 = NewScope(object, nil)
 
 	/* Arithmetic. */
 	bindArithmetic(scope0)
@@ -262,7 +270,7 @@ func init() {
 		}
 
 		sym := NewSymbol(str)
-		c := Resolve(t.Lexical, t.Frame, sym)
+		c, _ := Resolve(t.Lexical, t.Frame, sym)
 
 		if c == nil {
 			return t.Return(sym)
@@ -520,17 +528,17 @@ func init() {
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
-		c := Resolve(t.Self(), nil, k)
+		c, o := Resolve(t.Self(), nil, k)
 		if c == nil {
 			panic("'" + s + "' undefined")
 		} else if a, ok := c.Get().(Binding); ok {
-			return t.Return(a.Bind(t.Lexical))
+			return t.Return(a.Bind(o))
 		} else {
 			return t.Return(c.Get())
 		}
 	})
 	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		c := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
+		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -550,10 +558,10 @@ func init() {
 			name := ref[2 : len(ref)-1]
 			sym := NewSymbol(name)
 
-			c := Resolve(l, t.Frame, sym)
+			c, _ := Resolve(l, t.Frame, sym)
 			if c == nil {
 				sym := NewSymbol("$" + name)
-				c = Resolve(l, t.Frame, sym)
+				c, _ = Resolve(l, t.Frame, sym)
 			}
 			if c == nil {
 				return "${" + name + "}"
@@ -657,25 +665,31 @@ func init() {
 
 	scope0.Public(NewSymbol("$root"), scope0)
 
-	frame0 = NewScope(nil, nil)
+	sys = NewObject(NewScope(object, nil))
+	scope0.Public(NewSymbol("$sys"), sys)
 
-	frame0.Public(NewSymbol("false"), False)
-	frame0.Public(NewSymbol("true"), True)
+	sys.PublicSyntax("public", public)
+	sys.Public(NewSymbol("false"), False)
+	sys.Public(NewSymbol("true"), True)
 
-	frame0.Public(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
-	frame0.Public(NewSymbol("$platform"), NewSymbol(Platform))
+	sys.Public(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	sys.Public(NewSymbol("$platform"), NewSymbol(Platform))
 
-	frame0.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
-	frame0.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
-	frame0.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
+	sys.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
+	sys.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
+	sys.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
 
 	/* Environment variables. */
+	env := NewObject(NewScope(object, nil))
+	scope0.Public(NewSymbol("$env"), env)
+
+	sys.PublicSyntax("public", public)
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
-		frame0.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+		env.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
 	}
 
-	scope0.Public(NewSymbol("$env"), frame0)
+	frame0 = List(env, sys)
 }
 
 func isSimple(c Cell) bool {
@@ -809,10 +823,10 @@ func Pgid() int {
 	return pgid
 }
 
-func Resolve(s Context, f Cell, k *Symbol) (v Reference) {
+func Resolve(s Context, f Cell, k *Symbol) (Reference, Context) {
 	if s != nil {
 		if v := s.Access(k); v != nil {
-			return v
+			return v, s
 		}
 	}
 
@@ -820,13 +834,13 @@ func Resolve(s Context, f Cell, k *Symbol) (v Reference) {
 		for f != Null {
 			o := Car(f).(Context)
 			if v := o.Access(k); v != nil {
-				return v
+				return v, o
 			}
 			f = Cdr(f)
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func Start(parser reader, cli ui) {
@@ -847,27 +861,27 @@ func Start(parser reader, cli ui) {
 	origin := ""
 	if len(os.Args) > 1 {
 		origin = filepath.Dir(os.Args[1])
-		frame0.Public(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		sys.Public(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
 			k := "$" + strconv.Itoa(i+1)
-			frame0.Public(NewSymbol(k), NewSymbol(v))
+			sys.Public(NewSymbol(k), NewSymbol(v))
 		}
 
 		for i := len(os.Args) - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		frame0.Public(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		sys.Public(NewSymbol("$0"), NewSymbol(os.Args[0]))
 	}
-	frame0.Public(NewSymbol("$args"), args)
+	sys.Public(NewSymbol("$args"), args)
 
 	if wd, err := os.Getwd(); err == nil {
-		frame0.Public(NewSymbol("$cwd"), NewSymbol(wd))
+		sys.Public(NewSymbol("$cwd"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
-		frame0.Public(NewSymbol("$origin"), NewSymbol(origin))
+		sys.Public(NewSymbol("$origin"), NewSymbol(origin))
 	}
 
 	interactive = false
