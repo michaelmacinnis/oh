@@ -31,12 +31,13 @@ type Closure interface {
 
 	Applier() Function
 	Body() Cell
+	Caller() Cell
 	Label() Cell
 	Params() Cell
 	Scope() Context
 }
 
-type ClosureGenerator func(a Function, b, l, p Cell, s Context) Closure
+type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
 
 type Conduit interface {
 	Context
@@ -280,9 +281,16 @@ func IsBuiltin(c Cell) bool {
 	return false
 }
 
-func NewBuiltin(a Function, b, l, p Cell, s Context) Closure {
+func NewBuiltin(a Function, b, c, l, p Cell, s Context) Closure {
 	return &Builtin{
-		Command{applier: a, body: b, label: l, params: p, scope: s},
+		Command{
+			applier: a,
+			body: b,
+			caller: c,
+			label: l,
+			params: p,
+			scope: s,
+		},
 	}
 }
 
@@ -375,6 +383,7 @@ func (ch *Channel) Write(c Cell) {
 type Command struct {
 	applier Function
 	body    Cell
+	caller	Cell
 	label   Cell
 	params  Cell
 	scope   Context
@@ -390,6 +399,10 @@ func (c *Command) Applier() Function {
 
 func (c *Command) Body() Cell {
 	return c.body
+}
+
+func (c *Command) Caller() Cell {
+	return c.caller
 }
 
 func (c *Command) Params() Cell {
@@ -511,7 +524,8 @@ func (e *Env) Copy() *Env {
 
 func (e *Env) Method(name string, m Function) {
 	e.hash[name] =
-		NewConstant(NewBound(NewMethod(m, Null, Null, Null, nil), nil))
+		NewConstant(NewBound(NewMethod(
+			m, Null, Null, Null, Null, nil), nil))
 }
 
 func (e *Env) Prev() *Env {
@@ -559,9 +573,16 @@ func IsMethod(c Cell) bool {
 	return false
 }
 
-func NewMethod(a Function, b, l, p Cell, s Context) Closure {
+func NewMethod(a Function, b, c, l, p Cell, s Context) Closure {
 	return &Method{
-		Command{applier: a, body: b, label: l, params: p, scope: s},
+		Command{
+			applier: a,
+			body: b,
+			caller: c,
+			label: l,
+			params: p,
+			scope: s,
+		},
 	}
 }
 
@@ -1054,27 +1075,27 @@ func (s *Scope) Visibility() *Env {
 
 func (s *Scope) DefineBuiltin(k string, a Function) {
 	s.Define(NewSymbol(k),
-		NewUnbound(NewBuiltin(a, Null, Null, Null, s)))
+		NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s)))
 }
 
 func (s *Scope) DefineMethod(k string, a Function) {
 	s.Define(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, s), s))
+		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) PublicMethod(k string, a Function) {
 	s.Public(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, s), s))
+		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) DefineSyntax(k string, a Function) {
 	s.Define(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, s), s))
+		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) PublicSyntax(k string, a Function) {
 	s.Public(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, s), s))
+		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
 
 /* String cell definition. */
@@ -1191,9 +1212,16 @@ func IsSyntax(c Cell) bool {
 	return false
 }
 
-func NewSyntax(a Function, b, l, p Cell, s Context) Closure {
+func NewSyntax(a Function, b, c, l, p Cell, s Context) Closure {
 	return &Syntax{
-		Command{applier: a, body: b, label: l, params: p, scope: s},
+		Command{
+			applier: a,
+			body: b,
+			caller: c,
+			label: l,
+			params: p,
+			scope: s,
+		},
 	}
 }
 
@@ -1320,7 +1348,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	body := Cddr(t.Code)
 	scope := t.Lexical
 
-	c := n((*Task).Apply, body, label, params, scope)
+	c := n((*Task).Apply, body, Null, label, params, scope)
 	if label == Null {
 		SetCar(t.Dump, NewUnbound(c))
 	} else {

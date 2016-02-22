@@ -170,7 +170,7 @@ func init() {
 	runnable = make(chan bool)
 	close(runnable)
 
-	builtin := NewBuiltin((*Task).External, Null, Null, Null, nil)
+	builtin := NewBuiltin((*Task).External, Null, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
 
 	public := func(t *Task, args Cell) bool {
