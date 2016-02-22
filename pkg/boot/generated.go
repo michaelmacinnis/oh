@@ -139,15 +139,6 @@ define echo: builtin (: args) = {
 	}
 }
 define error: builtin (: args) =: $stderr::write @args
-public exception: method (_type _message _status _file _line) = {
-	object {
-		public type = _type
-		public status = _status
-		public message = _message
-		public line = _line
-		public file = _file
-	}
-}
 define for: method (l m) = {
 	define r: cons () ()
 	define c = r
@@ -229,11 +220,6 @@ define process-substitution: syntax (:args) e = {
 	wait @procs
 	rm @fifos
 }
-public prompt: method (suffix) = {
-	define folders: (string $cwd)::split "/"
-	define last: sub (length folders) 1
-	return (list-ref last folders) ^ suffix
-}
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons cell): return cell
 	if (is-null cell): return cell
@@ -285,18 +271,30 @@ define source: syntax (name) e = {
 	eval-list (car c) (cdr c)
 	return rval
 }
-public throw: method (c) = {
+define write: method (: args) =: $stdout::write @args
+$sys::public exception: method (_type _message _status _file _line) = {
+	object {
+		public type = _type
+		public status = _status
+		public message = _message
+		public line = _line
+		public file = _file
+	}
+}
+$sys::public get-prompt: method (suffix) = {
+	catch unused {
+		return suffix
+	}
+	prompt suffix
+}
+$sys::public prompt: method (suffix) = {
+	define folders: (string $cwd)::split "/"
+	define last: sub (length folders) 1
+	return (list-ref last folders) ^ suffix
+}
+$sys::public throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message
 	fatal c::status
-}
-define write: method (: args) =: $stdout::write @args
-define sys: object {
-	public get-prompt: method (suffix) = {
-		catch unused {
-			return suffix
-		}
-		prompt suffix
-	}
 }
 
 exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)

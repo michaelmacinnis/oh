@@ -81,7 +81,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	defer cooked.ApplyMode()
 
 	command := cell.List(
-		cell.Cons(cell.NewSymbol("sys"), cell.NewSymbol("get-prompt")),
+		cell.Cons(cell.NewSymbol("$sys"), cell.NewSymbol("get-prompt")),
 		cell.NewSymbol("> "),
 	)
 	prompt := task.Call(nil, command, "")

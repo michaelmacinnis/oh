@@ -178,7 +178,103 @@ func init() {
 	}
 
 	object := NewScope(nil, nil)
+
 	object.PublicSyntax("public", public)
+
+	/* Standard Methods. */
+	object.PublicMethod("child", func(t *Task, args Cell) bool {
+		return t.Return(NewObject(NewScope(t.Self().Expose(), nil)))
+	})
+	object.PublicMethod("clone", func(t *Task, args Cell) bool {
+		return t.Return(NewObject(t.Self().Expose().Copy()))
+	})
+	object.PublicMethod("context", func(t *Task, args Cell) bool {
+		self := t.Self()
+		bare := self.Expose()
+		if self == bare {
+			self = NewObject(bare)
+		}
+		return t.Return(self)
+	})
+	object.PublicMethod("eval", func(t *Task, args Cell) bool {
+		scope := t.Self().Expose()
+		t.RemoveState()
+		if t.Lexical != scope {
+			t.NewStates(SaveLexical)
+			t.Lexical = scope
+		}
+		t.NewStates(psEvalElement)
+		t.Code = Car(args)
+		t.Dump = Cdr(t.Dump)
+
+		return true
+	})
+	object.PublicMethod("get-slot", func(t *Task, args Cell) bool {
+		s := raw(Car(args))
+		k := NewSymbol(s)
+
+		c, o := Resolve(t.Self(), nil, k)
+		if c == nil {
+			panic("'" + s + "' undefined")
+		} else if a, ok := c.Get().(Binding); ok {
+			return t.Return(a.Bind(o))
+		} else {
+			return t.Return(c.Get())
+		}
+	})
+	object.PublicMethod("has", func(t *Task, args Cell) bool {
+		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(c != nil))
+	})
+	object.PublicMethod("interpolate", func(t *Task, args Cell) bool {
+		original := raw(Car(args))
+
+		l := t.Self()
+		if t.Lexical == l.Expose() {
+			l = t.Lexical
+		}
+
+		f := func(ref string) string {
+			if ref == "$$" {
+				return "$"
+			}
+
+			name := ref[2 : len(ref)-1]
+			sym := NewSymbol(name)
+
+			c, _ := Resolve(l, t.Frame, sym)
+			if c == nil {
+				sym := NewSymbol("$" + name)
+				c, _ = Resolve(l, t.Frame, sym)
+			}
+			if c == nil {
+				return "${" + name + "}"
+			}
+
+			return raw(c.Get())
+		}
+
+		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
+		modified := r.ReplaceAllStringFunc(original, f)
+
+		return t.Return(NewString(t, modified))
+	})
+
+	object.PublicMethod("set-slot", func(t *Task, args Cell) bool {
+		s := raw(Car(args))
+		v := Cadr(args)
+
+		k := NewSymbol(s)
+
+		t.Self().Public(k, v)
+		return t.Return(v)
+	})
+	object.PublicMethod("unset", func(t *Task, args Cell) bool {
+		r := t.Self().Remove(NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(r))
+	})
 
 	/* Root Scope. */
 	scope0 = NewScope(object, nil)
@@ -496,100 +592,6 @@ func init() {
 		return t.Return(list)
 	})
 
-	/* Standard Methods. */
-	scope0.PublicMethod("child", func(t *Task, args Cell) bool {
-		return t.Return(NewObject(NewScope(t.Self().Expose(), nil)))
-	})
-	scope0.PublicMethod("clone", func(t *Task, args Cell) bool {
-		return t.Return(NewObject(t.Self().Expose().Copy()))
-	})
-	scope0.PublicMethod("context", func(t *Task, args Cell) bool {
-		self := t.Self()
-		bare := self.Expose()
-		if self == bare {
-			self = NewObject(bare)
-		}
-		return t.Return(self)
-	})
-	scope0.PublicMethod("eval", func(t *Task, args Cell) bool {
-		scope := t.Self().Expose()
-		t.RemoveState()
-		if t.Lexical != scope {
-			t.NewStates(SaveLexical)
-			t.Lexical = scope
-		}
-		t.NewStates(psEvalElement)
-		t.Code = Car(args)
-		t.Dump = Cdr(t.Dump)
-
-		return true
-	})
-	scope0.PublicMethod("get-slot", func(t *Task, args Cell) bool {
-		s := raw(Car(args))
-		k := NewSymbol(s)
-
-		c, o := Resolve(t.Self(), nil, k)
-		if c == nil {
-			panic("'" + s + "' undefined")
-		} else if a, ok := c.Get().(Binding); ok {
-			return t.Return(a.Bind(o))
-		} else {
-			return t.Return(c.Get())
-		}
-	})
-	scope0.PublicMethod("has", func(t *Task, args Cell) bool {
-		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
-
-		return t.Return(NewBoolean(c != nil))
-	})
-	scope0.PublicMethod("interpolate", func(t *Task, args Cell) bool {
-		original := raw(Car(args))
-
-		l := t.Self()
-		if t.Lexical == l.Expose() {
-			l = t.Lexical
-		}
-
-		f := func(ref string) string {
-			if ref == "$$" {
-				return "$"
-			}
-
-			name := ref[2 : len(ref)-1]
-			sym := NewSymbol(name)
-
-			c, _ := Resolve(l, t.Frame, sym)
-			if c == nil {
-				sym := NewSymbol("$" + name)
-				c, _ = Resolve(l, t.Frame, sym)
-			}
-			if c == nil {
-				return "${" + name + "}"
-			}
-
-			return raw(c.Get())
-		}
-
-		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
-		modified := r.ReplaceAllStringFunc(original, f)
-
-		return t.Return(NewString(t, modified))
-	})
-	scope0.PublicMethod("set-slot", func(t *Task, args Cell) bool {
-		s := raw(Car(args))
-		v := Cadr(args)
-
-		k := NewSymbol(s)
-
-		t.Self().Public(k, v)
-		return t.Return(v)
-	})
-	scope0.PublicMethod("unset", func(t *Task, args Cell) bool {
-		r := t.Self().Remove(NewSymbol(raw(Car(args))))
-
-		return t.Return(NewBoolean(r))
-	})
-
 	/* Syntax. */
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveLexical, psEvalBlock)
@@ -663,12 +665,11 @@ func init() {
 	/* The rest. */
 	bindTheRest(scope0)
 
-	scope0.Public(NewSymbol("$root"), scope0)
+	scope0.Define(NewSymbol("$root"), scope0)
 
 	sys = NewObject(NewScope(object, nil))
-	scope0.Public(NewSymbol("$sys"), sys)
+	scope0.Define(NewSymbol("$sys"), sys)
 
-	sys.PublicSyntax("public", public)
 	sys.Public(NewSymbol("false"), False)
 	sys.Public(NewSymbol("true"), True)
 
@@ -681,9 +682,8 @@ func init() {
 
 	/* Environment variables. */
 	env := NewObject(NewScope(object, nil))
-	scope0.Public(NewSymbol("$env"), env)
+	scope0.Define(NewSymbol("$env"), env)
 
-	sys.PublicSyntax("public", public)
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
 		env.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))

@@ -1525,13 +1525,8 @@ func (t *Task) Listen() {
 func (t *Task) LexicalVar(state int64) bool {
 	t.RemoveState()
 
-	l := t.Self().Expose()
-	if t.Lexical != l {
-	        t.NewStates(SaveLexical)
-	        t.Lexical = l
-	}
-
-	t.NewStates(state)
+	c := t.Lexical
+	s := t.Self().Expose()
 
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
@@ -1546,7 +1541,21 @@ func (t *Task) LexicalVar(state int64) bool {
 		}
 	}
 
-	t.NewStates(SaveCarCode, psEvalElement)
+	if s != c {
+	        t.NewStates(SaveLexical)
+	        t.Lexical = s
+	}
+
+	t.NewStates(state)
+
+	if s != c {
+		t.NewStates(SaveCarCode|SaveLexical)
+		t.Lexical = c
+	} else {
+		t.NewStates(SaveCarCode)
+	}
+
+	t.NewStates(psEvalElement)
 
 	if Length(t.Code) == 3 {
 		if raw(Cadr(t.Code)) != "=" {
