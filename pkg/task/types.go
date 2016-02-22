@@ -31,10 +31,10 @@ type Closure interface {
 
 	Applier() Function
 	Body() Cell
-	Caller() Cell
-	Label() Cell
+	CallerLabel() Cell
 	Params() Cell
 	Scope() Context
+	SelfLabel() Cell
 }
 
 type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
@@ -286,8 +286,8 @@ func NewBuiltin(a Function, b, c, l, p Cell, s Context) Closure {
 		Command{
 			applier: a,
 			body: b,
-			caller: c,
-			label: l,
+			clabel: c,
+			slabel: l,
 			params: p,
 			scope: s,
 		},
@@ -383,8 +383,8 @@ func (ch *Channel) Write(c Cell) {
 type Command struct {
 	applier Function
 	body    Cell
-	caller	Cell
-	label   Cell
+	clabel	Cell
+	slabel   Cell
 	params  Cell
 	scope   Context
 }
@@ -401,20 +401,20 @@ func (c *Command) Body() Cell {
 	return c.body
 }
 
-func (c *Command) Caller() Cell {
-	return c.caller
+func (c *Command) CallerLabel() Cell {
+	return c.clabel
 }
 
 func (c *Command) Params() Cell {
 	return c.params
 }
 
-func (c *Command) Label() Cell {
-	return c.label
-}
-
 func (c *Command) Scope() Context {
 	return c.scope
+}
+
+func (c *Command) SelfLabel() Cell {
+	return c.slabel
 }
 
 /* Continuation cell definition. */
@@ -578,8 +578,8 @@ func NewMethod(a Function, b, c, l, p Cell, s Context) Closure {
 		Command{
 			applier: a,
 			body: b,
-			caller: c,
-			label: l,
+			clabel: c,
+			slabel: l,
 			params: p,
 			scope: s,
 		},
@@ -1217,8 +1217,8 @@ func NewSyntax(a Function, b, c, l, p Cell, s Context) Closure {
 		Command{
 			applier: a,
 			body: b,
-			caller: c,
-			label: l,
+			clabel: c,
+			slabel: l,
 			params: p,
 			scope: s,
 		},
@@ -1306,15 +1306,22 @@ func (t *Task) Equal(c Cell) bool {
 /* Task-specific functions. */
 
 func (t *Task) Apply(args Cell) bool {
+	caller := t.Lexical
+
 	m := Car(t.Dump).(Binding)
 
 	t.NewFrame(m.Ref().Scope())
 
 	t.Code = m.Ref().Body()
 
-	label := m.Ref().Label()
-	if label != Null {
-		t.Lexical.Public(label, m.Self().Expose())
+	clabel := m.Ref().CallerLabel()
+	if clabel != Null {
+		t.Lexical.Public(clabel, caller)
+	}
+
+	slabel := m.Ref().SelfLabel()
+	if slabel != Null {
+		t.Lexical.Public(slabel, m.Self().Expose())
 	}
 
 	params := m.Ref().Params()
@@ -1333,24 +1340,24 @@ func (t *Task) Apply(args Cell) bool {
 }
 
 func (t *Task) Closure(n ClosureGenerator) bool {
-	label := Car(t.Code)
+	slabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
 	params := Null
-	if IsSymbol(label) {
+	if IsSymbol(slabel) {
 		params = Car(t.Code)
 		t.Code = Cdr(t.Code)
 	} else {
-		params = label
-		label = Null
+		params = slabel
+		slabel = Null
 	}
 
 	equals := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
-	caller := Null
+	clabel := Null
 	if raw(equals) != "=" {
-		caller = equals
+		clabel = equals
 		equals = Car(t.Code)
 		t.Code = Cdr(t.Code)
 	}
@@ -1362,8 +1369,8 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	body := t.Code
 	scope := t.Lexical
 
-	c := n((*Task).Apply, body, caller, label, params, scope)
-	if label == Null {
+	c := n((*Task).Apply, body, clabel, slabel, params, scope)
+	if slabel == Null {
 		SetCar(t.Dump, NewUnbound(c))
 	} else {
 		SetCar(t.Dump, NewBound(c, scope))

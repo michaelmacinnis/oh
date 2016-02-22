@@ -28,7 +28,7 @@ define cdddar: method (l) =: cddr: cdar l
 define cddddr: method (l) =: cddr: cddr l
 define $connect: syntax (conduit name) = {
 	set conduit: eval conduit
-	syntax e (left right) = {
+	syntax (left right) e = {
 		define p: conduit
 		spawn {
 			e::eval: quasiquote: block {
@@ -47,7 +47,7 @@ define $connect: syntax (conduit name) = {
 	}
 }
 define $redirect: syntax (name mode closer) = {
-	syntax e (c cmd) = {
+	syntax (c cmd) e = {
 		define c: e::eval c
 		define f = ()
 		if (not: or (is-channel c) (is-pipe c)) {
@@ -75,7 +75,7 @@ define ...: method (: args) = {
 		cd ..
 	}
 }
-define and: syntax e (: lst) = {
+define and: syntax (: lst) e = {
 	define r = false
 	while (not: is-null: car lst) {
 		set r: e::eval: car lst
@@ -87,7 +87,7 @@ define and: syntax e (: lst) = {
 define append-stderr: $redirect $stderr "a" writer-close
 define append-stdout: $redirect $stdout "a" writer-close
 define apply: method (f: args) =: f @args
-define backtick: syntax e (cmd) = {
+define backtick: syntax (cmd) e = {
 	define p: pipe
 	spawn {
 		e::eval: quasiquote: block {
@@ -105,7 +105,7 @@ define backtick: syntax e (cmd) = {
 	p::reader-close
 	return: cdr r
 }
-define catch: syntax e (name: clause) = {
+define catch: syntax (name: clause) e = {
 	define args: list name (quote throw)
 	define body: list (quote throw) name
 	if (is-null clause) {
@@ -152,7 +152,7 @@ define for: method (l m) = {
 	return: cdr r
 }
 define glob: builtin (: args) =: return args
-define import: syntax e (name) = {
+define import: syntax (name) e = {
 	set name: e::eval name
 	define m: module name
 	if (or (is-null m) (is-object m)) {
@@ -178,10 +178,10 @@ define list-tail: method (k x) = {
 		return x
 	}
 }
-define object: syntax e (: body) = {
+define object: syntax (: body) e = {
 	e::eval: cons (quote block): append body (quote: context)
 }
-define or: syntax e (: lst) = {
+define or: syntax (: lst) e = {
 	define r = false
 	while (not: is-null: car lst) {
 		set r: e::eval: car lst
@@ -193,7 +193,7 @@ define or: syntax e (: lst) = {
 define pipe-stderr: $connect pipe $stderr
 define pipe-stdout: $connect pipe $stdout
 define printf: method (f: args) =: echo: f::sprintf @args
-define process-substitution: syntax e (:args) = {
+define process-substitution: syntax (:args) e = {
 	define fifos = ()
 	define procs = ()
 	define cmd: for args: method (arg) = {
@@ -227,7 +227,7 @@ public prompt: method (suffix) = {
 	define last: sub (length folders) 1
 	return (list-ref last folders) ^ suffix
 }
-define quasiquote: syntax e (cell) = {
+define quasiquote: syntax (cell) e = {
 	if (not: is-cons cell): return cell
 	if (is-null cell): return cell
 	if (eq (quote unquote): car cell): return: e::eval: cadr cell
@@ -242,7 +242,7 @@ define readline: builtin () =: $stdin::readline
 define redirect-stderr: $redirect $stderr "w" writer-close
 define redirect-stdin: $redirect $stdin "r" reader-close
 define redirect-stdout: $redirect $stdout "w" writer-close
-define source: syntax e (name) = {
+define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()
 	define name = basename
@@ -267,7 +267,7 @@ define source: syntax e (name) = {
 	f::close
 
 	define rval: status 0
-	define eval-list: syntax o (first rest) = {
+	define eval-list: syntax (first rest) o = {
 		set first: o::eval first
 		set rest: o::eval rest
 		if (is-null first): return rval
