@@ -1333,22 +1333,36 @@ func (t *Task) Apply(args Cell) bool {
 }
 
 func (t *Task) Closure(n ClosureGenerator) bool {
-	label := Null
-	params := Car(t.Code)
-	for t.Code != Null && raw(Cadr(t.Code)) != "=" {
-		label = params
-		params = Cadr(t.Code)
+	label := Car(t.Code)
+	t.Code = Cdr(t.Code)
+
+	params := Null
+	if IsSymbol(label) {
+		params = Car(t.Code)
 		t.Code = Cdr(t.Code)
+	} else {
+		params = label
+		label = Null
 	}
 
-	if t.Code == Null {
+	equals := Car(t.Code)
+	t.Code = Cdr(t.Code)
+
+	caller := Null
+	if raw(equals) != "=" {
+		caller = equals
+		equals = Car(t.Code)
+		t.Code = Cdr(t.Code)
+	}
+		
+	if raw(equals) != "=" {
 		panic(common.ErrSyntax + "expected '='")
 	}
 
-	body := Cddr(t.Code)
+	body := t.Code
 	scope := t.Lexical
 
-	c := n((*Task).Apply, body, Null, label, params, scope)
+	c := n((*Task).Apply, body, caller, label, params, scope)
 	if label == Null {
 		SetCar(t.Dump, NewUnbound(c))
 	} else {
