@@ -845,7 +845,8 @@ func (r *Registers) NewBlock(lexical Context) {
 func (r *Registers) NewFrame(lexical Context) {
 	var state int64 = SaveLexical
 
-	if r.Lexical.Visibility() != Car(r.Frame).(Context).Visibility() {
+	v := r.Lexical.Visibility()
+	if v != nil && v != Car(r.Frame).(Context).Visibility() {
 		state |= SaveFrame
 	}
 
@@ -1316,25 +1317,25 @@ func (t *Task) Apply(args Cell) bool {
 
 	clabel := m.Ref().CallerLabel()
 	if clabel != Null {
-		t.Lexical.Public(clabel, caller)
+		t.Lexical.Define(clabel, caller)
 	}
 
 	slabel := m.Ref().SelfLabel()
 	if slabel != Null {
-		t.Lexical.Public(slabel, m.Self().Expose())
+		t.Lexical.Define(slabel, m.Self().Expose())
 	}
 
 	params := m.Ref().Params()
 	for args != Null && params != Null && IsAtom(Car(params)) {
-		t.Lexical.Public(Car(params), Car(args))
+		t.Lexical.Define(Car(params), Car(args))
 		args, params = Cdr(args), Cdr(params)
 	}
 	if IsCons(Car(params)) {
-		t.Lexical.Public(Caar(params), args)
+		t.Lexical.Define(Caar(params), args)
 	}
 
 	cc := NewContinuation(Cdr(t.Dump), t.Stack, t.Frame)
-	t.Lexical.Public(NewSymbol("return"), cc)
+	t.Lexical.Define(NewSymbol("return"), cc)
 
 	return true
 }
