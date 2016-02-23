@@ -1835,7 +1835,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 		t.RemoveState()
 	}
 
-	return -1
+	return
 }
 
 func (t *Task) Runnable() bool {
