@@ -272,25 +272,25 @@ define source: syntax (name) e = {
 	return rval
 }
 define write: method (: args) =: $stdout::write @args
-$sys::public exception: method (_type _message _status _file _line) = {
+$sys::public exception: method (type message status file line) = {
 	object {
-		public type = _type
-		public status = _status
-		public message = _message
-		public line = _line
-		public file = _file
+		public type = type
+		public status = status
+		public message = message
+		public line = line
+		public file = file
 	}
 }
-$sys::public get-prompt: method (suffix) = {
+$sys::public get-prompt: method self (suffix) = {
 	catch unused {
 		return suffix
 	}
-	prompt suffix
+	self::prompt suffix
 }
 $sys::public prompt: method (suffix) = {
-	define folders: (string $cwd)::split "/"
-	define last: sub (length folders) 1
-	return (list-ref last folders) ^ suffix
+	define dirs: (string $cwd)::split "/"
+	define last: sub (length dirs) 1
+	return (list-ref last dirs) ^ suffix
 }
 $sys::public throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message
