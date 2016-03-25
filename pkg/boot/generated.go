@@ -76,9 +76,9 @@ define ...: method (: args) = {
 		set path: cadr args
 	}
 	while true {
-		define abs: symbol: "/"::join $cwd path
+		define abs: symbol: "/"::join $CWD path
 		if (exists abs): return abs
-		if (eq $cwd /): return path
+		if (eq $CWD /): return path
 		cd ..
 	}
 }
@@ -288,7 +288,7 @@ $sys::public get-prompt: method self (suffix) = {
 	self::prompt suffix
 }
 $sys::public prompt: method (suffix) = {
-	define dirs: (string $cwd)::split "/"
+	define dirs: (string $CWD)::split "/"
 	define last: sub (length dirs) 1
 	return (list-ref last dirs) ^ suffix
 }

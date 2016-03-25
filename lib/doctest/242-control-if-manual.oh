@@ -10,7 +10,7 @@
 ##
 #{
 if (cd /tmp) {
-    echo $cwd
+    echo $CWD
 }
 #}
 ##
@@ -18,13 +18,13 @@ if (cd /tmp) {
 ##
 #+     /tmp
 ##
-## (The current working directory is stored in the variable `$cwd`).
+## (The current working directory is stored in the variable `$CWD`).
 ##
 ## If statements may have an else clause:
 ##
 #{
 if (cd /non-existent-directory) {
-    echo $cwd
+    echo $CWD
 } else {
     echo "Couldn't change the current working directory."
 }
@@ -36,9 +36,9 @@ if (cd /non-existent-directory) {
 ##
 #{
 if (cd /non-existent-directory) {
-    echo $cwd
+    echo $CWD
 } else: if (cd /another-non-existent-directory) {
-    echo $cwd
+    echo $CWD
 } else {
     echo "Couldn't change the current working directory, again."
 }

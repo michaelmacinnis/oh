@@ -192,7 +192,7 @@ func files(word string) []string {
 	candidate = path.Clean(candidate)
 	if !path.IsAbs(candidate) {
 		ft := task.ForegroundTask()
-		n := cell.NewSymbol("$cwd")
+		n := cell.NewSymbol("$CWD")
 		ref, _ := task.Resolve(ft.Lexical, ft.Frame, n)
 		cwd := ref.Get().String()
 
