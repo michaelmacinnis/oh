@@ -1995,9 +1995,10 @@ func Start(parser reader, cli ui) {
 	parse(task0, b, "boot.oh", deref, eval)
 
 	/* Command-line arguments */
+	argc := len(os.Args)
 	args := Null
 	origin := ""
-	if len(os.Args) > 1 {
+	if argc > 1 && os.Args[1] != "-c" {
 		origin = filepath.Dir(os.Args[1])
 		sys.Public(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
@@ -2006,7 +2007,7 @@ func Start(parser reader, cli ui) {
 			sys.Public(NewSymbol(k), NewSymbol(v))
 		}
 
-		for i := len(os.Args) - 1; i > 1; i-- {
+		for i := argc - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
@@ -2023,11 +2024,20 @@ func Start(parser reader, cli ui) {
 	}
 
 	interactive = false
-	if len(os.Args) > 1 {
-		eval(
-			List(NewSymbol("source"), NewSymbol(os.Args[1])),
-			os.Args[1], 0, "",
-		)
+	if argc > 1 {
+		if os.Args[1] == "-c" {
+			if argc == 2 {
+				msg := "-c requires an argument"
+				println(common.ErrSyntax + msg)
+				os.Exit(1)
+			}
+			s := os.Args[2] + "\n"
+			b := bufio.NewReader(strings.NewReader(s))
+			parse(task0, b, "-c", deref, eval)
+		} else {
+			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
+			eval(cmd, os.Args[1], 0, "")
+		}
 	} else if cli.Exists() {
 		interactive = true
 
