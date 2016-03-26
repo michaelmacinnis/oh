@@ -26,7 +26,7 @@ define cddaar: method (l) =: cddr: caar l
 define cddadr: method (l) =: cddr: cadr l
 define cdddar: method (l) =: cddr: cdar l
 define cddddr: method (l) =: cddr: cddr l
-define $connect: syntax (conduit name) = {
+define _connect_: syntax (conduit name) = {
 	set conduit: eval conduit
 	syntax (left right) e = {
 		define p: conduit
@@ -46,7 +46,7 @@ define $connect: syntax (conduit name) = {
 		}
 	}
 }
-define $redirect: syntax (name mode closer) = {
+define _redirect_: syntax (name mode closer) = {
 	syntax (c cmd) e = {
 		define c: e::eval c
 		define f = ()
@@ -84,8 +84,8 @@ define and: syntax (: lst) e = {
 	}
 	return r
 }
-define append-stderr: $redirect $stderr "a" writer-close
-define append-stdout: $redirect $stdout "a" writer-close
+define append-stderr: _redirect_ $stderr "a" writer-close
+define append-stdout: _redirect_ $stdout "a" writer-close
 define apply: method (f: args) =: f @args
 define backtick: syntax (cmd) e = {
 	define p: pipe
@@ -122,8 +122,8 @@ define catch: syntax (name: clause) e = {
 		_return: handler condition _throw
 	}
 }
-define channel-stderr: $connect channel $stderr
-define channel-stdout: $connect channel $stdout
+define channel-stderr: _connect_ channel $stderr
+define channel-stdout: _connect_ channel $stdout
 define echo: builtin (: args) = {
 	if (is-null args) {
 		$stdout::write: symbol ""
@@ -181,8 +181,8 @@ define or: syntax (: lst) e = {
 	}
 	return r
 }
-define pipe-stderr: $connect pipe $stderr
-define pipe-stdout: $connect pipe $stdout
+define pipe-stderr: _connect_ pipe $stderr
+define pipe-stdout: _connect_ pipe $stdout
 define printf: method (f: args) =: echo: f::sprintf @args
 define process-substitution: syntax (:args) e = {
 	define fifos = ()
@@ -225,9 +225,9 @@ define quasiquote: syntax (cell) e = {
 define quote: syntax (cell) =: return cell
 define read: builtin () =: $stdin::read
 define readline: builtin () =: $stdin::readline
-define redirect-stderr: $redirect $stderr "w" writer-close
-define redirect-stdin: $redirect $stdin "r" reader-close
-define redirect-stdout: $redirect $stdout "w" writer-close
+define redirect-stderr: _redirect_ $stderr "w" writer-close
+define redirect-stdin: _redirect_ $stdin "r" reader-close
+define redirect-stdout: _redirect_ $stdout "w" writer-close
 define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()
