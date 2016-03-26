@@ -4,7 +4,7 @@ define common: import: ... lib/common.oh
 
 public $stdout: open w: "/"::join _origin_ generated.go
 
-common::introduction @`(basename $0) $GOPACKAGE
+common::introduction @`(basename _0_) $GOPACKAGE
 
 echo "var Script string = `"
 cat: ... lib/boot.oh

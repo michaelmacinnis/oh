@@ -2000,10 +2000,10 @@ func Start(parser reader, cli ui) {
 	origin := ""
 	if argc > 1 && os.Args[1] != "-c" {
 		origin = filepath.Dir(os.Args[1])
-		scope0.Define(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		scope0.Define(NewSymbol("_0_"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
-			k := "$" + strconv.Itoa(i+1)
+			k := "_" + strconv.Itoa(i+1) + "_"
 			scope0.Define(NewSymbol(k), NewSymbol(v))
 		}
 
@@ -2011,9 +2011,9 @@ func Start(parser reader, cli ui) {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		scope0.Define(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		scope0.Define(NewSymbol("_0_"), NewSymbol(os.Args[0]))
 	}
-	scope0.Define(NewSymbol("$*"), args)
+	scope0.Define(NewSymbol("_args_"), args)
 
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public(NewSymbol("$CWD"), NewSymbol(wd))

@@ -3,8 +3,8 @@
 package common
 
 var Symbols = []string{
-	"$*", "...", "abs", "add", "and", "append", "append-stderr",
-	"append-stdout", "apply", "arg", "args", "backtick",
+	"...", "abs", "add", "and", "append", "append-stderr",
+	"append-stdout", "apply", "arg", "_args_", "args", "backtick",
 	"basename", "block", "body", "boolean", "builtin", "caaaar",
 	"caaadr", "caaar", "caadar", "caaddr", "caadr", "caar", "cadaar",
 	"cadadr", "cadar", "caddar", "cadddr", "caddr", "cadr", "car",

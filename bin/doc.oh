@@ -1,26 +1,26 @@
 #!/usr/bin/env oh
 
-if (ne 2: length $*) {
-    error "usage:" $0 "<pattern> <output>"
+if (ne 2: length _args_) {
+    error "usage:" _0_ "<pattern> <output>"
     exit 1
 }
 
-define $dir: ... lib/doctest
-define $pattern = $1
-define $output = $2
+define Dir: ... lib/doctest
+define Pattern = _1_
+define Output = _2_
 
-public $stdout: open "w": "/"::join _origin_ $output
+public $stdout: open "w": "/"::join _origin_ Output
 
 # Generate documentation.
-find $dir -name "[0-9]*.oh" |
-grep -i $pattern | sort |
-while (define $file: readline) {
+find Dir -name "[0-9]*.oh" |
+grep -i Pattern | sort |
+while (define Path: readline) {
 	awk "
 BEGIN { code = 0 }
 $0 ~ /^#[#+]/ { print substr($0, 4) }
 $1 ~ /^#[}]/ { code = 0 }
 code > 0 { print \"    \" $0 }
 $1 ~ /^#[{]/ { code = 1 }
-" $file
+" Path
 }
 

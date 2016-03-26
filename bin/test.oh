@@ -1,23 +1,23 @@
 #!/usr/bin/env oh
 
-define $dir: ... lib/doctest
+define Dir: ... lib/doctest
 
-define prefix-lines: method ($prefix) = {
-        define $count = 1
-	while (define $line: readline) {
-		echo: ": "::join $prefix $count $line
-                set $count: add $count 1
+define prefix-lines: method (Prefix) = {
+        define Count = 1
+	while (define Line: readline) {
+		echo: ": "::join Prefix Count Line
+                set Count: add Count 1
 	}
 }
 
 # Run tests.
-find $dir -name "[0-9]*.oh" | grep -Fv unused |
-while (define $path: readline) {
-        define $file = @`(basename $path)
-	grep "^#[+-]     " $path |
+find Dir -name "[0-9]*.oh" | grep -Fv unused |
+while (define Path: readline) {
+        define File = @`(basename Path)
+	grep "^#[+-]     " Path |
 	sed -e "s/^#[+-]     //g" |
-	prefix-lines $file
+	prefix-lines File
 
-	public $stderr = $stdout; $path | prefix-lines $file
+	public $stderr = $stdout; Path | prefix-lines File
 } | sort | uniq -u
 
