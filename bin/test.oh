@@ -18,6 +18,6 @@ while (define Path: readline) {
 	sed -e "s/^#[+-]     //g" |
 	prefix-lines File
 
-	public $stderr = $stdout; Path | prefix-lines File
+	public _stderr_ = _stdout_; Path | prefix-lines File
 } | sort | uniq -u
 

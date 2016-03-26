@@ -615,7 +615,7 @@ with Mice").
     define prime-numbers: channel
     
     counter 2 |+ block {
-        define in = $stdin
+        define in = _stdin_
     
         while true {
             define prime: car: in::read

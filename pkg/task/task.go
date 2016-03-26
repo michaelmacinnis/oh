@@ -1393,13 +1393,13 @@ func (t *Task) External(args Cell) bool {
 	c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$CWD"))
 	dir := c.Get().String()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stdin"))
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdin_"))
 	in := c.Get()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stdout"))
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdout_"))
 	out := c.Get()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("$stderr"))
+	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stderr_"))
 	err := c.Get()
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
@@ -2686,9 +2686,9 @@ func init() {
 	scope0.Define(NewSymbol("_root_"), scope0)
 	scope0.Define(NewSymbol("_sys_"), sys)
 
-	sys.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
-	sys.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
-	sys.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
+	sys.Public(NewSymbol("_stdin_"), NewPipe(scope0, os.Stdin, nil))
+	sys.Public(NewSymbol("_stdout_"), NewPipe(scope0, nil, os.Stdout))
+	sys.Public(NewSymbol("_stderr_"), NewPipe(scope0, nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {

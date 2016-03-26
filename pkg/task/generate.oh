@@ -2,7 +2,7 @@
 
 define common: import: ... lib/common.oh
 
-public $stdout: open w: "/"::join _origin_ generated.go
+public _stdout_: open w: "/"::join _origin_ generated.go
 
 common::introduction @`(basename _0_) $GOPACKAGE
 

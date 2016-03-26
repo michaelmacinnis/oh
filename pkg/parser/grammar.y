@@ -113,7 +113,7 @@ opt_substitution: SUBSTITUTE command ")" opt_statement opt_substitution {
 
 substitution: statement opt_substitution {
 	if $2.c != Null {
-		sym := NewSymbol("process-substitution")
+		sym := NewSymbol("_process-substitution_")
 		$$.c = JoinTo(Cons(sym, $1.c), $2.c)
 	} else {
 		$$.c = $1.c
@@ -193,7 +193,7 @@ expression: "@" expression {
 };
 
 expression: "`" expression {
-	$$.c = List(NewSymbol("backtick"), $2.c)
+	$$.c = List(NewSymbol("_backtick_"), $2.c)
 };
 
 expression: expression CONS expression {

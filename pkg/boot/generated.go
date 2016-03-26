@@ -46,7 +46,7 @@ define _connect_: syntax (conduit name) = {
 		}
 		block {
 			e::eval: quasiquote: block {
-				public $stdin = (unquote p)
+				public _stdin_ = (unquote p)
 				eval (unquote right)
 			}
 			p::reader-close
@@ -91,14 +91,14 @@ define and: syntax (: lst) e = {
 	}
 	return r
 }
-define append-stderr: _redirect_ $stderr "a" writer-close
-define append-stdout: _redirect_ $stdout "a" writer-close
+define _append-stderr_: _redirect_ _stderr_ "a" writer-close
+define _append-stdout_: _redirect_ _stdout_ "a" writer-close
 define apply: method (f: args) =: f @args
-define backtick: syntax (cmd) e = {
+define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	spawn {
 		e::eval: quasiquote: block {
-			public $stdout = (unquote p)
+			public _stdout_ = (unquote p)
 			eval (unquote cmd)
 		}
 		p::writer-close
@@ -129,16 +129,16 @@ define catch: syntax (name: clause) e = {
 		_return: handler condition _throw
 	}
 }
-define channel-stderr: _connect_ channel $stderr
-define channel-stdout: _connect_ channel $stdout
+define _channel-stderr_: _connect_ channel _stderr_
+define _channel-stdout_: _connect_ channel _stdout_
 define echo: builtin (: args) = {
 	if (is-null args) {
-		$stdout::write: symbol ""
+		_stdout_::write: symbol ""
 	} else {
-		$stdout::write @(for args symbol)
+		_stdout_::write @(for args symbol)
 	}
 }
-define error: builtin (: args) =: $stderr::write @args
+define error: builtin (: args) =: _stderr_::write @args
 define for: method (l m) = {
 	define r: cons () ()
 	define c = r
@@ -188,10 +188,10 @@ define or: syntax (: lst) e = {
 	}
 	return r
 }
-define pipe-stderr: _connect_ pipe $stderr
-define pipe-stdout: _connect_ pipe $stdout
+define _pipe-stderr_: _connect_ pipe _stderr_
+define _pipe-stdout_: _connect_ pipe _stdout_
 define printf: method (f: args) =: echo: f::sprintf @args
-define process-substitution: syntax (:args) e = {
+define _process-substitution_: syntax (:args) e = {
 	define fifos = ()
 	define procs = ()
 	define cmd: for args: method (arg) = {
@@ -230,11 +230,11 @@ define quasiquote: syntax (cell) e = {
 	}
 }
 define quote: syntax (cell) =: return cell
-define read: builtin () =: $stdin::read
-define readline: builtin () =: $stdin::readline
-define redirect-stderr: _redirect_ $stderr "w" writer-close
-define redirect-stdin: _redirect_ $stdin "r" reader-close
-define redirect-stdout: _redirect_ $stdout "w" writer-close
+define read: builtin () =: _stdin_::read
+define readline: builtin () =: _stdin_::readline
+define _redirect-stderr_: _redirect_ _stderr_ "w" writer-close
+define _redirect-stdin_: _redirect_ _stdin_ "r" reader-close
+define _redirect-stdout_: _redirect_ _stdout_ "w" writer-close
 define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()
@@ -271,7 +271,7 @@ define source: syntax (name) e = {
 	eval-list (car c) (cdr c)
 	return rval
 }
-define write: method (: args) =: $stdout::write @args
+define write: method (: args) =: _stdout_::write @args
 _sys_::public exception: method (type message status file line) = {
 	object {
 		public type = type

@@ -670,7 +670,7 @@ yydefault:
 		//line grammar.y:114
 		{
 			if yyDollar[2].c != Null {
-				sym := NewSymbol("process-substitution")
+				sym := NewSymbol("_process-substitution_")
 				yyVAL.c = JoinTo(Cons(sym, yyDollar[1].c), yyDollar[2].c)
 			} else {
 				yyVAL.c = yyDollar[1].c
@@ -810,7 +810,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line grammar.y:195
 		{
-			yyVAL.c = List(NewSymbol("backtick"), yyDollar[2].c)
+			yyVAL.c = List(NewSymbol("_backtick_"), yyDollar[2].c)
 		}
 	case 44:
 		yyDollar = yyS[yypt-3 : yypt+1]
