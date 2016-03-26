@@ -18,7 +18,7 @@ cd /tmp/simple-commands
 touch 1 2 3
 ls -l | awk "{ print $1 FS $9 }"
 rm 1 2 3
-cd $origin
+cd _origin_
 rmdir /tmp/simple-commands
 
 #-     total 

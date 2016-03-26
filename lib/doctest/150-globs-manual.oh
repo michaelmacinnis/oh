@@ -71,6 +71,6 @@ echo .*
 #-     .hidden
 
 rm a.1 b.2 3.go 4 .hidden
-cd $origin
+cd _origin_
 rmdir /tmp/globs
 

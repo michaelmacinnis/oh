@@ -2000,28 +2000,28 @@ func Start(parser reader, cli ui) {
 	origin := ""
 	if argc > 1 && os.Args[1] != "-c" {
 		origin = filepath.Dir(os.Args[1])
-		sys.Public(NewSymbol("$0"), NewSymbol(os.Args[1]))
+		scope0.Define(NewSymbol("$0"), NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
 			k := "$" + strconv.Itoa(i+1)
-			sys.Public(NewSymbol(k), NewSymbol(v))
+			scope0.Define(NewSymbol(k), NewSymbol(v))
 		}
 
 		for i := argc - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		sys.Public(NewSymbol("$0"), NewSymbol(os.Args[0]))
+		scope0.Define(NewSymbol("$0"), NewSymbol(os.Args[0]))
 	}
-	sys.Public(NewSymbol("$args"), args)
+	scope0.Define(NewSymbol("$*"), args)
 
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public(NewSymbol("$CWD"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
-		sys.Public(NewSymbol("$origin"), NewSymbol(origin))
 	}
+	scope0.Define(NewSymbol("_origin_"), NewSymbol(origin))
 
 	interactive = false
 	if argc > 1 {
@@ -2674,25 +2674,23 @@ func init() {
 	/* The rest. */
 	bindTheRest(scope0)
 
-	scope0.Define(NewSymbol("$root"), scope0)
-
+	env := NewObject(NewScope(object, nil))
 	sys = NewObject(NewScope(object, nil))
-	scope0.Define(NewSymbol("$sys"), sys)
 
-	sys.Public(NewSymbol("false"), False)
-	sys.Public(NewSymbol("true"), True)
+	scope0.Define(NewSymbol("false"), False)
+	scope0.Define(NewSymbol("true"), True)
 
-	sys.Public(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
-	sys.Public(NewSymbol("$platform"), NewSymbol(Platform))
+	scope0.Define(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
+	scope0.Define(NewSymbol("_env_"), env)
+	scope0.Define(NewSymbol("_platform_"), NewSymbol(Platform))
+	scope0.Define(NewSymbol("_root_"), scope0)
+	scope0.Define(NewSymbol("_sys_"), sys)
 
 	sys.Public(NewSymbol("$stdin"), NewPipe(scope0, os.Stdin, nil))
 	sys.Public(NewSymbol("$stdout"), NewPipe(scope0, nil, os.Stdout))
 	sys.Public(NewSymbol("$stderr"), NewPipe(scope0, nil, os.Stderr))
 
 	/* Environment variables. */
-	env := NewObject(NewScope(object, nil))
-	scope0.Define(NewSymbol("$env"), env)
-
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
 		env.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))

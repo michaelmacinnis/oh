@@ -157,5 +157,5 @@ p::show
 #
 # Public, top-level definitions in 'file' can now be accessed using 'module'
 # and the '::' operator.  See the Oh script import-prime.oh
-:"/"::join $origin import-prime.oh
+:"/"::join _origin_ import-prime.oh
 

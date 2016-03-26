@@ -26,8 +26,8 @@ echo "private member" o::y
 #-     public member 1
 #-     252-objects-object-manual.oh: 22: error/runtime: 'y' undefined
 
-## #### $root
+## #### _root_
 ##
 ## All variables in oh belong to an environment. These environments are
-## chained. The top-level environment is called `$root`.
+## chained. The top-level environment is called `_root_`.
 ##

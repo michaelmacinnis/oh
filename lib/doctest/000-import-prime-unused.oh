@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-define prime: import: "/"::join $origin another-prime.oh
+define prime: import: "/"::join _origin_ another-prime.oh
 
 define count: integer 1000
 while count {

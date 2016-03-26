@@ -62,7 +62,7 @@ define $redirect: syntax (name mode closer) = {
 	}
 }
 define ...: method (: args) = {
-	cd $origin
+	cd _origin_
 	define path: car args
 	if (eq 2: length args) {
 		cd: car args
@@ -150,7 +150,7 @@ define import: syntax (name) e = {
 		return m
 	}
 
-	e::eval: quasiquote: $root::define (unquote m): object {
+	e::eval: quasiquote: _root_::define (unquote m): object {
 		source (unquote name)
 	}
 }
@@ -265,7 +265,7 @@ define source: syntax (name) e = {
 	return rval
 }
 define write: method (: args) =: $stdout::write @args
-$sys::public exception: method (type message status file line) = {
+_sys_::public exception: method (type message status file line) = {
 	object {
 		public type = type
 		public status = status
@@ -274,18 +274,18 @@ $sys::public exception: method (type message status file line) = {
 		public file = file
 	}
 }
-$sys::public get-prompt: method self (suffix) = {
+_sys_::public get-prompt: method self (suffix) = {
 	catch unused {
 		return suffix
 	}
 	self::prompt suffix
 }
-$sys::public prompt: method (suffix) = {
+_sys_::public prompt: method (suffix) = {
 	define dirs: (string $CWD)::split "/"
 	define last: sub (length dirs) 1
 	return (list-ref last dirs) ^ suffix
 }
-$sys::public throw: method (c) = {
+_sys_::public throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message
 	fatal c::status
 }

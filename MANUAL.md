@@ -468,10 +468,10 @@ The previous example can be rewritten as,
     echo "public member" o::x
     echo "private member" o::y
 
-#### $root
+#### _root_
 
 All variables in oh belong to an environment. These environments are
-chained. The top-level environment is called `$root`.
+chained. The top-level environment is called `_root_`.
 
 #### Method
 

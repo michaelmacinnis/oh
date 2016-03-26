@@ -45,7 +45,7 @@ ls -l >/dev/null !>errors
 ls -l >/dev/null !>>errors
 sort file | awk "{ print \"redirection\" FS count++ FS $0 }"
 rm errors file 1 2 3
-cd $origin
+cd _origin_
 rmdir /tmp/redirection
 
 #-     8

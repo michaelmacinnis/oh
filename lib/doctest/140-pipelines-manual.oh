@@ -39,6 +39,6 @@ ls | grep old | wc -l
 #-     0
 
 rm file 1 2 3
-cd $origin
+cd _origin_
 rmdir /tmp/pipelines
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-if (ne 2: length $args) {
+if (ne 2: length $*) {
     error "usage:" $0 "<pattern> <output>"
     exit 1
 }
@@ -9,7 +9,7 @@ define $dir: ... lib/doctest
 define $pattern = $1
 define $output = $2
 
-public $stdout: open "w": "/"::join $origin $output
+public $stdout: open "w": "/"::join _origin_ $output
 
 # Generate documentation.
 find $dir -name "[0-9]*.oh" |
