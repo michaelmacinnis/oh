@@ -192,7 +192,12 @@ define _process-substitution_: syntax (:args) e = {
 		if (eq (quote substitute-stdin) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
-				e::eval: cdr arg < fifo
+				e::eval: quasiquote {
+					_redirect-stdin_ {
+						unquote fifo
+						unquote: cdr arg
+					}
+				}
 			}
 			set fifos: cons fifo fifos
 			set procs: cons proc procs
@@ -201,7 +206,12 @@ define _process-substitution_: syntax (:args) e = {
 		if (eq (quote substitute-stdout) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
-				e::eval: cdr arg > fifo
+				e::eval: quasiquote {
+					_redirect-stdout_ {
+						unquote fifo
+						unquote: cdr arg
+					}
+				}
 			}
 			set fifos: cons fifo fifos
 			set procs: cons proc procs
