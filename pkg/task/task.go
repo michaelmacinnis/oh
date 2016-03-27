@@ -61,6 +61,7 @@ type Context interface {
 	Copy() Context
 	Complete(word string) []string
 	Define(key, value Cell)
+	Exported() map[string]Cell
 	Expose() Context
 	Faces() *Env
 	Prev() Context
@@ -432,12 +433,12 @@ func (e *Env) Add(key Cell, value Cell) {
 }
 
 func (e *Env) Complete(word string) []string {
-	cl := []string{}
+	p := e.Prefixed(word)
 
-	for k := range e.hash {
-		if strings.HasPrefix(k, word) {
-			cl = append(cl, k)
-		}
+	cl := make([]string, 0, len(p))
+
+	for k := range p {
+		cl = append(cl, k)
 	}
 
 	if e.prev != nil {
@@ -465,6 +466,18 @@ func (e *Env) Method(name string, m Function) {
 	e.hash[name] =
 		NewConstant(NewBound(NewMethod(
 			m, Null, Null, Null, Null, nil), nil))
+}
+
+func (e *Env) Prefixed(prefix string) map[string]Cell {
+	r := map[string]Cell{}
+
+	for k, v := range e.hash {
+		if strings.HasPrefix(k, prefix) {
+			r[k] = v.Get()
+		}
+	}
+
+	return r
 }
 
 func (e *Env) Prev() *Env {
@@ -766,8 +779,14 @@ func (r *Registers) Arguments() Cell {
 }
 
 func (r *Registers) Complete(word string) []string {
-	// TODO: Also look through frames.
-	return r.Lexical.Complete(word)
+	cl := r.Lexical.Complete(word)
+
+	for f:= r.Frame; f != Null; f = Cdr(f) {
+		o := Car(f).(Context)
+		cl = append(cl, o.Complete(word)...)
+	}
+
+	return cl
 }
 
 func (r *Registers) GetState() int64 {
@@ -775,6 +794,27 @@ func (r *Registers) GetState() int64 {
 		return 0
 	}
 	return Car(r.Stack).(Atom).Int()
+}
+
+func (r *Registers) MakeEnv() []string {
+	e := r.Lexical.Exported()
+
+	for f:= r.Frame; f != Null; f = Cdr(f) {
+		o := Car(f).(Context)
+		for k, v := range o.Exported() {
+			if _, ok := e[k]; !ok {
+				e[k] = v
+			}
+		}
+	}
+
+	l := make([]string, 0, len(e))
+
+	for k, v := range(e) {
+		l = append(l, k[1:] + "=" + raw(v))
+	}
+
+	return l
 }
 
 func (r *Registers) NewBlock(lexical Context) {
@@ -971,6 +1011,10 @@ func (s *Scope) Complete(word string) []string {
 
 func (s *Scope) Copy() Context {
 	return &Scope{s.env.Copy(), s.prev}
+}
+
+func (s *Scope) Exported() map[string]Cell {
+	return s.env.prev.Prefixed("$")
 }
 
 func (s *Scope) Expose() Context {
@@ -1404,7 +1448,7 @@ func (t *Task) External(args Cell) bool {
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
 
-	attr := &os.ProcAttr{Dir: dir, Env: nil, Files: files}
+	attr := &os.ProcAttr{Dir: dir, Env: t.MakeEnv(), Files: files}
 
 	status, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
