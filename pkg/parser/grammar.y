@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token CTRLC DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
+%token CTRLC DOLLAR_DOUBLE DOLLAR_SINGLE DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
 %left ANDF       /* && */
@@ -210,6 +210,17 @@ expression: "(" command ")" { $$ = $2 };
 expression: "(" ")" { $$.c = Null };
 
 expression: word { $$ = $1 };
+
+word: DOLLAR_DOUBLE {
+	v, _ := strconv.Unquote($1.s[1:])
+	s := task.NewString(yylex.(*scanner).task, v)
+	$$.c = List(NewSymbol("interpolate"), s)
+};
+
+word: DOLLAR_SINGLE {
+	s := task.NewString(yylex.(*scanner).task, $1.s[2:len($1.s)-1])
+	$$.c = List(NewSymbol("interpolate"), s)
+};
 
 word: DOUBLE_QUOTED {
 	v, _ := strconv.Unquote($1.s)

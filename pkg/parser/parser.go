@@ -34,6 +34,10 @@ const (
 	ssBangGreater
 	ssColon
 	ssComment
+	ssDollar
+	ssDollarDouble
+	ssDollarDoubleEscape
+	ssDollarSingle
 	ssDoubleQuoted
 	ssDoubleQuotedEscape
 	ssGreater
@@ -133,12 +137,6 @@ main:
 				continue main
 			case '\n', '%', '(', ')', ';', '@', '^', '`', '{', '}':
 				s.token = s.line[s.cursor]
-			case '&':
-				s.state = ssAmpersand
-			case '<':
-				s.state = ssLess
-			case '|':
-				s.state = ssPipe
 			case '\t', ' ':
 				s.state = ssStart
 			case '!':
@@ -147,12 +145,20 @@ main:
 				s.state = ssDoubleQuoted
 			case '#':
 				s.state = ssComment
+			case '$':
+				s.state = ssDollar
+			case '&':
+				s.state = ssAmpersand
 			case '\'':
 				s.state = ssSingleQuoted
 			case ':':
 				s.state = ssColon
+			case '<':
+				s.state = ssLess
 			case '>':
 				s.state = ssGreater
+			case '|':
+				s.state = ssPipe
 			}
 
 		case ssAmpersand:
@@ -202,24 +208,49 @@ main:
 			s.cursor--
 			s.state = ssStart
 
-		case ssDoubleQuoted, ssDoubleQuotedEscape:
+		case ssDollar:
+			switch s.line[s.cursor] {
+			case '"':
+				s.state = ssDollarDouble
+			case '\'':
+				s.state = ssDollarSingle
+			default:
+				s.state = ssSymbol
+				continue main
+			}
+
+		case ssDollarDouble, ssDollarDoubleEscape,
+			ssDoubleQuoted, ssDoubleQuotedEscape:
 			for s.cursor < len(s.line) {
-				if s.state == ssDoubleQuotedEscape {
+				if s.state == ssDollarDoubleEscape {
+					s.state = ssDollarDouble
+				} else if s.state == ssDoubleQuotedEscape {
 					s.state = ssDoubleQuoted
 				} else if s.line[s.cursor] == '"' {
 					break
 				} else if s.line[s.cursor] == '\\' {
-					s.state = ssDoubleQuotedEscape
+					if s.state == ssDollarDouble {
+						s.state = ssDollarDoubleEscape
+					} else {
+						s.state = ssDoubleQuotedEscape
+					}
 				}
 				s.cursor++
 			}
 			if s.cursor >= len(s.line) {
 				if s.line[s.cursor-1] == '\n' {
-					s.line = append(s.line[0:s.cursor-1], []rune("\\n")...)
+					s.line = append(
+						s.line[0:s.cursor-1],
+						[]rune("\\n")...,
+					)
 				}
 				continue main
 			}
-			s.token = DOUBLE_QUOTED
+			if s.state == ssDollarDouble {
+				s.token = DOLLAR_DOUBLE
+			} else {
+				s.token = DOUBLE_QUOTED
+			}
 
 		case ssGreater:
 			s.token = REDIRECT
@@ -248,7 +279,7 @@ main:
 				continue main
 			}
 
-		case ssSingleQuoted:
+		case ssDollarSingle, ssSingleQuoted:
 			for s.cursor < len(s.line) && s.line[s.cursor] != '\'' {
 				s.cursor++
 			}
@@ -258,7 +289,11 @@ main:
 				}
 				continue main
 			}
-			s.token = SINGLE_QUOTED
+			if s.state == ssDollarSingle {
+				s.token = DOLLAR_SINGLE
+			} else {
+				s.token = SINGLE_QUOTED
+			}
 
 		case ssSymbol:
 			switch s.line[s.cursor] {
