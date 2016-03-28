@@ -2130,7 +2130,7 @@ func conduitEnv() *Env {
 		toConduit(t.Self()).Close()
 		return t.Return(True)
 	})
-	envc.Method("reader-close", func(t *Task, args Cell) bool {
+	envc.Method("_reader_close_", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).ReaderClose()
 		return t.Return(True)
 	})
@@ -2140,7 +2140,7 @@ func conduitEnv() *Env {
 	envc.Method("readline", func(t *Task, args Cell) bool {
 		return t.Return(toConduit(t.Self()).ReadLine(t))
 	})
-	envc.Method("writer-close", func(t *Task, args Cell) bool {
+	envc.Method("_writer_close_", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).WriterClose()
 		return t.Return(True)
 	})

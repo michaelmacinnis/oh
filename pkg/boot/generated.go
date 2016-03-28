@@ -42,14 +42,14 @@ define _connect_: syntax (conduit name) = {
 				public (unquote name) = (unquote p)
 				eval (unquote left)
 			}
-			p::writer-close
+			p::_writer_close_
 		}
 		block {
 			e::eval: quasiquote: block {
 				public _stdin_ = (unquote p)
 				eval (unquote right)
 			}
-			p::reader-close
+			p::_reader_close_
 		}
 	}
 }
@@ -91,9 +91,8 @@ define and: syntax (: lst) e = {
 	}
 	return r
 }
-define _append_stderr_: _redirect_ _stderr_ "a" writer-close
-define _append_stdout_: _redirect_ _stdout_ "a" writer-close
-define apply: method (f: args) =: f @args
+define _append_stderr_: _redirect_ _stderr_ "a" _writer_close_
+define _append_stdout_: _redirect_ _stdout_ "a" _writer_close_
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	spawn {
@@ -101,7 +100,7 @@ define _backtick_: syntax (cmd) e = {
 			public _stdout_ = (unquote p)
 			eval (unquote cmd)
 		}
-		p::writer-close
+		p::_writer_close_
 	}
 	define r: cons () ()
 	define c = r
@@ -109,7 +108,7 @@ define _backtick_: syntax (cmd) e = {
 		set-cdr c: cons l ()
 		set c: cdr c
 	}
-	p::reader-close
+	p::_reader_close_
 	return: cdr r
 }
 define catch: syntax (name: clause) e = {
@@ -242,9 +241,9 @@ define quasiquote: syntax (cell) e = {
 define quote: syntax (cell) =: return cell
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
-define _redirect_stderr_: _redirect_ _stderr_ "w" writer-close
-define _redirect_stdin_: _redirect_ _stdin_ "r" reader-close
-define _redirect_stdout_: _redirect_ _stdout_ "w" writer-close
+define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_
+define _redirect_stdin_: _redirect_ _stdin_ "r" _reader_close_
+define _redirect_stdout_: _redirect_ _stdout_ "w" _writer_close_
 define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()

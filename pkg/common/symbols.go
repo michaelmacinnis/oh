@@ -4,7 +4,7 @@ package common
 
 var Symbols = []string{
 	"...", "abs", "add", "and", "append", "_append_stderr_",
-	"_append_stdout_", "apply", "arg", "_args_", "args", "_backtick_",
+	"_append_stdout_", "arg", "_args_", "args", "_backtick_",
 	"basename", "block", "body", "boolean", "builtin", "caaaar",
 	"caaadr", "caaar", "caadar", "caaddr", "caadr", "caar", "cadaar",
 	"cadadr", "cadar", "caddar", "cadddr", "caddr", "cadr", "car",
@@ -28,7 +28,7 @@ var Symbols = []string{
 	"$OHPATH", ".ohrc", "open", "_origin_", "$PATH", "path", "paths",
 	"pipe", "_pipe_stderr_", "_pipe_stdout_", "_platform_", "printf",
 	"proc", "_process_substitution_", "procs", "prompt", "public",
-	"quasiquote", "quote", "rational", "read", "reader-close",
+	"quasiquote", "quote", "rational", "read", "_reader_close_",
 	"readline", "_redirect_", "_redirect_stderr_", "_redirect_stdin_",
 	"_redirect_stdout_", "rest", "_return", "return", "reverse", "right",
 	"_root_", "run", "rval", "self", "set", "set-car", "set-cdr",
@@ -36,5 +36,5 @@ var Symbols = []string{
 	"_splice_", "split", "sprintf", "status", "_stderr_", "_stdin_",
 	"_stdout_", "strict", "string", "sub", "suffix", "symbol", "syntax",
 	"_sys_", "temp-fifo", "_throw", "throw", "true", "type", "unquote",
-	"unset", "$USER", "wait", "while", "write", "writer-close",
+	"unset", "$USER", "wait", "while", "write", "_writer_close_",
 }
