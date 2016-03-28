@@ -675,7 +675,7 @@ yydefault:
 		//line grammar.y:114
 		{
 			if yyDollar[2].c != Null {
-				sym := NewSymbol("_process-substitution_")
+				sym := NewSymbol("_process_substitution_")
 				yyVAL.c = JoinTo(Cons(sym, yyDollar[1].c), yyDollar[2].c)
 			} else {
 				yyVAL.c = yyDollar[1].c
@@ -809,7 +809,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line grammar.y:191
 		{
-			yyVAL.c = List(NewSymbol("splice"), yyDollar[2].c)
+			yyVAL.c = List(NewSymbol("_splice_"), yyDollar[2].c)
 		}
 	case 43:
 		yyDollar = yyS[yypt-2 : yypt+1]

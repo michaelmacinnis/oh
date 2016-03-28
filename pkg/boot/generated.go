@@ -91,8 +91,8 @@ define and: syntax (: lst) e = {
 	}
 	return r
 }
-define _append-stderr_: _redirect_ _stderr_ "a" writer-close
-define _append-stdout_: _redirect_ _stdout_ "a" writer-close
+define _append_stderr_: _redirect_ _stderr_ "a" writer-close
+define _append_stdout_: _redirect_ _stdout_ "a" writer-close
 define apply: method (f: args) =: f @args
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
@@ -129,8 +129,8 @@ define catch: syntax (name: clause) e = {
 		_return: handler condition _throw
 	}
 }
-define _channel-stderr_: _connect_ channel _stderr_
-define _channel-stdout_: _connect_ channel _stdout_
+define _channel_stderr_: _connect_ channel _stderr_
+define _channel_stdout_: _connect_ channel _stdout_
 define echo: builtin (: args) = {
 	if (is-null args) {
 		_stdout_::write: symbol ""
@@ -188,19 +188,19 @@ define or: syntax (: lst) e = {
 	}
 	return r
 }
-define _pipe-stderr_: _connect_ pipe _stderr_
-define _pipe-stdout_: _connect_ pipe _stdout_
+define _pipe_stderr_: _connect_ pipe _stderr_
+define _pipe_stdout_: _connect_ pipe _stdout_
 define printf: method (f: args) =: echo: f::sprintf @args
-define _process-substitution_: syntax (:args) e = {
+define _process_substitution_: syntax (:args) e = {
 	define fifos = ()
 	define procs = ()
 	define cmd: for args: method (arg) = {
 		if (not: is-cons arg): return arg
-		if (eq (quote substitute-stdin) (car arg)) {
+		if (eq (quote _substitute_stdin_) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
 				e::eval: quasiquote {
-					_redirect-stdin_ {
+					_redirect_stdin_ {
 						unquote fifo
 						unquote: cdr arg
 					}
@@ -210,11 +210,11 @@ define _process-substitution_: syntax (:args) e = {
 			set procs: cons proc procs
 			return fifo
 		}
-		if (eq (quote substitute-stdout) (car arg)) {
+		if (eq (quote _substitute_stdout_) (car arg)) {
 			define fifo: temp-fifo
 			define proc: spawn {
 				e::eval: quasiquote {
-					_redirect-stdout_ {
+					_redirect_stdout_ {
 						unquote fifo
 						unquote: cdr arg
 					}
@@ -242,9 +242,9 @@ define quasiquote: syntax (cell) e = {
 define quote: syntax (cell) =: return cell
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
-define _redirect-stderr_: _redirect_ _stderr_ "w" writer-close
-define _redirect-stdin_: _redirect_ _stdin_ "r" reader-close
-define _redirect-stdout_: _redirect_ _stdout_ "w" writer-close
+define _redirect_stderr_: _redirect_ _stderr_ "w" writer-close
+define _redirect_stdin_: _redirect_ _stdin_ "r" reader-close
+define _redirect_stdout_: _redirect_ _stdout_ "w" writer-close
 define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()

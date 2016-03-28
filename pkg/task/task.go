@@ -2701,7 +2701,7 @@ func init() {
 
 		return false
 	})
-	scope0.DefineSyntax("splice", func(t *Task, args Cell) bool {
+	scope0.DefineSyntax("_splice_", func(t *Task, args Cell) bool {
 		t.ReplaceStates(psExecSplice, psEvalElement)
 
 		t.Code = Car(t.Code)

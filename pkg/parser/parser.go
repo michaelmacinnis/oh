@@ -49,19 +49,19 @@ const (
 
 func (s *scanner) Lex(lval *yySymType) (token int) {
 	var operator = map[string]string{
-		"!>":  "_redirect-stderr_",
-		"!>>": "_append-stderr_",
-		"!|":  "_pipe-stderr_",
-		"!|+": "_channel-stderr_",
+		"!>":  "_redirect_stderr_",
+		"!>>": "_append_stderr_",
+		"!|":  "_pipe_stderr_",
+		"!|+": "_channel_stderr_",
 		"&":   "spawn",
 		"&&":  "and",
-		"<":   "_redirect-stdin_",
-		"<(":  "substitute-stdout",
-		">":   "_redirect-stdout_",
-		">(":  "substitute-stdin",
-		">>":  "_append-stdout_",
-		"|":   "_pipe-stdout_",
-		"|+":  "_channel-stdout_",
+		"<":   "_redirect_stdin_",
+		"<(":  "_substitute_stdout_",
+		">":   "_redirect_stdout_",
+		">(":  "_substitute_stdin_",
+		">>":  "_append_stdout_",
+		"|":   "_pipe_stdout_",
+		"|+":  "_channel_stdout_",
 		"||":  "or",
 	}
 
