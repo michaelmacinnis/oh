@@ -11,13 +11,11 @@ define prefix-lines: method (Prefix) = {
 }
 
 # Run tests.
-find Dir -name "[0-9]*.oh" | grep -Fv unused |
+find Dir -name "[0-9]*.oh" | grep -Fv unused | sort |
 while (define Path: readline) {
-        define File = @`(basename Path)
-	grep "^#[+-]     " Path |
-	sed -e "s/^#[+-]     //g" |
-	prefix-lines File
-
-	public _stderr_ = _stdout_; Path | prefix-lines File
-} | sort | uniq -u
+	define File = @`(basename Path)
+	diff <(grep "^#[+-]     " Path | sed -e "s/^#[+-]     //g" |
+		prefix-lines File) \
+	     <(public _stderr_ = _stdout_; Path | prefix-lines File)
+}
 
