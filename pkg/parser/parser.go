@@ -238,12 +238,6 @@ main:
 				s.cursor++
 			}
 			if s.cursor >= len(s.line) {
-				if s.line[s.cursor-1] == '\n' {
-					s.line = append(
-						s.line[0:s.cursor-1],
-						[]rune("\\n")...,
-					)
-				}
 				continue main
 			}
 			if s.state == ssDollarDouble {

@@ -70,68 +70,28 @@
 </tr><tr><td><a name="list-terminators" id="list-terminators"></a><a href="http://hyperpolyglot.org/unix-shells#list-terminators-note">list terminators</a></td>
 <td>; &amp;</td>
 <td>; &amp;</td>
-<td>; &amp;</td>
+<td>&amp;</td>
 <td>; &amp;</td>
 <td>; &amp;</td>
 </tr><tr><td><a name="group-cmd" id="group-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#group-cmd-note">group command</a></td>
 <td>{ ls; ls;} | wc</td>
 <td>begin; ls; ls; end | wc</td>
-<td>{ ls; ls;} | wc</td>
+<td>ls; ls | wc</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>{ ls; ls;} | wc</td>
 </tr><tr><td><a name="subshell" id="subshell"></a><a href="http://hyperpolyglot.org/unix-shells#subshell-note">subshell</a></td>
 <td>(ls; ls) | wc</td>
 <td>fish -c 'ls; ls' | wc</td>
+<td>oh -c 'ls; ls' | wc</td>
 <td>(ls; ls) | wc</td>
 <td>(ls; ls) | wc</td>
-<td>(ls; ls) | wc</td>
-</tr></tbody></table><p>Shells read input up to an unquoted newline and then execute it. An unquoted backslash followed by a newline are discarded and cause the shell to wait for more input. The backslash and newline are discarded before the shell tokenizes the string, so long lines can be split anywhere outside of single quotes, even in the middle of command names and variable names.</p>
-<p>In the shell grammar, <em>lists</em> contain <em>sublists</em>, which contain <em>pipelines</em>, which contain <em>simple commands</em>.</p>
-<p><em>Subshells</em> and <em>grouping</em> can be used to put a list in a pipeline. Subshells and groups can have newlines, but the shell defers execution until the end of the subshell or group is reached.</p>
-<p>The section on <a href="http://hyperpolyglot.org/unix-shells#execution-control">execution control</a> describes structures which do not fit into the simple grammar and execution model outlined here. The shell will not execute any of the control structures until the end keyword is reached. As a result, the control structure can contain multiple statements separated by newlines. Execution control structures cannot be put into pipelines.</p>
-<p><a name="simple-cmd-note" id="simple-cmd-note"></a></p>
-<h2 id="toc1"><span><a href="http://hyperpolyglot.org/unix-shells#simple-cmd">simple command</a></span></h2>
-<p>In its simplest form a line in a shell script is a word denoting a command. The shell looks successively for a user-defined function, built-in function, and external command in the search path matching the word. The first one found is run. If no matching function or external command is found the shell emits a warning and sets its status variable to a nonzero value. It does not return the status value to its caller unless it has reached the end of its input, however.</p>
-<p><tt>tcsh</tt> lacks user defined functions but built-ins still take precedence over external commands.</p>
-<p><a name="simple-cmd-arg-note" id="simple-cmd-arg-note"></a></p>
-<h2 id="toc2"><span><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-arg">simple command with argument</a></span></h2>
-<p>Commands can be followed by one or more words which are the arguments to the command. How a shell tokenizes the input into words is complicated in the general case, but in the common case the arguments are whitespace delimited.</p>
-<p><a name="simple-cmd-redirect-note" id="simple-cmd-redirect-note"></a></p>
-<h2 id="toc3"><span><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-redirect">simple command with redirect</a></span></h2>
-<p>The standard output, standard input, and standard error of the command can be redirected to files. This is described under <a href="http://hyperpolyglot.org/unix-shells#redirection">redirection</a>.</p>
-<p><a name="simple-cmd-env-var-note" id="simple-cmd-env-var-note"></a></p>
-<h2 id="toc4"><span><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-env-var">simple command with environment variable</a></span></h2>
-<p>A nonce environment variable can be set for the exclusive use of the command.</p>
-<p><a name="pipeline-note" id="pipeline-note"></a></p>
-<h2 id="toc5"><span><a href="http://hyperpolyglot.org/unix-shells#pipeline">pipeline</a></span></h2>
-<p>Pipelines are a sequence of simple commands in which the standard output of each command is redirected to the standard input of its successor.</p>
-<p><a name="sublist-separators-note" id="sublist-separators-note"></a></p>
-<h2 id="toc6"><span><a href="http://hyperpolyglot.org/unix-shells#sublist-separators">sublist separators</a></span></h2>
-<p><em>Sublist</em> is a term from the <tt>zsh</tt> documentation describing one or more pipelines separated by the shortcut operators <tt>&amp;&amp;</tt> and <tt><span style="white-space: pre-wrap;">||</span></tt>. When <tt>&amp;&amp;</tt> is encountered, the shell stops executing the pipelines if the previous pipeline failed. When <tt><span style="white-space: pre-wrap;">||</span></tt> is encountered, the shell stops executing if the previous pipeline succeeded. A pipeline is successful if the last command returns a zero status.</p>
-<p><strong>fish:</strong></p>
-<p>Fish has short-circuit operators; the following are equivalent to <tt>ls &amp;&amp; ls</tt> and <tt>ls || ls</tt>:</p>
-<div class="code">
-<pre><code>$ ls ; and ls
-$ ls ; or ls</code>
-</pre></div>
-<p><a name="list-terminators-note" id="list-terminators-note"></a></p>
-<h2 id="toc7"><span><a href="http://hyperpolyglot.org/unix-shells#list-terminators">list terminators</a></span></h2>
-<p>A list is a sequence of sublists separated by semicolons <tt>;</tt> or ampersands <tt>&amp;</tt> and optionally terminated by a semicolon or ampersand.</p>
-<p>If the separator or terminator is an ampersand, the previous sublist is run in the background. This permits the shell to execute the next sublist or the subsequent statement without waiting for the previous sublist to finish.</p>
-<p><a name="group-cmd-note" id="group-cmd-note"></a></p>
-<h2 id="toc8"><span><a href="http://hyperpolyglot.org/unix-shells#group-cmd">group command</a></span></h2>
-<p>A group command can be used to concatenate the stdout of multiple commands and pipe it to a subsequent command.</p>
-<p>If the group has an input stream, it is consumed by the first command to read from stdin.</p>
-<p><tt>bash</tt> requires that the final command be terminated by a semicolon; <tt>zsh</tt> does not.</p>
-<p><a name="subshell-note" id="subshell-note"></a></p>
-<h2 id="toc9"><span><a href="http://hyperpolyglot.org/unix-shells#subshell">subshell</a></span></h2>
-<p>Like the group command, but the commands are executed in a subshell. Variable assignments or change of working directory are local to the subshell.</p>
+</tr></tbody></table>
 <p><a name="quoting" id="quoting"></a></p>
-<h1 id="toc10"><span><a href="http://hyperpolyglot.org/unix-shells#top">Quoting and Escaping</a></span></h1>
+<h1 id="toc10"><span><a href="#top">Quoting and Escaping</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="literal-quotes" id="literal-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#literal-quotes-note">literal quotes</a></td>
@@ -143,34 +103,34 @@ $ ls ; or ls</code>
 <td>'foo'</td>
 </tr><tr><td><a name="interpolating-quotes" id="interpolating-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-note">interpolating quotes</a></td>
 <td>foo=7<br>
-"foo is $foo"</td>
+echo "foo is $foo"</td>
 <td>set foo 7<br>
-"foo is $foo"<br><br><span style="color: gray"><em>double quotes do not perform<br>
+echo "foo is $foo"<br><br><span style="color: gray"><em>double quotes do not perform<br>
 command substitution</em></span></td>
-<td>foo=7<br>
-"foo is $foo"</td>
+<td>define foo = 7<br>
+echo $"foo is ${foo}"</td>
 <td>setenv foo 7<br>
-"foo is $foo"</td>
+echo "foo is $foo"</td>
 <td>foo=7<br>
-"foo is $foo"</td>
+echo "foo is $foo"</td>
 </tr><tr><td><a name="interpolating-quotes-esc" id="interpolating-quotes-esc"></a><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-esc-note">interpolating quotes escape sequences</a></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
 <td>\" \$ \\</td>
-<td>\$ \\ <span style="white-space: pre-wrap;">\`</span></td>
+<td>\$ \\ <span style="white-space: pre-wrap;">\"</span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
 </tr><tr><td><a name="c-esc-quotes" id="c-esc-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#c-esc-quotes-note">quotes with backslash escapes</a></td>
 <td>$'foo\n'</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>$'foo'</td>
+<td>"foo\n"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$'foo'</td>
 </tr><tr><td><a name="c-esc" id="c-esc"></a><a href="http://hyperpolyglot.org/unix-shells#c-esc-note">quoted backslash escapes</a></td>
 <td>\a \b \e \E \f \n \r \t \v<br>
 \\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>\a \b \e \E \f \n \r \t \v<br>
-\\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
+<td>\a \b \f \n \r \t \v<br>
+\\ \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\a \b \e \E \f \n \r \t \v<br>
 \\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
@@ -187,54 +147,17 @@ command substitution</em></span></td>
 <td>$(ls)<br>
 `ls`</td>
 <td>(ls)</td>
-<td>$(ls)<br>
-`ls`</td>
+<td>`(ls)</td>
 <td>`ls`</td>
 <td>$(ls)<br>
 `ls`</td>
 </tr><tr><td><a name="backtick-esc" id="backtick-esc"></a><a href="http://hyperpolyglot.org/unix-shells#backtick-esc-note">backtick escape sequences</a></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>\$ \\ \<span style="color: gray"><em>newline</em></span></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
 </tr></tbody></table><p><a name="literal-quotes-note" id="literal-quotes-note"></a></p>
-<h2 id="toc11"><span><a href="http://hyperpolyglot.org/unix-shells#literal-quotes">literal quotes</a></span></h2>
-<p>Literal quotes (aka single quotes) create a word with exactly the characters shown in the source code. For the shells other than <tt>fish</tt> there is no escaping mechanism and hence no way to put single quotes in the word.</p>
-<p>Literal quotes can be used to put characters that the shell lexer uses to distinguish words inside a single word. For <tt>bash</tt> these characters are:</p>
-<div class="code">
-<pre><code>| &amp; ; ( ) &lt; &gt; space tab</code>
-</pre></div>
-<p>Literals quotes can also be used to prevent the parameter, brace, pathname, and tilde expansion as well as command substitution. For <tt>bash</tt> the special characters that trigger these expansions are:</p>
-<div class="code">
-<pre><code>$ { } * ? [ ] ` ~</code>
-</pre></div>
-<p><a name="interpolating-quotes-note" id="interpolating-quotes-note"></a></p>
-<h2 id="toc12"><span><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes">interpolating quotes</a></span></h2>
-<p>Interpolating quotes (aka double quotes) perform parameter expansion and command substitution of both the $( ) and <span style="white-space: pre-wrap;">` `</span> variety. They do not perform brace, pathname, or tilde expansion. $ and <span style="white-space: pre-wrap;">`</span> are thus special characters but they can be escaped with a backslash as can the backslash itself, the double quote, and a newline.</p>
-<p><a name="interpolating-quotes-esc-note" id="interpolating-quotes-esc-note"></a></p>
-<h2 id="toc13"><span><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-esc">interpolating quotes escape sequences</a></span></h2>
-<p>The escape sequences available in interpolating quotes.</p>
-<p><a name="c-esc-quotes-note" id="c-esc-quotes-note"></a></p>
-<h2 id="toc14"><span><a href="http://hyperpolyglot.org/unix-shells#c-esc-quotes">quotes with backslash escapes</a></span></h2>
-<p>String literals which support C-style escapes.</p>
-<p><a name="c-esc-note" id="c-esc-note"></a></p>
-<h2 id="toc15"><span><a href="http://hyperpolyglot.org/unix-shells#c-esc">quoted backslash escapes</a></span></h2>
-<p>The C-style string literal escapes.</p>
-<p><a name="bare-c-esc-note" id="bare-c-esc-note"></a></p>
-<h2 id="toc16"><span><a href="http://hyperpolyglot.org/unix-shells#bare-c-esc">unquoted backslash escapes</a></span></h2>
-<p><tt>fish</tt> permits the use of C escapes outside of quotes.</p>
-<p><a name="cmd-subst-note" id="cmd-subst-note"></a></p>
-<h2 id="toc17"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-subst">command substitution</a></span></h2>
-<p>How to execute a command and get the output as shell text.</p>
-<p>If the command output contains whitespace, the shell may parse the output into multiple words. Double quotes can be used to guarantee that the command output is treated as a single word by the shell:</p>
-<div class="code">
-<pre><code>"$(ls)"
-"`ls`"</code>
-</pre></div>
-<p><a name="backtick-esc-note" id="backtick-esc-note"></a></p>
-<h2 id="toc18"><span><a href="http://hyperpolyglot.org/unix-shells#backtick-esc">backtick escape sequences</a></span></h2>
-<p>Escape sequences that can be used inside backtick quotes.</p>
 <p><a name="char" id="char"></a></p>
 <h1 id="toc19"><span><a href="http://hyperpolyglot.org/unix-shells#top">Characters</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>

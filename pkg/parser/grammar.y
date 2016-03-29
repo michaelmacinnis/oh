@@ -16,6 +16,7 @@
 package parser
 
 import (
+	"github.com/michaelmacinnis/adapted"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"strconv"
@@ -212,7 +213,7 @@ expression: "(" ")" { $$.c = Null };
 expression: word { $$ = $1 };
 
 word: DOLLAR_DOUBLE {
-	v, _ := strconv.Unquote($1.s[1:])
+	v, _ := adapted.Unquote($1.s[1:])
 	s := task.NewString(yylex.(*scanner).task, v)
 	$$.c = List(NewSymbol("interpolate"), s)
 };
@@ -223,7 +224,7 @@ word: DOLLAR_SINGLE {
 };
 
 word: DOUBLE_QUOTED {
-	v, _ := strconv.Unquote($1.s)
+	v, _ := adapted.Unquote($1.s)
 	$$.c = task.NewString(yylex.(*scanner).task, v)
 };
 
