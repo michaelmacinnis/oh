@@ -297,10 +297,6 @@ func bindTheRest(s *Scope) {
 		return t.Closure(NewMethod)
 	})
 
-	s.DefineSyntax("setenv", func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecSetenv)
-	})
-
 	s.DefineSyntax("syntax", func(t *Task, args Cell) bool {
 		return t.Closure(NewSyntax)
 	})

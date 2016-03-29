@@ -208,7 +208,7 @@ echo "foo is $foo"</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 <th>external</th>
@@ -222,10 +222,15 @@ $<span style="color: gray"><em>var</em></span><br>
 set -g<br>
 set -e <span style="color: gray"><em>var</em></span><br>
 vared <span style="color: gray"><em>var</em></span></td>
-<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
-$<span style="color: gray"><em>var</em></span><br>
-set<br>
-unset -v <span style="color: gray"><em>var</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td><br><br>
+define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
+<span style="color: gray"><em>var</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+<br>
+<span style="color: gray"><em>variables in oh are not global by default</span><br>
+</td>
 <td>set <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
 $<span style="color: gray"><em>var</em></span><br>
 set<br>
@@ -241,9 +246,7 @@ vared <span style="color: gray"><em>var</em></span></td>
 readonly <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
 readonly -p</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>readonly <span style="color: gray"><em>var</em></span><br>
-readonly <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
-readonly -p</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>readonly <span style="color: gray"><em>var</em></span><br>
 readonly <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
@@ -258,9 +261,10 @@ export -n <span style="color: gray"><em>var</em></span></td>
 set -gx <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
 set -x<br>
 set -gu <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span></td>
-<td>export <span style="color: gray"><em>var</em></span><br>
-export <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
-export -p<br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br>
+public $<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span></td>
 <td>setenv <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span><br>
 setenv <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
 printenv<br><span style="color: gray"><em>none</em></span></td>
@@ -274,9 +278,7 @@ printenv<br><span style="color: gray"><em>none</em></span></td>
 set -o<br>
 set +o <span style="color: gray"><em>opt</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>set -o <span style="color: gray"><em>opt</em></span><br>
-set -o<br>
-set +o <span style="color: gray"><em>opt</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>set -o <span style="color: gray"><em>opt</em></span><br>
 set -o<br>
@@ -294,28 +296,7 @@ float<br>
 integer<br>
 unsetopt</td>
 <td></td>
-</tr></tbody></table><p><a name="global-var-note" id="global-var-note"></a></p>
-<h2 id="toc27"><span><a href="http://hyperpolyglot.org/unix-shells#global-var">global variables</a></span></h2>
-<p>How to set a global variable; how to get the value of a global variable; how to list all the global variables; how to unset a global variable; how to edit a variable.</p>
-<p>Variables are global by default.</p>
-<p>In <tt>tcsh</tt> if <span style="color: gray"><em>var</em></span> is undefined then encountering $<span style="color: gray"><em>var</em></span> throws an error. The other shells will treat $<span style="color: gray"><em>var</em></span> as an empty string.</p>
-<p>If there is a variable named <tt>foo</tt>, then</p>
-<div class="code">
-<pre><code>unset foo</code>
-</pre></div>
-<p>will unset the variable. However, if there is no such variable but there is a function named <tt>foo</tt>, then the function will be unset. <tt>unset -v</tt> will only unset a variable.</p>
-<p><a name="read-only-var-note" id="read-only-var-note"></a></p>
-<h2 id="toc28"><span><a href="http://hyperpolyglot.org/unix-shells#read-only-var">read-only variables</a></span></h2>
-<p>How to mark a variable as read-only; how to simultaneously set and mark a variable as read-only; how to list the read-only variables.</p>
-<p>An error results if an attempt is made to modify a read-only variable.</p>
-<p><a name="exported-var-note" id="exported-var-note"></a></p>
-<h2 id="toc29"><span><a href="http://hyperpolyglot.org/unix-shells#exported-var">exported variables</a></span></h2>
-<p>How to export a variable; how to set and export a variable; how to list the exported variables.</p>
-<p>Exported variables are passed to child processes forked by the shell. This can be prevented by launching the subprocess with <tt>env -i</tt>. Subshells created with parens ( ) have access non-exported variables.</p>
-<p>The <tt>tcsh</tt> example for exporting a variable without setting it isn't the same as the corresponding examples from the other shells because in <tt>tcsh</tt> an error will result if the variable isn't already set.</p>
-<p><a name="option-var-note" id="option-var-note"></a></p>
-<h2 id="toc30"><span><a href="http://hyperpolyglot.org/unix-shells#option-var">options</a></span></h2>
-<p>Options are variables which are normally set via flags at the command line and affect shell behavior.</p>
+</tr></tbody></table>
 <p><a name="var-expansion" id="var-expansion"></a></p>
 <h1 id="toc31"><span><a href="http://hyperpolyglot.org/unix-shells#top">Variable Expansion</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>

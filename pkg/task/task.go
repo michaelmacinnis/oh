@@ -66,7 +66,6 @@ type Context interface {
 	Faces() *Env
 	Prev() Context
 	Public(key, value Cell)
-	Remove(key Cell) bool
 	Visibility() *Env
 
 	DefineBuiltin(k string, f Function)
@@ -481,14 +480,6 @@ func (e *Env) Prefixed(prefix string) map[string]Cell {
 
 func (e *Env) Prev() *Env {
 	return e.prev
-}
-
-func (e *Env) Remove(key Cell) bool {
-	_, ok := e.hash[key.String()]
-
-	delete(e.hash, key.String())
-
-	return ok
 }
 
 /* Job definition. */
@@ -1034,14 +1025,6 @@ func (s *Scope) Define(key Cell, value Cell) {
 
 func (s *Scope) Public(key Cell, value Cell) {
 	s.env.prev.Add(key, value)
-}
-
-func (s *Scope) Remove(key Cell) bool {
-	if !s.env.prev.Remove(key) {
-		return s.env.Remove(key)
-	}
-
-	return true
 }
 
 func (s *Scope) Visibility() *Env {
@@ -2306,11 +2289,6 @@ func init() {
 
 		t.Self().Public(k, v)
 		return t.Return(v)
-	})
-	object.PublicMethod("unset", func(t *Task, args Cell) bool {
-		r := t.Self().Remove(NewSymbol(raw(Car(args))))
-
-		return t.Return(NewBoolean(r))
 	})
 
 	/* Root Scope. */

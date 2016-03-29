@@ -35,6 +35,6 @@ var Symbols = []string{
 	"set-line-number", "set-slot", "source", "spawn", "_splice_",
 	"split", "sprintf", "status", "_stderr_", "_stdin_", "_stdout_",
 	"strict", "string", "sub", "suffix", "symbol", "syntax", "_sys_",
-	"temp-fifo", "_throw", "throw", "true", "type", "unquote", "unset",
-	"$USER", "wait", "while", "write", "_writer_close_",
+	"temp-fifo", "_throw", "throw", "true", "type", "unquote", "$USER",
+	"wait", "while", "write", "_writer_close_",
 }
