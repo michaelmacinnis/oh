@@ -122,7 +122,6 @@ const (
 	psExecMethod
 	psExecPublic
 	psExecSet
-	psExecSetenv
 	psExecSplice
 	psExecSyntax
 	psExecWhileBody
@@ -1518,13 +1517,6 @@ func (t *Task) LexicalVar(state int64) bool {
 		panic(msg)
 	}
 
-	if state == psExecSetenv {
-		if !strings.HasPrefix(r, "$") {
-			msg := "environment variable names must begin with '$'"
-			panic(common.ErrSyntax + msg)
-		}
-	}
-
 	if s != c {
 		t.NewStates(SaveLexical)
 		t.Lexical = s
@@ -1750,16 +1742,8 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 		case psExecDefine:
 			t.Lexical.Define(t.Code, Car(t.Dump))
 
-		case psExecPublic, psExecSetenv:
-			k := t.Code
-			v := Car(t.Dump)
-
-			if state == psExecSetenv {
-				s := raw(v)
-				os.Setenv(strings.TrimLeft(k.String(), "$"), s)
-			}
-
-			t.Lexical.Public(k, v)
+		case psExecPublic:
+			t.Lexical.Public(t.Code, Car(t.Dump))
 
 		case psExecSet:
 			k := t.Code.(*Symbol)

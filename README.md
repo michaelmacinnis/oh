@@ -9,7 +9,7 @@ Where oh diverges from traditional Unix shells is in its programming
 language features.
 
 At its core, oh is a heavily modified dialect of the Scheme programming
-language complete with first-class continuations and proper tail
+language, complete with first-class continuations and proper tail
 recursion. Like early Scheme implementations, oh exposes environments
 as first-class values. Oh extends environments to allow both public and
 private members and uses these extended first-class environments as the

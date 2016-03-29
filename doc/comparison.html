@@ -140,7 +140,7 @@ echo "foo is $foo"</td>
 \$ \\ \* \? \~ \% \# \( \) \{<br>
 \} \[ \] \&lt; \&gt; \^ \&amp; \; \" \'<br>
 \x<span style="color: gray"><em>hh</em></span> \X<span style="color: gray"><em>hh</em></span> \<span style="color: gray"><em>ooo</em></span> \u<span style="color: gray"><em>hhhh</em></span> \U<span style="color: gray"><em>hhhhhhhh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
-<td>\<span style="color: gray"><em>space</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>\<span style="color: gray"><em>space</em></span></td>
 <td>\<span style="color: gray"><em>space</em></span></td>
 </tr><tr><td><a name="cmd-subst" id="cmd-subst"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-subst-note">command substitution</a></td>
@@ -157,19 +157,19 @@ echo "foo is $foo"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\$ \\ \<span style="color: gray"><em>newline</em></span></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
-</tr></tbody></table><p><a name="literal-quotes-note" id="literal-quotes-note"></a></p>
+</tr></tbody></table>
 <p><a name="char" id="char"></a></p>
-<h1 id="toc19"><span><a href="http://hyperpolyglot.org/unix-shells#top">Characters</a></span></h1>
+<h1 id="toc19"><span><a href="#top">Characters</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="word-separating-char" id="word-separating-char"></a><a href="http://hyperpolyglot.org/unix-shells#word-separating-char-note">word separating</a></td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
-<td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @ ^ { }</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 </tr><tr><td><a name="quoting-escaping-char" id="quoting-escaping-char"></a><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char-note">quoting and escaping</a></td>
@@ -181,97 +181,30 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="shell-expansion-char" id="shell-expansion-char"></a><a href="http://hyperpolyglot.org/unix-shells#shell-expansion-char-note">shell expansion</a></td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">( )</span><br><span style="color: gray"><em>pathname:</em></span> * ?</td>
-<td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
+<td><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`( )</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 </tr><tr><td><a name="other-special-char" id="other-special-char"></a><a href="http://hyperpolyglot.org/unix-shells#other-special-char-note">other special</a></td>
 <td># =</td>
 <td># [ ]</td>
-<td># = .</td>
+<td>#</td>
 <td>#</td>
 <td># =</td>
 </tr><tr><td><a name="bareword-char" id="bareword-char"></a><a href="http://hyperpolyglot.org/unix-shells#bareword-char-note">bareword</a></td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % ! ^ =</td>
-<td>A-Z a-z 0-9 _ - , : + / @ % ! ^</td>
+<td>A-Z a-z 0-9 _ - . , + / =</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % =</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 </tr><tr><td><a name="var-char" id="var-char"></a><a href="http://hyperpolyglot.org/unix-shells#var-char-note">variable name</a></td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
+<td>A-Z a-z 0-9 _ - . , + / =</td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
-<td>A-Z a-z 0-9 _</td>
-</tr></tbody></table><p><a name="word-separating-char-note" id="word-separating-char-note"></a></p>
-<h2 id="toc20"><span><a href="http://hyperpolyglot.org/unix-shells#word-separating-char">word separating</a></span></h2>
-<p>The shell tokenizes its input into words. Characters which are not word separating and do not have any word separating characters between them are part of the same word.</p>
-<p><a name="quoting-escaping-char-note" id="quoting-escaping-char-note"></a></p>
-<h2 id="toc21"><span><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char">quoting and escaping</a></span></h2>
-<p>For two characters to be in different words, the presence of a word separating character between them is <em>necessary</em> but not <em>sufficient</em>, because the separating character must not be quoted or escaped.</p>
-<p>The following two lines both tokenize as a single word:</p>
-<div class="code">
-<pre><code>"lorem ipsum"
-lorem" "ispum</code>
-</pre></div>
-<p><a name="shell-expansion-char-note" id="shell-expansion-char-note"></a></p>
-<h2 id="toc22"><span><a href="http://hyperpolyglot.org/unix-shells#shell-expansion-char">shell expansion</a></span></h2>
-<p>The presence of shell expansion characters in a word causes the shell to perform a transformation on the word. The transformation may replace the word with more than one word.</p>
-<p>In the following example, the word <tt>*.c</tt> will be replaced by multiple words if there is more than one file with a <tt>.c</tt> suffix in the working directory:</p>
-<div class="code">
-<pre><code>grep main *.c</code>
-</pre></div>
-<p>Square brackets <tt>[ ]</tt> are used for both pathname expansion, where the brackets contain a list of characters, and array notation, where the brackets contain an index. We believe that in cases of ambiguity, the syntax is always treated as array notation. <tt>fish</tt> does not have this ambiguity because it does not use square brackets in pathname expansion.</p>
-<p><strong>zsh:</strong></p>
-<p>In <tt>zsh</tt> variable expansion will expand to a single word, even if the variable contains word separating characters. This behavior is different from the other shells.</p>
-<p>A variable can be expanded to multiple words with the <tt>${=VAR<span style="white-space: pre-wrap;">}</span></tt> syntax, however.</p>
-<div class="code">
-<pre><code>$ function countem() { echo $#; }
-
-$ foo='one two three'
-
-$ countem $foo
-1
-
-$ countem ${=foo}
-3</code>
-</pre></div>
-<p><a name="other-special-char-note" id="other-special-char-note"></a></p>
-<h2 id="toc23"><span><a href="http://hyperpolyglot.org/unix-shells#other-special-char">other special characters</a></span></h2>
-<p><strong>comments:</strong></p>
-<p>The number sign <tt>#</tt> can be used to start a comment which ends at the end of the line. The <tt>#</tt> must be by itself or the first character in a word.</p>
-<p>In <tt>tcsh</tt>, comments are not supported when the shell is interactive.</p>
-<p>In <tt>zsh</tt>, comments are not supported by default when the shell is interactive. This can be changed by invoking <tt>zsh</tt> with the <tt>-k</tt> flag or by running:</p>
-<div class="code">
-<pre><code>set -o INTERACTIVE_COMMENTS</code>
-</pre></div>
-<p><strong>variable assignment:</strong></p>
-<p>The equals sign <tt>=</tt> is used for variable assignment in <tt>bash</tt>, <tt>ksh</tt>, and <tt>zsh</tt>. Given that spaces cannot be placed around the equals sign, it seems likely the tokenizer treats it like other bareword characters. Note that in a simple command, the command name is the first word which does not contain an equals sign.</p>
-<p><strong>namespaces:</strong></p>
-<p><tt>ksh</tt> has namespaces. They can be used for variable names and function names:</p>
-<div class="code">
-<pre><code>$ bar=3
-
-$ namespace foo { bar=4; } 
-
-$ echo $bar
-3
-
-$ namespace foo { echo $bar; }
-4
-
-$ echo ${.foo.bar}
-4</code>
-</pre></div>
-<p><a name="bareword-char-note" id="bareword-char-note"></a></p>
-<h2 id="toc24"><span><a href="http://hyperpolyglot.org/unix-shells#bareword-char">bareword characters</a></span></h2>
-<p>A bareword is a word which is not quoted and does not contain escapes. The characters which are listed above are those which can appear anywhere in a bareword.</p>
-<p>Some of the other characters can appear in barewords under certain circumstances. For example the tilde <tt>~</tt> can appear if it is not the first character.</p>
-<p><a name="var-char-note" id="var-char-note"></a></p>
-<h2 id="toc25"><span><a href="http://hyperpolyglot.org/unix-shells#var-char">variable name characters</a></span></h2>
-<p>Characters which can be used in variable names.</p>
-<p>Note that a variable name cannot start with a digit. Also, <tt>$_</tt> is a special variable which contains the previous command.</p>
+</tr></tbody></table>
 <p><a name="variables" id="variables"></a></p>
-<h1 id="toc26"><span><a href="http://hyperpolyglot.org/unix-shells#top">Variables</a></span></h1>
+<h1 id="toc26"><span><a href="#top">Variables</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>

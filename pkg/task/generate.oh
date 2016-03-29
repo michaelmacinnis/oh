@@ -100,7 +100,6 @@ echo "}"
 define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineSyntax define "t.LexicalVar(psExecDefine)") \
                  (DefineSyntax method "t.Closure(NewMethod)") \
-                 (DefineSyntax setenv "t.LexicalVar(psExecSetenv)") \
                  (DefineSyntax syntax "t.Closure(NewSyntax)") \
                  (DefineMethod car "t.Return(Caar(args))") \
                  (DefineMethod cdr "t.Return(Cdar(args))") \
