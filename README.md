@@ -32,7 +32,7 @@ With Go 1.5 or greater installed,
 
 ## Using
 
-For more detail see: [Using oh](MANUAL.md)
+For more detail see: [Using oh](doc/manual.md)
 
 ## License
 

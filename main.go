@@ -33,5 +33,5 @@ func main() {
 }
 
 //go:generate bin/test.oh
-//go:generate bin/doc.oh manual ../MANUAL.md
+//go:generate bin/doc.oh manual ../doc/manual.md
 //go:generate bin/doc.oh readme ../README.md
