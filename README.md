@@ -22,6 +22,8 @@ used interchangeably. This homoiconic nature also allows oh to support
 fexprs which, in turn, allow oh to be easily extended. In fact, much of
 oh is written in oh.
 
+For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/hyperpolyglot/doc/comparison.html)
+
 ## Installing
 
 With Go 1.5 or greater installed,
