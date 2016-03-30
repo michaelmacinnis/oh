@@ -486,7 +486,11 @@ font-family: helvetica, arial, san-serif;
 </tr><tr><td><a name="simple-cmd-env-var" id="simple-cmd-env-var"></a><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-env-var-note">simple command with environment variable</a></td>
 <td>EDITOR=vi git commit</td>
 <td>env EDITOR=vi git commit</td>
-<td>public $EDITOR = vi; git commit</td>
+<td>
+env EDITOR=vi git commit<br>
+<span style="color: gray"><em>or</em></span><br>
+public $EDITOR = vi; git commit
+</td>
 <td>env EDITOR=vi git commit</td>
 <td>EDITOR=vi git commit</td>
 </tr><tr><td><a name="pipeline" id="pipeline"></a><a href="http://hyperpolyglot.org/unix-shells#pipeline-note">pipeline</a></td>
@@ -530,8 +534,7 @@ font-family: helvetica, arial, san-serif;
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="literal-quotes" id="literal-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#literal-quotes-note">literal quotes</a></td>
 <td>'foo'</td>
-<td><span style="color: gray"><em>allows \' and \\ escapes:</em></span><br>
-'foo'</td>
+<td>'foo'</td>
 <td>'foo'</td>
 <td>'foo'</td>
 <td>'foo'</td>
@@ -539,8 +542,7 @@ font-family: helvetica, arial, san-serif;
 <td>foo=7<br>
 echo "foo is $foo"</td>
 <td>set foo 7<br>
-echo "foo is $foo"<br><br><span style="color: gray"><em>double quotes do not perform<br>
-command substitution</em></span></td>
+echo "foo is $foo"</td>
 <td>define foo = 7<br>
 echo $"foo is ${foo}"</td>
 <td>setenv foo 7<br>
@@ -564,7 +566,8 @@ echo "foo is $foo"</td>
 \\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\a \b \f \n \r \t \v<br>
-\\ \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span></span></td>
+\\ \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \u<span style="color: gray"><em>hhhh</em></span> \U<span style="color: gray"><em>hhhhhhhh</em></span>
+</span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\a \b \e \E \f \n \r \t \v<br>
 \\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
@@ -609,13 +612,13 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="quoting-escaping-char" id="quoting-escaping-char"></a><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char-note">quoting and escaping</a></td>
 <td>" ' <span style="white-space: pre-wrap;">\</span></td>
 <td>" ' <span style="white-space: pre-wrap;">\</span></td>
-<td>" ' <span style="white-space: pre-wrap;">\</span></td>
+<td>" '</td>
 <td>" ' <span style="white-space: pre-wrap;">\</span></td>
 <td>" ' <span style="white-space: pre-wrap;">\</span></td>
 </tr><tr><td><a name="shell-expansion-char" id="shell-expansion-char"></a><a href="http://hyperpolyglot.org/unix-shells#shell-expansion-char-note">shell expansion</a></td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">( )</span><br><span style="color: gray"><em>pathname:</em></span> * ?</td>
-<td><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`( )</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
+<td><br><br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`( )</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 </tr><tr><td><a name="other-special-char" id="other-special-char"></a><a href="http://hyperpolyglot.org/unix-shells#other-special-char-note">other special</a></td>
@@ -650,20 +653,19 @@ echo "foo is $foo"</td>
 <td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
 $<span style="color: gray"><em>var</em></span><br>
 set<br>
-unset -v <span style="color: gray"><em>var</em></span><br><span style="color: gray"><em>none</em></span></td>
+unset -v <span style="color: gray"><em>var</em></span><br><span style="color: gray"><em>none</em></span><br></td>
 <td>set -g <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
 $<span style="color: gray"><em>var</em></span><br>
 set -g<br>
 set -e <span style="color: gray"><em>var</em></span><br>
 vared <span style="color: gray"><em>var</em></span></td>
-<td><br><br>
+<td>
 define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
 <span style="color: gray"><em>var</em></span><br>
-<span style="color: gray"><em>none</em></span><br>
-<span style="color: gray"><em>none</em></span><br>
-<span style="color: gray"><em>none</em></span><br>
 <br>
-<span style="color: gray"><em>variables in oh are not global by default</span><br>
+<span style="color: gray"><em>Variables are not global by default.<br>
+To define a new global variable:</span><br>
+_root_::public <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
 </td>
 <td>set <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
 $<span style="color: gray"><em>var</em></span><br>
@@ -673,7 +675,7 @@ unset <span style="color: gray"><em>var</em></span><br><span style="color: gray"
 $<span style="color: gray"><em>var</em></span><br>
 set<br>
 unset -v <span style="color: gray"><em>var</em></span><br>
-vared <span style="color: gray"><em>var</em></span></td>
+vared <span style="color: gray"><em>var</em></span><br></td>
 <td></td>
 </tr><tr><td><a name="read-only-var" id="read-only-var"></a><a href="http://hyperpolyglot.org/unix-shells#read-only-var-note">read-only variables</a><br><br><span style="color: gray"><em>mark readonly, set and mark readonly, list readonly</em></span></td>
 <td>readonly <span style="color: gray"><em>var</em></span><br>
@@ -736,49 +738,48 @@ unsetopt</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 <th>external</th>
 </tr><tr><td>set variable value</td>
 <td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span></td>
 <td>set -g <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
-<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span></td>
+<td>set <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span></td>
 <td>setenv <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
 <td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span></td>
 <td></td>
 </tr><tr><td>get variable value</td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
-<td>$<span style="color: gray"><em>var</em></span></td>
+<td><span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td></td>
 </tr><tr><td>concatenate variable and value</td>
 <td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td>{$<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
-<td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td><span style="color: gray"><em>var</em></span> ^ <span style="color: gray"><em>val</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td></td>
 </tr><tr><td>coalesce</td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
-<td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
+<td>or (and (has "<span style="color: gray"><em>var</em></span>") <span style="color: gray"><em>var</em></span>) <span style="color: gray"><em>val</em></span></td>
 <td></td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
 </tr><tr><td>coalesce and assign if null</td>
 <td>${<span style="color: gray"><em>var</em></span>:=<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
-<td>${<span style="color: gray"><em>var</em></span>:=<span style="color: gray"><em>val</em></span>}</td>
+<td></td>
 <td></td>
 <td>${<span style="color: gray"><em>var</em></span>:=<span style="color: gray"><em>val</em></span>}</td>
-<td></td>
 </tr><tr><td>message to stderr and exit if null</td>
 <td>${<span style="color: gray"><em>var</em></span>:?<span style="color: gray"><em>msg</em></span>}</td>
 <td></td>
-<td>${<span style="color: gray"><em>var</em></span>:?<span style="color: gray"><em>msg</em></span>}</td>
+<td></td>
 <td></td>
 <td>${<span style="color: gray"><em>var</em></span>:?<span style="color: gray"><em>msg</em></span>}</td>
 <td></td>
@@ -787,9 +788,8 @@ unsetopt</td>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>:<span style="color: gray"><em>len</em></span>}</td>
 <td></td>
-<td><span style="color: gray"><em>offset is zero based:</em></span><br>
-${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
-${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>:<span style="color: gray"><em>len</em></span>}</td>
+<td><span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span><br>
+<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span> <span style="color: gray"><em>stop</em></span></td>
 <td></td>
 <td><span style="color: gray"><em>offset is zero based:</em></span><br>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
@@ -800,7 +800,7 @@ awk '{print substr($0, <span style="color: gray"><em>offset</em></span>, <span s
 </tr><tr><td>length</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td></td>
-<td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
+<td>length <span style="color: gray"><em>var</em></span></td>
 <td>${%<span style="color: gray"><em>var</em></span>}</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td>wc -m</td>
@@ -808,8 +808,7 @@ awk '{print substr($0, <span style="color: gray"><em>offset</em></span>, <span s
 <td>foo=do.re.mi<br>
 ${foo##*.}</td>
 <td></td>
-<td>foo=do.re.mi<br>
-${foo##*.}</td>
+<td></td>
 <td></td>
 <td>foo=do.re.mi<br>
 ${foo##*.}</td>
@@ -818,8 +817,7 @@ ${foo##*.}</td>
 <td>foo=do.re.mi<br>
 ${foo#*.}</td>
 <td></td>
-<td>foo=do.re.mi<br>
-${foo#*.}</td>
+<td></td>
 <td></td>
 <td>foo=do.re.mi<br>
 ${foo#*.}</td>
@@ -828,8 +826,7 @@ ${foo#*.}</td>
 <td>foo=do.re.mi<br>
 ${foo%%.*}</td>
 <td></td>
-<td>foo=do.re.mi<br>
-${foo%%.*}</td>
+<td></td>
 <td></td>
 <td>foo=do.re.mi<br>
 ${foo%%.*}</td>
@@ -838,8 +835,7 @@ ${foo%%.*}</td>
 <td>foo=do.re.mi<br>
 ${foo%.*}</td>
 <td></td>
-<td>foo=do.re.mi<br>
-${foo%.*}</td>
+<td></td>
 <td></td>
 <td>foo=do.re.mi<br>
 ${foo%.*}</td>
@@ -848,8 +844,7 @@ ${foo%.*}</td>
 <td>foo='do re mi mi'<br>
 ${foo/mi/ma}</td>
 <td></td>
-<td>foo='do re mi mi'<br>
-${foo/mi/ma}</td>
+<td></td>
 <td></td>
 <td>foo='do re mi mi'<br>
 ${foo/mi/ma}</td>
@@ -858,8 +853,7 @@ ${foo/mi/ma}</td>
 <td>foo='do re mi mi'<br>
 ${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
 <td></td>
-<td>foo='do re mi mi'<br>
-${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
+<td></td>
 <td></td>
 <td>foo='do re mi mi'<br>
 ${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
@@ -868,8 +862,7 @@ ${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
 <td>foo=txt.txt<br>
 ${foo/#txt/text}</td>
 <td></td>
-<td>foo=txt.txt<br>
-${foo/#txt/text}</td>
+<td></td>
 <td></td>
 <td>foo=txt.txt<br>
 ${foo/#txt/text}</td>
@@ -878,8 +871,7 @@ ${foo/#txt/text}</td>
 <td>foo=txt.txt<br>
 ${foo/%txt/html}</td>
 <td></td>
-<td>foo=txt.txt<br>
-${foo/%txt/html}</td>
+<td></td>
 <td></td>
 <td>foo=txt.txt<br>
 ${foo/%txt/html}</td>
@@ -888,7 +880,7 @@ ${foo/%txt/html}</td>
 <td>foo=lorem<br>
 ${foo^^}</td>
 <td></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::upper</td>
 <td></td>
 <td>foo=lorem<br>
 ${foo:u}</td>
@@ -897,7 +889,7 @@ ${foo:u}</td>
 <td>foo=lorem<br>
 ${foo^}</td>
 <td></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>((<span style="color: gray"><em>var</em></span>::slice 0 1)::upper) ^ (<span style="color: gray"><em>var</em></span>::slice 1)</td>
 <td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td></td>
@@ -905,7 +897,7 @@ ${foo^}</td>
 <td>foo=LOREM<br>
 ${foo,,}</td>
 <td></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::lower</td>
 <td></td>
 <td>foo=LOREM<br>
 ${foo:l}</td>
@@ -914,7 +906,7 @@ ${foo:l}</td>
 <td>foo=LOREM<br>
 ${foo,}</td>
 <td></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>((<span style="color: gray"><em>var</em></span>::slice 0 1)::lower) ^ (<span style="color: gray"><em>var</em></span>::slice 1)</td>
 <td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td></td>

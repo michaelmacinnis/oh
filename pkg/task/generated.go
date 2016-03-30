@@ -472,19 +472,19 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("to-lower", func(t *Task, args Cell) bool {
+	e.Method("lower", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToLower(s)))
 	})
 
-	e.Method("to-title", func(t *Task, args Cell) bool {
+	e.Method("title", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToTitle(s)))
 	})
 
-	e.Method("to-upper", func(t *Task, args Cell) bool {
+	e.Method("upper", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		return t.Return(NewString(t, strings.ToUpper(s)))

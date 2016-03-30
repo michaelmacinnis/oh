@@ -145,7 +145,7 @@ for t: method (l) = {
 	})"
 }
 
-define t: quote: (to-lower ToLower) (to-title ToTitle) (to-upper ToUpper)
+define t: quote: (lower ToLower) (title ToTitle) (upper ToUpper)
 
 for t: method (l) = {
 	define n: car l

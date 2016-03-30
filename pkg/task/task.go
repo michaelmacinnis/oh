@@ -2790,6 +2790,18 @@ func stringEnv() *Env {
 
 		return t.Return(NewString(t, r))
 	})
+	envs.Method("slice", func(t *Task, args Cell) bool {
+		s := []rune(raw(toString(t.Self())))
+
+		start := int(Car(args).(Atom).Int())
+		end := len(s)
+
+		if Cdr(args) != Null {
+			end = int(Cadr(args).(Atom).Int())
+		}
+
+		return t.Return(NewString(t, string(s[start:end])))
+	})
 	envs.Method("split", func(t *Task, args Cell) bool {
 		r := Null
 
@@ -2826,18 +2838,6 @@ func stringEnv() *Env {
 		s := fmt.Sprintf(f, argv...)
 
 		return t.Return(NewString(t, s))
-	})
-	envs.Method("substring", func(t *Task, args Cell) bool {
-		s := []rune(raw(toString(t.Self())))
-
-		start := int(Car(args).(Atom).Int())
-		end := len(s)
-
-		if Cdr(args) != Null {
-			end = int(Cadr(args).(Atom).Int())
-		}
-
-		return t.Return(NewString(t, string(s[start:end])))
 	})
 	envs.Method("to-list", func(t *Task, args Cell) bool {
 		s := raw(toString(t.Self()))
