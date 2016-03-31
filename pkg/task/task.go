@@ -2447,6 +2447,11 @@ func init() {
 
 		return t.Return(True)
 	})
+	scope0.DefineMethod("resolves", func(t *Task, args Cell) bool {
+		c, _ := Resolve(t.Lexical, t.Frame, NewSymbol(raw(Car(args))))
+
+		return t.Return(NewBoolean(c != nil))
+	})
 
 	/* Standard Functions. */
 	scope0.DefineMethod("append", func(t *Task, args Cell) bool {

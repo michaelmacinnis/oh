@@ -606,7 +606,7 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="word-separating-char" id="word-separating-char"></a><a href="http://hyperpolyglot.org/unix-shells#word-separating-char-note">word separating</a></td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
-<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @ ^ { }</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @ { }</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 </tr><tr><td><a name="quoting-escaping-char" id="quoting-escaping-char"></a><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char-note">quoting and escaping</a></td>
@@ -630,13 +630,13 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="bareword-char" id="bareword-char"></a><a href="http://hyperpolyglot.org/unix-shells#bareword-char-note">bareword</a></td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % ! ^ =</td>
-<td>A-Z a-z 0-9 _ - . , + / =</td>
+<td>A-Z a-z 0-9 _ - . , + / = $</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % =</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 </tr><tr><td><a name="var-char" id="var-char"></a><a href="http://hyperpolyglot.org/unix-shells#var-char-note">variable name</a></td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
-<td>A-Z a-z 0-9 _ - . , + / =</td>
+<td>A-Z a-z 0-9 _ - . , + / = $</td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
 </tr></tbody></table>
@@ -766,7 +766,7 @@ unsetopt</td>
 </tr><tr><td>coalesce</td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
-<td>or (and (has "<span style="color: gray"><em>var</em></span>") <span style="color: gray"><em>var</em></span>) <span style="color: gray"><em>val</em></span></td>
+<td>coalesce <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
 <td></td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
@@ -914,7 +914,8 @@ ${foo,}</td>
 </tr><tr><td>absolute path</td>
 <td></td>
 <td></td>
-<td></td>
+<td>define $foo = ~<br>
+readlink -f $foo</td>
 <td></td>
 <td>foo=~<br>
 ${foo:a}</td>
@@ -922,7 +923,8 @@ ${foo:a}</td>
 </tr><tr><td>dirname</td>
 <td></td>
 <td></td>
-<td></td>
+<td>define $foo = /etc/hosts<br>
+dirname $foo</td>
 <td></td>
 <td>foo=/etc/hosts<br>
 ${foo:h}</td>
@@ -931,7 +933,8 @@ dirname $foo</td>
 </tr><tr><td>basename</td>
 <td></td>
 <td></td>
-<td></td>
+<td>define $foo = /etc/hosts<br>
+basename $foo</td>
 <td></td>
 <td>foo=/etc/hosts<br>
 ${foo:t}</td>
@@ -958,25 +961,25 @@ ${foo:r}</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>brace expansion: list</td>
 <td>echo {foo,bar}</td>
 <td>echo {foo,bar}</td>
-<td>echo {foo,bar}</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>echo {foo,bar}</td>
 <td>echo {foo,bar}</td>
 </tr><tr><td>brace expansion: sequence</td>
 <td>echo {1..10}</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>echo {1..10}</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>echo {1..10}</td>
 </tr><tr><td>brace expansion: character sequence</td>
 <td>echo {a..z}</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>echo {a..z}</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 </tr><tr><td>tilde expansion</td>
@@ -988,13 +991,13 @@ ${foo:r}</td>
 </tr><tr><td>command expansion: dollar parens</td>
 <td>echo $(ls)</td>
 <td>echo (ls)</td>
-<td>echo $(ls)</td>
+<td>echo @`(ls)</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>echo $(ls)</td>
 </tr><tr><td>command expansion: backticks</td>
 <td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
 <td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
 </tr><tr><td>process substitution</td>

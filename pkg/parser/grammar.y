@@ -7,7 +7,6 @@
 %left PIPE	 /* |,|+,!|,!|+ */
 %left REDIRECT   /* <,>,!>,>>,!>> */
 %left SUBSTITUTE /* <(,>( */
-%left "^"
 %right "@"
 %right "`"
 %left CONS
@@ -182,12 +181,6 @@ opt_command: command { $$.c = $1.c };
 list: expression { $$.c = Cons($1.c, Null) };
 
 list: list expression { $$.c = AppendTo($1.c, $2.c) };
-
-expression: expression "^" expression {
-	t := yylex.(*scanner).task
-	s := Cons(task.NewString(t, ""), NewSymbol("join"))
-	$$.c = List(s, $1.c, $3.c)
-};
 
 expression: "@" expression {
 	$$.c = List(NewSymbol("_splice_"), $2.c)

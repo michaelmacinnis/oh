@@ -135,7 +135,7 @@ main:
 			default:
 				s.state = ssSymbol
 				continue main
-			case '\n', '%', '(', ')', ';', '@', '^', '`', '{', '}':
+			case '\n', '%', '(', ')', ';', '@', '`', '{', '}':
 				s.token = s.line[s.cursor]
 			case '\t', ' ':
 				s.state = ssStart
@@ -292,7 +292,7 @@ main:
 		case ssSymbol:
 			switch s.line[s.cursor] {
 			case '\n', '%', '&', '\'', '(', ')', ';',
-				'<', '@', '^', '`', '{', '|', '}',
+				'<', '@', '`', '{', '|', '}',
 				'\t', ' ', '"', '#', ':', '>':
 				s.token = SYMBOL
 				continue main

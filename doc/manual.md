@@ -634,7 +634,7 @@ with Mice").
     define line = ""
     while count {
         define p: car: read
-        set line = line ^ ("%7.7s"::sprintf p)
+        set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {
             echo line

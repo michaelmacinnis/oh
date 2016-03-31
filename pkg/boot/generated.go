@@ -84,7 +84,7 @@ define ...: method (: args) = {
 }
 define and: syntax (: lst) e = {
 	define r = false
-	while (not: is-null: car lst) {
+	while (not: is-null lst) {
 		set r: e::eval: car lst
 		if (not r): return r
 		set lst: cdr lst
@@ -130,6 +130,12 @@ define catch: syntax (name: clause) e = {
 }
 define _channel_stderr_: _connect_ channel _stderr_
 define _channel_stdout_: _connect_ channel _stdout_
+define coalesce: syntax (: lst) e = {
+	while (and (not: is-null: cdr lst) (not: resolves: car lst)) {
+		set lst: cdr lst
+	}
+	return: e::eval: car lst 
+}
 define echo: builtin (: args) = {
 	if (is-null args) {
 		_stdout_::write: symbol ""
@@ -180,7 +186,7 @@ define object: syntax (: body) e = {
 }
 define or: syntax (: lst) e = {
 	define r = false
-	while (not: is-null: car lst) {
+	while (not: is-null lst) {
 		set r: e::eval: car lst
 		if r: return r
 		set lst: cdr lst 
@@ -299,7 +305,7 @@ _sys_::public get-prompt: method self (suffix) = {
 _sys_::public prompt: method (suffix) = {
 	define dirs: (string $CWD)::split "/"
 	define last: sub (length dirs) 1
-	return (list-ref last dirs) ^ suffix
+	return: ""::join (list-ref last dirs) suffix
 }
 _sys_::public throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message
