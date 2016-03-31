@@ -1416,7 +1416,7 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, raw(Car(args)))
 	}
 
-	c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$CWD"))
+	c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$PWD"))
 	dir := c.Get().String()
 
 	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdin_"))
@@ -2027,7 +2027,7 @@ func Start(parser reader, cli ui) {
 	scope0.Define(NewSymbol("_args_"), args)
 
 	if wd, err := os.Getwd(); err == nil {
-		sys.Public(NewSymbol("$CWD"), NewSymbol(wd))
+		sys.Public(NewSymbol("$PWD"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
@@ -2320,7 +2320,7 @@ func init() {
 		}
 
 		if wd, err := os.Getwd(); err == nil {
-			t.Lexical.Public(NewSymbol("$CWD"), NewSymbol(wd))
+			t.Lexical.Public(NewSymbol("$PWD"), NewSymbol(wd))
 		}
 
 		return t.Return(NewStatus(int64(status)))

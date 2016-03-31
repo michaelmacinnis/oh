@@ -13,7 +13,7 @@ var Symbols = []string{
 	"cddr", "cdr", "cell", "channel", "_channel_stderr_",
 	"_channel_stdout_", "child", "clause", "clone", "close", "closer",
 	"cmd", "condition", "conduit", "_connect_", "cons", "context",
-	"$CWD", "debug", "define", "dirs", "div", "echo", "else", "_env_",
+	"$PWD", "debug", "define", "dirs", "div", "echo", "else", "_env_",
 	"error", "eval", "eval-list", "exists", "exit", "false", "fatal",
 	"fifo", "fifos", "file", "first", "float", "for", "get-line-number",
 	"get-prompt", "get-slot", "glob", "handler", "has", "$HOME",

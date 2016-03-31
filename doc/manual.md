@@ -375,19 +375,19 @@ changed with the `set` (or, in the same scope, `define`) command.
 The command,
 
     if (cd /tmp) {
-        echo $CWD
+        echo $PWD
     }
 
 produces the output,
 
     /tmp
 
-(The current working directory is stored in the variable `$CWD`).
+(The current working directory is stored in the variable `$PWD`).
 
 If statements may have an else clause:
 
     if (cd /non-existent-directory) {
-        echo $CWD
+        echo $PWD
     } else {
         echo "Couldn't change the current working directory."
     }
@@ -395,9 +395,9 @@ If statements may have an else clause:
 If statements can be chained:
 
     if (cd /non-existent-directory) {
-        echo $CWD
+        echo $PWD
     } else: if (cd /another-non-existent-directory) {
-        echo $CWD
+        echo $PWD
     } else {
         echo "Couldn't change the current working directory, again."
     }
