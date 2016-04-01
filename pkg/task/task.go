@@ -2027,6 +2027,7 @@ func Start(parser reader, cli ui) {
 	scope0.Define(NewSymbol("_args_"), args)
 
 	if wd, err := os.Getwd(); err == nil {
+		sys.Public(NewSymbol("$OLDPWD"), NewSymbol(wd))
 		sys.Public(NewSymbol("$PWD"), NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
@@ -2313,14 +2314,34 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
-		err := os.Chdir(raw(Car(args)))
-		status := 0
-		if err != nil {
-			status = 1
+		oldpwd := NewSymbol("$OLDPWD")
+		pwd := NewSymbol("$PWD")
+
+		c, _ := Resolve(t.Lexical, t.Frame, pwd)
+		prev := c.Get().String()
+
+		dir := ""
+		if args == Null {
+			c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$HOME"))
+			dir = raw(c.Get())
+		} else {
+			dir = raw(Car(args))
 		}
 
-		if wd, err := os.Getwd(); err == nil {
-			t.Lexical.Public(NewSymbol("$PWD"), NewSymbol(wd))
+		if dir == "-" {
+			c, _ := Resolve(t.Lexical, t.Frame, oldpwd)
+			dir = c.Get().String()
+
+		}
+
+		status := 0
+
+		err := os.Chdir(dir)
+		if err != nil {
+			status = 1
+		} else if wd, err := os.Getwd(); err == nil {
+			t.Lexical.Public(pwd, NewSymbol(wd))
+			t.Lexical.Public(oldpwd, NewSymbol(prev))
 		}
 
 		return t.Return(NewStatus(int64(status)))
