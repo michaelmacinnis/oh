@@ -1043,26 +1043,26 @@ ${foo:r}</td>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>name of shell or shell script</td>
 <td>$0</td>
 <td>(status -f)</td>
-<td>$0</td>
+<td>_0_</td>
 <td>$0</td>
 <td>$0</td>
 </tr><tr><td>command line arguments</td>
 <td>$1, $2, …</td>
 <td>$argv[1], $argv[2], …</td>
-<td>$1, $2, …</td>
+<td>_1_, _2_, …</td>
 <td>$1, $2, …</td>
 <td>$1, $2, …<br>
 $argv[1], $argv[2], …</td>
 </tr><tr><td>number of command line args</td>
 <td>$#</td>
 <td>(count $argv)</td>
-<td>$#</td>
+<td>length _args_</td>
 <td>$#</td>
 <td>$#<br>
 $#argv</td>
@@ -1070,21 +1070,20 @@ $#argv</td>
 <td>$*<br>
 $@</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>$*<br>
-$@</td>
+<td>_args_</td>
 <td>$*</td>
 <td>$*<br>
 $@</td>
 </tr><tr><td>"$1" "$2" "$3" …</td>
 <td>"$@"</td>
 <td>$argv</td>
-<td>"$@"</td>
+<td>@_args_</td>
 <td></td>
 <td>"$@"</td>
 </tr><tr><td>"$1<span style="color: gray"><em>c</em></span>$2<span style="color: gray"><em>c</em></span>$3 …" where <span style="color: gray"><em>c</em></span> is first character of $IFS</td>
 <td>"$*"</td>
 <td>"$argv"</td>
-<td>"$*"</td>
+<td>"<span style="color: gray"><em>c</em></span>"::join @_args_</td>
 <td></td>
 <td>"$*"</td>
 </tr><tr><td>process id</td>
@@ -1096,26 +1095,26 @@ $@</td>
 </tr><tr><td>process id of last asynchronous command</td>
 <td>$!</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>$!</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>$!</td>
 <td>$!</td>
 </tr><tr><td>exit status of last non-asynchronous command</td>
 <td>$?</td>
 <td>$status</td>
-<td>$?</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>$?</td>
 <td>$?</td>
 </tr><tr><td>previous command executed</td>
 <td>$_</td>
 <td><span style="color: gray"><em>current command executing:</em></span><br>
 $_</td>
-<td>$_</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>$_</td>
 <td>$_</td>
 </tr><tr><td>command line options</td>
 <td>$-</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>$-</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$-</td>
 </tr><tr><td>read input</td>
@@ -1124,12 +1123,8 @@ $_</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$&lt;</td>
 <td><span style="color: gray"><em>none</em></span></td>
-</tr></tbody></table><h2 id="toc34"><span>$* and $@</span></h2>
-<p>These parameters behave differently in double quotes.</p>
-<p>Normally you should use "$@" to pass all the parameters to a subcommand. The subcommand will receive the same number of parameters as the caller received.</p>
-<p>"$*" can be used to collect the parameters in a string. The first character of $IFS is used as the join separator. This could be used to pass all of the parameters as a single parameter to the subcommand.</p>
-<p>Outside of double quotes, $* and $@ have the same behavior. Their behavior varies from shell to shell, however. In <tt>bash</tt> if you use them to pass parameters to a subcommand, the subcommand will receive more parameters than the caller if any of the parameters contain whitespace.</p>
-<p>In <tt>zsh</tt> $* and $@ behave like "$@".</p>
+</tr></tbody></table>
+<p><br>
 <table class="wiki-content-table"><tbody><tr><th colspan="6">set by shell</th>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
@@ -1217,7 +1212,9 @@ random</td>
 <td></td>
 <td></td>
 <td>SHLVL</td>
-</tr></tbody></table><table class="wiki-content-table"><tbody><tr><th colspan="6">read by shell</th>
+</tr></tbody></table>
+<p><br>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">read by shell</th>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
