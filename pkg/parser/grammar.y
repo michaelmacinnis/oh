@@ -1,6 +1,7 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token CTRLC DOLLAR_DOUBLE DOLLAR_SINGLE DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
+%token BRACE_EXPANSION CTRLC DOLLAR_DOUBLE DOLLAR_SINGLE
+%token DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
 %left ANDF       /* && */
@@ -226,6 +227,8 @@ word: SINGLE_QUOTED {
 };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };
+
+word: BRACE_EXPANSION { $$.c = NewSymbol($1.s) };
 
 %%
 

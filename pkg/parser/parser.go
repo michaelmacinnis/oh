@@ -7,6 +7,7 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
+	"strings"
 )
 
 type scanner struct {
@@ -68,15 +69,29 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 	defer func() {
 		exists := false
 
+		v := string(s.line[s.start:s.cursor])
+
 		switch s.token {
+		case SYMBOL:
+			if strings.ContainsAny(v, "{}") {
+				if v == "{" || v == "}" {
+					s.token = s.line[s.start]
+				} else {
+					s.token = BRACE_EXPANSION
+				}
+				token = int(s.token)
+			}
+			lval.s = v
+
 		case BACKGROUND, ORF, ANDF, PIPE, REDIRECT, SUBSTITUTE:
-			lval.s, exists = operator[string(s.line[s.start:s.cursor])]
+			lval.s, exists = operator[v]
 			if exists {
 				break
 			}
-			fallthrough
+			lval.s = v
+
 		default:
-			lval.s = string(s.line[s.start:s.cursor])
+			lval.s = v
 		}
 
 		s.state = ssStart
@@ -135,8 +150,8 @@ main:
 			default:
 				s.state = ssSymbol
 				continue main
-			case '\n', '%', '(', ')', ';', '@', '`', '{', '}':
-				s.token = s.line[s.cursor]
+			case '\n', '%', '(', ')', ';', '@', '`', '}':
+				s.token = s.line[s.start]
 			case '\t', ' ':
 				s.state = ssStart
 			case '!':
@@ -292,7 +307,7 @@ main:
 		case ssSymbol:
 			switch s.line[s.cursor] {
 			case '\n', '%', '&', '\'', '(', ')', ';',
-				'<', '@', '`', '{', '|', '}',
+				'<', '@', '`', '|',
 				'\t', ' ', '"', '#', ':', '>':
 				s.token = SYMBOL
 				continue main
