@@ -45,11 +45,12 @@ define _connect_: syntax (conduit name) = {
 			p::_writer_close_
 		}
 		block {
-			e::eval: quasiquote: block {
+			define s: e::eval: quasiquote: block {
 				public _stdin_ = (unquote p)
 				eval (unquote right)
 			}
 			p::_reader_close_
+			return s
 		}
 	}
 }
