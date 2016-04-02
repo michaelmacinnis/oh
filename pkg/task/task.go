@@ -11,6 +11,7 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/peterh/liner"
 	"math/big"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Binding interface {
@@ -2212,6 +2214,8 @@ func glob(t *Task, args Cell) Cell {
 }
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
+
 	CacheSymbols(common.Symbols...)
 
 	runnable = make(chan bool)
@@ -2621,6 +2625,9 @@ func init() {
 
 		return t.Return(NewPipe(t.Lexical, r, w))
 	})
+	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
+		return t.Return(NewFloat(rand.Float64()))
+	})
 	scope0.DefineMethod("set-car", func(t *Task, args Cell) bool {
 		SetCar(Car(args), Cadr(args))
 
@@ -2741,9 +2748,10 @@ func init() {
 	scope0.Define(NewSymbol("false"), False)
 	scope0.Define(NewSymbol("true"), True)
 
-	scope0.Define(NewSymbol("$$"), NewInteger(int64(os.Getpid())))
 	scope0.Define(NewSymbol("_env_"), env)
+	scope0.Define(NewSymbol("_pid_"), NewInteger(int64(os.Getpid())))
 	scope0.Define(NewSymbol("_platform_"), NewSymbol(Platform))
+	scope0.Define(NewSymbol("_ppid_"), NewInteger(int64(os.Getppid())))
 	scope0.Define(NewSymbol("_root_"), scope0)
 	scope0.Define(NewSymbol("_sys_"), sys)
 

@@ -544,7 +544,7 @@ echo "foo is $foo"</td>
 <td>set foo 7<br>
 echo "foo is $foo"</td>
 <td>define foo = 7<br>
-echo $"foo is ${foo}"</td>
+echo $"foo is $foo"</td>
 <td>setenv foo 7<br>
 echo "foo is $foo"</td>
 <td>foo=7<br>
@@ -1089,7 +1089,7 @@ $@</td>
 </tr><tr><td>process id</td>
 <td>$$</td>
 <td>%self</td>
-<td>$$</td>
+<td>_pid_</td>
 <td>$$</td>
 <td>$$</td>
 </tr><tr><td>process id of last asynchronous command</td>
@@ -1129,13 +1129,13 @@ $_</td>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>shell version</td>
 <td>BASH_VERSION</td>
 <td></td>
-<td>KSH_VERSION</td>
+<td></td>
 <td>tcsh</td>
 <td>ZSH_VERSION</td>
 </tr><tr><td>return value of last syscall</td>
@@ -1153,15 +1153,15 @@ $_</td>
 </tr><tr><td>current line number of script</td>
 <td>LINENO</td>
 <td></td>
-<td>LINENO</td>
+<td><span style="color: gray"><em>built-in function:</em></span><br>
+get-line-number</td>
 <td></td>
 <td>LINENO</td>
 </tr><tr><td>set by getopts</td>
 <td>OPTARG<br>
 OPTIND</td>
 <td></td>
-<td>OPTARG<br>
-OPTIND</td>
+<td></td>
 <td></td>
 <td>OPTARG<br>
 OPTIND</td>
@@ -1175,15 +1175,15 @@ MACHTYPE</td>
 </tr><tr><td>shell parent pid</td>
 <td>PPID</td>
 <td></td>
-<td>PPID</td>
+<td>_ppid_</td>
 <td></td>
 <td>PPID</td>
 </tr><tr><td>working directory and previous working directory</td>
 <td>PWD<br>
 OLDPWD</td>
 <td>PWD<br><span style="color: gray"><em>none</em></span></td>
-<td>PWD<br>
-OLDPWD</td>
+<td>$PWD<br>
+$OLDPWD</td>
 <td></td>
 <td>PWD<br>
 OLDPWD</td>
@@ -1191,19 +1191,20 @@ OLDPWD</td>
 <td>RANDOM</td>
 <td><span style="color: gray"><em>built-in function:</em></span><br>
 random</td>
-<td>RANDOM</td>
+<td><span style="color: gray"><em>built-in function:</em></span><br>
+random</td>
 <td></td>
 <td>RANDOM</td>
 </tr><tr><td>return value</td>
 <td>REPLY</td>
 <td></td>
-<td>REPLY</td>
+<td></td>
 <td></td>
 <td>REPLY</td>
 </tr><tr><td>seconds since shell was invoked</td>
 <td>SECONDS</td>
 <td></td>
-<td>SECONDS</td>
+<td></td>
 <td></td>
 <td>SECONDS</td>
 </tr><tr><td>incremented each time a subshell is called</td>
