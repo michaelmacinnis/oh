@@ -2261,7 +2261,10 @@ func init() {
 				return "$"
 			}
 
-			name := ref[2 : len(ref)-1]
+			name := ref[1:]
+			if name[0] == '{' {
+				name = name[1 : len(name)-1]
+			}
 			sym := NewSymbol(name)
 
 			c, _ := Resolve(l, t.Frame, sym)
@@ -2270,13 +2273,13 @@ func init() {
 				c, _ = Resolve(l, t.Frame, sym)
 			}
 			if c == nil {
-				return "${" + name + "}"
+				return ref
 			}
 
 			return raw(c.Get())
 		}
 
-		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})")
+		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
 		modified := r.ReplaceAllStringFunc(original, f)
 
 		return t.Return(NewString(t, modified))
