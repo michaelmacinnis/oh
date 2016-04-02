@@ -55,11 +55,12 @@ define _redirect_: syntax (name mode closer) = {
 			set f: open mode c
 			set c = f
 		}
-		e::eval: quasiquote: block {
+		define s: e::eval: quasiquote: block {
 			public (unquote name) (unquote c)
 			eval (unquote cmd)
 		}
 		if (not: is-null f): eval: quasiquote: f::(unquote closer)
+		return s
 	}
 }
 define ...: method (: args) = {
