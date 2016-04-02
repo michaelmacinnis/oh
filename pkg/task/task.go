@@ -1580,7 +1580,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 			args := t.Arguments()
 
 			if state == psExecBuiltin {
-				args = expand(t, args)
+				args = glob(t, args)
 			}
 
 			t.Code = args
@@ -2148,7 +2148,32 @@ func control(t *Task, args Cell) *Task {
 	return found
 }
 
-func expand(t *Task, args Cell) Cell {
+func expand(braces string) []string {
+	prefix := strings.SplitN(braces, "{", 2)
+	if len(prefix) != 2 {
+		return []string{braces}
+	}
+
+	suffix := strings.SplitN(prefix[1], "}", 2)	
+	if len(suffix) != 2 {
+		return []string{braces}
+	}
+
+	middle := strings.Split(suffix[0], ",")
+	if len(middle) <= 1 {
+		return []string{braces}
+	}
+
+	expanded := make([]string, 0, len(middle))
+	for _, v := range middle {
+		v = prefix[0] + v + suffix[1]
+		expanded = append(expanded, expand(v)...)
+	}
+
+	return expanded
+}
+
+func glob(t *Task, args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
@@ -2164,20 +2189,21 @@ func expand(t *Task, args Cell) Cell {
 			s = filepath.Join(os.Getenv("HOME"), s[1:])
 		}
 
-		if strings.IndexAny(s, "*?[") == -1 {
-			list = AppendTo(list, NewSymbol(s))
-			continue
-		}
+		for _, e := range expand(s) {
+			if strings.IndexAny(e, "*?[") == -1 {
+				list = AppendTo(list, NewSymbol(e))
+				continue
+			}
 
-		m, err := filepath.Glob(s)
-		if err != nil || len(m) == 0 {
-			panic("no matches found: " + s)
-		}
+			m, err := filepath.Glob(e)
+			if err != nil || len(m) == 0 {
+				panic("no matches found: " + e)
+			}
 
-		for _, v := range m {
-			if v[0] != '.' || s[0] == '.' {
-				e := NewString(t, v)
-				list = AppendTo(list, e)
+			for _, v := range m {
+				if v[0] != '.' || s[0] == '.' {
+					list = AppendTo(list, NewString(t, v))
+				}
 			}
 		}
 	}
