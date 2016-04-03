@@ -183,6 +183,19 @@ define list-tail: method (k x) = {
 		return x
 	}
 }
+# TODO: Replace with builtin rather than invoking bc.
+define math: method (S) e = {
+	set S: e::interpolate S
+	catch ex {
+		set ex::type = "error/syntax"
+		set ex::message = $"Malformed expression: ${S}"
+	}
+
+	rational @(_backtick_ (block {
+		echo "scale=3"
+		write: symbol S
+	} | bc))
+}
 define object: syntax (: body) e = {
 	e::eval: cons (quote block): append body (quote: context)
 }
