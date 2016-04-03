@@ -606,7 +606,7 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="word-separating-char" id="word-separating-char"></a><a href="http://hyperpolyglot.org/unix-shells#word-separating-char-note">word separating</a></td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
-<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @ { }</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 <td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
 </tr><tr><td><a name="quoting-escaping-char" id="quoting-escaping-char"></a><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char-note">quoting and escaping</a></td>
@@ -618,7 +618,7 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="shell-expansion-char" id="shell-expansion-char"></a><a href="http://hyperpolyglot.org/unix-shells#shell-expansion-char-note">shell expansion</a></td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">( )</span><br><span style="color: gray"><em>pathname:</em></span> * ?</td>
-<td><br><br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`( )</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
+<td><br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 <td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
 </tr><tr><td><a name="other-special-char" id="other-special-char"></a><a href="http://hyperpolyglot.org/unix-shells#other-special-char-note">other special</a></td>
@@ -630,13 +630,13 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="bareword-char" id="bareword-char"></a><a href="http://hyperpolyglot.org/unix-shells#bareword-char-note">bareword</a></td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % ! ^ =</td>
-<td>A-Z a-z 0-9 _ - . , + / = $</td>
+<td>A-Z a-z 0-9 _ - . , + / = $ { }</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % =</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 </tr><tr><td><a name="var-char" id="var-char"></a><a href="http://hyperpolyglot.org/unix-shells#var-char-note">variable name</a></td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
-<td>A-Z a-z 0-9 _ - . , + / = $</td>
+<td>A-Z a-z 0-9 _ - . , + / = $ { }</td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
 </tr></tbody></table>
@@ -659,13 +659,11 @@ $<span style="color: gray"><em>var</em></span><br>
 set -g<br>
 set -e <span style="color: gray"><em>var</em></span><br>
 vared <span style="color: gray"><em>var</em></span></td>
-<td>
-define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
+<td>define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
 <span style="color: gray"><em>var</em></span><br>
 <br>
-<span style="color: gray"><em>Variables are not global by default.<br>
-To define a new global variable:</span><br>
-_root_::public <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
+<br>
+<span style="color: gray"><em>(Variables not global by default).</span><br>
 </td>
 <td>set <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
 $<span style="color: gray"><em>var</em></span><br>
@@ -734,7 +732,7 @@ unsetopt</td>
 <td></td>
 </tr></tbody></table>
 <p><a name="var-expansion" id="var-expansion"></a></p>
-<h1 id="toc31"><span><a href="http://hyperpolyglot.org/unix-shells#top">Variable Expansion</a></span></h1>
+<h1 id="toc31"><span><a href="#top">Variable Expansion</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -890,7 +888,7 @@ ${foo:u}</td>
 <td>foo=lorem<br>
 ${foo^}</td>
 <td></td>
-<td>((<span style="color: gray"><em>var</em></span>::slice 0 1)::upper) ^ (<span style="color: gray"><em>var</em></span>::slice 1)</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td></td>
@@ -907,7 +905,7 @@ ${foo:l}</td>
 <td>foo=LOREM<br>
 ${foo,}</td>
 <td></td>
-<td>((<span style="color: gray"><em>var</em></span>::slice 0 1)::lower) ^ (<span style="color: gray"><em>var</em></span>::slice 1)</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td></td>
@@ -957,7 +955,7 @@ ${foo:e}</td>
 ${foo:r}</td>
 <td></td>
 </tr></tbody></table><p><a name="brace-tilde-cmd-pathname-expansion" id="brace-tilde-cmd-pathname-expansion"></a></p>
-<h1 id="toc32"><span><a href="http://hyperpolyglot.org/unix-shells#top">Brace, Tilde, Command, and Pathname Expansion</a></span></h1>
+<h1 id="toc32"><span><a href="#top">Brace, Tilde, Command, and Pathname Expansion</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -1037,7 +1035,7 @@ ${foo:r}</td>
 <td>echo /bin/[a-f]*</td>
 <td>echo /bin/[a-f]*</td>
 </tr></tbody></table><p><a name="special-var" id="special-var"></a></p>
-<h1 id="toc33"><span><a href="http://hyperpolyglot.org/unix-shells#top">Special Variables</a></span></h1>
+<h1 id="toc33"><span><a href="#top">Special Variables</a></span></h1>
 <p><em>in zsh terminology, special means read-only variables that cannot have their type changed</em></p>
 <table class="wiki-content-table"><tbody><tr><th colspan="6">non-alphabetical variables</th>
 </tr><tr><th></th>
@@ -1168,7 +1166,8 @@ OPTIND</td>
 </tr><tr><td>operating system and machine type</td>
 <td></td>
 <td></td>
-<td></td>
+<td>_platform_<br>
+<span style="color: gray"><em>none</em></span></td>
 <td></td>
 <td>OSTYPE<br>
 MACHTYPE</td>
@@ -1219,7 +1218,7 @@ random</td>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>browser</td>
@@ -1231,15 +1230,14 @@ random</td>
 </tr><tr><td>cd search path</td>
 <td>CDPATH</td>
 <td>CDPATH</td>
-<td>CDPATH</td>
+<td></td>
 <td>cdpath</td>
 <td>CDPATH<br>
 cdpath</td>
 </tr><tr><td>terminal width and height</td>
 <td></td>
 <td></td>
-<td>COLUMNS<br>
-LINES</td>
+<td></td>
 <td></td>
 <td>COLUMNS<br>
 LINES</td>
@@ -1247,34 +1245,33 @@ LINES</td>
 <td>FCEDIT<br>
 EDITOR</td>
 <td></td>
-<td>FCEDIT<br>
-EDITOR</td>
+<td></td>
 <td></td>
 <td>FCEDIT<br>
 EDITOR</td>
 </tr><tr><td>shell startup file</td>
 <td>ENV</td>
 <td></td>
-<td>ENV</td>
+<td></td>
 <td></td>
 <td>ENV</td>
 </tr><tr><td>function definition search path</td>
 <td></td>
 <td></td>
-<td>FPATH</td>
+<td></td>
 <td></td>
 <td>fpath<br>
 FPATH</td>
 </tr><tr><td>history file path</td>
 <td>HISTFILE</td>
 <td></td>
-<td>HISTFILE</td>
+<td></td>
 <td></td>
 <td>HISTFILE</td>
 </tr><tr><td>size of history</td>
 <td>HISTSIZE</td>
 <td></td>
-<td>HISTSIZE</td>
+<td></td>
 <td></td>
 <td>HISTSIZE</td>
 </tr><tr><td>home directory</td>
@@ -1286,7 +1283,7 @@ FPATH</td>
 </tr><tr><td>input field separators</td>
 <td>IFS</td>
 <td></td>
-<td>IFS</td>
+<td></td>
 <td></td>
 <td>IFS</td>
 </tr><tr><td>locale</td>
@@ -1311,7 +1308,7 @@ READNULLCMD</td>
 </tr><tr><td>prompt customization<br><span style="color: gray"><em>main, secondary, select, trace</em></span></td>
 <td>PS1 PS2 PS4</td>
 <td></td>
-<td>PS1 PS2 PS3 PS4</td>
+<td></td>
 <td></td>
 <td>PS1 PS2 PS3 PS4</td>
 </tr><tr><td>right prompt customization</td>
@@ -1329,7 +1326,7 @@ READNULLCMD</td>
 </tr><tr><td>timeout</td>
 <td></td>
 <td></td>
-<td>TMOUT</td>
+<td></td>
 <td></td>
 <td>TMOUT</td>
 </tr><tr><td>system tmp directory</td>
@@ -1345,7 +1342,7 @@ READNULLCMD</td>
 <td></td>
 <td></td>
 </tr></tbody></table><p><a name="arith-conditional-expr" id="arith-conditional-expr"></a></p>
-<h1 id="toc35"><span><a href="http://hyperpolyglot.org/unix-shells#top">Arithmetic and Conditional Expressions</a></span></h1>
+<h1 id="toc35"><span><a href="#top">Arithmetic and Conditional Expressions</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -1637,7 +1634,7 @@ fi</code>
 <h2 id="toc46"><span><a href="http://hyperpolyglot.org/unix-shells#eval">eval</a></span></h2>
 <p>How to evaluate a string as a shell command.</p>
 <p><a name="arrays" id="arrays"></a></p>
-<h1 id="toc47"><span><a href="http://hyperpolyglot.org/unix-shells#top">Arrays</a></span></h1>
+<h1 id="toc47"><span><a href="#top">Arrays</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -1790,7 +1787,7 @@ unset a[*]</td>
 <p>Deleting elements from a <tt>bash</tt> array leaves gaps. Deleting elements from a <tt>zsh</tt> arrays causes higher indexed elements to move to lower index positions.</p>
 <h2 id="toc59"><span>delete array</span></h2>
 <p><a name="associative-arrays" id="associative-arrays"></a></p>
-<h1 id="toc60"><span><a href="http://hyperpolyglot.org/unix-shells#top">Associative Arrays</a></span></h1>
+<h1 id="toc60"><span><a href="#top">Associative Arrays</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -1842,7 +1839,7 @@ ${!foo[*]}</td>
 <td>unset -v foo</td>
 </tr></tbody></table><p>Associative arrays were added to <tt>bash</tt> with version 4.0.</p>
 <p><a name="functions" id="functions"></a></p>
-<h1 id="toc61"><span><a href="http://hyperpolyglot.org/unix-shells#top">Functions</a></span></h1>
+<h1 id="toc61"><span><a href="#top">Functions</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -1989,7 +1986,7 @@ unfunction <span style="color: gray"><em>foo</em></span></td>
 <h2 id="toc73"><span><a href="http://hyperpolyglot.org/unix-shells#del-func">delete function</a></span></h2>
 <p>How to remove a user defined function.</p>
 <p><a name="cmd-resolution" id="cmd-resolution"></a></p>
-<h1 id="toc74"><span><a href="http://hyperpolyglot.org/unix-shells#top">Command Resolution</a></span></h1>
+<h1 id="toc74"><span><a href="#top">Command Resolution</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2117,7 +2114,7 @@ foo</code>
 <p><a name="cmd-path-all-note" id="cmd-path-all-note"></a></p>
 <h2 id="toc82"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-path-all">command paths</a></span></h2>
 <p><a name="arg-options" id="arg-options"></a></p>
-<h1 id="toc83"><span><a href="http://hyperpolyglot.org/unix-shells#top">Arguments and Options</a></span></h1>
+<h1 id="toc83"><span><a href="#top">Arguments and Options</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2239,7 +2236,7 @@ do
 done</code>
 </pre></div>
 <p><a name="execution-control" id="execution-control"></a></p>
-<h1 id="toc94"><span><a href="http://hyperpolyglot.org/unix-shells#top">Execution Control</a></span></h1>
+<h1 id="toc94"><span><a href="#top">Execution Control</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2450,7 +2447,7 @@ for i in {1..10}; do echo "la"; done</code>
 <h2 id="toc106"><span>while</span></h2>
 <p>The remarks above on <a href="http://hyperpolyglot.org/unix-shells#if">if</a> conditions also apply to the while loop condition.</p>
 <p><a name="redirection" id="redirection"></a></p>
-<h1 id="toc107"><span><a href="http://hyperpolyglot.org/unix-shells#top">Redirection</a></span></h1>
+<h1 id="toc107"><span><a href="#top">Redirection</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2593,7 +2590,7 @@ $ ls 3&gt; /dev/stdout 1&gt; /dev/stderr 2&gt;&amp;3 | wc</code>
 <pre><code>$ ( ls &gt; /tmp/stdout.txt ) &gt;&amp; /tmp/stderr.txt</code>
 </pre></div>
 <p><a name="echo-read" id="echo-read"></a></p>
-<h1 id="toc108"><span><a href="http://hyperpolyglot.org/unix-shells#top">Echo and Read</a></span></h1>
+<h1 id="toc108"><span><a href="#top">Echo and Read</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2686,7 +2683,7 @@ csb</td>
 <p>The user can put a backslash in front of a newline to split the input up over multiple lines. The backslash and newline are stripped from the input. The user can put backslash into the variable by entering two backslashes. The <tt>-r</tt> option disables this feature, allowing the user to enter literal backslashes with a single keystroke.</p>
 <p><tt>tcsh</tt> gets input from the user by reading from the special variable <tt>$&lt;</tt>. Backslashes are always interpreted literally.</p>
 <p><a name="file-dir" id="file-dir"></a></p>
-<h1 id="toc112"><span><a href="http://hyperpolyglot.org/unix-shells#top">Files and Directories</a></span></h1>
+<h1 id="toc112"><span><a href="#top">Files and Directories</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2829,7 +2826,7 @@ printf("%o\n", perms &amp; ~mask);</code>
 <p>If <tt>umask</tt> is given a numeric argument it is always interpreted as octal; a leading zero is not required.</p>
 <p><tt>umask</tt> also supports the symbolic notation used by <a href="http://linux.die.net/man/1/chmod">chmod</a>. In this case the argument is one or more 3 character sequences of the format <tt>[agou][-+][rwx]</tt> separated by commas.</p>
 <p><a name="process-job-control" id="process-job-control"></a></p>
-<h1 id="toc118"><span><a href="http://hyperpolyglot.org/unix-shells#top">Process and Job Control</a></span></h1>
+<h1 id="toc118"><span><a href="#top">Process and Job Control</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -2998,7 +2995,7 @@ kill</td>
 <p><a name="exec-note" id="exec-note"></a></p>
 <h2 id="toc121"><span><a href="http://hyperpolyglot.org/unix-shells#exec">execute file</a></span></h2>
 <p><a name="history-cmd-expansion" id="history-cmd-expansion"></a></p>
-<h1 id="toc122"><span><a href="http://hyperpolyglot.org/unix-shells#top">History</a></span></h1>
+<h1 id="toc122"><span><a href="#top">History</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th colspan="6">history commands</th>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
@@ -3232,7 +3229,7 @@ set savehist=2000 merge</td>
 <td></td>
 <td></td>
 </tr></tbody></table><p><a name="key-bindings" id="key-bindings"></a></p>
-<h1 id="toc128"><span><a href="http://hyperpolyglot.org/unix-shells#top">Key Bindings</a></span></h1>
+<h1 id="toc128"><span><a href="#top">Key Bindings</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -3285,7 +3282,7 @@ set savehist=2000 merge</td>
 <p><em>how to create a new keymap with zsh</em></p>
 <p><em>alternate fish syntax referring to keys</em></p>
 <p><a name="startup-file" id="startup-file"></a></p>
-<h1 id="toc129"><span><a href="http://hyperpolyglot.org/unix-shells#top">Startup Files</a></span></h1>
+<h1 id="toc129"><span><a href="#top">Startup Files</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
@@ -3351,7 +3348,7 @@ end</code>
 end</code>
 </pre></div>
 <p><a name="prompt-customization" id="prompt-customization"></a></p>
-<h1 id="toc130"><span><a href="http://hyperpolyglot.org/unix-shells#top">Prompt Customization</a></span></h1>
+<h1 id="toc130"><span><a href="#top">Prompt Customization</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
