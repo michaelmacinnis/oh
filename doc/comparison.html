@@ -1346,7 +1346,7 @@ READNULLCMD</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="test-cmd" id="test-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#test-cmd-note">test command</a></td>
@@ -1362,19 +1362,21 @@ test -e /etc</td>
 </tr><tr><td><a name="true-cmd" id="true-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#true-cmd-note">true command</a></td>
 <td>true</td>
 <td>true</td>
-<td>true</td>
+<td>/bin/true<br>
+<span style="color: gray"><em>(true is a boolean value in oh)</em></span></td>
 <td></td>
 <td>true</td>
 </tr><tr><td><a name="false-cmd" id="false-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#false-cmd-note">false command</a></td>
 <td>false</td>
 <td>false</td>
-<td>false</td>
+<td>/bin/false<br>
+<span style="color: gray"><em>(false is a boolean value in oh)</em></span></td>
 <td></td>
 <td>false</td>
 </tr><tr><td><a name="conditional-cmd" id="conditional-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#conditional-cmd-note">conditional command</a></td>
 <td>[[ ]]</td>
 <td></td>
-<td>[[ ]]</td>
+<td></td>
 <td></td>
 <td>[[ ]]</td>
 </tr><tr><td><a name="conditional-expr" id="conditional-expr"></a><a href="http://hyperpolyglot.org/unix-shells#conditional-expr-note">conditional expression</a></td>
@@ -1386,19 +1388,19 @@ test -e /etc</td>
 </tr><tr><td><a name="arith-expansion" id="arith-expansion"></a><a href="http://hyperpolyglot.org/unix-shells#arith-expansion-note">arithmetic expansion</a></td>
 <td>$(( 1 + 1 ))</td>
 <td>math '1 + 1'</td>
-<td>$(( 1 + 1 ))</td>
+<td>math '1 + 1'</td>
 <td></td>
 <td>$(( 1 + 1 ))</td>
 </tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#arith-expansion">floating point expansion</a></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>math '1.1 + 1.1'</td>
-<td>$(( 1.1 + 1.1 ))</td>
+<td>math '1.1 + 1.1'</td>
 <td></td>
 <td>$(( 1.1 + 1.1 ))</td>
 </tr><tr><td><a name="let-expr" id="let-expr"></a><a href="http://hyperpolyglot.org/unix-shells#let-expr-note">let expression</a></td>
 <td>let "<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>expr</em></span>"</td>
 <td></td>
-<td>let "<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>expr</em></span>"</td>
+<td></td>
 <td></td>
 <td>let "<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>expr</em></span>"</td>
 </tr><tr><td><a name="external-expr" id="external-expr"></a><a href="http://hyperpolyglot.org/unix-shells#external-expr-note">external expression</a></td>
@@ -1415,7 +1417,7 @@ expr 0 '&lt;' 1</td>
 </tr><tr><td><a name="arith-cmd" id="arith-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#arith-cmd-note">arithmetic command</a></td>
 <td>(( ))</td>
 <td></td>
-<td>(( ))</td>
+<td></td>
 <td></td>
 <td>(( ))</td>
 </tr><tr><td><a name="eval" id="eval"></a><a href="http://hyperpolyglot.org/unix-shells#eval-note">eval</a></td>
@@ -1429,12 +1431,6 @@ done</td>
 end</td>
 <td>while true; do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd\?'$ '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
 done</td>
-</tr><tr><td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>filetest</td>
-<td></td>
 </tr></tbody></table>
 <p><a name="arrays" id="arrays"></a></p>
 <h1 id="toc47"><span><a href="#top">Arrays</a></span></h1>
