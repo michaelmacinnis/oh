@@ -1425,8 +1425,8 @@ expr 0 '&lt;' 1</td>
 done</td>
 <td>while true<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
 end</td>
-<td>while true; do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd?'$ '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
-done</td>
+<td>while (define cmd: read) {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval cmd<br>
+}</td>
 <td>while (1)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo -n '% '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $&lt;<br>
 end</td>
 <td>while true; do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd\?'$ '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>

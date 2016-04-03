@@ -75,6 +75,22 @@ func JoinProcess(proc *os.Process) int {
 	return (<-response).status.ExitStatus()
 }
 
+func ResetForegroundGroup(f *os.File) bool {
+	if f != os.Stdin {
+		return false
+	}
+
+	g := Pgid()
+	if g <= 0 {
+		return false
+	}
+
+	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
+		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&g)))
+
+	return true
+}
+
 func SetForegroundGroup(group int) {
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
 		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))

@@ -39,6 +39,10 @@ func JoinProcess(proc *os.Process) int {
 	return status.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
+func ResetForegroundGroup(f *os.File) bool {
+	return false
+}
+
 func SetForegroundGroup(group int) {}
 
 func SuspendProcess(pid int) {}

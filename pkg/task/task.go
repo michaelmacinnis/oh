@@ -686,23 +686,37 @@ func (p *Pipe) Read(t *Task) Cell {
 		return Null
 	}
 
-	if p.c == nil {
-		p.c = make(chan Cell)
+	if p.d == nil {
 		p.d = make(chan bool)
-		go func() {
-			parse(
-				t, p.reader(), p.r.Name(), deref,
-				func(c Cell, f string, l int, u string) Cell {
-					t.Line = l
-					p.c <- c
-					<-p.d
-					return nil
-				},
-			)
-			p.c <- Null
-		}()
 	} else {
 		p.d <- true
+	}
+
+	if p.c == nil {
+		p.c = make(chan Cell)
+		go func() {
+			for attempt := 0; attempt < 2; attempt++ {
+				parse(
+					t, p.reader(), p.r.Name(), deref,
+					func(c Cell, f string, l int, u string) Cell {
+						attempt = 0
+
+						t.Line = l
+						p.c <- c
+						<-p.d
+						return nil
+					},
+				)
+
+				if !ResetForegroundGroup(p.r) {
+					break
+				}
+
+			}
+			p.d = nil
+			p.c <- Null
+			p.c = nil
+		}()
 	}
 
 	return <-p.c
@@ -773,7 +787,7 @@ func (r *Registers) Arguments() Cell {
 func (r *Registers) Complete(word string) []string {
 	cl := r.Lexical.Complete(word)
 
-	for f:= r.Frame; f != Null; f = Cdr(f) {
+	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(Context)
 		cl = append(cl, o.Complete(word)...)
 	}
@@ -791,7 +805,7 @@ func (r *Registers) GetState() int64 {
 func (r *Registers) MakeEnv() []string {
 	e := r.Lexical.Exported()
 
-	for f:= r.Frame; f != Null; f = Cdr(f) {
+	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(Context)
 		for k, v := range o.Exported() {
 			if _, ok := e[k]; !ok {
@@ -802,8 +816,8 @@ func (r *Registers) MakeEnv() []string {
 
 	l := make([]string, 0, len(e))
 
-	for k, v := range(e) {
-		l = append(l, k[1:] + "=" + raw(v))
+	for k, v := range e {
+		l = append(l, k[1:]+"="+raw(v))
 	}
 
 	return l
@@ -2156,7 +2170,7 @@ func expand(braces string) []string {
 		return []string{braces}
 	}
 
-	suffix := strings.SplitN(prefix[1], "}", 2)	
+	suffix := strings.SplitN(prefix[1], "}", 2)
 	if len(suffix) != 2 {
 		return []string{braces}
 	}

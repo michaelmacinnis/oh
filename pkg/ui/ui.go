@@ -11,8 +11,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"syscall"
-	"unsafe"
 )
 
 type cli struct {
@@ -259,13 +257,5 @@ func restart(err error) bool {
 		return false
 	}
 
-	g := task.Pgid()
-	if g > 0 {
-		syscall.Syscall(syscall.SYS_IOCTL,
-			uintptr(syscall.Stdin),
-			syscall.TIOCSPGRP,
-			uintptr(unsafe.Pointer(&g)))
-	}
-
-	return true
+	return task.ResetForegroundGroup(os.Stdin)
 }
