@@ -191,8 +191,8 @@ define math: method (S) e = {
 		set ex::message = $"Malformed expression: ${S}"
 	}
 
-	rational @(_backtick_ (block {
-		echo "scale=3"
+	float @(_backtick_ (block {
+		echo "scale=6"
 		write: symbol S
 	} | bc))
 }
