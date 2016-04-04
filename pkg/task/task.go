@@ -140,7 +140,8 @@ var (
 	envs        *Env
 	frame0      Cell
 	external    Cell
-	interactive bool
+	home        = "-"
+	interactive = false
 	jobs        = map[int]*Task{}
 	parse       reader
 	pgid        int
@@ -1596,7 +1597,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 			args := t.Arguments()
 
 			if state == psExecBuiltin {
-				args = glob(t, args)
+				args = expand(t, args)
 			}
 
 			t.Code = args
@@ -2051,7 +2052,6 @@ func Start(parser reader, cli ui) {
 	}
 	scope0.Define(NewSymbol("_origin_"), NewSymbol(origin))
 
-	interactive = false
 	if argc > 1 {
 		if os.Args[1] == "-c" {
 			if argc == 2 {
@@ -2093,6 +2093,31 @@ func asConduit(o Context) Conduit {
 	}
 
 	return nil
+}
+
+func braceExpand(arg string) []string {
+	prefix := strings.SplitN(arg, "{", 2)
+	if len(prefix) != 2 {
+		return []string{arg}
+	}
+
+	suffix := strings.SplitN(prefix[1], "}", 2)
+	if len(suffix) != 2 {
+		return []string{arg}
+	}
+
+	middle := strings.Split(suffix[0], ",")
+	if len(middle) <= 1 {
+		return []string{arg}
+	}
+
+	expanded := make([]string, 0, len(middle))
+	for _, v := range middle {
+		v = prefix[0] + v + suffix[1]
+		expanded = append(expanded, braceExpand(v)...)
+	}
+
+	return expanded
 }
 
 func conduitEnv() *Env {
@@ -2164,48 +2189,35 @@ func control(t *Task, args Cell) *Task {
 	return found
 }
 
-func expand(braces string) []string {
-	prefix := strings.SplitN(braces, "{", 2)
-	if len(prefix) != 2 {
-		return []string{braces}
-	}
-
-	suffix := strings.SplitN(prefix[1], "}", 2)
-	if len(suffix) != 2 {
-		return []string{braces}
-	}
-
-	middle := strings.Split(suffix[0], ",")
-	if len(middle) <= 1 {
-		return []string{braces}
-	}
-
-	expanded := make([]string, 0, len(middle))
-	for _, v := range middle {
-		v = prefix[0] + v + suffix[1]
-		expanded = append(expanded, expand(v)...)
-	}
-
-	return expanded
-}
-
-func glob(t *Task, args Cell) Cell {
+func expand(t *Task, args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
 		c := Car(args)
-
 		s := raw(c)
-		if _, ok := c.(*Symbol); !ok {
+
+		done := true
+
+		switch c.(type) {
+		case *Symbol:
+			done = false
+		case *String:
+			s = interpolate(t.Lexical, t.Frame, s)
+		}
+
+		if done {
 			list = AppendTo(list, NewSymbol(s))
 			continue
 		}
 
-		if s[:1] == "~" {
-			s = filepath.Join(os.Getenv("HOME"), s[1:])
-		}
+		for _, e := range braceExpand(s) {
+			if e[:1] == "~" {
+				if home == "-" {
+					home = "+" + os.Getenv("HOME")
+				}
+				e = filepath.Join(home[1:], e[1:])
+			}
 
-		for _, e := range expand(s) {
 			if strings.IndexAny(e, "*?[") == -1 {
 				list = AppendTo(list, NewSymbol(e))
 				continue
@@ -2293,42 +2305,15 @@ func init() {
 		return t.Return(NewBoolean(c != nil))
 	})
 	object.PublicMethod("interpolate", func(t *Task, args Cell) bool {
-		original := raw(Car(args))
-
 		l := t.Self()
 		if t.Lexical == l.Expose() {
 			l = t.Lexical
 		}
 
-		f := func(ref string) string {
-			if ref == "$$" {
-				return "$"
-			}
-
-			name := ref[1:]
-			if name[0] == '{' {
-				name = name[1 : len(name)-1]
-			}
-			sym := NewSymbol(name)
-
-			c, _ := Resolve(l, t.Frame, sym)
-			if c == nil {
-				sym := NewSymbol("$" + name)
-				c, _ = Resolve(l, t.Frame, sym)
-			}
-			if c == nil {
-				return ref
-			}
-
-			return raw(c.Get())
-		}
-
-		r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
-		modified := r.ReplaceAllStringFunc(original, f)
+		modified := interpolate(l, t.Frame, raw(Car(args)))
 
 		return t.Return(NewString(t, modified))
 	})
-
 	object.PublicMethod("set-slot", func(t *Task, args Cell) bool {
 		s := raw(Car(args))
 		v := Cadr(args)
@@ -2780,6 +2765,34 @@ func init() {
 	}
 
 	frame0 = List(env, sys)
+}
+
+func interpolate(l Context, d Cell, s string) string {
+	f := func(ref string) string {
+		if ref == "$$" {
+			return "$"
+		}
+
+		name := ref[1:]
+		if name[0] == '{' {
+			name = name[1 : len(name)-1]
+		}
+		sym := NewSymbol(name)
+
+		c, _ := Resolve(l, d, sym)
+		if c == nil {
+			sym := NewSymbol("$" + name)
+			c, _ = Resolve(l, d, sym)
+		}
+		if c == nil {
+			return ref
+		}
+
+		return raw(c.Get())
+	}
+
+	r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
+	return r.ReplaceAllStringFunc(s, f)
 }
 
 func isSimple(c Cell) bool {
