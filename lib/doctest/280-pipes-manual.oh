@@ -13,16 +13,16 @@
 define exit-status: object
 
 define pipe-fitting: method (label cmd: args) = {
-    exit-status::set-slot label: cmd @args
+    exit-status::_set_ label: cmd @args
 }
 
 pipe-fitting "1st" echo 1 2 3 |
 pipe-fitting "2nd" tr " " "\n" |
 pipe-fitting "3rd" grep 2
 
-echo "1st stage exit status =>": exit-status::get-slot "1st"
-echo "2nd stage exit status =>": exit-status::get-slot "2nd"
-echo "3rd stage exit status =>": exit-status::get-slot "3rd"
+echo "1st stage exit status =>" exit-status::1st
+echo "2nd stage exit status =>" exit-status::2nd
+echo "3rd stage exit status =>" exit-status::3rd
 #}
 ##
 ## produces the output,

@@ -2286,7 +2286,7 @@ func init() {
 
 		return true
 	})
-	object.PublicMethod("get-slot", func(t *Task, args Cell) bool {
+	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
@@ -2314,7 +2314,7 @@ func init() {
 
 		return t.Return(NewString(t, modified))
 	})
-	object.PublicMethod("set-slot", func(t *Task, args Cell) bool {
+	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
 		s := raw(Car(args))
 		v := Cadr(args)
 
