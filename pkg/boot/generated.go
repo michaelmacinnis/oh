@@ -177,8 +177,18 @@ define is-list: method (l) = {
 define is-text: method (t) =: or (is-string t) (is-symbol t)
 define list-ref: method (k x) =: car: list-tail k x
 define list-tail: method (k x) = {
-	if k {
+	define l: length x
+	set k: integer k
+	if (ge k l) {
+		return ()
+	} else: if (gt k 0) {
 		list-tail (sub k 1): cdr x
+	} else: if (lt k 0) {
+		set k: add l k
+		if (lt k 0) {
+			return ()
+		}
+		list-tail k x
 	} else {
 		return x
 	}

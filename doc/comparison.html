@@ -1439,13 +1439,13 @@ done</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>declare</td>
 <td>typeset -a <span style="color: gray"><em>var</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: list</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>typeset -a <span style="color: gray"><em>var</em></span></td>
 </tr><tr><td>list all arrays</td>
@@ -1457,13 +1457,13 @@ done</td>
 </tr><tr><td>literal</td>
 <td>a=(do re mi)</td>
 <td>set a do re mi</td>
-<td>a=(do re mi)</td>
+<td>list do re mi</td>
 <td>set a = (do re mi)</td>
 <td>a=(do re mi)</td>
 </tr><tr><td>lookup</td>
 <td>${a[0]}</td>
 <td>$a[1]</td>
-<td>${a[0]}</td>
+<td>list-ref 0 a</td>
 <td>${a[1]}</td>
 <td>${a[1]}<br>
 $a[1]</td>
