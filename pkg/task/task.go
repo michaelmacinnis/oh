@@ -92,9 +92,11 @@ type ui interface {
 	ReadString(delim byte) (line string, err error)
 }
 
-type reader func(*Task, common.ReadStringer, string,
-	func(string, uintptr) Cell,
-	func(Cell, string, int, string) Cell) bool
+type reader func(
+	*Task, common.ReadStringer, *os.File,
+	string, func(string, uintptr) Cell,
+	func(Cell, string, int, string) Cell,
+) bool
 
 const (
 	SaveCarCode = 1 << iota
@@ -696,24 +698,19 @@ func (p *Pipe) Read(t *Task) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			for attempt := 0; attempt < 2; attempt++ {
-				parse(
-					t, p.reader(), p.r.Name(), deref,
-					func(c Cell, f string, l int, u string) Cell {
-						attempt = 0
-
-						t.Line = l
-						p.c <- c
-						<-p.d
-						return nil
-					},
-				)
-
-				if !ResetForegroundGroup(p.r) {
-					break
-				}
-
+			var f *os.File = nil
+			if interactive && p.r == os.Stdin {
+				f = p.r
 			}
+			parse(
+				t, p.reader(), f, p.r.Name(), deref,
+				func(c Cell, f string, l int, u string) Cell {
+					t.Line = l
+					p.c <- c
+					<-p.d
+					return nil
+				},
+			)
 			p.d = nil
 			p.c <- Null
 			p.c = nil
@@ -2020,7 +2017,7 @@ func Start(parser reader, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(task0, b, "boot.oh", deref, eval)
+	parse(task0, b, nil, "boot.oh", deref, eval)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -2061,7 +2058,7 @@ func Start(parser reader, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parse(task0, b, "-c", deref, eval)
+			parse(task0, b, nil, "-c", deref, eval)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -2073,7 +2070,7 @@ func Start(parser reader, cli ui) {
 
 		pgid = BecomeProcessGroupLeader()
 
-		if parse(task0, cli, "oh", deref, evaluate) {
+		if parse(task0, cli, nil, "oh", deref, evaluate) {
 			fmt.Printf("\n")
 		}
 		cli.Close()

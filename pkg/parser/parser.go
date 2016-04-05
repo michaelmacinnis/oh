@@ -7,19 +7,23 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
+	"io"
+	"os"
 	"strings"
 )
 
 type scanner struct {
-	deref   func(string, uintptr) Cell
-	input   common.ReadStringer
-	line    []rune
-	process func(Cell, string, int, string) Cell
-	task    *task.Task
+	deref    func(string, uintptr) Cell
+	f        *os.File
+	filename string
+	input    common.ReadStringer
+	process  func(Cell, string, int, string) Cell
+	task     *task.Task
+
+	line []rune
 
 	cursor   int
 	lineno   int
-	filename string
 	previous rune
 	start    int
 	state    int
@@ -99,6 +103,8 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 		s.token = 0
 	}()
 
+	retries := 0
+
 main:
 	for s.token == 0 {
 		if s.cursor >= len(s.line) {
@@ -106,11 +112,18 @@ main:
 				return 0
 			}
 
-			line, error := s.input.ReadString('\n')
-			if error == ui.CtrlCPressed {
+			line, err := s.input.ReadString('\n')
+			if err == nil {
+				retries = 0
+			} else if err == ui.CtrlCPressed {
 				s.start = 0
 				s.token = CTRLC
 				break
+			} else if s.f != nil && retries < 1 && err != io.EOF {
+				if task.ResetForegroundGroup(s.f) {
+					retries++
+					goto main
+				}
 			}
 
 			s.lineno++
@@ -126,7 +139,7 @@ main:
 				runes = runes[0:last]
 			}
 
-			if error != nil {
+			if err != nil {
 				runes = append(runes, '\n')
 				s.finished = true
 			}
@@ -331,16 +344,17 @@ func (s *scanner) Error(msg string) {
 	s.task.Throw(s.filename, s.lineno, msg)
 }
 
-func Parse(t *task.Task,
-	r common.ReadStringer,
-	f string,
-	d func(string, uintptr) Cell,
-	c func(Cell, string, int, string) Cell) bool {
+func Parse(
+	t *task.Task, r common.ReadStringer, f *os.File,
+	n string, d func(string, uintptr) Cell,
+	c func(Cell, string, int, string) Cell,
+) bool {
 
 	s := new(scanner)
 
 	s.deref = d
-	s.filename = f
+	s.f = f
+	s.filename = n
 	s.input = r
 	s.process = c
 	s.task = t
