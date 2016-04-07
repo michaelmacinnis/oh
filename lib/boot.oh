@@ -168,22 +168,22 @@ define is-list: method (l) = {
 	is-list: cdr l
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
-define list-ref: method (k x) =: car: list-tail k x
-define list-tail: method (k x) = {
-	define l: length x
-	set k: integer k
-	if (ge k l) {
-		return ()
-	} else: if (gt k 0) {
-		list-tail (sub k 1): cdr x
-	} else: if (lt k 0) {
-		set k: add l k
-		if (lt k 0) {
+define list-ref: method (Index List) =: car: list-tail Index List
+define list-tail: method (Index List) = {
+	define _list-tail: method (Index Length List) = {
+		if (lt Index 0) {
 			return ()
+		} else: if (or (eq Index 0) (eq Length 0)) {
+			return List
 		}
-		list-tail k x
+		_list-tail (sub Index 1) (sub Length 1) (cdr List)
+	}
+	define Length: length List
+	set Index: integer Index
+	if (lt Index 0) {
+		_list-tail (add Length Index) Length List
 	} else {
-		return x
+		_list-tail Index Length List
 	}
 }
 # TODO: Replace with builtin rather than invoking bc.
