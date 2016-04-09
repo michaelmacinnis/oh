@@ -36,10 +36,10 @@ echo "}"
 define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
                  (float "NewFloat(Car(args).(Atom).Float())") \
                  (integer "NewInteger(Car(args).(Atom).Int())") \
-                 (pipe "NewPipe(t.Lexical, nil, nil)") \
+                 (pipe "NewPipe(nil, nil)") \
                  (rational "NewRational(Car(args).(Atom).Rat())") \
                  (status "NewStatus(Car(args).(Atom).Status())") \
-                 (string "NewString(t, Car(args).String())") \
+                 (string "NewString(Car(args).String())") \
                  (symbol "NewSymbol(raw(Car(args)))")
 
 echo "\nfunc bindGenerators(s *Scope) {"
@@ -120,7 +120,7 @@ for t: method (l) = {
 }
 echo "}"
 
-echo "\nfunc bindStringPredicates(e *Env) {"
+echo "\nfunc bindStringPredicates(e Context) {"
 
 define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-graphic IsGraphic) (is-letter IsLetter) \
@@ -132,7 +132,7 @@ for t: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo $"
-	e.Method(\"${n}\", func(t *Task, args Cell) bool {
+	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -151,10 +151,10 @@ for t: method (l) = {
 	define n: car l
 	define m: cadr l
 	echo $"
-	e.Method(\"${n}\", func(t *Task, args Cell) bool {
+	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.${m}(s)))
+		return t.Return(NewString(strings.${m}(s)))
 	})"
 }
 

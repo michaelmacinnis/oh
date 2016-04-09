@@ -208,22 +208,22 @@ expression: word { $$ = $1 };
 
 word: DOLLAR_DOUBLE {
 	v, _ := adapted.Unquote($1.s[1:])
-	s := task.NewString(yylex.(*scanner).task, v)
+	s := task.NewString(v)
 	$$.c = List(NewSymbol("interpolate"), s)
 };
 
 word: DOLLAR_SINGLE {
-	s := task.NewString(yylex.(*scanner).task, $1.s[2:len($1.s)-1])
+	s := task.NewString($1.s[2:len($1.s)-1])
 	$$.c = List(NewSymbol("interpolate"), s)
 };
 
 word: DOUBLE_QUOTED {
 	v, _ := adapted.Unquote($1.s)
-	$$.c = task.NewString(yylex.(*scanner).task, v)
+	$$.c = task.NewString(v)
 };
 
 word: SINGLE_QUOTED {
-	$$.c = task.NewString(yylex.(*scanner).task, $1.s[1:len($1.s)-1])
+	$$.c = task.NewString($1.s[1:len($1.s)-1])
 };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };

@@ -27,9 +27,9 @@ import (
 type Binding interface {
 	Cell
 
-	Bind(c Context) Binding
+	Bind(c Cell) Binding
 	Ref() Closure
-	Self() Context
+	Self() Cell
 }
 
 type Closure interface {
@@ -46,8 +46,6 @@ type Closure interface {
 type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
 
 type Conduit interface {
-	Context
-
 	Close()
 	ReaderClose()
 	ReadLine(*Task) Cell
@@ -138,8 +136,8 @@ const (
 )
 
 var (
-	envc        *Env
-	envs        *Env
+	envc        Context
+	envs        Context
 	frame0      Cell
 	external    Cell
 	home        = "-"
@@ -166,10 +164,10 @@ var next = map[int64][]int64{
 
 type Bound struct {
 	ref     Closure
-	context Context
+	context Cell
 }
 
-func NewBound(ref Closure, context Context) *Bound {
+func NewBound(ref Closure, context Cell) *Bound {
 	return &Bound{ref, context}
 }
 
@@ -190,7 +188,7 @@ func (b *Bound) String() string {
 
 /* Bound-specific functions */
 
-func (b *Bound) Bind(c Context) Binding {
+func (b *Bound) Bind(c Cell) Binding {
 	if c == b.context {
 		return b
 	}
@@ -201,7 +199,7 @@ func (b *Bound) Ref() Closure {
 	return b.ref
 }
 
-func (b *Bound) Self() Context {
+func (b *Bound) Self() Cell {
 	return b.context
 }
 
@@ -248,17 +246,11 @@ func (b *Builtin) String() string {
 /* Channel cell definition. */
 
 type Channel struct {
-	*Scope
 	v chan Cell
 }
 
 func IsChannel(c Cell) bool {
-	context, ok := c.(Context)
-	if !ok {
-		return false
-	}
-
-	conduit := asConduit(context)
+	conduit := asConduit(c)
 	if conduit == nil {
 		return false
 	}
@@ -270,27 +262,24 @@ func IsChannel(c Cell) bool {
 	return false
 }
 
-func NewChannel(t *Task, cap int) Context {
-	return &Channel{
-		NewScope(t.Lexical.Expose(), conduitEnv()),
-		make(chan Cell, cap),
-	}
+func NewChannel(cap int) *Channel {
+	return &Channel{make(chan Cell, cap)}
 }
 
-func (ch *Channel) String() string {
-	return fmt.Sprintf("%%channel %p%%", ch)
+func (ch *Channel) Bool() bool {
+	return true
 }
 
 func (ch *Channel) Equal(c Cell) bool {
 	return ch == c
 }
 
-func (ch *Channel) Close() {
-	ch.WriterClose()
+func (ch *Channel) String() string {
+	return fmt.Sprintf("%%channel %p%%", ch)
 }
 
-func (ch *Channel) Expose() Context {
-	return ch
+func (ch *Channel) Close() {
+	ch.WriterClose()
 }
 
 func (ch *Channel) ReaderClose() {
@@ -310,7 +299,7 @@ func (ch *Channel) ReadLine(t *Task) Cell {
 	if v == nil {
 		return False
 	}
-	return NewString(t, v.String())
+	return NewString(v.String())
 }
 
 func (ch *Channel) WriterClose() {
@@ -598,7 +587,6 @@ func (o *Object) Define(key Cell, value Cell) {
 /* Pipe cell definition. */
 
 type Pipe struct {
-	*Scope
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
@@ -607,12 +595,7 @@ type Pipe struct {
 }
 
 func IsPipe(c Cell) bool {
-	context, ok := c.(Context)
-	if !ok {
-		return false
-	}
-
-	conduit := asConduit(context)
+	conduit := asConduit(c)
 	if conduit == nil {
 		return false
 	}
@@ -624,9 +607,8 @@ func IsPipe(c Cell) bool {
 	return false
 }
 
-func NewPipe(l Context, r *os.File, w *os.File) Context {
+func NewPipe(r *os.File, w *os.File) *Pipe {
 	p := &Pipe{
-		Scope: NewScope(l.Expose(), conduitEnv()),
 		b:     nil,
 		c:     nil,
 		d:     nil,
@@ -647,12 +629,16 @@ func NewPipe(l Context, r *os.File, w *os.File) Context {
 	return p
 }
 
-func (p *Pipe) String() string {
-	return fmt.Sprintf("%%pipe %p%%", p)
+func (p *Pipe) Bool() bool {
+	return true
 }
 
 func (p *Pipe) Equal(c Cell) bool {
 	return p == c
+}
+
+func (p *Pipe) String() string {
+	return fmt.Sprintf("%%pipe %p%%", p)
 }
 
 func (p *Pipe) Close() {
@@ -663,10 +649,6 @@ func (p *Pipe) Close() {
 	if p.w != nil && len(p.w.Name()) > 0 {
 		p.WriterClose()
 	}
-}
-
-func (p *Pipe) Expose() Context {
-	return p
 }
 
 func (p *Pipe) reader() *bufio.Reader {
@@ -727,7 +709,7 @@ func (p *Pipe) ReadLine(t *Task) Cell {
 		return Null
 	}
 
-	return NewString(t, strings.TrimRight(s, "\n"))
+	return NewString(strings.TrimRight(s, "\n"))
 }
 
 func (p *Pipe) WriterClose() {
@@ -761,7 +743,7 @@ type Registers struct {
 	Continuation // Stack and Dump
 
 	Code    Cell // Control
-	Lexical Context
+	Lexical Cell
 }
 
 /* Registers-specific functions. */
@@ -783,7 +765,7 @@ func (r *Registers) Arguments() Cell {
 }
 
 func (r *Registers) Complete(word string) []string {
-	cl := r.Lexical.Complete(word)
+	cl := toContext(r.Lexical).Complete(word)
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(Context)
@@ -801,7 +783,7 @@ func (r *Registers) GetState() int64 {
 }
 
 func (r *Registers) MakeEnv() []string {
-	e := r.Lexical.Exported()
+	e := toContext(r.Lexical).Exported()
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(Context)
@@ -828,7 +810,8 @@ func (r *Registers) NewBlock(lexical Context) {
 func (r *Registers) NewFrame(lexical Context) {
 	var state int64 = SaveLexical
 
-	v := r.Lexical.Visibility()
+	c := toContext(r.Lexical)
+	v := c.Visibility()
 	if v != nil && v != Car(r.Frame).(Context).Visibility() {
 		state |= SaveFrame
 	}
@@ -836,7 +819,7 @@ func (r *Registers) NewFrame(lexical Context) {
 	r.ReplaceStates(state, psEvalBlock)
 
 	if state&SaveFrame > 0 {
-		r.Frame = Cons(NewObject(r.Lexical), r.Frame)
+		r.Frame = Cons(NewObject(c), r.Frame)
 	}
 
 	r.Lexical = NewScope(lexical, nil)
@@ -1081,7 +1064,6 @@ func (s *Scope) PublicSyntax(k string, a Function) {
 /* String cell definition. */
 
 type String struct {
-	*Scope
 	v string
 }
 
@@ -1093,24 +1075,14 @@ func IsString(c Cell) bool {
 	return false
 }
 
-func NewString(t *Task, v string) *String {
+func NewString(v string) *String {
 	p, ok := str[v]
 
 	if ok {
 		return p
 	}
 
-	e := stringEnv()
-	l := scope0
-	if t != nil {
-		l = NewScope(t.Lexical.Expose(), e)
-	} else if task0 != nil {
-		l = NewScope(task0.Lexical.Expose(), e)
-	} else {
-		l = NewScope(l, e)
-	}
-
-	s := String{l, v}
+	s := String{v}
 	p = &s
 
 	return p
@@ -1161,10 +1133,6 @@ func (s *String) Status() (i int64) {
 		panic(err)
 	}
 	return i
-}
-
-func (s *String) Expose() Context {
-	return s
 }
 
 /* String-specific functions. */
@@ -1294,27 +1262,29 @@ func (t *Task) Apply(args Cell) bool {
 
 	t.Code = m.Ref().Body()
 
+	c := toContext(t.Lexical)
+
 	clabel := m.Ref().CallerLabel()
 	if clabel != Null {
-		t.Lexical.Define(clabel, caller)
+		c.Define(clabel, caller)
 	}
 
 	slabel := m.Ref().SelfLabel()
 	if slabel != Null {
-		t.Lexical.Define(slabel, m.Self().Expose())
+		c.Define(slabel, toContext(m.Self()).Expose())
 	}
 
 	params := m.Ref().Params()
 	for args != Null && params != Null && IsAtom(Car(params)) {
-		t.Lexical.Define(Car(params), Car(args))
+		c.Define(Car(params), Car(args))
 		args, params = Cdr(args), Cdr(params)
 	}
 	if IsCons(Car(params)) {
-		t.Lexical.Define(Caar(params), args)
+		c.Define(Caar(params), args)
 	}
 
 	cc := NewContinuation(Cdr(t.Dump), t.Stack, t.Frame)
-	t.Lexical.Define(NewSymbol("return"), cc)
+	c.Define(NewSymbol("return"), cc)
 
 	return true
 }
@@ -1347,7 +1317,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	body := t.Code
-	scope := t.Lexical
+	scope := toContext(t.Lexical)
 
 	c := n((*Task).Apply, body, clabel, slabel, params, scope)
 	if slabel == Null {
@@ -1506,7 +1476,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	t.RemoveState()
 
 	c := t.Lexical
-	s := t.Self().Expose()
+	s := toContext(t.Self()).Expose()
 
 	r := raw(Car(t.Code))
 	if t.Strict() && number(r) {
@@ -1587,7 +1557,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 
 		switch state {
 		case psChangeContext:
-			t.Lexical = Car(t.Dump).(Context)
+			t.Lexical = Car(t.Dump)
 			t.Dump = Cdr(t.Dump)
 
 		case psExecBuiltin, psExecMethod:
@@ -1737,10 +1707,10 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 			}
 
 		case psExecDefine:
-			t.Lexical.Define(t.Code, Car(t.Dump))
+			toContext(t.Lexical).Define(t.Code, Car(t.Dump))
 
 		case psExecPublic:
-			t.Lexical.Public(t.Code, Car(t.Dump))
+			toContext(t.Lexical).Public(t.Code, Car(t.Dump))
 
 		case psExecSet:
 			k := t.Code.(*Symbol)
@@ -1807,7 +1777,7 @@ func (t *Task) Runnable() bool {
 	return !<-t.suspended
 }
 
-func (t *Task) Self() Context {
+func (t *Task) Self() Cell {
 	return Car(t.Dump).(Binding).Self()
 }
 
@@ -1865,6 +1835,27 @@ func (t *Task) Suspend() {
 }
 
 func (t *Task) Throw(file string, line int, text string) {
+	throw := NewSymbol("throw")
+
+	/* Unwind stack until we can resolve 'throw'. */
+	for t.Lexical != scope0 {
+		state := t.GetState()
+		if state <= 0 {
+			t.Lexical = scope0
+			break
+		}
+
+		switch t.Lexical.(type) {
+		case Context:
+			c, _ := Resolve(t.Lexical, t.Frame, throw)
+			if c != nil {
+				break
+			}
+		}
+
+		t.RemoveState()
+	}
+
 	kind := "error/runtime"
 	code := "1"
 
@@ -1875,7 +1866,7 @@ func (t *Task) Throw(file string, line int, text string) {
 		text = args[3]
 	}
 	c := List(
-		NewSymbol("throw"), List(
+		throw, List(
 			NewSymbol("exception"),
 			NewSymbol(kind),
 			NewSymbol(text),
@@ -1923,7 +1914,7 @@ func (u *Unbound) String() string {
 
 /* Unbound-specific functions */
 
-func (u *Unbound) Bind(c Context) Binding {
+func (u *Unbound) Bind(c Cell) Binding {
 	return u
 }
 
@@ -1931,7 +1922,7 @@ func (u *Unbound) Ref() Closure {
 	return u.ref
 }
 
-func (u *Unbound) Self() Context {
+func (u *Unbound) Self() Cell {
 	return nil
 }
 
@@ -1986,16 +1977,19 @@ func Pgid() int {
 	return pgid
 }
 
-func Resolve(s Context, f Cell, k *Symbol) (Reference, Context) {
+func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 	if s != nil {
-		if v := s.Access(k); v != nil {
-			return v, s
+		c := toContext(s)
+		if c != nil {
+			if v := c.Access(k); v != nil {
+				return v, s
+			}
 		}
 	}
 
 	if f != nil {
 		for f != Null {
-			o := Car(f).(Context)
+			o := toContext(Car(f))
 			if v := o.Access(k); v != nil {
 				return v, o
 			}
@@ -2083,12 +2077,27 @@ func Start(parser reader, cli ui) {
 	os.Exit(status(Car(task0.Dump)))
 }
 
-/* Convert Context into a Conduit. (Return nil if not possible). */
-func asConduit(o Context) Conduit {
+/* Convert Cell into a Conduit. (Return nil if not possible). */
+func asConduit(o Cell) Conduit {
 	if c, ok := o.(Conduit); ok {
 		return c
 	}
 
+	return nil
+}
+
+/* Convert Cell into a Context. (Return nil if not possible). */
+func asContext(c Cell) Context {
+	switch t := c.(type) {
+	case Context:
+		return t
+	case *Channel:
+		return conduitContext()
+	case *Pipe:
+		return conduitContext()
+	case *String:
+		return stringContext()
+	}
 	return nil
 }
 
@@ -2117,40 +2126,43 @@ func braceExpand(arg string) []string {
 	return expanded
 }
 
-func conduitEnv() *Env {
+func conduitContext() Context {
 	if envc != nil {
 		return envc
 	}
 
-	envc = NewEnv(nil)
-	envc.Method("child", func(t *Task, args Cell) bool {
-		panic("conduits cannot be parents")
-	})
-	envc.Method("clone", func(t *Task, args Cell) bool {
-		panic("conduits cannot be cloned")
-	})
-	envc.Method("define", func(t *Task, args Cell) bool {
-		panic("private members cannot be added to a conduit")
-	})
-	envc.Method("close", func(t *Task, args Cell) bool {
-		toConduit(t.Self()).Close()
-		return t.Return(True)
-	})
-	envc.Method("_reader_close_", func(t *Task, args Cell) bool {
+	envc = NewScope(nil, nil)
+	envc.PublicMethod("_reader_close_", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).ReaderClose()
 		return t.Return(True)
 	})
-	envc.Method("read", func(t *Task, args Cell) bool {
-		return t.Return(toConduit(t.Self()).Read(t))
-	})
-	envc.Method("readline", func(t *Task, args Cell) bool {
-		return t.Return(toConduit(t.Self()).ReadLine(t))
-	})
-	envc.Method("_writer_close_", func(t *Task, args Cell) bool {
+	envc.PublicMethod("_writer_close_", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).WriterClose()
 		return t.Return(True)
 	})
-	envc.Method("write", func(t *Task, args Cell) bool {
+	envc.PublicMethod("child", func(t *Task, args Cell) bool {
+		panic("conduits cannot be parents")
+	})
+	envc.PublicMethod("clone", func(t *Task, args Cell) bool {
+		panic("conduits cannot be cloned")
+	})
+	envc.PublicMethod("close", func(t *Task, args Cell) bool {
+		toConduit(t.Self()).Close()
+		return t.Return(True)
+	})
+	envc.PublicMethod("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to a conduit")
+	})
+	envc.PublicMethod("public", func(t *Task, args Cell) bool {
+		panic("public members cannot be added to a conduit")
+	})
+	envc.PublicMethod("read", func(t *Task, args Cell) bool {
+		return t.Return(toConduit(t.Self()).Read(t))
+	})
+	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
+		return t.Return(toConduit(t.Self()).ReadLine(t))
+	})
+	envc.PublicMethod("write", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).Write(args)
 		return t.Return(True)
 	})
@@ -2199,7 +2211,7 @@ func expand(t *Task, args Cell) Cell {
 		case *Symbol:
 			done = false
 		case *String:
-			s = interpolate(t.Lexical, t.Frame, s)
+			s = interpolate(toContext(t.Lexical), t.Frame, s)
 		}
 
 		if done {
@@ -2227,7 +2239,7 @@ func expand(t *Task, args Cell) Cell {
 
 			for _, v := range m {
 				if v[0] != '.' || s[0] == '.' {
-					list = AppendTo(list, NewString(t, v))
+					list = AppendTo(list, NewString(v))
 				}
 			}
 		}
@@ -2257,13 +2269,15 @@ func init() {
 
 	/* Standard Methods. */
 	object.PublicMethod("child", func(t *Task, args Cell) bool {
-		return t.Return(NewObject(NewScope(t.Self().Expose(), nil)))
+		c := toContext(t.Self())
+		return t.Return(NewObject(NewScope(c.Expose(), nil)))
 	})
 	object.PublicMethod("clone", func(t *Task, args Cell) bool {
-		return t.Return(NewObject(t.Self().Expose().Copy()))
+		c := toContext(t.Self())
+		return t.Return(NewObject(c.Expose().Copy()))
 	})
 	object.PublicMethod("context", func(t *Task, args Cell) bool {
-		self := t.Self()
+		self := toContext(t.Self())
 		bare := self.Expose()
 		if self == bare {
 			self = NewObject(bare)
@@ -2271,7 +2285,7 @@ func init() {
 		return t.Return(self)
 	})
 	object.PublicMethod("eval", func(t *Task, args Cell) bool {
-		scope := t.Self().Expose()
+		scope := toContext(t.Self()).Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
 			t.NewStates(SaveLexical)
@@ -2302,14 +2316,14 @@ func init() {
 		return t.Return(NewBoolean(c != nil))
 	})
 	object.PublicMethod("interpolate", func(t *Task, args Cell) bool {
-		l := t.Self()
+		l := toContext(t.Self())
 		if t.Lexical == l.Expose() {
-			l = t.Lexical
+			l = toContext(t.Lexical)
 		}
 
 		modified := interpolate(l, t.Frame, raw(Car(args)))
 
-		return t.Return(NewString(t, modified))
+		return t.Return(NewString(modified))
 	})
 	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
 		s := raw(Car(args))
@@ -2317,7 +2331,7 @@ func init() {
 
 		k := NewSymbol(s)
 
-		t.Self().Public(k, v)
+		toContext(t.Self()).Public(k, v)
 		return t.Return(v)
 	})
 
@@ -2369,8 +2383,9 @@ func init() {
 		if err != nil {
 			status = 1
 		} else if wd, err := os.Getwd(); err == nil {
-			t.Lexical.Public(pwd, NewSymbol(wd))
-			t.Lexical.Public(oldpwd, NewSymbol(prev))
+			c := toContext(t.Lexical)
+			c.Public(pwd, NewSymbol(wd))
+			c.Public(oldpwd, NewSymbol(prev))
 		}
 
 		return t.Return(NewStatus(int64(status)))
@@ -2463,7 +2478,7 @@ func init() {
 			cap = int(Car(args).(Atom).Int())
 		}
 
-		return t.Return(NewChannel(t, cap))
+		return t.Return(NewChannel(cap))
 	})
 
 	/* Predicates. */
@@ -2559,7 +2574,7 @@ func init() {
 			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
 		}
 
-		return t.Return(NewString(t, s))
+		return t.Return(NewString(s))
 	})
 	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
 		s := ""
@@ -2619,7 +2634,7 @@ func init() {
 			w = nil
 		}
 
-		return t.Return(NewPipe(t.Lexical, r, w))
+		return t.Return(NewPipe(r, w))
 	})
 	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
 		return t.Return(NewFloat(rand.Float64()))
@@ -2669,7 +2684,7 @@ func init() {
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
 		t.ReplaceStates(SaveLexical, psEvalBlock)
 
-		t.NewBlock(t.Lexical)
+		t.NewBlock(toContext(t.Lexical))
 
 		return true
 	})
@@ -2677,7 +2692,7 @@ func init() {
 		t.ReplaceStates(SaveLexical,
 			psExecIf, SaveCode, psEvalElement)
 
-		t.NewBlock(t.Lexical)
+		t.NewBlock(toContext(t.Lexical))
 
 		t.Code = Car(t.Code)
 		t.Dump = Cdr(t.Dump)
@@ -2713,7 +2728,8 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
-		child := NewTask(t.Code, NewScope(t.Lexical, nil), t)
+		c := toContext(t.Lexical)
+		child := NewTask(t.Code, NewScope(c, nil), t)
 
 		go child.Launch()
 
@@ -2751,9 +2767,9 @@ func init() {
 	scope0.Define(NewSymbol("_root_"), scope0)
 	scope0.Define(NewSymbol("_sys_"), sys)
 
-	sys.Public(NewSymbol("_stdin_"), NewPipe(scope0, os.Stdin, nil))
-	sys.Public(NewSymbol("_stdout_"), NewPipe(scope0, nil, os.Stdout))
-	sys.Public(NewSymbol("_stderr_"), NewPipe(scope0, nil, os.Stderr))
+	sys.Public(NewSymbol("_stdin_"), NewPipe(os.Stdin, nil))
+	sys.Public(NewSymbol("_stdout_"), NewPipe(nil, os.Stdout))
+	sys.Public(NewSymbol("_stderr_"), NewPipe(nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
@@ -2827,7 +2843,7 @@ func raw(c Cell) string {
 }
 
 func rpipe(c Cell) *os.File {
-	return toConduit(c.(Context)).(*Pipe).ReadFd()
+	return c.(*Pipe).ReadFd()
 
 }
 
@@ -2849,22 +2865,22 @@ func status(c Cell) int {
 	return int(a.Status())
 }
 
-func stringEnv() *Env {
+func stringContext() Context {
 	if envs != nil {
 		return envs
 	}
 
-	envs = NewEnv(nil)
-	envs.Method("child", func(t *Task, args Cell) bool {
+	envs = NewScope(nil, nil)
+	envs.PublicMethod("child", func(t *Task, args Cell) bool {
 		panic("strings cannot be parents")
 	})
-	envs.Method("clone", func(t *Task, args Cell) bool {
+	envs.PublicMethod("clone", func(t *Task, args Cell) bool {
 		panic("strings cannot be cloned")
 	})
-	envs.Method("define", func(t *Task, args Cell) bool {
+	envs.PublicMethod("define", func(t *Task, args Cell) bool {
 		panic("private members cannot be added to a string")
 	})
-	envs.Method("join", func(t *Task, args Cell) bool {
+	envs.PublicMethod("join", func(t *Task, args Cell) bool {
 		sep := toString(t.Self())
 		arr := make([]string, Length(args))
 
@@ -2875,9 +2891,12 @@ func stringEnv() *Env {
 
 		r := strings.Join(arr, string(raw(sep)))
 
-		return t.Return(NewString(t, r))
+		return t.Return(NewString(r))
 	})
-	envs.Method("slice", func(t *Task, args Cell) bool {
+	envs.PublicMethod("public", func(t *Task, args Cell) bool {
+		panic("public members cannot be added to a string")
+	})
+	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
 		s := []rune(raw(toString(t.Self())))
 
 		start := int(Car(args).(Atom).Int())
@@ -2887,9 +2906,9 @@ func stringEnv() *Env {
 			end = int(Cadr(args).(Atom).Int())
 		}
 
-		return t.Return(NewString(t, string(s[start:end])))
+		return t.Return(NewString(string(s[start:end])))
 	})
-	envs.Method("split", func(t *Task, args Cell) bool {
+	envs.PublicMethod("split", func(t *Task, args Cell) bool {
 		r := Null
 
 		sep := Car(args)
@@ -2898,12 +2917,12 @@ func stringEnv() *Env {
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 
 		for i := len(l) - 1; i >= 0; i-- {
-			r = Cons(NewString(t, l[i]), r)
+			r = Cons(NewString(l[i]), r)
 		}
 
 		return t.Return(r)
 	})
-	envs.Method("sprintf", func(t *Task, args Cell) bool {
+	envs.PublicMethod("sprintf", func(t *Task, args Cell) bool {
 		f := raw(toString(t.Self()))
 
 		argv := []interface{}{}
@@ -2924,9 +2943,9 @@ func stringEnv() *Env {
 
 		s := fmt.Sprintf(f, argv...)
 
-		return t.Return(NewString(t, s))
+		return t.Return(NewString(s))
 	})
-	envs.Method("to-list", func(t *Task, args Cell) bool {
+	envs.PublicMethod("to-list", func(t *Task, args Cell) bool {
 		s := raw(toString(t.Self()))
 		l := Null
 		for _, char := range s {
@@ -2942,8 +2961,8 @@ func stringEnv() *Env {
 }
 
 /* Convert Context into a Conduit. */
-func toConduit(o Context) Conduit {
-	conduit := asConduit(o)
+func toConduit(c Cell) Conduit {
+	conduit := asConduit(c)
 	if conduit == nil {
 		panic("not a conduit")
 	}
@@ -2951,9 +2970,19 @@ func toConduit(o Context) Conduit {
 	return conduit
 }
 
-/* Convert Context into a String. */
-func toString(o Context) *String {
-	if s, ok := o.(*String); ok {
+/* Convert Cell into a Context. */
+func toContext(c Cell) Context {
+	context := asContext(c)
+	if context == nil {
+		panic("not an object ")
+	}
+
+	return context
+}
+
+/* Convert Cell into a String. */
+func toString(c Cell) *String {
+	if s, ok := c.(*String); ok {
 		return s
 	}
 
@@ -2961,7 +2990,7 @@ func toString(o Context) *String {
 }
 
 func wpipe(c Cell) *os.File {
-	return toConduit(c.(Context)).(*Pipe).WriteFd()
+	return c.(*Pipe).WriteFd()
 }
 
 //go:generate ./generate.oh

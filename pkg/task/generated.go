@@ -83,7 +83,7 @@ func bindGenerators(s *Scope) {
 	})
 
 	s.DefineMethod("pipe", func(t *Task, args Cell) bool {
-		return t.Return(NewPipe(t.Lexical, nil, nil))
+		return t.Return(NewPipe(nil, nil))
 	})
 
 	s.DefineMethod("rational", func(t *Task, args Cell) bool {
@@ -95,7 +95,7 @@ func bindGenerators(s *Scope) {
 	})
 
 	s.DefineMethod("string", func(t *Task, args Cell) bool {
-		return t.Return(NewString(t, Car(args).String()))
+		return t.Return(NewString(Car(args).String()))
 	})
 
 	s.DefineMethod("symbol", func(t *Task, args Cell) bool {
@@ -326,9 +326,9 @@ func bindTheRest(s *Scope) {
 	})
 }
 
-func bindStringPredicates(e *Env) {
+func bindStringPredicates(e Context) {
 
-	e.Method("is-control", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-control", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -340,7 +340,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-digit", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-digit", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -352,7 +352,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-graphic", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-graphic", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -364,7 +364,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-letter", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-letter", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -376,7 +376,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-lower", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-lower", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -388,7 +388,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-mark", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-mark", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -400,7 +400,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-print", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-print", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -412,7 +412,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-punct", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-punct", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -424,7 +424,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-space", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-space", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -436,7 +436,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-symbol", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-symbol", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -448,7 +448,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-title", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-title", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -460,7 +460,7 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("is-upper", func(t *Task, args Cell) bool {
+	e.PublicMethod("is-upper", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
 		for _, c := range s {
@@ -472,21 +472,21 @@ func bindStringPredicates(e *Env) {
 		return t.Return(True)
 	})
 
-	e.Method("lower", func(t *Task, args Cell) bool {
+	e.PublicMethod("lower", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToLower(s)))
+		return t.Return(NewString(strings.ToLower(s)))
 	})
 
-	e.Method("title", func(t *Task, args Cell) bool {
+	e.PublicMethod("title", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToTitle(s)))
+		return t.Return(NewString(strings.ToTitle(s)))
 	})
 
-	e.Method("upper", func(t *Task, args Cell) bool {
+	e.PublicMethod("upper", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
-		return t.Return(NewString(t, strings.ToUpper(s)))
+		return t.Return(NewString(strings.ToUpper(s)))
 	})
 }

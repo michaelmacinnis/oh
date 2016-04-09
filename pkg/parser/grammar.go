@@ -847,14 +847,14 @@ yydefault:
 		//line grammar.y:209
 		{
 			v, _ := adapted.Unquote(yyDollar[1].s[1:])
-			s := task.NewString(yylex.(*scanner).task, v)
+			s := task.NewString(v)
 			yyVAL.c = List(NewSymbol("interpolate"), s)
 		}
 	case 49:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line grammar.y:215
 		{
-			s := task.NewString(yylex.(*scanner).task, yyDollar[1].s[2:len(yyDollar[1].s)-1])
+			s := task.NewString(yyDollar[1].s[2 : len(yyDollar[1].s)-1])
 			yyVAL.c = List(NewSymbol("interpolate"), s)
 		}
 	case 50:
@@ -862,13 +862,13 @@ yydefault:
 		//line grammar.y:220
 		{
 			v, _ := adapted.Unquote(yyDollar[1].s)
-			yyVAL.c = task.NewString(yylex.(*scanner).task, v)
+			yyVAL.c = task.NewString(v)
 		}
 	case 51:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line grammar.y:225
 		{
-			yyVAL.c = task.NewString(yylex.(*scanner).task, yyDollar[1].s[1:len(yyDollar[1].s)-1])
+			yyVAL.c = task.NewString(yyDollar[1].s[1 : len(yyDollar[1].s)-1])
 		}
 	case 52:
 		yyDollar = yyS[yypt-1 : yypt+1]
