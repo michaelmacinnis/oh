@@ -143,6 +143,7 @@ var (
 	home        = "-"
 	interactive = false
 	jobs        = map[int]*Task{}
+	namespace   Context
 	parse       reader
 	pgid        int
 	pid         int
@@ -2131,7 +2132,7 @@ func conduitContext() Context {
 		return envc
 	}
 
-	envc = NewScope(nil, nil)
+	envc = NewScope(namespace, nil)
 	envc.PublicMethod("_reader_close_", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).ReaderClose()
 		return t.Return(True)
@@ -2140,21 +2141,9 @@ func conduitContext() Context {
 		toConduit(t.Self()).WriterClose()
 		return t.Return(True)
 	})
-	envc.PublicMethod("child", func(t *Task, args Cell) bool {
-		panic("conduits cannot be parents")
-	})
-	envc.PublicMethod("clone", func(t *Task, args Cell) bool {
-		panic("conduits cannot be cloned")
-	})
 	envc.PublicMethod("close", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).Close()
 		return t.Return(True)
-	})
-	envc.PublicMethod("define", func(t *Task, args Cell) bool {
-		panic("private members cannot be added to a conduit")
-	})
-	envc.PublicMethod("public", func(t *Task, args Cell) bool {
-		panic("public members cannot be added to a conduit")
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		return t.Return(toConduit(t.Self()).Read(t))
@@ -2259,15 +2248,27 @@ func init() {
 	builtin := NewBuiltin((*Task).External, Null, Null, Null, Null, nil)
 	external = NewUnbound(builtin)
 
-	public := func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecPublic)
-	}
+	namespace = NewScope(nil, nil)
+
+	namespace.PublicMethod("child", func(t *Task, args Cell) bool {
+		panic("this type cannot be a parent")
+	})
+	namespace.PublicMethod("clone", func(t *Task, args Cell) bool {
+		panic("this type cannot be cloned")
+	})
+	namespace.PublicMethod("define", func(t *Task, args Cell) bool {
+		panic("private members cannot be added to this type")
+	})
+	namespace.PublicMethod("public", func(t *Task, args Cell) bool {
+		panic("public members cannot be added to this type")
+	})
 
 	object := NewScope(nil, nil)
 
-	object.PublicSyntax("public", public)
-
 	/* Standard Methods. */
+	object.PublicSyntax("public", func(t *Task, args Cell) bool {
+		return t.LexicalVar(psExecPublic)
+	})
 	object.PublicMethod("child", func(t *Task, args Cell) bool {
 		c := toContext(t.Self())
 		return t.Return(NewObject(NewScope(c.Expose(), nil)))
@@ -2870,16 +2871,7 @@ func stringContext() Context {
 		return envs
 	}
 
-	envs = NewScope(nil, nil)
-	envs.PublicMethod("child", func(t *Task, args Cell) bool {
-		panic("strings cannot be parents")
-	})
-	envs.PublicMethod("clone", func(t *Task, args Cell) bool {
-		panic("strings cannot be cloned")
-	})
-	envs.PublicMethod("define", func(t *Task, args Cell) bool {
-		panic("private members cannot be added to a string")
-	})
+	envs = NewScope(namespace, nil)
 	envs.PublicMethod("join", func(t *Task, args Cell) bool {
 		sep := toString(t.Self())
 		arr := make([]string, Length(args))
@@ -2892,9 +2884,6 @@ func stringContext() Context {
 		r := strings.Join(arr, string(raw(sep)))
 
 		return t.Return(NewString(r))
-	})
-	envs.PublicMethod("public", func(t *Task, args Cell) bool {
-		panic("public members cannot be added to a string")
 	})
 	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
 		s := []rune(raw(toString(t.Self())))
@@ -2911,8 +2900,8 @@ func stringContext() Context {
 	envs.PublicMethod("split", func(t *Task, args Cell) bool {
 		r := Null
 
-		sep := Car(args)
-		str := toString(t.Self())
+		sep := toString(t.Self())
+		str := Car(args)
 
 		l := strings.Split(string(raw(str)), string(raw(sep)))
 

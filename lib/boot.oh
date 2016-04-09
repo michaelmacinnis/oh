@@ -273,7 +273,7 @@ define source: syntax (name) e = {
 	define paths = ()
 	define name = basename
 
-	if (has $OHPATH): set paths: (string $OHPATH)::split ":"
+	if (has $OHPATH): set paths: ":"::split $OHPATH
 	while (and (not: is-null paths) (not: exists name)) {
 		set name: "/"::join (car paths) basename
 		set paths: cdr paths
@@ -321,7 +321,7 @@ _sys_::public get-prompt: method self (suffix) = {
 	self::prompt suffix
 }
 _sys_::public prompt: method (suffix) = {
-	define dirs: (string $PWD)::split "/"
+	define dirs: "/"::split $PWD
 	define last: sub (length dirs) 1
 	return: ""::join (list-ref last dirs) suffix
 }
