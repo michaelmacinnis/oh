@@ -141,12 +141,15 @@ var (
 	frame0      Cell
 	external    Cell
 	home        = "-"
+	homesym     *Symbol
 	interactive = false
 	jobs        = map[int]*Task{}
 	namespace   Context
+	oldpwdsym   *Symbol
 	parse       reader
 	pgid        int
 	pid         int
+	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
 	str         = map[string]*String{}
@@ -1290,6 +1293,24 @@ func (t *Task) Apply(args Cell) bool {
 	return true
 }
 
+func (t *Task) Chdir(dir string) bool {
+	status := 0
+
+	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
+	oldwd := c.Get().String()
+
+	err := os.Chdir(dir)
+	if err != nil {
+		status = 1
+	} else if wd, err := os.Getwd(); err == nil {
+		c := toContext(t.Lexical)
+		c.Public(pwdsym, NewSymbol(wd))
+		c.Public(oldpwdsym, NewSymbol(oldwd))
+	}
+
+	return t.Return(NewStatus(int64(status)))
+}
+
 func (t *Task) Closure(n ClosureGenerator) bool {
 	slabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
@@ -1387,12 +1408,16 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
-	arg0, problem := adapted.LookPath(raw(Car(t.Dump)))
+	arg0, exe, problem := adapted.LookPath(raw(Car(t.Dump)))
 
 	SetCar(t.Dump, False)
 
 	if problem != nil {
 		panic(common.ErrNotFound + problem.Error())
+	}
+
+	if !exe {
+		return t.Chdir(arg0)
 	}
 
 	argv := []string{arg0}
@@ -1401,7 +1426,7 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, raw(Car(args)))
 	}
 
-	c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$PWD"))
+	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
 	dir := c.Get().String()
 
 	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdin_"))
@@ -2036,8 +2061,8 @@ func Start(parser reader, cli ui) {
 	scope0.Define(NewSymbol("_args_"), args)
 
 	if wd, err := os.Getwd(); err == nil {
-		sys.Public(NewSymbol("$OLDPWD"), NewSymbol(wd))
-		sys.Public(NewSymbol("$PWD"), NewSymbol(wd))
+		sys.Public(oldpwdsym, NewSymbol(wd))
+		sys.Public(pwdsym, NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
@@ -2242,6 +2267,10 @@ func init() {
 
 	CacheSymbols(common.Symbols...)
 
+	homesym = NewSymbol("$HOME")
+	oldpwdsym = NewSymbol("$OLDPWD")
+	pwdsym = NewSymbol("$PWD")
+
 	runnable = make(chan bool)
 	close(runnable)
 
@@ -2358,38 +2387,21 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
-		oldpwd := NewSymbol("$OLDPWD")
-		pwd := NewSymbol("$PWD")
-
-		c, _ := Resolve(t.Lexical, t.Frame, pwd)
-		prev := c.Get().String()
-
 		dir := ""
 		if args == Null {
-			c, _ := Resolve(t.Lexical, t.Frame, NewSymbol("$HOME"))
+			c, _ := Resolve(t.Lexical, t.Frame, homesym)
 			dir = raw(c.Get())
 		} else {
 			dir = raw(Car(args))
 		}
 
 		if dir == "-" {
-			c, _ := Resolve(t.Lexical, t.Frame, oldpwd)
+			c, _ := Resolve(t.Lexical, t.Frame, oldpwdsym)
 			dir = c.Get().String()
 
 		}
 
-		status := 0
-
-		err := os.Chdir(dir)
-		if err != nil {
-			status = 1
-		} else if wd, err := os.Getwd(); err == nil {
-			c := toContext(t.Lexical)
-			c.Public(pwd, NewSymbol(wd))
-			c.Public(oldpwd, NewSymbol(prev))
-		}
-
-		return t.Return(NewStatus(int64(status)))
+		return t.Chdir(dir)
 	})
 	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
 		t.Debug("debug")
