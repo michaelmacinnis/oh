@@ -2850,9 +2850,24 @@ func pairContext() Context {
 		var i int64 = 0
 		if args != Null {
 			i = Car(args).(Atom).Int()
+			args = Cdr(args)
 		}
 
-		return t.Return(Car(Tail(s, i)))
+		var dflt Cell = nil
+		if args != Null {
+			dflt = Car(args)
+		}
+
+		return t.Return(Car(Tail(s, i, dflt)))
+	})
+	envp.PublicMethod("head", func(t *Task, args Cell) bool {
+		s := toPair(t.Self())
+
+		var dflt Cell = nil
+		if args != Null {
+			dflt = Car(args)
+		}
+		return t.Return(Car(Tail(s, 0, dflt)))
 	})
 	envp.PublicMethod("length", func(t *Task, args Cell) bool {
 		return t.Return(NewInteger(Length(t.Self())))
@@ -2866,7 +2881,7 @@ func pairContext() Context {
 		i := Car(args).(Atom).Int()
 		v := Cadr(args)
 
-		SetCar(Tail(s, i), v)
+		SetCar(Tail(s, i, nil), v)
 		return t.Return(v)
 	})
 	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
@@ -2875,7 +2890,7 @@ func pairContext() Context {
 		i := Car(args).(Atom).Int()
 		v := Cadr(args)
 
-		SetCdr(Tail(s, i), v)
+		SetCdr(Tail(s, i + 1, nil), v)
 		return t.Return(v)
 	})
 	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
@@ -2886,12 +2901,12 @@ func pairContext() Context {
 	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
 		s := toPair(t.Self())
 
-		var i int64 = 0
+		var dflt Cell = nil
 		if args != Null {
-			i = Car(args).(Atom).Int()
+			dflt = Car(args)
 		}
 
-		return t.Return(Tail(s, i))
+		return t.Return(Tail(s, 0, dflt))
 	})
 
 	return envp

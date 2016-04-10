@@ -163,17 +163,26 @@ func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
 }
 
-func Tail(list Cell, index int64) Cell {
+func Tail(list Cell, index int64, dflt Cell) Cell {
 	length := Length(list)
 
 	if index < 0 {
 		index = length + index
 	}
 
+	msg := ""
 	if index >= length {
-		panic("index after last element")
+		msg = "index after last element"
 	} else if index < 0 {
-		panic("index before first element")
+		msg = "index before first element"
+	}
+
+	if msg != "" {
+		if dflt == nil {
+			panic(msg)
+		} else {
+			return dflt
+		}
 	}
 
 	for ; index > 0 && list != nil && list != Null; list = Cdr(list) {
