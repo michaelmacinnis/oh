@@ -2852,6 +2852,16 @@ func pairContext() Context {
 
 		return t.Return(NewBoolean(true))
 	})
+	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
+		s := toPair(t.Self())
+
+		var i int64 = 0
+		if args != Null {
+			i = Car(args).(Atom).Int()
+		}
+
+		return t.Return(Tail(s, i))
+	})
 
 	return envp
 }
@@ -2993,6 +3003,15 @@ func toContext(c Cell) Context {
 	}
 
 	return context
+}
+
+/* Convert Cell into a Pair. */
+func toPair(c Cell) *Pair {
+	if p, ok := c.(*Pair); ok {
+		return p
+	}
+
+	panic("not a string")
 }
 
 /* Convert Cell into a String. */

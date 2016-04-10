@@ -154,3 +154,24 @@ func SetCar(c, value Cell) {
 func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
 }
+
+func Tail(list Cell, index int64) Cell {
+	length := Length(list)
+
+	if index < 0 {
+		index = length + index
+	}
+
+	if index >= length {
+		panic("index greater than list length")
+	} else if index < 0 {
+		panic("negative index greater than list length")
+	}
+
+	for ; index > 0 && list != nil && list != Null; list = Cdr(list) {
+		index--
+	}
+
+	return list
+}
+
