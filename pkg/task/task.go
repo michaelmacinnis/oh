@@ -137,6 +137,7 @@ const (
 
 var (
 	envc        Context
+	envp        Context
 	envs        Context
 	frame0      Cell
 	external    Cell
@@ -2119,6 +2120,8 @@ func asContext(c Cell) Context {
 		return t
 	case *Channel:
 		return conduitContext()
+	case *Pair:
+		return pairContext()
 	case *Pipe:
 		return conduitContext()
 	case *String:
@@ -2563,18 +2566,6 @@ func init() {
 
 		return true
 	})
-	scope0.DefineMethod("length", func(t *Task, args Cell) bool {
-		var l int64
-
-		switch c := Car(args); c.(type) {
-		case *String, *Symbol:
-			l = int64(len(raw(c)))
-		default:
-			l = Length(c)
-		}
-
-		return t.Return(NewInteger(l))
-	})
 	scope0.DefineMethod("get-line-number", func(t *Task, args Cell) bool {
 		return t.Return(NewInteger(int64(t.Line)))
 	})
@@ -2847,6 +2838,24 @@ func number(s string) bool {
 	return err == nil && m
 }
 
+func pairContext() Context {
+	if envp != nil {
+		return envp
+	}
+
+	envp = NewScope(namespace, nil)
+	envp.PublicMethod("length", func(t *Task, args Cell) bool {
+		return t.Return(NewInteger(Length(t.Self())))
+	})
+	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
+		println("list slice")
+
+		return t.Return(NewBoolean(true))
+	})
+
+	return envp
+}
+
 func raw(c Cell) string {
 	if s, ok := c.(*String); ok {
 		return s.Raw()
@@ -2896,6 +2905,11 @@ func stringContext() Context {
 		r := strings.Join(arr, string(raw(sep)))
 
 		return t.Return(NewString(r))
+	})
+	envs.PublicMethod("length", func(t *Task, args Cell) bool {
+		s := raw(toString(t.Self()))
+
+		return t.Return(NewInteger(int64(len(s))))
 	})
 	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
 		s := []rune(raw(toString(t.Self())))

@@ -801,7 +801,7 @@ awk '{print substr($0, <span style="color: gray"><em>offset</em></span>, <span s
 </tr><tr><td>length</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td></td>
-<td>length <span style="color: gray"><em>var</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::length</td>
 <td>${%<span style="color: gray"><em>var</em></span>}</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td>wc -m</td>
@@ -1062,7 +1062,7 @@ $argv[1], $argv[2], …</td>
 </tr><tr><td>number of command line args</td>
 <td>$#</td>
 <td>(count $argv)</td>
-<td>length _args_</td>
+<td>_args_::length</td>
 <td>$#</td>
 <td>$#<br>
 $#argv</td>

@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-if (ne 2: length _args_) {
+if (ne 2: _args_::length) {
     error "usage:" _0_ "<pattern> <output>"
     exit 1
 }

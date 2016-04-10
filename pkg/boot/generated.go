@@ -73,7 +73,7 @@ define _redirect_: syntax (name mode closer) = {
 define ...: method (: args) = {
 	cd _origin_
 	define path: car args
-	if (eq 2: length args) {
+	if (eq 2: args::length) {
 		cd: car args
 		set path: cadr args
 	}
@@ -185,7 +185,7 @@ define list-tail: method (Index List) = {
 		}
 		_list-tail (sub Index 1) (sub Length 1) (cdr List)
 	}
-	define Length: length List
+	define Length: List::length
 	set Index: integer Index
 	if (lt Index 0) {
 		_list-tail (add Length Index) Length List
@@ -329,7 +329,7 @@ _sys_::public get-prompt: method self (suffix) = {
 }
 _sys_::public prompt: method (suffix) = {
 	define dirs: "/"::split $PWD
-	define last: sub (length dirs) 1
+	define last: sub (dirs::length) 1
 	return: ""::join (list-ref last dirs) suffix
 }
 _sys_::public throw: method (c) = {
