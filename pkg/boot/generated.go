@@ -5,34 +5,6 @@
 package boot
 
 var Script string = `
-define caar: method (l) =: car: car l
-define cadr: method (l) =: car: cdr l
-define cdar: method (l) =: cdr: car l
-define cddr: method (l) =: cdr: cdr l
-define caaar: method (l) =: car: caar l
-define caadr: method (l) =: car: cadr l
-define cadar: method (l) =: car: cdar l
-define caddr: method (l) =: car: cddr l
-define cdaar: method (l) =: cdr: caar l
-define cdadr: method (l) =: cdr: cadr l
-define cddar: method (l) =: cdr: cdar l
-define cdddr: method (l) =: cdr: cddr l
-define caaaar: method (l) =: caar: caar l
-define caaadr: method (l) =: caar: cadr l
-define caadar: method (l) =: caar: cdar l
-define caaddr: method (l) =: caar: cddr l
-define cadaar: method (l) =: cadr: caar l
-define cadadr: method (l) =: cadr: cadr l
-define caddar: method (l) =: cadr: cdar l
-define cadddr: method (l) =: cadr: cddr l
-define cdaaar: method (l) =: cdar: caar l
-define cdaadr: method (l) =: cdar: cadr l
-define cdadar: method (l) =: cdar: cdar l
-define cdaddr: method (l) =: cdar: cddr l
-define cddaar: method (l) =: cddr: caar l
-define cddadr: method (l) =: cddr: cadr l
-define cdddar: method (l) =: cddr: cdar l
-define cddddr: method (l) =: cddr: cddr l
 define _connect_: syntax (conduit name) = {
 	set conduit: eval conduit
 	syntax (left right) e = {
@@ -75,7 +47,7 @@ define ...: method (: args) = {
 	define path: car args
 	if (eq 2: args::length) {
 		cd: car args
-		set path: cadr args
+		set path: args::get 1
 	}
 	while true {
 		define abs: symbol: "/"::join $PWD path
@@ -263,7 +235,7 @@ define _process_substitution_: syntax (:args) e = {
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons cell): return cell
 	if (is-null cell): return cell
-	if (eq (quote unquote): car cell): return: e::eval: cadr cell
+	if (eq (quote unquote): car cell): return: e::eval: cell::get 1
 	cons {
 		e::eval: list (quote quasiquote): car cell
 		e::eval: list (quote quasiquote): cdr cell

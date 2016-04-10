@@ -2844,8 +2844,39 @@ func pairContext() Context {
 	}
 
 	envp = NewScope(namespace, nil)
+	envp.PublicMethod("get", func(t *Task, args Cell) bool {
+		s := toPair(t.Self())
+
+		var i int64 = 0
+		if args != Null {
+			i = Car(args).(Atom).Int()
+		}
+
+		return t.Return(Car(Tail(s, i)))
+	})
 	envp.PublicMethod("length", func(t *Task, args Cell) bool {
 		return t.Return(NewInteger(Length(t.Self())))
+	})
+	envp.PublicMethod("reverse", func(t *Task, args Cell) bool {
+		return t.Return(Reverse(t.Self()))
+	})
+	envp.PublicMethod("set", func(t *Task, args Cell) bool {
+		s := toPair(t.Self())
+
+		i := Car(args).(Atom).Int()
+		v := Cadr(args)
+
+		SetCar(Tail(s, i), v)
+		return t.Return(v)
+	})
+	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
+		s := toPair(t.Self())
+
+		i := Car(args).(Atom).Int()
+		v := Cadr(args)
+
+		SetCdr(Tail(s, i), v)
+		return t.Return(v)
 	})
 	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
 		println("list slice")

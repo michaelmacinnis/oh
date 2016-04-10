@@ -13,7 +13,7 @@ spawn: while true {
     define prime: boolean true
 
     while (and (cdr previous) prime) {
-        set prime: mod number (cadr previous)
+        set prime: mod number (previous::get 1)
 
         set previous: cdr previous
     }

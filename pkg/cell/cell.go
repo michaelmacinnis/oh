@@ -84,6 +84,14 @@ func IsNumber(c Cell) bool {
 	return false
 }
 
+func IsPair(c Cell) bool {
+	switch c.(type) {
+	case *Pair:
+		return true
+	}
+	return false
+}
+
 func JoinTo(list Cell, elements ...Cell) Cell {
 	var pair, prev, start Cell
 
@@ -113,7 +121,7 @@ func JoinTo(list Cell, elements ...Cell) Cell {
 func Length(list Cell) int64 {
 	var length int64
 
-	for ; list != nil && list != Null; list = Cdr(list) {
+	for ; list != nil && list != Null && IsPair(list); list = Cdr(list) {
 		length++
 	}
 
@@ -163,9 +171,9 @@ func Tail(list Cell, index int64) Cell {
 	}
 
 	if index >= length {
-		panic("index greater than list length")
+		panic("index after last element")
 	} else if index < 0 {
-		panic("negative index greater than list length")
+		panic("index before first element")
 	}
 
 	for ; index > 0 && list != nil && list != Null; list = Cdr(list) {

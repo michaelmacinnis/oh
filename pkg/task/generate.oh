@@ -17,8 +17,8 @@ define t: quote: (add Add) (sub Subtract) (div Divide) \
 
 echo "\nfunc bindArithmetic(s *Scope) {"
 for t: method (l) = {
-	define n: car l
-	define m: cadr l
+	define n: l::get 0
+	define m: l::get 1
 	echo $"
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
@@ -44,8 +44,8 @@ define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
 
 echo "\nfunc bindGenerators(s *Scope) {"
 for t: method (l) = {
-	define n: car l
-	define o: cadr l
+	define n: l::get 0
+	define o: l::get 1
 	echo $"
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(${o})
@@ -55,8 +55,8 @@ echo "}"
 
 echo "\nfunc bindPredicates(s *Scope) {"
 for common::predicates: method (l) = {
-	define n: car l
-	define m: cadr l
+	define n: l::get 0
+	define m: l::get 1
 	echo $"
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(${m}(Car(args))))
@@ -74,9 +74,9 @@ define t: quote: \
 
 echo "\nfunc bindRelational(s *Scope) {"
 for t: method (l) = {
-	define n: car l
-	define o: cadr l
-	define t: caddr l
+	define n: l::get 0
+	define o: l::get 1
+	define t: l::get 2
 	echo $"
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		prev := Car(args)${t}
@@ -110,9 +110,9 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
 
 echo "\nfunc bindTheRest(s *Scope) {"
 for t: method (l) = {
-	define d: car l
-	define n: cadr l
-	define o: caddr l
+	define d: l::get 0
+	define n: l::get 1
+	define o: l::get 2
 	echo $"
 	s.${d}(\"${n}\", func(t *Task, args Cell) bool {
 		return ${o}
@@ -129,8 +129,8 @@ define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-title IsTitle) (is-upper IsUpper)
 
 for t: method (l) = {
-	define n: car l
-	define m: cadr l
+	define n: l::get 0
+	define m: l::get 1
 	echo $"
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
@@ -148,8 +148,8 @@ for t: method (l) = {
 define t: quote: (lower ToLower) (title ToTitle) (upper ToUpper)
 
 for t: method (l) = {
-	define n: car l
-	define m: cadr l
+	define n: l::get 0
+	define m: l::get 1
 	echo $"
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
