@@ -7,16 +7,16 @@
 ## #### Conses
 ##
 ## Because of its Lisp heritage, one of oh's fundamental types is the cons
-## cell. A cons cell is a pair of values referred to as the head and tail or
-## (for historical reasons) the car and cdr. The head of a cons cell is
-## accessed using the `car` command. The tail of a cons cell is accessed using
-## the `cdr` command. The `cons` command is used to construct a new cons cell.
+## cell. A cons cell is a pair of values. A cons cell's values are referred to
+## as the head and tail. The head of a cons cell is accessed using the `head`
+## method. The tail of a cons cell is accessed using the `tail` method. The
+## `cons` command is used to construct a new cons cell.
 ##
 ## The commands,
 ##
 #{
-write: car: cons 11 12
-write: cdr: cons 11 12
+write: (cons 11 12)::head
+write: (cons 11 12)::tail
 #}
 ##
 ## produce the output,
@@ -24,8 +24,8 @@ write: cdr: cons 11 12
 #+     11
 #+     12
 ##
-## Lists, in oh, are formed by chaining cons cells. The cdr of each cons cell
-## is set to the next cons cell in the list. The cdr of the last element in
+## Lists, in oh, are formed by chaining cons cells. The tail of each cons cell
+## is set to the next cons cell in the list. The tail of the last element in
 ## the list is set to empty list, which is written as `()`.
 ##
 ## The following commands are equivalent:
