@@ -301,14 +301,6 @@ func bindTheRest(s *Scope) {
 		return t.Closure(NewSyntax)
 	})
 
-	s.DefineMethod("car", func(t *Task, args Cell) bool {
-		return t.Return(Caar(args))
-	})
-
-	s.DefineMethod("cdr", func(t *Task, args Cell) bool {
-		return t.Return(Cdar(args))
-	})
-
 	s.DefineMethod("cons", func(t *Task, args Cell) bool {
 		return t.Return(Cons(Car(args), Cadr(args)))
 	})

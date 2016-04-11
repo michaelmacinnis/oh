@@ -2643,16 +2643,6 @@ func init() {
 	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
 		return t.Return(NewFloat(rand.Float64()))
 	})
-	scope0.DefineMethod("set-car", func(t *Task, args Cell) bool {
-		SetCar(Car(args), Cadr(args))
-
-		return t.Return(Cadr(args))
-	})
-	scope0.DefineMethod("set-cdr", func(t *Task, args Cell) bool {
-		SetCdr(Car(args), Cadr(args))
-
-		return t.Return(Cadr(args))
-	})
 	scope0.DefineMethod("set-line-number", func(t *Task, args Cell) bool {
 		t.Line = int(Car(args).(Atom).Int())
 

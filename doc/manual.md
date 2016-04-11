@@ -607,7 +607,7 @@ with Mice").
     
     define filter: method (base) = {
         while true {
-    	define n: car: read
+    	define n: (read)::head
             if (mod n base): write n
         }
     }
@@ -618,7 +618,7 @@ with Mice").
         define in = _stdin_
     
         while true {
-            define prime: car: in::read
+            define prime: (in::read)::head
             write prime
     
             define out: channel
@@ -633,7 +633,7 @@ with Mice").
     
     define line = ""
     while count {
-        define p: car: read
+        define p: (read)::head
         set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {

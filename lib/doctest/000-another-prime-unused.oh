@@ -12,14 +12,14 @@ spawn: while true {
     define previous = list-of-primes
     define prime: boolean true
 
-    while (and (cdr previous) prime) {
+    while (and (previous::tail) prime) {
         set prime: mod number (previous::get 1)
 
-        set previous: cdr previous
+        set previous: previous::tail
     }
 
     if prime {
-        set-cdr previous: cons number ()
+        previous::set-tail: cons number ()
 
         echo number
     }

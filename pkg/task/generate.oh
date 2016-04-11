@@ -101,8 +101,6 @@ define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
                  (DefineSyntax define "t.LexicalVar(psExecDefine)") \
                  (DefineSyntax method "t.Closure(NewMethod)") \
                  (DefineSyntax syntax "t.Closure(NewSyntax)") \
-                 (DefineMethod car "t.Return(Caar(args))") \
-                 (DefineMethod cdr "t.Return(Cdar(args))") \
                  (DefineMethod cons "t.Return(Cons(Car(args), Cadr(args)))") \
                  (DefineMethod list "t.Return(args)") \
                  (DefineMethod not "t.Return(NewBoolean(!Car(args).Bool()))") \

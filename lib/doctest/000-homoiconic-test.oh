@@ -10,10 +10,10 @@
 # The short-circuit and operator is defined using the syntax command.
 define and: syntax e (: lst) = {
     define r = false
-    while (not: is-null: car lst) {
-        set r: e::eval: car lst
+    while (not: is-null: lst::head) {
+        set r: e::eval: lst::head
         if (not r): return r
-        set lst: cdr lst
+        set lst: lst::tail
     }
     return r
 }

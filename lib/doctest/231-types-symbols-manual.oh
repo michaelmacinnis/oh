@@ -52,7 +52,7 @@ define common: import: ... lib/common.oh
 
 define x this-is-a-symbol
 for common::predicates: method (names) = {
-    define name: car names
+    define name: names::head
     define predicate: eval name
     write name: "x => %v"::sprintf: predicate x
 }
