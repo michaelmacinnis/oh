@@ -54,7 +54,7 @@ define and: syntax (: lst) e = {
 	while (not: is-null lst) {
 		set r: e::eval: lst::head
 		if (not r): return r
-		set lst: lst::tail ()
+		set lst: lst::tail
 	}
 	return r
 }
@@ -72,11 +72,11 @@ define _backtick_: syntax (cmd) e = {
 	define r: cons () ()
 	define c = r
 	while (define l: p::readline) {
-		set-cdr c: cons l ()
-		set c: cdr c
+		c::set-tail: cons l ()
+		set c: c::tail
 	}
 	p::_reader_close_
-	return: cdr r
+	return: r::tail
 }
 define catch: syntax (name: clause) e = {
 	define args: list name (quote throw)
@@ -98,8 +98,8 @@ define catch: syntax (name: clause) e = {
 define _channel_stderr_: _connect_ channel _stderr_
 define _channel_stdout_: _connect_ channel _stdout_
 define coalesce: syntax (: lst) e = {
-	while (and (not: is-null: cdr lst) (not: resolves: lst::head)) {
-		set lst: cdr lst
+	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
+		set lst: lst::tail
 	}
 	return: e::eval: lst::head
 }
@@ -115,11 +115,11 @@ define for: method (l m) = {
 	define r: cons () ()
 	define c = r
 	while (not: is-null l) {
-		set-cdr c: cons (m: l::head) ()
-		set c: cdr c
-		set l: cdr l
+		c::set-tail: cons (m: l::head) ()
+		set c: c::tail
+		set l: l::tail
 	}
-	return: cdr r
+	return: r::tail
 }
 define glob: builtin (: args) =: return args
 define import: syntax (name) e = {
@@ -136,8 +136,8 @@ define import: syntax (name) e = {
 define is-list: method (l) = {
 	if (is-null l): return false
 	if (not: is-cons l): return false
-	if (is-null: cdr l): return true
-	is-list: cdr l
+	if (is-null: l::tail): return true
+	is-list: l::tail
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
 # TODO: Replace with builtin rather than invoking bc.
@@ -161,7 +161,7 @@ define or: syntax (: lst) e = {
 	while (not: is-null lst) {
 		set r: e::eval: lst::head
 		if r: return r
-		set lst: lst::tail ()
+		set lst: lst::tail
 	}
 	return r
 }
@@ -179,7 +179,7 @@ define _process_substitution_: syntax (:args) e = {
 				e::eval: quasiquote {
 					_redirect_stdin_ {
 						unquote fifo
-						unquote: cdr arg
+						unquote: arg::tail
 					}
 				}
 			}
@@ -193,7 +193,7 @@ define _process_substitution_: syntax (:args) e = {
 				e::eval: quasiquote {
 					_redirect_stdout_ {
 						unquote fifo
-						unquote: cdr arg
+						unquote: arg::tail
 					}
 				}
 			}
@@ -212,8 +212,8 @@ define quasiquote: syntax (cell) e = {
 	if (is-null cell): return cell
 	if (eq (quote unquote): cell::head): return: e::eval: cell::get 1
 	cons {
-		e::eval: list (quote quasiquote): cell::head
-		e::eval: list (quote quasiquote): cdr cell
+		e::eval: list (quote quasiquote) (cell::head)
+		e::eval: list (quote quasiquote) (cell::tail)
 	}
 }
 define quote: syntax (cell) =: return cell
@@ -230,7 +230,7 @@ define source: syntax (name) e = {
 	if (has $OHPATH): set paths: ":"::split $OHPATH
 	while (and (not: is-null paths) (not: exists name)) {
 		set name: "/"::join (paths::head) basename
-		set paths: cdr paths
+		set paths: paths::tail
 	}
 
 	if (not: exists name): set name = basename
@@ -240,20 +240,20 @@ define source: syntax (name) e = {
 	define r: cons () ()
 	define c = r
 	while (define l: f::read) {
-		set-cdr c: cons (cons (get-line-number) l) ()
-		set c: cdr c
+		c::set-tail: cons (cons (get-line-number) l) ()
+		set c: c::tail
 	}
-	set c: cdr r
+	set c: r::tail
 	f::close
 
 	define rval: status 0
 	define eval-list: method (first rest) o = {
 		if (is-null first): return rval
 		set-line-number: first::head
-		set rval: e::eval: cdr first
-		eval-list (rest::head ()) (cdr rest)
+		set rval: e::eval: first::tail
+		eval-list (rest::head) (rest::tail)
 	}
-	eval-list (c::head ()) (cdr c)
+	eval-list (c::head) (c::tail)
 	return rval
 }
 define write: method (: args) =: _stdout_::write @args
