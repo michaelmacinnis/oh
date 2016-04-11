@@ -61,7 +61,7 @@ define and: syntax (: lst) e = {
 	while (not: is-null lst) {
 		set r: e::eval: lst::head
 		if (not r): return r
-		set lst: cdr lst
+		set lst: lst::tail ()
 	}
 	return r
 }
@@ -168,7 +168,7 @@ define or: syntax (: lst) e = {
 	while (not: is-null lst) {
 		set r: e::eval: lst::head
 		if r: return r
-		set lst: cdr lst 
+		set lst: lst::tail ()
 	}
 	return r
 }

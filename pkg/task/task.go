@@ -2906,7 +2906,7 @@ func pairContext() Context {
 			dflt = Car(args)
 		}
 
-		return t.Return(Tail(s, 0, dflt))
+		return t.Return(Tail(s, 1, dflt))
 	})
 
 	return envp
