@@ -1457,13 +1457,13 @@ done</td>
 </tr><tr><td>literal</td>
 <td>a=(do re mi)</td>
 <td>set a do re mi</td>
-<td>list do re mi</td>
+<td>define a: list do re mi</td>
 <td>set a = (do re mi)</td>
 <td>a=(do re mi)</td>
 </tr><tr><td>lookup</td>
 <td>${a[0]}</td>
 <td>$a[1]</td>
-<td>list-ref 0 a</td>
+<td>a::get 0</td>
 <td>${a[1]}</td>
 <td>${a[1]}<br>
 $a[1]</td>
@@ -1473,7 +1473,7 @@ ${a[-1]}</td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
 $a[-1]</td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
-${a[-1]}</td>
+a::get -1</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
 ${a[-1]}</td>
@@ -1481,8 +1481,7 @@ ${a[-1]}</td>
 <td>${a[@]:2:3}<br>
 ${a[*]:2:3}</td>
 <td>$a[(seq 2&nbsp;3)]</td>
-<td>${a[@]:1:2}<br>
-${a[*]:1:2}</td>
+<td>a::slice 1 2</td>
 <td>${a[2-3]}</td>
 <td>$a[2,3]</td>
 </tr><tr><td>update</td>
@@ -1492,9 +1491,9 @@ a[2]=mi</td>
 <td>set a[1] do<br>
 set a[2] re<br>
 set a[3] mi</td>
-<td>a[0]=do<br>
-a[1]=re<br>
-a[2]=mi</td>
+<td>a::set 0 do<br>
+a::set 1 re<br>
+a::set 2 mi</td>
 <td>set a[1] = do<br>
 set a[2] = re<br>
 set a[3] = mi</td>
@@ -1505,7 +1504,8 @@ a[3]=mi</td>
 <td><span style="color: gray"><em>lookup returns empty string</em></span><br><br><span style="color: gray"><em>update expands array; array can have gaps</em></span></td>
 <td><span style="color: gray"><em>error message and nonzero exit status</em></span><br><br><span style="color: gray"><em>update expands array; in-between<br>
 slots get empty strings</em></span></td>
-<td><span style="color: gray"><em>lookup returns empty string</em></span><br><br><span style="color: gray"><em>update expands array; array can have gaps</em></span></td>
+<td><span style="color: gray"><em>lookup and update both<br>
+cause an exception</em></span></td>
 <td><span style="color: gray"><em>lookup and update both produce<br>
 error message and nonzero exit status</em></span></td>
 <td><span style="color: gray"><em>lookup returns empty string</em></span><br><br><span style="color: gray"><em>update expands array; in-between<br>
@@ -1515,9 +1515,7 @@ slots get empty strings</em></span></td>
 ${#a[@]}<br>
 ${#a[*]}</td>
 <td>count $a</td>
-<td><span style="color: gray"><em>highest index:</em></span><br>
-${#a[@]}<br>
-${#a[*]}</td>
+<td>a::length</td>
 <td>${#a}</td>
 <td>${#a}<br>
 ${#a[@]}<br>
@@ -1527,21 +1525,19 @@ ${#a[*]}</td>
 ${!a[@]}<br>
 ${!a[*]}</td>
 <td>(seq (count $a))</td>
-<td><span style="color: gray"><em>can contain gaps:</em></span><br>
-${!a[@]}<br>
-${!a[*]}</td>
+<td><span style="color: gray"><em>none</em></span><br></td>
 <td><span style="white-space: pre-wrap;">`seq ${#a}`</span></td>
 <td>$(seq ${#a})</td>
 </tr><tr><td>regular reference</td>
 <td><span style="color: gray"><em>return first element</em></span></td>
 <td><span style="color: gray"><em>return all elements joined by space</em></span></td>
-<td><span style="color: gray"><em>return first element</em></span></td>
+<td><span style="color: gray"><em>return list</em></span></td>
 <td><span style="color: gray"><em>return all elements joined by space</em></span></td>
 <td><span style="color: gray"><em>return all elements joined by space</em></span></td>
 </tr><tr><td>regular assignment</td>
 <td><span style="color: gray"><em>assigns to 0-indexed slot</em></span></td>
 <td><span style="color: gray"><em>convert array to regular variable</em></span></td>
-<td><span style="color: gray"><em>assigns to 0-indexed slot</em></span></td>
+<td><span style="color: gray"><em>variable reference new value</em></span></td>
 <td><span style="color: gray"><em>convert array to regular variable</em></span></td>
 <td><span style="color: gray"><em>convert array to regular variable</em></span></td>
 </tr><tr><td>delete element</td>
@@ -1560,33 +1556,16 @@ unset a[*]</td>
 </tr><tr><td>pass each element as argument</td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
 <td><span style="color: gray"><em>cmd</em></span> $a</td>
-<td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
+<td><span style="color: gray"><em>cmd</em></span> @a</td>
 <td></td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
 </tr><tr><td>pass as single argument</td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
 <td><span style="color: gray"><em>cmd</em></span> "$a"</td>
-<td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
+<td><span style="color: gray"><em>cmd</em></span> " "::join @a</td>
 <td></td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
-</tr></tbody></table><p>Shell arrays are arrays of strings. In particular arrays cannot be nested.</p>
-<p>Arrays with one element are for the most part indistinguishable from a variable containing a nonempty string. Empty arrays are for the most part indistinguishable from a variable containing an empty string.</p>
-<p>In the case of <tt>bash</tt> or <tt>zsh</tt>, it is possible to tell whether the variable is an array by seeing whether it is listed in the output of <tt>typeset -a</tt>.</p>
-<h2 id="toc48"><span>declare</span></h2>
-<p><tt>bash</tt> and <tt>zsh</tt> allow one to declare an array. This creates an empty array. There doesn't appear to be any need to do this, however,</p>
-<h2 id="toc49"><span>list all arrays</span></h2>
-<h2 id="toc50"><span>literal</span></h2>
-<p><tt>bash</tt> and <tt>zsh</tt> us parens to delimit an array literal. Spaces separate the elements. If the elements themselves contain spaces, quotes or backslash escaping must be used.</p>
-<h2 id="toc51"><span>lookup</span></h2>
-<h2 id="toc52"><span>update</span></h2>
-<h2 id="toc53"><span>out-of-bounds behavior</span></h2>
-<h2 id="toc54"><span>size</span></h2>
-<h2 id="toc55"><span>list indices</span></h2>
-<h2 id="toc56"><span>regular reference</span></h2>
-<h2 id="toc57"><span>regular assignment</span></h2>
-<h2 id="toc58"><span>delete value</span></h2>
-<p>Deleting elements from a <tt>bash</tt> array leaves gaps. Deleting elements from a <tt>zsh</tt> arrays causes higher indexed elements to move to lower index positions.</p>
-<h2 id="toc59"><span>delete array</span></h2>
+</tr></tbody></table>
 <p><a name="associative-arrays" id="associative-arrays"></a></p>
 <h1 id="toc60"><span><a href="#top">Associative Arrays</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
