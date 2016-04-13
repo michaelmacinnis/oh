@@ -2887,9 +2887,17 @@ func pairContext() Context {
 		return t.Return(v)
 	})
 	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
-		println("list slice")
+		s := toPair(t.Self())
+		i := Car(args).(Atom).Int()
 
-		return t.Return(NewBoolean(true))
+		var j int64 = 0
+
+		args = Cdr(args)
+		if args != Null {
+			j = Car(args).(Atom).Int()
+		}
+
+		return t.Return(Slice(s, i, j))
 	})
 	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
 		s := toPair(t.Self())

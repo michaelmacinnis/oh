@@ -163,6 +163,53 @@ func SetCdr(c, value Cell) {
 	c.(*Pair).cdr = value
 }
 
+func Slice(list Cell, start, end int64) Cell {
+	length := Length(list)
+
+	if start < 0 {
+		start = length + start
+	}
+
+	if start < 0 {
+		panic("slice starts before first element")
+	} else if start >= length {
+		panic("slice starts after last element")
+	}
+
+	if end <= 0 {
+		end = length + end
+	}
+
+	if end < 0 {
+		panic("slice ends before first element")
+	} else if end > length {
+		end = length
+	}
+
+	end -= start
+
+	if end < 0 {
+		panic("end of slice before start")
+	} else if end == 0 {
+		return Null
+	}
+
+	for ; start > 0; start-- {
+		list = Cdr(list)
+	}
+
+	slice := Cons(Car(list), Null)
+
+	for c := slice; end > 1; end-- {
+		list = Cdr(list)
+		n := Cons(Car(list), Null)
+		SetCdr(c, n)
+		c = n
+	}
+
+	return slice
+}
+
 func Tail(list Cell, index int64, dflt Cell) Cell {
 	length := Length(list)
 
@@ -171,10 +218,10 @@ func Tail(list Cell, index int64, dflt Cell) Cell {
 	}
 
 	msg := ""
-	if index >= length {
-		msg = "index after last element"
-	} else if index < 0 {
+	if index < 0 {
 		msg = "index before first element"
+	} else if index >= length {
+		msg = "index after last element"
 	}
 
 	if msg != "" {
@@ -185,8 +232,8 @@ func Tail(list Cell, index int64, dflt Cell) Cell {
 		}
 	}
 
-	for ; index > 0 && list != nil && list != Null; list = Cdr(list) {
-		index--
+	for ; index > 0; index-- {
+		list = Cdr(list)
 	}
 
 	return list
