@@ -2535,23 +2535,6 @@ func init() {
 	})
 
 	/* Standard Functions. */
-	scope0.DefineMethod("append", func(t *Task, args Cell) bool {
-		/*
-		 * NOTE: oh's append works differently than Scheme's append.
-		 *       To mimic Scheme's behavior use: append l1 @l2 ... @ln
-		 */
-
-		l := Car(args)
-		n := Cons(Car(l), Null)
-		s := n
-		for l = Cdr(l); l != Null; l = Cdr(l) {
-			SetCdr(n, Cons(Car(l), Null))
-			n = Cdr(n)
-		}
-		SetCdr(n, Cdr(args))
-
-		return t.Return(s)
-	})
 	scope0.DefineMethod("exit", func(t *Task, args Cell) bool {
 		t.Dump = List(Car(args))
 
@@ -2834,6 +2817,19 @@ func pairContext() Context {
 	}
 
 	envp = NewScope(namespace, nil)
+	envp.PublicMethod("append", func(t *Task, args Cell) bool {
+		var s Cell = toPair(t.Self())
+
+		n := Cons(Car(s), Null)
+		l := n
+		for s = Cdr(s); s != Null; s = Cdr(s) {
+			SetCdr(n, Cons(Car(s), Null))
+			n = Cdr(n)
+		}
+		SetCdr(n, args)
+
+		return t.Return(l)
+	})
 	envp.PublicMethod("get", func(t *Task, args Cell) bool {
 		s := toPair(t.Self())
 

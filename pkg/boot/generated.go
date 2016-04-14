@@ -91,7 +91,7 @@ define catch: syntax (name: clause) e = {
 	if (is-null clause) {
 		set body: list body
 	} else {
-		set body: append clause body
+		set body: clause::append body
 	}
 	define handler: e::eval {
 		list (quote method) args (quote =) @body
@@ -161,7 +161,7 @@ define math: method (S) e = {
 	} | bc))
 }
 define object: syntax (: body) e = {
-	e::eval: cons (quote block): append body (quote: context)
+	e::eval: cons (quote block): body::append (quote: context)
 }
 define or: syntax (: lst) e = {
 	define r = false
