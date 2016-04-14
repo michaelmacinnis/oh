@@ -18,7 +18,7 @@ var Symbols = []string{
 	"is-number", "is-object", "is-pipe", "is-rational", "is-status",
 	"is-string", "is-symbol", "is-syntax", "is-text", "jobs", "join",
 	"last", "left", "length", "line", "list",
-	"list-to-string", "list-to-symbol", "lst", "match", "message",
+	"lst", "match", "message",
 	"method", "mod", "mode", "module", "mul", "name", "not", "object",
 	"$OHPATH", ".ohrc", "open", "_origin_", "$PATH", "path", "paths",
 	"pipe", "_pipe_stderr_", "_pipe_stdout_", "_platform_", "printf",
@@ -30,6 +30,7 @@ var Symbols = []string{
 	"set-line-number", "_set_", "source", "spawn", "_splice_",
 	"split", "sprintf", "status", "_stderr_", "_stdin_", "_stdout_",
 	"strict", "string", "sub", "suffix", "symbol", "syntax", "_sys_",
-	"temp-fifo", "_throw", "throw", "true", "type", "unquote", "$USER",
+	"temp-fifo", "_throw", "throw", "to-string", "to-symbol",
+	"true", "type", "unquote", "$USER",
 	"wait", "while", "write", "_writer_close_",
 }

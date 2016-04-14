@@ -2555,22 +2555,6 @@ func init() {
 	scope0.DefineMethod("get-source-file", func(t *Task, args Cell) bool {
 		return t.Return(NewSymbol(t.File))
 	})
-	scope0.DefineMethod("list-to-string", func(t *Task, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
-
-		return t.Return(NewString(s))
-	})
-	scope0.DefineMethod("list-to-symbol", func(t *Task, args Cell) bool {
-		s := ""
-		for l := Car(args); l != Null; l = Cdr(l) {
-			s = fmt.Sprintf("%s%c", s, int(Car(l).(Atom).Int()))
-		}
-
-		return t.Return(NewSymbol(s))
-	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		mode := raw(Car(args))
 		path := raw(Cadr(args))
@@ -2899,6 +2883,16 @@ func pairContext() Context {
 		s := toPair(t.Self())
 
 		return t.Return(Cdr(s))
+	})
+	envp.DefineMethod("to-string", func(t *Task, args Cell) bool {
+		var s Cell
+
+		v := ""
+		for s = toPair(t.Self()); s != Null; s = Cdr(s) {
+			v = fmt.Sprintf("%s%c", v, int(Car(s).(Atom).Int()))
+		}
+
+		return t.Return(NewString(v))
 	})
 
 	return envp
