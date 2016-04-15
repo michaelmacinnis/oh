@@ -140,6 +140,19 @@ define is-list: method (l) = {
 	is-list: l::tail
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
+define map: syntax (: literal) e = {
+    define o: object
+    o::public get = o::_get_
+    o::public set = o::_set_
+    for literal: method (entry) = {
+        define v: entry::get 1
+        if (eq 1: v::length) {
+            set v: v::head
+        }
+        o::set (entry::head): e::eval v
+    }
+    return o
+}
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {
 	set S: e::interpolate S
