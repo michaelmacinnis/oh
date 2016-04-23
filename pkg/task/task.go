@@ -2184,6 +2184,9 @@ func conduitContext() Context {
 		toConduit(t.Self()).Close()
 		return t.Return(True)
 	})
+	envc.PublicMethod("keys", func(t *Task, args Cell) bool {
+		return t.Return(Null)
+	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		return t.Return(toConduit(t.Self()).Read(t))
 	})
@@ -2307,6 +2310,14 @@ func init() {
 	})
 	namespace.PublicMethod("define", func(t *Task, args Cell) bool {
 		panic("private members cannot be added to this type")
+	})
+	namespace.PublicMethod("keys", func(t *Task, args Cell) bool {
+		self := toContext(t.Self())
+		l := Null
+		for _, s := range self.Faces().prev.Complete("") {
+			l = Cons(NewSymbol(s), l)
+		}
+		return t.Return(l)
 	})
 	namespace.PublicMethod("public", func(t *Task, args Cell) bool {
 		panic("public members cannot be added to this type")
@@ -2852,6 +2863,19 @@ func pairContext() Context {
 
 		return t.Return(Car(s))
 	})
+	envp.PublicMethod("keys", func(t *Task, args Cell) bool {
+		var s Cell = toPair(t.Self())
+		l := Null
+
+		var i int64 = 0
+		for s != Null {
+			l = Cons(NewInteger(i), l)
+			s = Cdr(s)
+			i++
+		}
+			
+		return t.Return(Reverse(l))
+	})
 	envp.PublicMethod("length", func(t *Task, args Cell) bool {
 		return t.Return(NewInteger(Length(t.Self())))
 	})
@@ -2964,6 +2988,9 @@ func stringContext() Context {
 		r := strings.Join(arr, string(raw(sep)))
 
 		return t.Return(NewString(r))
+	})
+	envs.PublicMethod("keys", func(t *Task, args Cell) bool {
+		return t.Return(Null)
 	})
 	envs.PublicMethod("length", func(t *Task, args Cell) bool {
 		s := raw(toString(t.Self()))
