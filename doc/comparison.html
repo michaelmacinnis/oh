@@ -1525,7 +1525,7 @@ ${#a[*]}</td>
 ${!a[@]}<br>
 ${!a[*]}</td>
 <td>(seq (count $a))</td>
-<td><span style="color: gray"><em>none</em></span><br></td>
+<td>a::keys</td>
 <td><span style="white-space: pre-wrap;">`seq ${#a}`</span></td>
 <td>$(seq ${#a})</td>
 </tr><tr><td>regular reference</td>
@@ -1599,24 +1599,24 @@ unset a[*]</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
 </tr><tr><td>list indices</td>
-<td>${!foo[@]}<br>
-${!foo[*]}</td>
+<td>${!<span style="color: gray"><em>var</em></span>[@]}<br>
+${!<span style="color: gray"><em>var</em></span>[*]}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::keys</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
-<td></td>
 </tr><tr><td>delete value</td>
-<td>unset "foo[bar]"</td>
+<td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>unset "foo[bar]"</td>
+<td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
 </tr><tr><td>delete array</td>
 <td>unset "<span style="color: gray"><em>var</em></span>[@]"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>unset -v foo</td>
+<td>unset -v <span style="color: gray"><em>var</em></span></td>
 </tr></tbody></table>
 <p><a name="functions" id="functions"></a></p>
 <h1 id="toc61"><span><a href="#top">Functions</a></span></h1>
