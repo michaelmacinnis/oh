@@ -19,7 +19,7 @@ echo "\nfunc bindArithmetic(s *Scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
-	echo $"
+	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
 
@@ -33,20 +33,20 @@ for t: method (l) = {
 }
 echo "}"
 
-define t: quote: (boolean "NewBoolean(Car(args).Bool())") \
-                 (float "NewFloat(Car(args).(Atom).Float())") \
-                 (integer "NewInteger(Car(args).(Atom).Int())") \
-                 (pipe "NewPipe(nil, nil)") \
-                 (rational "NewRational(Car(args).(Atom).Rat())") \
-                 (status "NewStatus(Car(args).(Atom).Status())") \
-                 (string "NewString(Car(args).String())") \
-                 (symbol "NewSymbol(raw(Car(args)))")
+define t: quote: (boolean 'NewBoolean(Car(args).Bool())') \
+                 (float 'NewFloat(Car(args).(Atom).Float())') \
+                 (integer 'NewInteger(Car(args).(Atom).Int())') \
+                 (pipe 'NewPipe(nil, nil)') \
+                 (rational 'NewRational(Car(args).(Atom).Rat())') \
+                 (status 'NewStatus(Car(args).(Atom).Status())') \
+                 (string 'NewString(Car(args).String())') \
+                 (symbol 'NewSymbol(raw(Car(args)))')
 
 echo "\nfunc bindGenerators(s *Scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define o: l::get 1
-	echo $"
+	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(${o})
 	})"
@@ -57,7 +57,7 @@ echo "\nfunc bindPredicates(s *Scope) {"
 for common::predicates: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
-	echo $"
+	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(${m}(Car(args))))
 	})"
@@ -65,19 +65,19 @@ for common::predicates: method (l) = {
 echo "}"
 
 define t: quote: \
-        (eq "!prev.Equal(curr)" "") \
-        (ge "prev.Less(curr)" ".(Number)") \
-        (gt "!prev.Greater(curr)" ".(Number)") \
-        (is "prev != curr" "") \
-        (le "prev.Greater(curr)" ".(Number)") \
-        (lt "!prev.Less(curr)" ".(Number)")
+        (eq '!prev.Equal(curr)' '') \
+        (ge 'prev.Less(curr)' '.(Number)') \
+        (gt '!prev.Greater(curr)' '.(Number)') \
+        (is 'prev != curr' '') \
+        (le 'prev.Greater(curr)' '.(Number)') \
+        (lt '!prev.Less(curr)' '.(Number)')
 
 echo "\nfunc bindRelational(s *Scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define o: l::get 1
 	define t: l::get 2
-	echo $"
+	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		prev := Car(args)${t}
 
@@ -97,21 +97,21 @@ for t: method (l) = {
 }
 echo "}"
 
-define t: quote: (DefineSyntax builtin "t.Closure(NewBuiltin)") \
-                 (DefineSyntax define "t.LexicalVar(psExecDefine)") \
-                 (DefineSyntax method "t.Closure(NewMethod)") \
-                 (DefineSyntax syntax "t.Closure(NewSyntax)") \
-                 (DefineMethod cons "t.Return(Cons(Car(args), Cadr(args)))") \
-                 (DefineMethod list "t.Return(args)") \
-                 (DefineMethod not "t.Return(NewBoolean(!Car(args).Bool()))") \
-                 (DefineMethod reverse "t.Return(Reverse(Car(args)))")
+define t: quote: (DefineSyntax builtin 't.Closure(NewBuiltin)') \
+                 (DefineSyntax define 't.LexicalVar(psExecDefine)') \
+                 (DefineSyntax method 't.Closure(NewMethod)') \
+                 (DefineSyntax syntax 't.Closure(NewSyntax)') \
+                 (DefineMethod cons 't.Return(Cons(Car(args), Cadr(args)))') \
+                 (DefineMethod list 't.Return(args)') \
+                 (DefineMethod not 't.Return(NewBoolean(!Car(args).Bool()))') \
+                 (DefineMethod reverse 't.Return(Reverse(Car(args)))')
 
 echo "\nfunc bindTheRest(s *Scope) {"
 for t: method (l) = {
 	define d: l::get 0
 	define n: l::get 1
 	define o: l::get 2
-	echo $"
+	echo "
 	s.${d}(\"${n}\", func(t *Task, args Cell) bool {
 		return ${o}
 	})"
@@ -129,7 +129,7 @@ define t: quote: (is-control IsControl) (is-digit IsDigit) \
 for t: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
-	echo $"
+	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 
@@ -148,7 +148,7 @@ define t: quote: (lower ToLower) (title ToTitle) (upper ToUpper)
 for t: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
-	echo $"
+	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := raw(toString(Car(t.Dump).(Binding).Self()))
 

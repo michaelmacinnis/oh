@@ -152,11 +152,17 @@ define map: syntax (: literal) e = {
     o::public get = o::_get_
     o::public set = o::_set_
     for literal: method (entry) = {
+        define k: entry::head
+        if (is-list k) {
+            write k
+            set k: e::eval k
+            write k
+	}
         define v: entry::get 1
         if (eq 1: v::length) {
             set v: v::head
         }
-        o::set (entry::head): e::eval v
+        o::set k: e::eval v
     }
     return o
 }
@@ -165,7 +171,7 @@ define math: method (S) e = {
 	set S: e::interpolate S
 	catch ex {
 		set ex::type = "error/syntax"
-		set ex::message = $"Malformed expression: ${S}"
+		set ex::message = "Malformed expression: ${S}"
 	}
 
 	float @(_backtick_ (block {
