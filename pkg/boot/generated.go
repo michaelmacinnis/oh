@@ -148,22 +148,20 @@ define is-list: method (l) = {
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
 define map: syntax (: literal) e = {
-    public get = _get_
-    public set = _set_
     define o: object
     for literal: method (entry) = {
         define k: entry::head
         if (is-list k) {
-            write k
             set k: e::eval k
-            write k
 	}
         define v: entry::get 1
         if (eq 1: v::length) {
             set v: v::head
         }
-        o::set k: e::eval v
+        o::_set_ k: e::eval v
     }
+    public get = _get_
+    public set = _set_
     return o
 }
 # TODO: Replace with builtin rather than invoking bc.
