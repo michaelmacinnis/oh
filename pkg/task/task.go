@@ -481,6 +481,15 @@ func (e *Env) Prev() *Env {
 	return e.prev
 }
 
+func (e *Env) Remove(key Cell) bool {
+	k := key.String()
+	_, ok := e.hash[k]
+	if ok {
+		delete(e.hash, k)
+	}
+	return ok
+}
+
 /* Job definition. */
 
 type Job struct {
@@ -2294,6 +2303,9 @@ func init() {
 
 	namespace = NewScope(nil, nil)
 
+	namespace.PublicMethod("_del_", func(t *Task, args Cell) bool {
+		panic("public members cannot be remove from this type")
+	})
 	namespace.PublicMethod("_dir_", func(t *Task, args Cell) bool {
 		self := toContext(t.Self())
 		l := Null
@@ -2326,6 +2338,17 @@ func init() {
 	object := NewScope(namespace, nil)
 
 	/* Standard Methods. */
+	object.PublicMethod("_del_", func(t *Task, args Cell) bool {
+		self := toContext(t.Self())
+		s := raw(Car(args))
+
+		ok := self.Faces().prev.Remove(NewSymbol(s))
+		if !ok {
+			panic("'" + s + "' undefined")
+		}
+
+		return t.Return(NewBoolean(ok))
+	})
 	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
 		s := raw(Car(args))
 		k := NewSymbol(s)

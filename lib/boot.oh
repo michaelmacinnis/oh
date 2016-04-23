@@ -153,6 +153,7 @@ define map: syntax (: literal) e = {
         }
         o::_set_ k: e::eval v
     }
+    public del = _del_
     public get = _get_
     public set = _set_
     return o
