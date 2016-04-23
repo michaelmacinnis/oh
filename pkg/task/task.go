@@ -2227,8 +2227,6 @@ func expand(t *Task, args Cell) Cell {
 		switch c.(type) {
 		case *Symbol:
 			done = false
-		case *String:
-			s = interpolate(toContext(t.Lexical), t.Frame, s)
 		}
 
 		if done {

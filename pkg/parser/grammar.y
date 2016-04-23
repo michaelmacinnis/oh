@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token BRACE_EXPANSION CTRLC DOLLAR_DOUBLE DOLLAR_SINGLE
+%token BRACE_EXPANSION CTRLC DOLLAR_DOUBLE
 %token DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
@@ -208,18 +208,13 @@ expression: word { $$ = $1 };
 
 word: DOLLAR_DOUBLE {
 	v, _ := adapted.Unquote($1.s[1:])
-	s := task.NewString(v)
-	$$.c = List(NewSymbol("interpolate"), s)
-};
-
-word: DOLLAR_SINGLE {
-	s := task.NewString($1.s[2:len($1.s)-1])
-	$$.c = List(NewSymbol("interpolate"), s)
+	$$.c = task.NewString(v)
 };
 
 word: DOUBLE_QUOTED {
 	v, _ := adapted.Unquote($1.s)
-	$$.c = task.NewString(v)
+	s := task.NewString(v)
+	$$.c = List(NewSymbol("interpolate"), s)
 };
 
 word: SINGLE_QUOTED {

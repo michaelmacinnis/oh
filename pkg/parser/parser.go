@@ -42,7 +42,6 @@ const (
 	ssDollar
 	ssDollarDouble
 	ssDollarDoubleEscape
-	ssDollarSingle
 	ssDoubleQuoted
 	ssDoubleQuotedEscape
 	ssGreater
@@ -240,8 +239,6 @@ main:
 			switch s.line[s.cursor] {
 			case '"':
 				s.state = ssDollarDouble
-			case '\'':
-				s.state = ssDollarSingle
 			default:
 				s.state = ssSymbol
 				continue main
@@ -301,7 +298,7 @@ main:
 				continue main
 			}
 
-		case ssDollarSingle, ssSingleQuoted:
+		case ssSingleQuoted:
 			for s.cursor < len(s.line) && s.line[s.cursor] != '\'' {
 				s.cursor++
 			}
@@ -311,11 +308,7 @@ main:
 				}
 				continue main
 			}
-			if s.state == ssDollarSingle {
-				s.token = DOLLAR_SINGLE
-			} else {
-				s.token = SINGLE_QUOTED
-			}
+			s.token = SINGLE_QUOTED
 
 		case ssSymbol:
 			switch s.line[s.cursor] {
