@@ -575,6 +575,17 @@ func (o *Object) Access(key Cell) Reference {
 	return nil
 }
 
+func (o *Object) Complete(word string) []string {
+	cl := []string{}
+
+	var obj Context
+	for obj = o; obj != nil; obj = obj.Prev() {
+		cl = append(cl, obj.Faces().prev.Complete(word)...)
+	}
+
+	return cl
+}
+
 func (o *Object) Copy() Context {
 	return &Object{
 		&Scope{o.Expose().Faces().Copy(), o.Context.Prev()},
@@ -2280,6 +2291,14 @@ func init() {
 
 	namespace = NewScope(nil, nil)
 
+	namespace.PublicMethod("_dir_", func(t *Task, args Cell) bool {
+		self := toContext(t.Self())
+		l := Null
+		for _, s := range self.Complete("") {
+			l = Cons(NewSymbol(s), l)
+		}
+		return t.Return(l)
+	})
 	namespace.PublicMethod("child", func(t *Task, args Cell) bool {
 		panic("this type cannot be a parent")
 	})
@@ -2293,11 +2312,30 @@ func init() {
 		panic("public members cannot be added to this type")
 	})
 
-	object := NewScope(nil, nil)
+	object := NewScope(namespace, nil)
 
 	/* Standard Methods. */
-	object.PublicSyntax("public", func(t *Task, args Cell) bool {
-		return t.LexicalVar(psExecPublic)
+	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
+		s := raw(Car(args))
+		k := NewSymbol(s)
+
+		c, o := Resolve(t.Self(), nil, k)
+		if c == nil {
+			panic("'" + s + "' undefined")
+		} else if a, ok := c.Get().(Binding); ok {
+			return t.Return(a.Bind(o))
+		} else {
+			return t.Return(c.Get())
+		}
+	})
+	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
+		s := raw(Car(args))
+		v := Cadr(args)
+
+		k := NewSymbol(s)
+
+		toContext(t.Self()).Public(k, v)
+		return t.Return(v)
 	})
 	object.PublicMethod("child", func(t *Task, args Cell) bool {
 		c := toContext(t.Self())
@@ -2328,19 +2366,6 @@ func init() {
 
 		return true
 	})
-	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
-		s := raw(Car(args))
-		k := NewSymbol(s)
-
-		c, o := Resolve(t.Self(), nil, k)
-		if c == nil {
-			panic("'" + s + "' undefined")
-		} else if a, ok := c.Get().(Binding); ok {
-			return t.Return(a.Bind(o))
-		} else {
-			return t.Return(c.Get())
-		}
-	})
 	object.PublicMethod("has", func(t *Task, args Cell) bool {
 		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
 
@@ -2356,14 +2381,8 @@ func init() {
 
 		return t.Return(NewString(modified))
 	})
-	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
-		s := raw(Car(args))
-		v := Cadr(args)
-
-		k := NewSymbol(s)
-
-		toContext(t.Self()).Public(k, v)
-		return t.Return(v)
+	object.PublicSyntax("public", func(t *Task, args Cell) bool {
+		return t.LexicalVar(psExecPublic)
 	})
 
 	/* Root Scope. */
