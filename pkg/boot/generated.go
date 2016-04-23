@@ -148,9 +148,9 @@ define is-list: method (l) = {
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
 define map: syntax (: literal) e = {
+    public get = _get_
+    public set = _set_
     define o: object
-    o::public get = o::_get_
-    o::public set = o::_set_
     for literal: method (entry) = {
         define k: entry::head
         if (is-list k) {

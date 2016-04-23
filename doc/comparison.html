@@ -1571,13 +1571,13 @@ unset a[*]</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>declare</td>
 <td>typeset -A <span style="color: gray"><em>var</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: map</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>typeset -A <span style="color: gray"><em>var</em></span></td>
 </tr><tr><td>list all associative arrays</td>
@@ -1587,17 +1587,17 @@ unset a[*]</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>typeset -A</td>
 </tr><tr><td>assign value</td>
-<td>foo[bar]=baz</td>
+<td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
 <td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::set "bar" baz</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
-<td>foo[bar]=baz</td>
+<td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
 </tr><tr><td>lookup</td>
-<td>${foo[bar]}</td>
+<td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
 <td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>::get "bar"</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
-<td>${foo[bar]}</td>
+<td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
 </tr><tr><td>list indices</td>
 <td>${!foo[@]}<br>
 ${!foo[*]}</td>
@@ -1617,7 +1617,7 @@ ${!foo[*]}</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>unset -v foo</td>
-</tr></tbody></table><p>Associative arrays were added to <tt>bash</tt> with version 4.0.</p>
+</tr></tbody></table>
 <p><a name="functions" id="functions"></a></p>
 <h1 id="toc61"><span><a href="#top">Functions</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
