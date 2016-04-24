@@ -2509,7 +2509,7 @@ func init() {
 
 		return t.Return(c.Get())
 	})
-	scope0.DefineBuiltin("run", func(t *Task, args Cell) bool {
+	scope0.DefineBuiltin("command", func(t *Task, args Cell) bool {
 		if args == Null {
 			SetCar(t.Dump, False)
 			return false
