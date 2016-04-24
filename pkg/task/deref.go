@@ -19,8 +19,6 @@ func deref(name string, address uintptr) Cell {
 		return (*Constant)(unsafe.Pointer(address))
 	case name == "continuation":
 		return (*Continuation)(unsafe.Pointer(address))
-	case name == "env":
-		return (*Env)(unsafe.Pointer(address))
 	case name == "method":
 		return (*Method)(unsafe.Pointer(address))
 	case name == "object":

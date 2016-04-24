@@ -390,7 +390,7 @@ func (ct *Continuation) String() string {
 	return fmt.Sprintf("%%continuation %p%%", ct)
 }
 
-/* Env cell definition. */
+/* Env definition. */
 
 type Env struct {
 	hash map[string]Reference
@@ -399,18 +399,6 @@ type Env struct {
 
 func NewEnv(prev *Env) *Env {
 	return &Env{make(map[string]Reference), prev}
-}
-
-func (e *Env) Bool() bool {
-	return true
-}
-
-func (e *Env) Equal(c Cell) bool {
-	return e == c
-}
-
-func (e *Env) String() string {
-	return fmt.Sprintf("%%env %p%%", e)
 }
 
 /* Env-specific functions */
