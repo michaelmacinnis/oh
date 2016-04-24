@@ -1,6 +1,6 @@
 // Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
 
-%token BRACE_EXPANSION CTRLC DOLLAR_DOUBLE
+%token BANG_DOUBLE BRACE_EXPANSION CTRLC
 %token DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
@@ -206,7 +206,7 @@ expression: "(" ")" { $$.c = Null };
 
 expression: word { $$ = $1 };
 
-word: DOLLAR_DOUBLE {
+word: BANG_DOUBLE {
 	v, _ := adapted.Unquote($1.s[1:])
 	$$.c = task.NewString(v)
 };

@@ -36,12 +36,11 @@ const (
 	ssStart = iota
 	ssAmpersand
 	ssBang
+	ssBangDouble
+	ssBangDoubleEscape
 	ssBangGreater
 	ssColon
 	ssComment
-	ssDollar
-	ssDollarDouble
-	ssDollarDoubleEscape
 	ssDoubleQuoted
 	ssDoubleQuotedEscape
 	ssGreater
@@ -172,8 +171,6 @@ main:
 				s.state = ssDoubleQuoted
 			case '#':
 				s.state = ssComment
-			case '$':
-				s.state = ssDollar
 			case '&':
 				s.state = ssAmpersand
 			case '\'':
@@ -199,6 +196,8 @@ main:
 
 		case ssBang:
 			switch s.line[s.cursor] {
+			case '"':
+				s.state = ssBangDouble
 			case '>':
 				s.state = ssBangGreater
 			case '|':
@@ -235,27 +234,18 @@ main:
 			s.cursor--
 			s.state = ssStart
 
-		case ssDollar:
-			switch s.line[s.cursor] {
-			case '"':
-				s.state = ssDollarDouble
-			default:
-				s.state = ssSymbol
-				continue main
-			}
-
-		case ssDollarDouble, ssDollarDoubleEscape,
+		case ssBangDouble, ssBangDoubleEscape,
 			ssDoubleQuoted, ssDoubleQuotedEscape:
 			for s.cursor < len(s.line) {
-				if s.state == ssDollarDoubleEscape {
-					s.state = ssDollarDouble
+				if s.state == ssBangDoubleEscape {
+					s.state = ssBangDouble
 				} else if s.state == ssDoubleQuotedEscape {
 					s.state = ssDoubleQuoted
 				} else if s.line[s.cursor] == '"' {
 					break
 				} else if s.line[s.cursor] == '\\' {
-					if s.state == ssDollarDouble {
-						s.state = ssDollarDoubleEscape
+					if s.state == ssBangDouble {
+						s.state = ssBangDoubleEscape
 					} else {
 						s.state = ssDoubleQuotedEscape
 					}
@@ -265,8 +255,8 @@ main:
 			if s.cursor >= len(s.line) {
 				continue main
 			}
-			if s.state == ssDollarDouble {
-				s.token = DOLLAR_DOUBLE
+			if s.state == ssBangDouble {
+				s.token = BANG_DOUBLE
 			} else {
 				s.token = DOUBLE_QUOTED
 			}
