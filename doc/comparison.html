@@ -1730,7 +1730,7 @@ unfunction <span style="color: gray"><em>foo</em></span></td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="alias" id="alias"></a><a href="http://hyperpolyglot.org/unix-shells#alias-note">alias:</a><br><br><span style="color: gray"><em>define, list, remove, define suffix alias</em></span></td>
@@ -1740,9 +1740,11 @@ unalias ll<br><span style="color: gray"><em>none</em></span></td>
 <td>alias ltr 'ls -ltr'<br>
 functions<br>
 functions -e ltr<br><span style="color: gray"><em>none</em></span></td>
-<td>alias ll='ls -l'<br>
-alias<br>
-unalias ll<br><span style="color: gray"><em>none</em></span></td>
+<td>define ll: syntax (: args) =: ls -l @args
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span>
+</td>
 <td>alias ll ls -l<br>
 alias<br>
 unalias ll<br><span style="color: gray"><em>none</em></span></td>
@@ -1758,7 +1760,7 @@ enable <span style="color: gray"><em>cmd</em></span><br>
 enable -n <span style="color: gray"><em>cmd</em></span></td>
 <td>builtin <span style="color: gray"><em>cmd</em></span><br>
 builltin -n<br><span style="color: gray"><em>cmd</em></span> <span style="white-space: pre-wrap;">--</span>help<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
-<td>builtin <span style="color: gray"><em>cmd</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span><br>
 builtins<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
 <td>builtin <span style="color: gray"><em>cmd</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>type command name; then M-h</em></span><br>
@@ -1777,9 +1779,7 @@ disable <span style="color: gray"><em>cmd</em></span></td>
 hash -d <span style="color: gray"><em>cmd</em></span><br>
 hash -r<br><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>does not cache command paths</em></span></td>
-<td>alias -t<br>
-alias -t <span style="color: gray"><em>cmd</em></span>=<span style="color: gray"><em>path</em></span><br><span style="color: gray"><em>none</em></span><br>
-alias -r<br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>does not cache command paths</em></span></td>
 <td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br>
 rehash<br><span style="color: gray"><em>none</em></span></td>
 <td>hash<br>
@@ -1790,15 +1790,14 @@ hash -f</td>
 </tr><tr><td><a name="type" id="type"></a><a href="http://hyperpolyglot.org/unix-shells#type-note">command type</a></td>
 <td>type <span style="color: gray"><em>cmd</em></span></td>
 <td>type <span style="color: gray"><em>cmd</em></span></td>
-<td>type <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
 <td></td>
 <td>type <span style="color: gray"><em>cmd</em></span></td>
 </tr><tr><td><a name="cmd-path" id="cmd-path"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-path-note">command path</a></td>
 <td>command -v <span style="color: gray"><em>cmd</em></span></td>
-<td></td>
 <td>whence <span style="color: gray"><em>cmd</em></span></td>
-<td>command -v <span style="color: gray"><em>cmd</em></span><br>
-which <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
+<td></td>
 <td>command -v <span style="color: gray"><em>cmd</em></span><br>
 which <span style="color: gray"><em>cmd</em></span><br>
 whence <span style="color: gray"><em>cmd</em></span></td>
@@ -1809,62 +1808,19 @@ whence <span style="color: gray"><em>cmd</em></span></td>
 <td>where <span style="color: gray"><em>cmd</em></span></td>
 <td>where <span style="color: gray"><em>cmd</em></span><br>
 which -a <span style="color: gray"><em>cmd</em></span></td>
-</tr></tbody></table><p><a name="alias-note" id="alias-note"></a></p>
-<h2 id="toc75"><span><a href="http://hyperpolyglot.org/unix-shells#alias">alias</a></span></h2>
-<p>Alias expansion is done after history expansion and before all other expansion. A command can be expanded by multiple aliases. For example the following will echo "baz":</p>
-<div class="code">
-<pre><code>alias bar=echo "baz"
-alias foo=bar
-foo</code>
-</pre></div>
-<p>On the other hand the shells seem smart enough about aliasing to not be put into an infinite loop. The following code causes an error "foo not found":</p>
-<div class="code">
-<pre><code>alias foo=bar
-alias bar=foo
-foo</code>
-</pre></div>
-<p>Alias definitions are not registered until an entire line of input is read. The following code causes an error "lshome not found":</p>
-<div class="code">
-<pre><code>alias lshome='ls ~'; lshome</code>
-</pre></div>
-<p>User defined functions can replace aliases in the shells which have them; i.e. all shells except <tt>tcsh</tt>.</p>
-<p>The Korn shell has a feature called tracked aliases which are identical to the <a href="http://hyperpolyglot.org/unix-shells#hash-cmd-note">external command hashes</a> of the other shells.</p>
-<p><a name="builtin-note" id="builtin-note"></a></p>
-<h2 id="toc76"><span><a href="http://hyperpolyglot.org/unix-shells#builtin">built-ins</a></span></h2>
-<p><a name="command-note" id="command-note"></a></p>
-<h2 id="toc77"><span><a href="http://hyperpolyglot.org/unix-shells#command">run external command</a></span></h2>
-<p>When resolving commands, user-defined functions take precedence over external commands. If a user-defined function is hiding an external command, the <tt>command</tt> modifier can be used to run the latter.</p>
-<p><a name="env-note" id="env-note"></a></p>
-<h2 id="toc78"><span><a href="http://hyperpolyglot.org/unix-shells#env">run with explicit environment</a></span></h2>
-<p>How to run a command with an explicit environment. <tt>env -i</tt> clears the environment of exported variables and only provides the external command with the environment variables that are explicitly specified. If the <tt>-i</tt> option is not specified then the environment is not cleared, which in many cases is no different than if the command had been run directly without the <tt>env</tt> command. The <tt>env</tt> command without the <tt>-i</tt> option is used in shebang scripts to avoid hard-coding the path of the interpreter.</p>
-<p>Multiple environment variables can be set with the env command:</p>
-<div class="code">
-<pre><code>env -i VAR1=VAL1 VAR2=VAL2 ... CMD</code>
-</pre></div>
-<p><a name="hash-cmd-note" id="hash-cmd-note"></a></p>
-<h2 id="toc79"><span><a href="http://hyperpolyglot.org/unix-shells#hash-cmd">external command hashes</a></span></h2>
-<p>External command hashes are a mapping from command names to paths on the file system.</p>
-<p>The Korn Shell calls external command hashes "tracked aliasaes", and <tt>ksh</tt> defines <tt>hash</tt> as an alias for <tt>alias -t</tt>.</p>
-<p><a name="type-note" id="type-note"></a></p>
-<h2 id="toc80"><span><a href="http://hyperpolyglot.org/unix-shells#type">command type</a></span></h2>
-<p>Determine what type a command is. The possible types are alias, shell function, shell builtin, or a path to an external command. If the command is not found an exit status of 1 is returned.</p>
-<p><a name="cmd-path-note" id="cmd-path-note"></a></p>
-<h2 id="toc81"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-path">command path</a></span></h2>
-<p>Return the absolute path for an external command. For shell functions and shell builtins the name of the command is returned. For aliases the statement used to define the alias is returned. If the command is not found an exit status of 1 is returned.</p>
-<p><a name="cmd-path-all-note" id="cmd-path-all-note"></a></p>
-<h2 id="toc82"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-path-all">command paths</a></span></h2>
+</tr></tbody></table>
 <p><a name="arg-options" id="arg-options"></a></p>
 <h1 id="toc83"><span><a href="#top">Arguments and Options</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="exec-exit" id="exec-exit"></a><a href="http://hyperpolyglot.org/unix-shells#exec-exit-note">execute command and exit</a></td>
 <td>$ bash -c 'echo foo'</td>
 <td>$ fish -c 'echo foo'</td>
-<td>$ ksh -c 'echo foo'</td>
+<td>$ oh -c 'echo foo'</td>
 <td>$ tcsh -c 'echo foo'</td>
 <td>$ zsh -c 'echo foo'</td>
 </tr><tr><td><a name="usage" id="usage"></a><a href="http://hyperpolyglot.org/unix-shells#usage-note">usage</a></td>
@@ -1876,7 +1832,7 @@ foo</code>
 </tr><tr><td><a name="interactive-shell" id="interactive-shell"></a><a href="http://hyperpolyglot.org/unix-shells#interactive-shell-note">interactive shell</a></td>
 <td>$ bash -i</td>
 <td>$ fish -i</td>
-<td>$ ksh -i</td>
+<td></td>
 <td>$ tcsh -i</td>
 <td>$ zsh -i</td>
 </tr><tr><td><a name="login-shell" id="login-shell"></a><a href="http://hyperpolyglot.org/unix-shells#login-shell-note">login shell</a></td>
@@ -1884,7 +1840,7 @@ foo</code>
 $ bash <span style="white-space: pre-wrap;">--</span>login</td>
 <td>$ fish -l<br>
 $ fish <span style="white-space: pre-wrap;">--</span>login</td>
-<td>$ ksh -l</td>
+<td></td>
 <td>$ tcsh -l</td>
 <td>$ zsh -l<br>
 $ zsh <span style="white-space: pre-wrap;">--</span>login</td>
@@ -1898,7 +1854,7 @@ $ zsh <span style="white-space: pre-wrap;">--</span>login</td>
 <td>$ bash -r<br>
 $ bash <span style="white-space: pre-wrap;">--</span>restricted</td>
 <td></td>
-<td>$ ksh -r</td>
+<td></td>
 <td></td>
 <td>$ zsh -r<br>
 $ zsh <span style="white-space: pre-wrap;">--</span>restricted</td>
@@ -1912,69 +1868,24 @@ $ zsh <span style="white-space: pre-wrap;">--</span>restricted</td>
 <td>shift<br>
 shift <span style="color: gray"><em>n</em></span></td>
 <td></td>
-<td>shift<br>
-shift <span style="color: gray"><em>n</em></span></td>
+<td>set _args_ =: _args_::tail<br>
+<span style="color: gray"><em>none</em></span></td>
 <td>shift<br><span style="color: gray"><em>none</em></span></td>
 <td>shift<br>
 shift <span style="color: gray"><em>n</em></span></td>
 </tr><tr><td><a name="set-param" id="set-param"></a><a href="http://hyperpolyglot.org/unix-shells#set-param-note">set positional parameters</a></td>
 <td>set <span style="white-space: pre-wrap;">--</span> <span style="color: gray"><em>arg …</em></span></td>
 <td></td>
-<td>set <span style="white-space: pre-wrap;">--</span> <span style="color: gray"><em>arg …</em></span></td>
+<td>set _args_ = <span style="color: gray"><em>…</em></span></td>
 <td></td>
 <td>set <span style="white-space: pre-wrap;">--</span> <span style="color: gray"><em>arg …</em></span></td>
 </tr><tr><td><a name="getopts" id="getopts"></a><a href="http://hyperpolyglot.org/unix-shells#getopts-note">getopts</a></td>
 <td>getopts <span style="color: gray"><em>opts</em></span> <span style="color: gray"><em>var</em></span></td>
 <td></td>
-<td>getopts <span style="color: gray"><em>opts</em></span> <span style="color: gray"><em>var</em></span></td>
+<td></td>
 <td></td>
 <td>getopts <span style="color: gray"><em>opts</em></span> <span style="color: gray"><em>var</em></span></td>
-</tr></tbody></table><p><em>options can be set by the script using</em> <tt>set</tt>. Also <tt>set -o</tt> (bash) and pipefail.</p>
-<p><a name="exec-exit-note" id="exec-exit-note"></a></p>
-<h2 id="toc84"><span><a href="http://hyperpolyglot.org/unix-shells#exec-exit">execute command and exit</a></span></h2>
-<p>Shell executes a single command which is provided on the command line and then exits.</p>
-<p><a name="usage-note" id="usage-note"></a></p>
-<h2 id="toc85"><span><a href="http://hyperpolyglot.org/unix-shells#usage">usage</a></span></h2>
-<p>Shell provides list of options and exits.</p>
-<p><a name="interactive-shell-note" id="interactive-shell-note"></a></p>
-<h2 id="toc86"><span><a href="http://hyperpolyglot.org/unix-shells#interactive-shell">interactive shell</a></span></h2>
-<p>An interactive shell is one that is not provided a script when invoked as an argument or is not invoked with the <tt>-c</tt> option. The <tt>-i</tt> option makes a script interactive regardless. Typically an interactive shell gets its input from and sends its output to a terminal. An interactive shell ignores SIGTERM and will handle but not exit when receiving a SIGINT. Interactive shells display a prompt and enable job control. In an interactive shell the octothorpe # causes a syntax error, unlike in non-interactive shells where it is treated as the start of a comment.</p>
-<p><a name="login-shell-note" id="login-shell-note"></a></p>
-<h2 id="toc87"><span><a href="http://hyperpolyglot.org/unix-shells#login-shell">login shell</a></span></h2>
-<p>A login shell is a special type of interactive shell. It executes different startup files and will also execute any logout files. When it exits it sends a SIGHUP to all jobs. (is this true?) A login shell ignores the <tt>suspend</tt> built-in.</p>
-<p><a name="posix-compliant-note" id="posix-compliant-note"></a></p>
-<h2 id="toc88"><span><a href="http://hyperpolyglot.org/unix-shells#posix-compliant">make posix compliant</a></span></h2>
-<p>Change the behavior of the shell to be more POSIX compliant.</p>
-<p><a name="restricted-note" id="restricted-note"></a></p>
-<h2 id="toc89"><span><a href="http://hyperpolyglot.org/unix-shells#restricted">restricted mode</a></span></h2>
-<p>Shell runs in restricted mode.</p>
-<p><a name="version-opt-note" id="version-opt-note"></a></p>
-<h2 id="toc90"><span><a href="http://hyperpolyglot.org/unix-shells#version-opt">show version</a></span></h2>
-<p>Show version and exit.</p>
-<p><a name="shift-note" id="shift-note"></a></p>
-<h2 id="toc91"><span><a href="http://hyperpolyglot.org/unix-shells#shift">shift positional parameters</a></span></h2>
-<p>Outside of a function <tt>shift</tt> operates on the command line arguments. Inside a function <tt>shift</tt> operates on the function arguments.</p>
-<p><a name="set-param-note" id="set-param-note"></a></p>
-<h2 id="toc92"><span><a href="http://hyperpolyglot.org/unix-shells#set-param">set positional parameters</a></span></h2>
-<p>How to set the positional parameters from within a script.</p>
-<p><a name="getopts-note" id="getopts-note"></a></p>
-<h2 id="toc93"><span><a href="http://hyperpolyglot.org/unix-shells#getopts">getopts</a></span></h2>
-<p>How to process command line options.</p>
-<p><tt>getopts</tt> operates on the positional parameters $1, $2, …</p>
-<p>The first argument to <tt>getopts</tt> is a word specifying the options. The options are single characters which cannot be ':' or '?'. The colon ':' indicates that the preceding letter is an option which takes an argument. If an option is encountered which is not in the option word, <tt>getopts</tt> sets the variable to '?'.</p>
-<div class="code">
-<pre><code>while getopts a:b:c:def OPT
-do
-    case $OPT in
-        a) OPTA=$OPTARG ;;
-        b) OPTB=$OPTARG ;;
-        c) OPTC=$OPTARG ;;
-        d) OPTD=1 ;;
-        e) OPTE=1 ;;
-        f) OPTF=1 ;;
-    esac
-done</code>
-</pre></div>
+</tr></tbody></table>
 <p><a name="execution-control" id="execution-control"></a></p>
 <h1 id="toc94"><span><a href="#top">Execution Control</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
