@@ -1891,25 +1891,25 @@ shift <span style="color: gray"><em>n</em></span></td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="negate-status" id="negate-status"></a><a href="http://hyperpolyglot.org/unix-shells#negate-status-note">negate exit status</a></td>
 <td>! <span style="color: gray"><em>cmd</em></span></td>
 <td>not <span style="color: gray"><em>cmd</em></span></td>
-<td>! <span style="color: gray"><em>cmd</em></span></td>
+<td>not: <span style="color: gray"><em>cmd</em></span></td>
 <td></td>
 <td>! <span style="color: gray"><em>cmd</em></span></td>
 </tr><tr><td><a name="noop" id="noop"></a><a href="http://hyperpolyglot.org/unix-shells#noop-note">no-op command</a></td>
 <td>:</td>
 <td></td>
-<td>:</td>
+<td></td>
 <td>:</td>
 <td>:</td>
 </tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#break">break</a></td>
 <td>break</td>
 <td>break</td>
-<td>break</td>
+<td></td>
 <td>break</td>
 <td>break</td>
 </tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#case">case</a></td>
@@ -1918,9 +1918,7 @@ shift <span style="color: gray"><em>n</em></span></td>
 esac</td>
 <td>switch <span style="color: gray"><em>arg</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>case <span style="color: gray"><em>pattern …</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>case '*'<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
-<td>case <span style="color: gray"><em>arg</em></span> in<br><span style="color: gray"><em>pattern</em></span>) <span style="color: gray"><em>cmd</em></span>;;<br><span style="color: gray"><em>…</em></span><br>
-*) <span style="color: gray"><em>cmd</em></span>;;<br>
-esac</td>
+<td></td>
 <td>switch (<span style="color: gray"><em>arg</em></span>)<br>
 case <span style="color: gray"><em>pattern</em></span>:<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>breaksw<br><span style="color: gray"><em>…</em></span><br>
 default:<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>breaksw<br>
@@ -1931,7 +1929,7 @@ esac</td>
 </tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#continue">continue</a></td>
 <td>continue</td>
 <td>continue</td>
-<td>continue</td>
+<td></td>
 <td>continue</td>
 <td>continue</td>
 </tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#for">for</a></td>
@@ -1940,9 +1938,9 @@ do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color
 done</td>
 <td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
-<td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
-do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-done</td>
+<td>for <span style="color: gray"><em>list</em></span>: method (<span style="color: gray"><em>var</em></span>) = {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+}</td>
 <td>foreach <span style="color: gray"><em>var</em></span> (<span style="color: gray"><em>arg …</em></span>)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
 <td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
@@ -1965,12 +1963,12 @@ fi</td>
 else if <span style="color: gray"><em>test</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
-<td>if <span style="color: gray"><em>test</em></span><br>
-then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-elif <span style="color: gray"><em>test</em></span><br>
-then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-fi</td>
+<td>if <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+} else: if <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+} else {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+}</td>
 <td>if (<span style="color: gray"><em>expr</em></span>) then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 else if (<span style="color: gray"><em>expr</em></span>) then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
@@ -1993,9 +1991,7 @@ done</td>
 do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 done</td>
 <td></td>
-<td>select <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
-do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-done</td>
+<td></td>
 <td></td>
 <td>select <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
 do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
@@ -2005,9 +2001,7 @@ done</td>
 do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 done</td>
 <td></td>
-<td>until <span style="color: gray"><em>test</em></span><br>
-do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-done</td>
+<td></td>
 <td></td>
 <td>until <span style="color: gray"><em>test</em></span><br>
 do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
@@ -2018,85 +2012,15 @@ do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color
 done</td>
 <td>while <span style="color: gray"><em>test</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
-<td>while <span style="color: gray"><em>test</em></span><br>
-do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
-done</td>
+<td>while <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+}</td>
 <td>while (<span style="color: gray"><em>expr</em></span>)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 end</td>
 <td>while <span style="color: gray"><em>test</em></span><br>
 do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
 done</td>
-</tr></tbody></table><p><a name="negate-status-note" id="negate-status-note"></a></p>
-<h2 id="toc95"><span><a href="http://hyperpolyglot.org/unix-shells#negate-status">negate exit status</a></span></h2>
-<p>How to run a command and logically negate the exit status. This can be useful if the command is run as the conditional of a <tt>if</tt> statement.</p>
-<p>The <tt>!</tt> precommand modifier converts a zero exit status to 1 and a nonzero exit status to 0.</p>
-<p>The <tt>!</tt> must be separated from the command by whitespace, or it will be interpreted by the shell as a history substitution.</p>
-<p><a name="noop-note" id="noop-note"></a></p>
-<h2 id="toc96"><span><a href="http://hyperpolyglot.org/unix-shells#noop">no-op command</a></span></h2>
-<p><a name="break" id="break"></a></p>
-<h2 id="toc97"><span>break</span></h2>
-<p>Exits the enclosing for, select, until, or while loop.</p>
-<p><a name="case" id="case"></a></p>
-<h2 id="toc98"><span>case</span></h2>
-<p>The syntax for a switch statement.</p>
-<p>Default clauses, which are indicated by the * pattern in most shells, are optional.</p>
-<p><a name="continue" id="continue"></a></p>
-<h2 id="toc99"><span>continue</span></h2>
-<p>Go to the next iteration of the enclosing for, select, until, or while loop.</p>
-<p><a name="for" id="for"></a></p>
-<h2 id="toc100"><span>for</span></h2>
-<p>A loop for iterating over a list of arguments.</p>
-<p><tt>zsh</tt> has alternate syntax which uses parens instead of the <tt>in</tt> keyword:</p>
-<div class="code">
-<pre><code>for VAR (ARG ...)
-do
-  CMD
-  ...
-done</code>
-</pre></div>
-<p><a name="goto" id="goto"></a></p>
-<h2 id="toc101"><span>goto</span></h2>
-<p><tt>tcsh</tt> supports the <tt>goto</tt> statement. The target the first line containing just the <span style="color: gray"><em>label</em></span> followed by a colon. Here's an example:</p>
-<div class="code">
-<pre><code>#/bin/tcsh
-goto foo
-echo "goto doesn't work!"
-exit -1
-foo:
-echo "goto works"</code>
-</pre></div>
-<p><a name="if" id="if"></a></p>
-<h2 id="toc102"><span>if</span></h2>
-<p>The if statement.</p>
-<p>The <span style="color: gray"><em>test</em></span> which is the argument of <tt>if</tt> or <tt>elif</tt> can be any simple command, pipeline, or list of commands. The <span style="color: gray"><em>test</em></span> executes and if the exit status is zero the corresponding clause is also executed.</p>
-<p>Often the <span style="color: gray"><em>test</em></span> which is the argument of <tt>if</tt> or <tt>elif</tt> will be one of the test operators: <tt>test</tt>, <tt>[ ]</tt>, <tt>[[ ]]</tt>, or <tt>(( ))</tt>.</p>
-<p>The <tt>elif</tt> and <tt>else</tt> clauses are optional.</p>
-<p><strong>tcsh:</strong></p>
-<p>The argument of <tt>if</tt> and <tt>elif</tt> clauses must be an expression inside parens. Unlike the other shells it cannot be an arbitrary command. One can think of expressions as being built-in to the <tt>tcsh</tt> shell language rather than being delegated to specialized (albeit built-in) commands such as <tt>test</tt> and <tt>[ ]</tt>.</p>
-<p>Note that the <tt>then</tt> keyword must be on the same line as the conditional expression. This is different from the POSIX syntax where the <tt>then</tt> keyword is separated from the test command by a newline or semicolon.</p>
-<p>The <tt>else if</tt> and <tt>else</tt> clauses are optional.</p>
-<p><tt>tcsh</tt> has the following syntax for conditionally executing a single command:</p>
-<div class="code">
-<pre><code>if (EXPR) CMD</code>
-</pre></div>
-<br><a name="repeat" id="repeat"></a>
-<h2 id="toc103"><span>repeat</span></h2>
-<p>Here are a couple of ways to do something 10 times if you aren't using <tt>tcsh</tt>. Neither technique is POSIX compliant, however:</p>
-<div class="code">
-<pre><code>for i in `seq 1 10`; do echo "la"; done
-
-for i in {1..10}; do echo "la"; done</code>
-</pre></div>
-<p><a name="select" id="select"></a></p>
-<h2 id="toc104"><span>select</span></h2>
-<p>The select statement creates a numbered menu inside an infinite loop. Each time the user selects one of the numbers the corresponding command is executed. The user can use ^D or EOF to exit the loop.</p>
-<p>On each iteration <span style="color: gray"><em>var</em></span> is set to the value corresponding to the number the user chose. The <tt>break</tt> keyword can be used to give the user a numbered option for exiting the loop.</p>
-<p><a name="until" id="until"></a></p>
-<h2 id="toc105"><span>until</span></h2>
-<p>The remarks above on <a href="http://hyperpolyglot.org/unix-shells#if">if</a> conditions also apply to the until loop condition.</p>
-<p><a name="while" id="while"></a></p>
-<h2 id="toc106"><span>while</span></h2>
-<p>The remarks above on <a href="http://hyperpolyglot.org/unix-shells#if">if</a> conditions also apply to the while loop condition.</p>
+</tr></tbody></table>
 <p><a name="redirection" id="redirection"></a></p>
 <h1 id="toc107"><span><a href="#top">Redirection</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
