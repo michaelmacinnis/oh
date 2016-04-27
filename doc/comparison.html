@@ -1623,15 +1623,14 @@ ${!<span style="color: gray"><em>var</em></span>[*]}</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="func-def" id="func-def"></a><a href="http://hyperpolyglot.org/unix-shells#func-def-note">define with parens</a></td>
 <td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
 }</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
-}</td>
+<td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
 }</td>
@@ -1640,8 +1639,10 @@ ${!<span style="color: gray"><em>var</em></span>[*]}</td>
 }</td>
 <td>function foo<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
 end</td>
-<td>function foo {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
-}</td>
+<td>
+define foo: method () = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}
+</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>function foo {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
 }</td>
@@ -1663,13 +1664,18 @@ zed -f foo</td>
 </tr><tr><td><a name="func-param" id="func-param"></a><a href="http://hyperpolyglot.org/unix-shells#func-param-note">parameters</a></td>
 <td>$1, $2, <span style="color: gray"><em>…</em></span></td>
 <td>$argv[1], $argv[2], <span style="color: gray"><em>…</em></span></td>
-<td>$1, $2, <span style="color: gray"><em>…</em></span></td>
+<td><span style="color: gray"><em>Given:</em></span><br>
+define foo: method (: argv) = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span># ...<br>
+}<br><br>
+argv::get 0, argv::get 1, <span style="color: gray"><em>…</em></span>
+</td>
+</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$1, $2, <span style="color: gray"><em>…</em></span></td>
 </tr><tr><td><a name="num-func-param" id="num-func-param"></a><a href="http://hyperpolyglot.org/unix-shells#num-func-param-note">number of parameters</a></td>
 <td>$#</td>
 <td>(count $argv)</td>
-<td>$#</td>
+<td>argv::length</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$#</td>
 </tr><tr><td><a name="func-return" id="func-return"></a><a href="http://hyperpolyglot.org/unix-shells#func-return-note">return</a></td>
@@ -1677,7 +1683,7 @@ zed -f foo</td>
 }</td>
 <td>function false<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
 end</td>
-<td>false() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
+<td>define return-false: method () = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return false<br>
 }</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>false() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
@@ -1685,7 +1691,7 @@ end</td>
 </tr><tr><td><a name="func-retval" id="func-retval"></a><a href="http://hyperpolyglot.org/unix-shells#func-retval-note">return values</a></td>
 <td>{0, <span style="color: gray"><em>…</em></span>, 255}</td>
 <td>{0, <span style="color: gray"><em>…</em></span>, 2<span style="white-space: pre-wrap;">**</span>31 - 1}<br><br><span style="color: gray"><em>negative values result in return value of "-"</em></span><br><br><span style="color: gray"><em>values above 2**31 - 1 cause error</em></span></td>
-<td>{0, <span style="color: gray"><em>…</em></span>, 255}</td>
+<td><span style="color: gray"><em>The complete set of oh data types.</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>{-2<span style="white-space: pre-wrap;">**</span>31, <span style="color: gray"><em>…</em></span>, 2<span style="white-space: pre-wrap;">**</span>31 - 1}<br><br><span style="color: gray"><em>other integers converted to one of the above values by modular arithmetic</em></span></td>
 </tr><tr><td><a name="local-var" id="local-var"></a><a href="http://hyperpolyglot.org/unix-shells#local-var-note">local variables</a></td>
@@ -1694,7 +1700,8 @@ end</td>
 <td>function foo<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>set -l bar 7<br>
 end<br><br><span style="color: gray"><em>without the -l flag, the the variable will<br>
 be global if already defined, otherwise local</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>define foo: method () = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>define bar = 7<br>
+}</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>local bar=7<br>
 }<br><br><span style="color: gray"><em>variables set without the local keyword are global</em></span></td>
@@ -1707,64 +1714,17 @@ be global if already defined, otherwise local</em></span></td>
 </tr><tr><td><a name="show-func" id="show-func"></a><a href="http://hyperpolyglot.org/unix-shells#show-func-note">show function</a></td>
 <td>typeset -f <span style="color: gray"><em>func</em></span></td>
 <td>functions <span style="color: gray"><em>func</em></span></td>
-<td>typeset -f <span style="color: gray"><em>func</em></span></td>
+<td></td>
 <td></td>
 <td>typeset -f <span style="color: gray"><em>func</em></span></td>
 </tr><tr><td><a name="del-func" id="del-func"></a><a href="http://hyperpolyglot.org/unix-shells#del-func-note">delete function</a></td>
 <td>unset -f <span style="color: gray"><em>func</em></span></td>
 <td>functions -e <span style="color: gray"><em>func</em></span></td>
-<td>unset -f <span style="color: gray"><em>func</em></span></td>
+<td></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>unset -f <span style="color: gray"><em>func</em></span><br>
 unfunction <span style="color: gray"><em>foo</em></span></td>
-</tr></tbody></table><p><a name="func-def-note" id="func-def-note"></a></p>
-<h2 id="toc62"><span><a href="http://hyperpolyglot.org/unix-shells#func-def">define with parens</a></span></h2>
-<p>How to define a function.</p>
-<p>POSIX calls for parens in the declaration, but parameters are not declared inside the parens, nor are parens used when invoking the function. Functions are invoked with the same syntax used to invoke external commands. Defining a function hides a built-in or an external command with the same name, but the built-in or external command can still be invoked with the <tt>builtin</tt> or <tt>command</tt> modifiers.</p>
-<p><a name="func-def-keyword-note" id="func-def-keyword-note"></a></p>
-<h2 id="toc63"><span><a href="http://hyperpolyglot.org/unix-shells#func-def-keyword">define with keyword</a></span></h2>
-<p>How to define a function using the <tt>function</tt> keyword.</p>
-<p><a name="func-def-doc-note" id="func-def-doc-note"></a></p>
-<h2 id="toc64"><span><a href="http://hyperpolyglot.org/unix-shells#func-def-doc">define function with doc string</a></span></h2>
-<p><a name="func-def-edit-note" id="func-def-edit-note"></a></p>
-<h2 id="toc65"><span><a href="http://hyperpolyglot.org/unix-shells#func-def-edit">edit function definition</a></span></h2>
-<p><a name="func-param-note" id="func-param-note"></a></p>
-<h2 id="toc66"><span><a href="http://hyperpolyglot.org/unix-shells#func-param">parameters</a></span></h2>
-<p>The variables which hold the function parameters.</p>
-<p>Outside of a function the variables $1, $2, … refer to the command line arguments provided to the script.</p>
-<p>$0 always refers the name of the script in a non-interactive shell.</p>
-<p><a name="num-func-param-note" id="num-func-param-note"></a></p>
-<h2 id="toc67"><span><a href="http://hyperpolyglot.org/unix-shells#num-func-param">number of parameters</a></span></h2>
-<p>The variable containing the number of function parameters which were provided.</p>
-<p>Outside of a function $# refers to the number of command line arguments.</p>
-<p><a name="func-return-note" id="func-return-note"></a></p>
-<h2 id="toc68"><span><a href="http://hyperpolyglot.org/unix-shells#func-return">return</a></span></h2>
-<p>If a function does not have an explicit <tt>return</tt> statement then the return value is the exit status of the last command executed. If no command executed the return value is 0.</p>
-<p><a name="func-retval-note" id="func-retval-note"></a></p>
-<h2 id="toc69"><span><a href="http://hyperpolyglot.org/unix-shells#func-retval">return values</a></span></h2>
-<p>Shell functions can only return integers. Some shells limit the return value to a single byte. This is all the information one can get from the exit status of an external process according to the POSIX standard.</p>
-<p>If a shell function needs to return a different type of value, it can write it to a global variable. All variables are global by default. The value in one of the parameters can be used to determine the variable to which the return value will be written. Consider this implementation of <tt>setenv</tt>:</p>
-<div class="code">
-<pre><code>setenv() {
-  eval $1=$2
-}</code>
-</pre></div>
-<p><a name="local-var-note" id="local-var-note"></a></p>
-<h2 id="toc70"><span><a href="http://hyperpolyglot.org/unix-shells#local-var">local variables</a></span></h2>
-<p>How to declare and set a local variable.</p>
-<p>Local variables are normally defined inside a function. <tt>bash</tt> throws an error when an attempt is made to define a local outside a function, but <tt>dash</tt> and <tt>zsh</tt> do not.</p>
-<p>Local variables have lexical, not dynamic scope. If a function recurses, locals in the caller will not be visible in the callee.</p>
-<p><a name="list-func-note" id="list-func-note"></a></p>
-<h2 id="toc71"><span><a href="http://hyperpolyglot.org/unix-shells#list-func">list functions</a></span></h2>
-<p>How to list the user defined functions.</p>
-<p><tt>typeset -f</tt> without an argument will show all function definitions.</p>
-<p><tt>bash</tt> and <tt>zsh</tt> always the function definitions with the paren syntax, even if the function keyword syntax was used to define the function.</p>
-<p><a name="show-func-note" id="show-func-note"></a></p>
-<h2 id="toc72"><span><a href="http://hyperpolyglot.org/unix-shells#show-func">show function</a></span></h2>
-<p>How to show the definition of a function.</p>
-<p><a name="del-func-note" id="del-func-note"></a></p>
-<h2 id="toc73"><span><a href="http://hyperpolyglot.org/unix-shells#del-func">delete function</a></span></h2>
-<p>How to remove a user defined function.</p>
+</tr></tbody></table>
 <p><a name="cmd-resolution" id="cmd-resolution"></a></p>
 <h1 id="toc74"><span><a href="#top">Command Resolution</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
