@@ -140,13 +140,18 @@ func broker() {
 					task0.Suspend()
 
 					last := 0
+					jobsl.RLock()
 					for k := range jobs {
 						if k > last {
 							last = k
 						}
 					}
+					jobsl.RUnlock()
 					last++
+
+					jobsl.Lock()
 					jobs[last] = task0
+					jobsl.Unlock()
 
 				case syscall.SIGINT:
 					task0.Stop()

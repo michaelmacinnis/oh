@@ -145,6 +145,7 @@ var (
 	homesym     *Symbol
 	interactive = false
 	jobs        = map[int]*Task{}
+	jobsl       = &sync.RWMutex{}
 	namespace   Context
 	oldpwdsym   *Symbol
 	parse       reader
@@ -153,7 +154,6 @@ var (
 	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
-	str         = map[string]*String{}
 	sys         Context
 	task0       *Task
 )
@@ -393,27 +393,34 @@ func (ct *Continuation) String() string {
 /* Env definition. */
 
 type Env struct {
+	*sync.RWMutex
 	hash map[string]Reference
 	prev *Env
 }
 
 func NewEnv(prev *Env) *Env {
-	return &Env{make(map[string]Reference), prev}
+	return &Env{&sync.RWMutex{}, make(map[string]Reference), prev}
 }
 
 /* Env-specific functions */
 
 func (e *Env) Access(key Cell) Reference {
 	for env := e; env != nil; env = env.prev {
+		env.RLock()
 		if value, ok := env.hash[key.String()]; ok {
+			env.RUnlock()
 			return value
 		}
+		env.RUnlock()
 	}
 
 	return nil
 }
 
 func (e *Env) Add(key Cell, value Cell) {
+	e.Lock()
+	defer e.Unlock()
+
 	e.hash[key.String()] = NewVariable(value)
 }
 
@@ -434,6 +441,9 @@ func (e *Env) Complete(word string) []string {
 }
 
 func (e *Env) Copy() *Env {
+	e.RLock()
+	defer e.RUnlock()
+
 	if e == nil {
 		return nil
 	}
@@ -447,13 +457,10 @@ func (e *Env) Copy() *Env {
 	return fresh
 }
 
-func (e *Env) Method(name string, m Function) {
-	e.hash[name] =
-		NewConstant(NewBound(NewMethod(
-			m, Null, Null, Null, Null, nil), nil))
-}
-
 func (e *Env) Prefixed(prefix string) map[string]Cell {
+	e.RLock()
+	defer e.RUnlock()
+
 	r := map[string]Cell{}
 
 	for k, v := range e.hash {
@@ -470,6 +477,9 @@ func (e *Env) Prev() *Env {
 }
 
 func (e *Env) Remove(key Cell) bool {
+	e.Lock()
+	defer e.Unlock()
+
 	k := key.String()
 	_, ok := e.hash[k]
 	if ok {
@@ -622,11 +632,11 @@ func IsPipe(c Cell) bool {
 
 func NewPipe(r *os.File, w *os.File) *Pipe {
 	p := &Pipe{
-		b:     nil,
-		c:     nil,
-		d:     nil,
-		r:     r,
-		w:     w,
+		b: nil,
+		c: nil,
+		d: nil,
+		r: r,
+		w: w,
 	}
 
 	if r == nil && w == nil {
@@ -1089,16 +1099,9 @@ func IsString(c Cell) bool {
 }
 
 func NewString(v string) *String {
-	p, ok := str[v]
-
-	if ok {
-		return p
-	}
-
 	s := String{v}
-	p = &s
 
-	return p
+	return &s
 }
 
 func (s *String) Bool() bool {
@@ -1204,6 +1207,7 @@ type Task struct {
 	File      string
 	Line      int
 	children  map[*Task]bool
+	childrenl *sync.RWMutex
 	parent    *Task
 	pid       int
 	suspended chan bool
@@ -1240,13 +1244,16 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 		File:      "oh",
 		Line:      0,
 		children:  make(map[*Task]bool),
+		childrenl: &sync.RWMutex{},
 		parent:    p,
 		pid:       0,
 		suspended: runnable,
 	}
 
 	if p != nil {
+		p.childrenl.Lock()
 		p.children[t] = true
+		p.childrenl.Unlock()
 	}
 
 	return t
@@ -1365,11 +1372,13 @@ func (t *Task) Continue() {
 		ContinueProcess(t.pid)
 	}
 
+	t.childrenl.RLock()
 	for k, v := range t.children {
 		if v {
 			k.Continue()
 		}
 	}
+	t.childrenl.RUnlock()
 
 	close(t.suspended)
 }
@@ -1830,11 +1839,13 @@ func (t *Task) Stop() {
 		TerminateProcess(t.pid)
 	}
 
+	t.childrenl.RLock()
 	for k, v := range t.children {
 		if v {
 			k.Stop()
 		}
 	}
+	t.childrenl.RUnlock()
 }
 
 func (t *Task) Strict() (ok bool) {
@@ -1860,11 +1871,13 @@ func (t *Task) Suspend() {
 		SuspendProcess(t.pid)
 	}
 
+	t.childrenl.RLock()
 	for k, v := range t.children {
 		if v {
 			k.Suspend()
 		}
 	}
+	t.childrenl.RUnlock()
 
 	t.suspended = make(chan bool)
 }
@@ -1914,12 +1927,14 @@ func (t *Task) Throw(file string, line int, text string) {
 }
 
 func (t *Task) Wait() {
+	t.childrenl.Lock()
 	for k, v := range t.children {
 		if v {
 			<-k.Done
 		}
 		delete(t.children, k)
 	}
+	t.childrenl.Unlock()
 }
 
 /* Unbound cell definition. */
@@ -2209,19 +2224,26 @@ func control(t *Task, args Cell) *Task {
 			index = int(a.Int())
 		}
 	} else {
+		jobsl.RLock()
 		for k := range jobs {
 			if k > index {
 				index = k
 			}
 		}
+		jobsl.RUnlock()
 	}
 
+	jobsl.RLock()
 	found, ok := jobs[index]
+	jobsl.RUnlock()
+
 	if !ok {
 		return nil
 	}
 
+	jobsl.Lock()
 	delete(jobs, index)
+	jobsl.Unlock()
 
 	return found
 }
@@ -2471,8 +2493,10 @@ func init() {
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		if !jobControlEnabled() || t != task0 ||
-			len(jobs) == 0 {
+		jobsl.RLock()
+		defer jobsl.RUnlock()
+
+		if !jobControlEnabled() || t != task0 || len(jobs) == 0 {
 			return false
 		}
 
@@ -2884,7 +2908,7 @@ func pairContext() Context {
 			s = Cdr(s)
 			i++
 		}
-			
+
 		return t.Return(Reverse(l))
 	})
 	envp.PublicMethod("length", func(t *Task, args Cell) bool {

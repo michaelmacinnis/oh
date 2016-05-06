@@ -238,4 +238,3 @@ func Tail(list Cell, index int64, dflt Cell) Cell {
 
 	return list
 }
-

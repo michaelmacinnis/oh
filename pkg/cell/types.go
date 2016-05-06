@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"sync"
 )
 
 type Atom interface {
@@ -49,14 +50,15 @@ var (
 	False *Boolean
 	True  *Boolean
 
-	max *big.Rat
-	min *big.Rat
-	num [512]*Integer
-	one *big.Rat
-	rat [512]Rational
-	res [256]*Status
-	sym = map[string]*Symbol{}
-	zip *big.Rat
+	max  *big.Rat
+	min  *big.Rat
+	num  [512]*Integer
+	one  *big.Rat
+	rat  [512]Rational
+	res  [256]*Status
+	sym  = map[string]*Symbol{}
+	syml = &sync.RWMutex{}
+	zip  *big.Rat
 )
 
 func init() {
@@ -599,7 +601,9 @@ func IsSymbol(c Cell) bool {
 }
 
 func NewSymbol(v string) *Symbol {
+	syml.RLock()
 	p, ok := sym[v]
+	syml.RUnlock()
 
 	if ok {
 		return p
@@ -609,7 +613,9 @@ func NewSymbol(v string) *Symbol {
 	p = &s
 
 	if len(v) <= 3 {
+		syml.Lock()
 		sym[v] = p
+		syml.Unlock()
 	}
 
 	return p
