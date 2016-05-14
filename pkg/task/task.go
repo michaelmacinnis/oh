@@ -1500,9 +1500,7 @@ func (t *Task) Listen() {
 		t.Code = m.Cmd
 		status := t.Run(end, m.Problem)
 		var result Cell = nil
-		if status < 0 {
-			break
-		} else if status > 0 {
+		if status != 0 {
 			*(t.Registers) = saved
 
 			SetCar(t.Code, nil)
@@ -1590,7 +1588,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 		if problem == "" {
 			t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
 		} else {
-			println(problem)
+			println("Catastrophic error: " + problem)
 		}
 
 		status = 1
