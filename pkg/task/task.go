@@ -1883,6 +1883,8 @@ func (t *Task) Suspend() {
 func (t *Task) Throw(file string, line int, text string) {
 	throw := NewSymbol("throw")
 
+	var resolved Reference = nil
+
 	/* Unwind stack until we can resolve 'throw'. */
 	for t.Lexical != scope0 {
 		state := t.GetState()
@@ -1893,10 +1895,11 @@ func (t *Task) Throw(file string, line int, text string) {
 
 		switch t.Lexical.(type) {
 		case Context:
-			c, _ := Resolve(t.Lexical, t.Frame, throw)
-			if c != nil {
-				break
-			}
+			resolved, _ = Resolve(t.Lexical, t.Frame, throw)
+		}
+
+		if resolved != nil {
+			break
 		}
 
 		t.RemoveState()
