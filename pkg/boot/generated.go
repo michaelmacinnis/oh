@@ -31,6 +31,14 @@ define _redirect_: syntax (name mode closer) = {
 		define c: e::eval c
 		define f = ()
 		if (not: or (is-channel c) (is-pipe c)) {
+			set mode: e::eval mode
+			if (and (eq mode: quote w) (exists c)) {
+				throw: exception "error/runtime" "${c} exists" {
+					status false
+					get-source-file
+					get-line-number
+				}
+			}
 			set f: open mode c
 			set c = f
 		}
