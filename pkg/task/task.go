@@ -2475,9 +2475,19 @@ func init() {
 	})
 	scope0.DefineBuiltin("exists", func(t *Task, args Cell) bool {
 		count := 0
+		ignore := false
 		for ; args != Null; args = Cdr(args) {
 			count++
-			if _, err := os.Stat(raw(Car(args))); err != nil {
+			path := raw(Car(args))
+			if path == "-i" {
+				ignore = true
+				continue
+			}
+			s, err := os.Stat(path)
+			if err != nil {
+				return t.Return(False)
+			}
+			if ignore && !s.Mode().IsRegular() {
 				return t.Return(False)
 			}
 		}
