@@ -105,6 +105,9 @@ define catch: syntax (name: clause) e = {
 }
 define _channel_stderr_: _connect_ channel _stderr_
 define _channel_stdout_: _connect_ channel _stdout_
+define clobber: builtin (: args) = {
+	tee @args >/dev/null
+}
 define coalesce: syntax (: lst) e = {
 	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
 		set lst: lst::tail
