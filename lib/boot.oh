@@ -196,7 +196,7 @@ define or: syntax (: lst) e = {
 }
 define _pipe_stderr_: _connect_ pipe _stderr_
 define _pipe_stdout_: _connect_ pipe _stdout_
-define printf: method (f: args) =: echo: f::sprintf @args
+define printf: method (f: args) =: echo: (string f)::sprintf @args
 define _process_substitution_: syntax (:args) e = {
 	define fifos = ()
 	define procs = ()

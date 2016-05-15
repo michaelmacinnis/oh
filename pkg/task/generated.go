@@ -95,7 +95,7 @@ func bindGenerators(s *Scope) {
 	})
 
 	s.DefineMethod("string", func(t *Task, args Cell) bool {
-		return t.Return(NewString(Car(args).String()))
+		return t.Return(NewString(raw(Car(args))))
 	})
 
 	s.DefineMethod("symbol", func(t *Task, args Cell) bool {

@@ -2143,7 +2143,7 @@ EOF</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="echo" id="echo"></a><a href="http://hyperpolyglot.org/unix-shells#echo-note">echo</a><br><span style="color: gray"><em>with newline, without newline</em></span></td>
@@ -2152,7 +2152,7 @@ echo -n <span style="color: gray"><em>arg …</em></span></td>
 <td>echo <span style="color: gray"><em>arg …</em></span><br>
 echo -n <span style="color: gray"><em>arg …</em></span></td>
 <td>echo <span style="color: gray"><em>arg …</em></span><br>
-echo -n <span style="color: gray"><em>arg …</em></span></td>
+/bin/echo -n <span style="color: gray"><em>arg …</em></span></td>
 <td>echo <span style="color: gray"><em>arg …</em></span><br>
 echo -n <span style="color: gray"><em>arg …</em></span></td>
 <td>echo <span style="color: gray"><em>arg …</em></span><br>
@@ -2169,68 +2169,13 @@ read -p <span style="color: gray"><em>str</em></span> <span style="color: gray">
 read -r <span style="color: gray"><em>var …</em></span></td>
 <td>read <span style="color: gray"><em>var …</em></span><br>
 read -p 'echo <span style="color: gray"><em>str</em></span>' <span style="color: gray"><em>var</em></span></td>
-<td>read <span style="color: gray"><em>var …</em></span><br>
-read <span style="color: gray"><em>var</em></span>?<span style="color: gray"><em>str</em></span><br>
-read -r <span style="color: gray"><em>var …</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: read<br><br></td>
 <td>echo -n <span style="color: gray"><em>str</em></span><br>
 set <span style="color: gray"><em>var</em></span>=$&lt;</td>
 <td>read <span style="color: gray"><em>var …</em></span><br>
 read <span style="color: gray"><em>var</em></span>\?<span style="color: gray"><em>str</em></span><br>
 read -r <span style="color: gray"><em>var …</em></span></td>
-</tr></tbody></table><p><a name="echo-note" id="echo-note"></a></p>
-<h2 id="toc109"><span><a href="http://hyperpolyglot.org/unix-shells#echo">echo</a></span></h2>
-<p>How to echo the arguments separated by spaces and followed by a newline; how to suppress the trailing newline.</p>
-<p>The POSIX standard says that <tt>echo</tt> should not have any options. It also says, perhaps contradicting itself, that if the first argument is <tt>-n</tt> then the behavior is implementation dependent.</p>
-<p>The POSIX standard also says that if any of the arguments contain backslashes, then the behavior is implementation dependent. Historically implementations have used the <tt>-E</tt> and <tt>-e</tt> options to enable or disable the interpretation of C-style backslash escape sequences.</p>
-<p><tt>fish</tt> provides an <tt>-s</tt> option for printing the arguments without spaces in-between.</p>
-<p>Because if the ill-defined behavior of <tt>echo</tt>, POSIX-compliant scripts use <tt>printf</tt> instead.</p>
-<p><a name="printf-note" id="printf-note"></a></p>
-<h2 id="toc110"><span><a href="http://hyperpolyglot.org/unix-shells#printf">printf</a></span></h2>
-<p><tt>printf</tt> is an external command line tool, though <tt>zsh</tt> also has a built-in version.</p>
-<p><a href="http://linux.die.net/man/3/printf">man 3 printf</a></p>
-<p>Like its counterpart from the C standard library, <tt>printf</tt> does not write a newline to stdout unless one is specified in the format using a backslash escape sequence.</p>
-<p>Unfortunately, the supported backslash ecscapes are system dependent, though some of them are mandated by POSIX:</p>
-<table class="wiki-content-table"><tbody><tr><th></th>
-<th>posix</th>
-<th>bsd</th>
-<th>gnu</th>
-</tr><tr><td>backslash escapes</td>
-<td>\a \b \c \f \n \r \t \v \\<br>
-\<span style="color: gray"><em>o</em></span> \<span style="color: gray"><em>oo</em></span> \<span style="color: gray"><em>ooo</em></span></td>
-<td>\a \b \c \f \n \r \t \v \\ \'<br>
-\<span style="color: gray"><em>o</em></span> \<span style="color: gray"><em>oo</em></span> \<span style="color: gray"><em>ooo</em></span></td>
-<td>\a \b \c \e \f \n \r \t \v \\ \"<br>
-\<span style="color: gray"><em>o</em></span> \<span style="color: gray"><em>oo</em></span> \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \u<span style="color: gray"><em>hhhh</em></span> \U<span style="color: gray"><em>hhhhhhhh</em></span></td>
-</tr></tbody></table><p>An interesting backslash escape is \c, which causes the rest of the format to be ignored.</p>
-<p>In a printf format, format specifiers are of the form <tt>%d</tt>, <tt>%f</tt> and <tt>%s</tt>.</p>
-<table class="wiki-content-table"><tbody><tr><th></th>
-<th>posix</th>
-<th>bsd</th>
-<th>gnu</th>
-</tr><tr><td>format specifiers</td>
-<td></td>
-<td>diouxX<br>
-fFaAeEgG<br>
-csb</td>
-<td>diouxX<br>
-feEgG<br>
-csb</td>
-</tr></tbody></table><p><em>format specifiers; many of which are useless in this context because of fewer types</em></p>
-<p><em>how invalid arguments are handled</em></p>
-<p><em>%%</em></p>
-<p><em>extra specifiers with floats</em></p>
-<p><em>extra specifiers with strings</em></p>
-<p><a name="read-note" id="read-note"></a></p>
-<h2 id="toc111"><span><a href="http://hyperpolyglot.org/unix-shells#read">read</a></span></h2>
-<p>How to read a line of input into one or more variables.</p>
-<p>When multiple variables are specified the value of <tt>IFS</tt> which by default contains the whitespace characters is used to split the input. If there are fewer variables than split values, then the last variable will contain a concatenation of the remaining values with their original separators. If there are fewer values then the extra variables are set to the empty string.</p>
-<p><tt>bash</tt> and <tt>dash</tt> use the <tt>-p</tt> option to set a prompt. <tt>ksh</tt> and <tt>zsh</tt> use a ?<span style="color: gray"><em>str</em></span> suffix appended to the first variable to set the prompt.</p>
-<p><tt>fish</tt> uses the <tt>-p</tt> option, but it evaluates the string to produce the prompt. This makes it possible to set the color of the prompt:</p>
-<div class="code">
-<pre><code>read -p 'set_color green; echo -n "&gt; "; set_color normal' foo</code>
-</pre></div>
-<p>The user can put a backslash in front of a newline to split the input up over multiple lines. The backslash and newline are stripped from the input. The user can put backslash into the variable by entering two backslashes. The <tt>-r</tt> option disables this feature, allowing the user to enter literal backslashes with a single keystroke.</p>
-<p><tt>tcsh</tt> gets input from the user by reading from the special variable <tt>$&lt;</tt>. Backslashes are always interpreted literally.</p>
+</tr></tbody></table>
 <p><a name="file-dir" id="file-dir"></a></p>
 <h1 id="toc112"><span><a href="#top">Files and Directories</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
