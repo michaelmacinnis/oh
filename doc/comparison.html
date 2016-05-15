@@ -2026,7 +2026,7 @@ done</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>stdin from file</td>
@@ -2044,13 +2044,13 @@ done</td>
 </tr><tr><td>stderr to file</td>
 <td>ls /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
 <td>s /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
-<td>ls /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
+<td>ls /not_a_file !&gt; <span style="color: gray"><em>file</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>ls /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
 </tr><tr><td>stdout and stderr to file</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
-<td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
+<td>public _stderr_ = _stdout_; ls &gt; <span style="color: gray"><em>file</em></td>
 <td>ls &gt;&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 </tr><tr><td>append stdout to file</td>
@@ -2062,13 +2062,13 @@ done</td>
 </tr><tr><td>append stderr to file</td>
 <td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 <td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
-<td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls !<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 </tr><tr><td>append stdout and stderr to file</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
-<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
+<td>public _stderr_ = _stdout_; ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span>&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/zsh.out 2&gt;&amp;1</td>
 </tr><tr><td>stdout to pipe</td>
@@ -2077,10 +2077,16 @@ done</td>
 <td>ls | wc</td>
 <td>ls | wc</td>
 <td>ls | wc</td>
+</tr><tr><td>stderr to pipe</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>ls !| wc</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
 </tr><tr><td>sdout and stderr to pipe</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
-<td>ls 2&gt;&amp;1 | wc</td>
+<td>public _stderr_ = _stdout_; ls | wc</td>
 <td>ls |&amp; wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 </tr><tr><td>stdin from here-document</td>
@@ -2090,11 +2096,7 @@ re<br>
 mi<br>
 EOF</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>wc <span style="white-space: pre-wrap;">&lt;&lt;</span> EOF<br>
-do<br>
-re<br>
-mi<br>
-EOF</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>wc <span style="white-space: pre-wrap;">&lt;&lt;</span> EOF<br>
 do<br>
 re<br>
@@ -2108,7 +2110,7 @@ EOF</td>
 </tr><tr><td>stdin from here-string</td>
 <td>wc <span style="white-space: pre-wrap;">&lt;&lt;&lt;</span> "do re mi"</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>wc <span style="white-space: pre-wrap;">&lt;&lt;&lt;</span> "do re mi"</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>wc <span style="white-space: pre-wrap;">&lt;&lt;&lt;</span> "do re mi"</td>
 </tr><tr><td>tee stdout</td>
@@ -2120,50 +2122,22 @@ EOF</td>
 </tr><tr><td>turn on noclobber</td>
 <td>set -o noclobber</td>
 <td></td>
-<td>set -o noclobber</td>
+<td><span style="color: gray"><em>noclobber is the default</em></span></td>
 <td>set noclobber</td>
 <td>set -o noclobber</td>
 </tr><tr><td>clobber file anyways</td>
 <td>ls &gt;! /tmp/exists.txt</td>
 <td></td>
-<td>ls &gt;! /tmp/exists.txt</td>
+<td>ls | clobber /tmp/exists.txt</td>
 <td>ls &gt;! /tmp/exists.txt</td>
 <td>ls &gt;! /tmp/exists.txt</td>
 </tr><tr><td>turn off noclobber</td>
 <td>set +o noclobber</td>
 <td></td>
-<td>set +o noclobber</td>
+<td></td>
 <td>unset noclobber</td>
 <td>set +o noclobber</td>
-</tr></tbody></table><p>A gap in the above chart is how to redirect just stderr to a pipe. One would guess by analogy with <tt>2&gt;</tt> and <tt><span style="white-space: pre-wrap;">2&gt;&gt;</span></tt> that this might work:</p>
-<div class="code">
-<pre><code>$ ls 2| wc</code>
-</pre></div>
-<p>However, none of the shells support it. The correct syntax is:</p>
-<div class="code">
-<pre><code>$ ls 3&gt;&amp;1 1&gt;&amp;2 2&gt;&amp;3 | wc</code>
-</pre></div>
-<p>The <tt>3&gt;&amp;1</tt> is equivalent to the C system call <tt>dup2(1, 3)</tt>. This makes file descriptor 3 a copy of file descriptor 1.</p>
-<p>The <tt>1&gt;&amp;2</tt> is equivalent to the C system call <tt>dup2(2, 1)</tt>. This changes what file descriptor 1 writes to, but does not change what file descriptor 3 writes to, even though file descriptor 3 was initially a copy of file descriptor 1. The shell processes the redirect statements from left to right. Also note that the <tt>1</tt> could be omitted: <tt>1&gt;&amp;2</tt> and <tt>&gt;&amp;2</tt> are the same.</p>
-<p><tt>zsh</tt> only supports file descriptors 0 through 9, but <tt>bash</tt> supports higher numbered file descriptors. The shell always opens file descriptors 0, 1, and 2, commonly called <tt>stdin</tt>, <tt>stdout</tt>, and <tt>stderr</tt>, for each simple command that it invokes. If additional file descriptors are specified, those are also passed to the command. For example, if <tt>foo</tt> were invoked as:</p>
-<div class="code">
-<pre><code>$ foo 3&gt; /tmp/bar.txt</code>
-</pre></div>
-<p>then it could contain a system call which writes to file descriptor 3 without opening it first, e.g.</p>
-<div class="code">
-<pre><code>write(3, msg, strlen(msg));</code>
-</pre></div>
-<p>Paths in the <tt>/dev</tt> directory can be used in place of <tt>&amp;1</tt>, <tt>&amp;2</tt>, …</p>
-<div class="code">
-<pre><code>$ ls 3&gt; /dev/fd/1 1&gt; /dev/fd/2 2&gt; /dev/fd/3 | wc
-
-$ ls 3&gt; /dev/stdout 1&gt; /dev/stderr 2&gt;&amp;3 | wc</code>
-</pre></div>
-<p><strong>tcsh:</strong></p>
-<p>It is possible to redirect stdout and stderr to different files:</p>
-<div class="code">
-<pre><code>$ ( ls &gt; /tmp/stdout.txt ) &gt;&amp; /tmp/stderr.txt</code>
-</pre></div>
+</tr></tbody></table>
 <p><a name="echo-read" id="echo-read"></a></p>
 <h1 id="toc108"><span><a href="#top">Echo and Read</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
