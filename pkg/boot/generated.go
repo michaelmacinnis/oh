@@ -178,7 +178,6 @@ define map: syntax (: literal) e = {
 }
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {
-	set S: e::interpolate S
 	catch ex {
 		set ex::type = "error/syntax"
 		set ex::message = "Malformed expression: ${S}"
