@@ -2181,7 +2181,7 @@ read -r <span style="color: gray"><em>var …</em></span></td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="cd" id="cd"></a><a href="http://hyperpolyglot.org/unix-shells#cd-note">change current directory</a><br><br><span style="color: gray"><em>change dir, to home dir, to previous dir, show physical dir, no symlink dir</em></span></td>
@@ -2195,7 +2195,8 @@ cd -<br><span style="color: gray"><em>none</em></span><br><span style="color: gr
 <td>cd <span style="color: gray"><em>dir</em></span><br>
 cd<br>
 cd -<br>
-cd -P <span style="color: gray"><em>dir</em></span><br><span style="color: gray"><em>none</em></span></td>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span></td>
 <td>cd <span style="color: gray"><em>dir</em></span><br>
 cd<br>
 cd -<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
@@ -2229,8 +2230,7 @@ dirs</td>
 . <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
 <td>source <span style="color: gray"><em>file</em></span><br>
 . <span style="color: gray"><em>file</em></span></td>
-<td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span><br>
-. <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
+<td>source <span style="color: gray"><em>file</em></span><br></td>
 <td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
 <td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span><br>
 . <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
@@ -2243,82 +2243,14 @@ umask -S</td>
 umask g-w,o-w<br>
 umask<br>
 umask -S</td>
-<td>umask 022<br>
-umask g-w,o-w<br>
-umask<br>
-umask -S</td>
+<td><span style="color: gray"><em>TODO</em></span></td>
 <td>umask 022<br><span style="color: gray"><em>none</em></span><br>
 umask<br><span style="color: gray"><em>none</em></span></td>
 <td>umask 022<br>
 umask g-w,o-w<br>
 umask<br>
 umask -S</td>
-</tr></tbody></table><p><a name="cd-note" id="cd-note"></a></p>
-<h2 id="toc113"><span><a href="http://hyperpolyglot.org/unix-shells#cd">change current directory</a></span></h2>
-<p>Change the current directory to the specified directory. If the directory starts with a slash '/' then it is taken to be an absolute path. If it does not it is treated as a relative path and CDPATH is used as a colon separated list of starting directories. By default CDPATH is empty in which case the current directory '.' is used as a starting point. See also the section on <a href="http://hyperpolyglot.org/unix-shells#brace-tilde-cmd-pathname-expansion">tilde expansion</a>.</p>
-<p>If there is no argument then the current directory is changed to $HOME.</p>
-<p>If the argument is a hyphen '-' then the current directory is changed to $OLDPWD which is the most recent former current directory.</p>
-<p>When the <tt>-P</tt> option is used, <tt>PWD</tt> will be set to the physical path of the current directory; i.e. any symbolic links will be resolved. If the current directory is being displayed in the prompt this will also be set the physical path.</p>
-<p><strong>zsh:</strong></p>
-<p>When the <tt>-s</tt> option is used, attempting to change directory into a path containing symlinks will fail.</p>
-<p><a name="dir-stack-note" id="dir-stack-note"></a></p>
-<h2 id="toc114"><span><a href="http://hyperpolyglot.org/unix-shells#dir-stack">directory stack</a></span></h2>
-<p>Push a directory provided as an argument onto the directory stack. The directory becomes the current directory.</p>
-<p>Pop a directory off the directory stack. The popped directory becomes the current directory.</p>
-<p>List the directory stack.</p>
-<p><a name="pwd-note" id="pwd-note"></a></p>
-<h2 id="toc115"><span><a href="http://hyperpolyglot.org/unix-shells#pwd">print current directory</a></span></h2>
-<p>Show the current directory. The same as executing:</p>
-<div class="code">
-<pre><code>echo $PWD</code>
-</pre></div>
-<p><a name="source-note" id="source-note"></a></p>
-<h2 id="toc116"><span><a href="http://hyperpolyglot.org/unix-shells#source">source</a></span></h2>
-<p>The <tt>source</tt> built-in executes the commands in another file using the current shell process and environment.</p>
-<p>Some shells have a non-POSIX feature which allows arguments to be passed to the file being sourced; i.e. the following invocation would set <tt>$1</tt>, <tt>$2</tt>, and <tt>$3</tt> to <tt>bar</tt>, <tt>baz</tt>, and <tt>quux</tt> while executing <tt>foo.sh</tt>:</p>
-<div class="code">
-<pre><code>source foo.sh bar baz quux</code>
-</pre></div>
-<p>The <tt>.</tt> syntax is part of the POSIX standard, but the <tt>source</tt> syntax is not.</p>
-<p>The file to be sourced may be specified with an absolute path. Some shells will also search the working directory or <tt>PATH</tt> for the file to be sourced:</p>
-<table class="wiki-content-table"><tbody><tr><th></th>
-<th>bash</th>
-<th>fish</th>
-<th>ksh</th>
-<th>tcsh</th>
-<th>zsh</th>
-</tr><tr><td>searches working directory</td>
-<td>yes</td>
-<td>yes</td>
-<td>no</td>
-<td>yes</td>
-<td>. no, source yes</td>
-</tr><tr><td>searches PATH</td>
-<td>yes</td>
-<td>no</td>
-<td>no</td>
-<td>no</td>
-<td>yes</td>
-</tr></tbody></table><p><a name="umask-note" id="umask-note"></a></p>
-<h2 id="toc117"><span><a href="http://hyperpolyglot.org/unix-shells#umask">umask</a></span></h2>
-<p>Set the shell file mode creation mask. <tt>umask</tt> is a POSIX syscall.</p>
-<p>The mask consists of 3 octal digits which apply to the user, group, and other permissions respectively. Each octal digit contains 3 bits of information. In order of most to least significant the bits apply to the read, write, and execute permissions.</p>
-<p>Setting a bit in the mask guarantees that the corresponding bit in the file permissions will not be set when a file is created. The logic for computing the file permissions can be expressed with the following shell code:</p>
-<div class="code">
-<pre><code>mask=8#022
-perms=8#777
-
-printf "0%o\n" $(( $perms &amp; ~ $mask ))</code>
-</pre></div>
-<p>Here is the same logic in C code:</p>
-<div class="code">
-<pre><code>unsigned int mask = 0022;
-unsigned int perms = 0777;
-
-printf("%o\n", perms &amp; ~mask);</code>
-</pre></div>
-<p>If <tt>umask</tt> is given a numeric argument it is always interpreted as octal; a leading zero is not required.</p>
-<p><tt>umask</tt> also supports the symbolic notation used by <a href="http://linux.die.net/man/1/chmod">chmod</a>. In this case the argument is one or more 3 character sequences of the format <tt>[agou][-+][rwx]</tt> separated by commas.</p>
+</tr></tbody></table>
 <p><a name="process-job-control" id="process-job-control"></a></p>
 <h1 id="toc118"><span><a href="#top">Process and Job Control</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
