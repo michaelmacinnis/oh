@@ -39,6 +39,8 @@ func JoinProcess(proc *os.Process) int {
 	return status.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
+func OSSpecificInit() {}
+
 func ResetForegroundGroup(f *os.File) bool {
 	return false
 }

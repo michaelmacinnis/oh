@@ -75,6 +75,23 @@ func JoinProcess(proc *os.Process) int {
 	return (<-response).status.ExitStatus()
 }
 
+func OSSpecificInit() {
+	scope0.DefineBuiltin("_umask_", func(t *Task, args Cell) bool {
+		nmask := int64(0)
+		if args != Null {
+			nmask = Car(args).(Atom).Int()
+		}
+
+		omask := syscall.Umask(int(nmask))
+
+		if nmask == 0 {
+			syscall.Umask(omask)
+		}
+
+		return t.Return(NewInteger(int64(omask)))
+	})
+}
+
 func ResetForegroundGroup(f *os.File) bool {
 	if f != os.Stdin {
 		return false

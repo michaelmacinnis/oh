@@ -284,6 +284,20 @@ define source: syntax (name) e = {
 	eval-list (c::head) (c::tail)
 	return rval
 }
+define umask: method (: args) = {
+	catch ex {
+		if (eq "_umask_: command not found" ex::message) {
+			set ex::message = "not implemented on ${_platform_}"
+		}
+	}
+
+	if (is-null args) {
+		define omask: _umask_
+		printf "%03o" omask
+		return omask
+	}
+	_umask_ @args
+}
 define write: method (: args) =: _stdout_::write @args
 _sys_::public exception: method (type message status file line) = {
 	object {

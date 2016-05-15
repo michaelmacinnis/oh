@@ -831,7 +831,7 @@ func (r *Registers) NewBlock(lexical Context) {
 }
 
 func (r *Registers) NewFrame(lexical Context) {
-	var state int64 = SaveLexical
+	state := int64(SaveLexical)
 
 	c := toContext(r.Lexical)
 	v := c.Visibility()
@@ -2813,6 +2813,8 @@ func init() {
 	}
 
 	frame0 = List(env, sys)
+
+	OSSpecificInit()
 }
 
 func interpolate(l Context, d Cell, s string) string {
@@ -2891,7 +2893,7 @@ func pairContext() Context {
 	envp.PublicMethod("get", func(t *Task, args Cell) bool {
 		s := toPair(t.Self())
 
-		var i int64 = 0
+		i := int64(0)
 		if args != Null {
 			i = Car(args).(Atom).Int()
 			args = Cdr(args)
@@ -2913,7 +2915,7 @@ func pairContext() Context {
 		var s Cell = toPair(t.Self())
 		l := Null
 
-		var i int64 = 0
+		i := int64(0)
 		for s != Null {
 			l = Cons(NewInteger(i), l)
 			s = Cdr(s)
@@ -2940,7 +2942,7 @@ func pairContext() Context {
 	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
 		s := toPair(t.Self())
 
-		var i int64 = 0
+		i := int64(0)
 
 		v := Car(args)
 		args = Cdr(args)
@@ -2957,7 +2959,7 @@ func pairContext() Context {
 		s := toPair(t.Self())
 		i := Car(args).(Atom).Int()
 
-		var j int64 = 0
+		j := int64(0)
 
 		args = Cdr(args)
 		if args != Null {
