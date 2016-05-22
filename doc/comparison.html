@@ -2549,19 +2549,19 @@ fc -R <span style="color: gray"><em>path</em></span></td>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>location</td>
 <td>HISTFILE=~/.bash_history</td>
 <td>~/.config/fish/fish_history</td>
-<td>HISTFILE=~/.ksh_history</td>
+<td>~/.oh_history</td>
 <td>set histfile ~/.tcsh_history</td>
 <td>HISTFILE=~/.zsh_history</td>
 </tr><tr><td>memory size</td>
 <td>HISTSIZE=2000</td>
 <td></td>
-<td>HISTSIZE=2000</td>
+<td>1000</td>
 <td></td>
 <td>HISTSIZE=2000</td>
 </tr><tr><td>file size</td>
@@ -2608,7 +2608,7 @@ set savehist=2000 merge</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>list keybindings</td>
@@ -2653,21 +2653,19 @@ set savehist=2000 merge</td>
 <td></td>
 <td></td>
 <td></td>
-</tr></tbody></table><p><em>bash and zsh have keymaps</em></p>
-<p><em>how to create a new keymap with zsh</em></p>
-<p><em>alternate fish syntax referring to keys</em></p>
+</tr></tbody></table>
 <p><a name="startup-file" id="startup-file"></a></p>
 <h1 id="toc129"><span><a href="#top">Startup Files</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>non-interactive shell startup files</td>
 <td>$BASH_ENV</td>
 <td>~/.config/fish/config.fish</td>
-<td>$ENV</td>
+<td>~/.ohrc</td>
 <td>/etc/csh.cshrc<br>
 ~/.tcshrc<br>
 ~/.cshrc</td>
@@ -2679,9 +2677,7 @@ $ZDOTDIR/.zshenv</td>
 ~/.bash_login<br>
 ~/.profile</td>
 <td>~/.config/fish/config.fish</td>
-<td>/etc/profile<br>
-~/.profile<br>
-$ENV</td>
+<td>~/.ohrc</td>
 <td>/etc/csh.login<br>
 ~/.login</td>
 <td><span style="color: gray"><em>non-interactive startup files</em></span><br>
@@ -2694,7 +2690,7 @@ $ZDOTDIR/.zlogin</td>
 </tr><tr><td>other interactive shell startup files</td>
 <td>~/.bashrc</td>
 <td>~/.config/fish/config.fish</td>
-<td>$ENV</td>
+<td>~/.ohrc</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>non-interactive startup files</em></span><br>
 /etc/zshrc<br>
@@ -2707,21 +2703,7 @@ $ZDOTDIR/.zshrc</td>
 ~/.logout</td>
 <td>$ZDOTDIR/.zlogout<br>
 /etc/zlogout</td>
-</tr></tbody></table><p><strong>bash:</strong></p>
-<p>When logging in <tt>bash</tt> will only execute one of <tt>~/.bash_profile</tt>, <tt>~/.bash_login</tt>, or <tt>~/.profile</tt>. It executes the first file that exists.</p>
-<p><strong>fish:</strong></p>
-<p>The startup file <tt>.config/fish/config.fish</tt> is run by all shells. Here is how to put code in it which only executes at login:</p>
-<div class="code">
-<pre><code>if status --is-login
-  set PATH $PATH ~/bin
-end</code>
-</pre></div>
-<p>How to define an exit handler:</p>
-<div class="code">
-<pre><code>function on_exit --on-process %self
-  echo fish is exiting ...
-end</code>
-</pre></div>
+</tr></tbody></table>
 <p><a name="prompt-customization" id="prompt-customization"></a></p>
 <h1 id="toc130"><span><a href="#top">Prompt Customization</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th></th>
