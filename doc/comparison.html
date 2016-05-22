@@ -2737,13 +2737,13 @@ end</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>function fish_right_prompt<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>date<br>
 end</td>
-<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>set rprompt='%Y-%W-%D %p'</td>
 <td>RPS1='%D{%F %T}'</td>
 </tr><tr><td>set right continued line prompt</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>RSP2='<span style="white-space: pre-wrap;">...</span>'</td>
 </tr><tr><th colspan="6"><a href="http://hyperpolyglot.org/unix-shells#dynamic-prompt-info">dynamic information</a></th>
@@ -2900,16 +2900,8 @@ prompt_pwd</td>
 <td></td>
 <td></td>
 <td>%K{green} %k</td>
-</tr></tbody></table><p>Most shells permit a user to customize the prompt by setting an environment variable. <tt>fish</tt> requires that the user define a callback function.</p>
-<p>The <em>primary prompt</em> is the prompt the user sees the most often.</p>
-<p>The <em>continued line prompt</em> is used when the user types an incomplete command. This can happen when there are open parens, braces, or quote in the command, or the user backslash escaped the newline.</p>
-<p>The <em>select prompt</em> is used to prompt the user to make a multiple choice selection. It corresponds to the select <a href="http://hyperpolyglot.org/unix-shells#execution-control">execution control statement</a>.</p>
-<p>The <em>right prompt</em> appears at the far right side of the input line. If the user types enough input to need the space, the right prompt disappears.</p>
-<p><a name="dynamic-prompt-info" id="dynamic-prompt-info"></a></p>
-<h2 id="toc131"><span>dynamic information</span></h2>
-<p><tt>bash</tt>, <tt>tcsh</tt>, and <tt>zsh</tt> provide a set of special character sequences for putting dynamic information in the prompt. In the case of <tt>bash</tt> the sequences start with a backslash and in the case of <tt>tcsh</tt> and <tt>zsh</tt> a percent sign.</p>
-<p><tt>bash</tt>, <tt>ksh</tt>, <tt>tcsh</tt>, and <tt>zsh</tt> will also perform variable expansion on anything that starts with a dollar sign and looks like a variable before each display of the prompt. <tt>bash</tt>, <tt>ksh</tt>, and <tt>zsh</tt> will also perform command substitution before each display of the prompt when they encounter the <tt>$( )</tt> syntax in the prompt.</p>
-
+</tr></tbody></table>
+<p>
         </div>
       </div>
       <div id="license-area" class="license-area">
