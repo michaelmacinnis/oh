@@ -2257,7 +2257,7 @@ umask -S</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="bg" id="bg"></a><a href="http://hyperpolyglot.org/unix-shells#bg-note">run job in background</a></td>
@@ -2269,19 +2269,20 @@ umask -S</td>
 </tr><tr><td><a name="disown" id="disown"></a><a href="http://hyperpolyglot.org/unix-shells#disown-note">protect job from hangup signal</a></td>
 <td>disown</td>
 <td><span style="color: gray"><em>does not SIGHUP background jobs on exit</em></span></td>
+<td><span style="color: gray"><em>does not SIGHUP background jobs on exit</em></span></td>
 <td>disown</td>
 <td></td>
 <td>disown</td>
 </tr><tr><td><a name="exec" id="exec"></a><a href="http://hyperpolyglot.org/unix-shells#exec-note">execute file</a></td>
 <td>exec [-c]</td>
 <td>exec</td>
-<td>exec</td>
+<td></td>
 <td>exec</td>
 <td>exec</td>
 </tr><tr><td>exit</td>
 <td>exit [n]</td>
 <td>exit</td>
-<td>exit</td>
+<td>exit [n]</td>
 <td>exit</td>
 <td>exit<br>
 bye</td>
@@ -2307,7 +2308,8 @@ bye</td>
 <td>kill</td>
 <td><span style="color: gray"><em>external, but …</em></span><br>
 kill</td>
-<td>kill</td>
+<td><span style="color: gray"><em>external, but …</em></span><br>
+kill</td>
 <td>kill</td>
 <td>kill</td>
 </tr><tr><td></td>
@@ -2355,7 +2357,7 @@ kill</td>
 </tr><tr><td></td>
 <td></td>
 <td></td>
-<td>sleep</td>
+<td></td>
 <td></td>
 <td></td>
 </tr><tr><td></td>
@@ -2367,31 +2369,32 @@ kill</td>
 </tr><tr><td></td>
 <td>suspend</td>
 <td></td>
-<td>suspend</td>
+<td></td>
 <td>suspend</td>
 <td>suspend</td>
 </tr><tr><td></td>
 <td></td>
 <td></td>
-<td>time</td>
+<td></td>
 <td>time</td>
 <td>time</td>
 </tr><tr><td></td>
 <td>times</td>
 <td></td>
-<td>times</td>
+<td></td>
 <td></td>
 <td>times</td>
 </tr><tr><td></td>
 <td>trap</td>
 <td>trap</td>
-<td>trap</td>
+<td><span style="color: gray"><em>(Not implemented yet)</em></span><br>
+trap</td>
 <td></td>
 <td>trap</td>
 </tr><tr><td></td>
 <td>ulimit</td>
 <td></td>
-<td>ulimit</td>
+<td></td>
 <td></td>
 <td>ulimit</td>
 </tr><tr><td></td>
@@ -2412,15 +2415,7 @@ kill</td>
 <th><span style="color: #efefef"><span style="white-space: pre-wrap;">______________________</span></span></th>
 <th><span style="color: #efefef"><span style="white-space: pre-wrap;">______________________</span></span></th>
 <th><span style="color: #efefef"><span style="white-space: pre-wrap;">______________________</span></span></th>
-</tr></tbody></table><p><tt>xargs</tt> splits standard input on spaces and newlines and feeds the arguments to argument of <tt>xargs</tt> which is executed as a command. The input delimiter can be changed to null characters with the -0 flag (useful with <tt>find -print0</tt>) or to the value of the -d flag argument.</p>
-<p>By default if the length of the input is more than 4096 characters the input will be broken up and the command run multiple times. This number can be increased with the -s flag up to system configuration variable ARG_MAX. It is also possible to call the command multiple times feeding it a prescribed number of arguments each time using the -n flag. The -t flag will write to standard error the command that is being invoked and its arguments before each invocation.</p>
-<p>The -P flag can be used to for parallelization. The argument is the max number of simultaneous processes.</p>
-<p><a name="bg-note" id="bg-note"></a></p>
-<h2 id="toc119"><span><a href="http://hyperpolyglot.org/unix-shells#bg-note">run job in background</a></span></h2>
-<p><a name="disown-note" id="disown-note"></a></p>
-<h2 id="toc120"><span><a href="http://hyperpolyglot.org/unix-shells#disown-note">protect job from hangup signal</a></span></h2>
-<p><a name="exec-note" id="exec-note"></a></p>
-<h2 id="toc121"><span><a href="http://hyperpolyglot.org/unix-shells#exec">execute file</a></span></h2>
+</tr></tbody></table>
 <p><a name="history-cmd-expansion" id="history-cmd-expansion"></a></p>
 <h1 id="toc122"><span><a href="#top">History</a></span></h1>
 <table class="wiki-content-table"><tbody><tr><th colspan="6">history commands</th>
