@@ -2409,7 +2409,7 @@ trap</td>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td><a name="list-cmd-history" id="list-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#list-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>list recent, list all, list with time, unnumbered list</em></span></td>
@@ -2420,8 +2420,10 @@ fc -ln</td>
 history | nl<br>
 cat ~/.config/fish/fish_history<br>
 history</td>
-<td><span style="color: gray"><em>??</em></span><br>
-fc -l 1<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>??</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+cat ~/.oh_history
 <td>history 15<br>
 history<br>
 history -T<br><span style="color: gray"><em>none</em></span></td>
@@ -2433,15 +2435,14 @@ history -n</td>
 <td>!<span style="color: gray"><em>num</em></span><br>
 fc -s <span style="color: gray"><em>str</em></span></td>
 <td></td>
-<td>r <span style="color: gray"><em>num</em></span><br>
-fc -s</td>
+<td></td>
 <td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
 <td>!<span style="color: gray"><em>num</em></span><br><span style="color: gray"><em>??</em></span></td>
 </tr><tr><td><a name="del-cmd-history" id="del-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#del-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>delete from history, clear history</em></span></td>
 <td>history -d <span style="color: gray"><em>num</em></span><br>
 history -c</td>
 <td></td>
-<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td></td>
 <td><span style="color: gray"><em>none</em></span><br>
 history -c</td>
 <td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
@@ -2449,8 +2450,7 @@ history -c</td>
 <td>fc <span style="color: gray"><em>num</em></span><br>
 fc -s <span style="color: gray"><em>old</em></span>=<span style="color: gray"><em>new</em></span> <span style="color: gray"><em>str</em></span></td>
 <td></td>
-<td>fc <span style="color: gray"><em>num</em></span><br>
-fc -s <span style="color: gray"><em>old</em></span>=<span style="color: gray"><em>new</em></span> <span style="color: gray"><em>str</em></span></td>
+<td></td>
 <td></td>
 <td>fc <span style="color: gray"><em>num</em></span><br><span style="color: gray"><em>none</em></span></td>
 </tr><tr><td><a name="cmd-history-file" id="cmd-history-file"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-history-file-note">command history:</a><br><br><span style="color: gray"><em>write to file, append to file, read from file</em></span></td>
@@ -2464,47 +2464,13 @@ history -r <span style="color: gray"><em>path</em></span></td>
 fc -A <span style="color: gray"><em>path</em></span><br>
 fc -R <span style="color: gray"><em>path</em></span></td>
 </tr></tbody></table><p><a name="list-cmd-history-note" id="list-cmd-history-note"></a></p>
-<h2 id="toc123"><span><a href="http://hyperpolyglot.org/unix-shells#list-cmd-history">command history: listing</a></span></h2>
-<p>How to list recent commands; how to list all commands; how to list commands with the time they were run.</p>
-<p><a name="run-cmd-history-note" id="run-cmd-history-note"></a></p>
-<h2 id="toc124"><span><a href="http://hyperpolyglot.org/unix-shells#run-cmd-history">command history: running</a></span></h2>
-<p>How to run a command in the history by command number; how to run the most recent command in the history matching a prefix.</p>
-<p><a name="del-cmd-history-note" id="del-cmd-history-note"></a></p>
-<h2 id="toc125"><span><a href="http://hyperpolyglot.org/unix-shells#del-cmd-history">command history: deleting</a></span></h2>
-<p>How to delete a command from the history by command number; how to clear the command history.</p>
-<p><a name="fix-cmd-history-note" id="fix-cmd-history-note"></a></p>
-<h2 id="toc126"><span><a href="http://hyperpolyglot.org/unix-shells#fix-cmd-history">command history: fixing</a></span></h2>
-<p>Use the following syntax to edit commands from the history list and run them:</p>
-<div class="code">
-<pre><code>fc [-e EDIT_CMD] [-r] [FIRST [LAST]]</code>
-</pre></div>
-<p>If EDIT_CMD is not specified, the value in the FCEDIT or EDITOR environment variable is used.</p>
-<p>If FIRST and LAST are specified, these indicate the numbers of the range of commands to edit. If FIRST is specified but LAST is not, only that command at that number is edited and run. If neither is specified the last command is edited and run.</p>
-<p>The -r flag reverses the order of the commands.</p>
-<p>To simply list commands the following flags can be used:</p>
-<div class="code">
-<pre><code>fc -l[r] [FROM]
-fc -l[r] -NUMBER_CMDS</code>
-</pre></div>
-<p>If neither FROM nor -NUMBER_CMDS is specified the last 16 commands is printed. Use -NUMBER_CMDS (i.e. a negative number) to list the last NUMBER_CMDS commands. Use FROM (i.e. a positive number) to list all commands from FROM on.</p>
-<p>The -r flag reverses the order of the commands</p>
-<p>To rerun a recent command without editing it use:</p>
-<div class="code">
-<pre><code>fc -s [PAT=REP] [START_OF_CMD]</code>
-</pre></div>
-<p>If START_OF_CMD is specified the last command that starts with START_OF_CMD will be run. If START_OF_CMD is not specified the last command will be run.</p>
-<p>If PAT=REP is specified then each occurrence of PAT will be replaced with REP in the command before it is run.</p>
-<p><strong>ksh:</strong></p>
-<p><tt>hist</tt> is a synonym for <tt>fc</tt> with the sole difference that HISTEDIT is the environment variable that determines the editor instead of FCEDIT.</p>
-<p><strong>zsh:</strong></p>
-<p><tt>r</tt> is an alias for <tt>fc -s</tt></p>
 <p><a name="cmd-history-file-note" id="cmd-history-file-note"></a></p>
 <h2 id="toc127"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-history-file">command history file</a></span></h2>
 <table class="wiki-content-table"><tbody><tr><th colspan="6">history expansion</th>
 </tr><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>most recent command</td>
