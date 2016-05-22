@@ -2709,26 +2709,28 @@ $ZDOTDIR/.zshrc</td>
 <table class="wiki-content-table"><tbody><tr><th></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
-<th><a href="http://hyperpolyglot.org/unix-shells#ksh">ksh</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
 <th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
 </tr><tr><td>set primary prompt</td>
 <td>PS1='$ '</td>
 <td>function fish_prompt<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo -n '$ '<br>
 end</td>
-<td>PS1='$ '</td>
+<td>set _sys_::prompt: method (suffix) = {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return "$ "<br>
+}</td>
 <td>set prompt='$ '</td>
 <td>PS1='$ '</td>
 </tr><tr><td>set continued line prompt</td>
 <td>PS2='&gt; '</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>PS2='&gt; '</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td>set prompt2='&gt; '</td>
 <td>PS2='&gt; '</td>
 </tr><tr><td>set select prompt</td>
 <td>PS3='? '</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>PS='? '</td>
+<td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>PS3='? '</td>
 </tr><tr><td>set right prompt</td>
@@ -2769,7 +2771,7 @@ prompt_pwd</td>
 </tr><tr><td>command number in history</td>
 <td>\!</td>
 <td></td>
-<td>!</td>
+<td></td>
 <td>!<br>
 %!<br>
 %h</td>
@@ -2796,13 +2798,13 @@ prompt_pwd</td>
 </tr><tr><td>environment variable</td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td>echo -n $<span style="color: gray"><em>var</em></span></td>
-<td>$<span style="color: gray"><em>var</em></span></td>
+<td></td>
 <td>%$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 </tr><tr><td>command substitution</td>
 <td>$(<span style="color: gray"><em>cmd</em></span>)</td>
 <td></td>
-<td>$(<span style="color: gray"><em>cmd</em></span>)</td>
+<td></td>
 <td></td>
 <td>$(<span style="color: gray"><em>cmd</em></span>)</td>
 </tr><tr><td>host name</td>
