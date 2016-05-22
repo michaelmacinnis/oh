@@ -5,7 +5,7 @@ familiar.
 
 ![gif](img/oh.gif)
 
-Where oh diverges from traditional Unix shells is in its programming
+Where oh diverges from traditional Unix shells is its programming
 language features.
 
 At its core, oh is a heavily modified dialect of the Scheme programming
@@ -22,7 +22,7 @@ used interchangeably. This homoiconic nature also allows oh to support
 fexprs which, in turn, allow oh to be easily extended. In fact, much of
 oh is written in oh.
 
-For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/hyperpolyglot/doc/comparison.html)
+For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
 
 ## Installing
 
