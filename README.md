@@ -39,5 +39,5 @@ For more detail see: [Using oh](doc/manual.md)
 
 ## License
 
-Oh is released under an MIT-style license.
+Oh is released under the MIT license.
 

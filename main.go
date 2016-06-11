@@ -17,7 +17,7 @@ other Unix shells. The following commands behave as expected:
 
 For more detail, see: https://github.com/michaelmacinnis/oh
 
-Oh is released under an MIT-style license.
+Oh is released under the MIT license.
 */
 package main
 

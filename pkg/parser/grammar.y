@@ -1,4 +1,4 @@
-// Released under an MIT-style license. See LICENSE. -*- mode: Go -*-
+// Released under the MIT license. See LICENSE. -*- mode: Go -*-
 
 %token BANG_DOUBLE BRACE_EXPANSION CTRLC
 %token DOUBLE_QUOTED SINGLE_QUOTED SYMBOL

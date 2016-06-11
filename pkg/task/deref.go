@@ -1,4 +1,4 @@
-// Released under an MIT-style license. See LICENSE.
+// Released under the MIT license. See LICENSE.
 
 package task
 
