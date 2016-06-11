@@ -4,6 +4,6 @@
 # PROVIDE: middle
 # REQUIRE: header
 
-## In fact, much of oh (currently, 532 of 6049 
+## In fact, much of oh (currently, 511 of 6029 
 ## lines of code) is written in oh.
 ##
