@@ -1,4 +1,4 @@
-#!/bin/env oh
+#!/usr/bin/env oh
 
 define input: method (Prompt) = {
 	/bin/echo -n Prompt
