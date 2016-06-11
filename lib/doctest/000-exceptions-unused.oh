@@ -1,0 +1,21 @@
+#!/usr/bin/env oh
+
+public y "and"
+define m1: method () = {
+    public x = "Hello"
+    define z = "Goodbye"
+    m2
+    m2
+}
+define m2: method () = {
+    catch ignored {
+	echo Here
+	return
+    }
+    echo x
+    set x = "Bonjour"
+    echo y
+    echo z
+}
+m1
+m2

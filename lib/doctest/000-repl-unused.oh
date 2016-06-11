@@ -1,0 +1,11 @@
+#!/bin/env oh
+
+define input: method (Prompt) = {
+	/bin/echo -n Prompt
+	read
+}
+
+while (define Cmd: input "> ") {
+	eval Cmd
+}
+
