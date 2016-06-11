@@ -1,0 +1,9 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: middle
+# REQUIRE: header
+
+## In fact, much of oh (currently, 532 of 6049 
+## lines of code) is written in oh.
+##

@@ -1,7 +1,7 @@
 #!/usr/bin/env oh
 
 # KEYWORD: readme
-# PROVIDE: readme
+# PROVIDE: header
 
 ## # A surprisingly powerful Unix shell
 ##

@@ -1,0 +1,24 @@
+#!/usr/bin/env oh
+
+# KEYWORD: readme
+# PROVIDE: footer
+# REQUIRE: middle
+
+## For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
+##
+## ## Installing
+##
+## With Go 1.5 or greater installed,
+##
+##     go get github.com/michaelmacinnis/oh
+##
+## (Oh compiles and runs, but should be considered experimental, on Windows.)
+##
+## ## Using
+##
+## For more detail see: [Using oh](doc/manual.md)
+##
+## ## License
+##
+## Oh is released under an MIT-style license.
+##
