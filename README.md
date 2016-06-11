@@ -19,8 +19,9 @@ Written in Go, oh is also a concurrent programming language. It exposes
 channels, in addition to pipes, as first-class values. As oh uses the
 same syntax for code and data, channels and pipes can, in many cases, be
 used interchangeably. This homoiconic nature also allows oh to support
-fexprs which, in turn, allow oh to be easily extended. In fact, much of
-oh is written in oh.
+fexprs which, in turn, allow oh to be easily extended.
+In fact, much of oh (currently, 514 of 5802 
+lines of code) is written in oh.
 
 For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
 

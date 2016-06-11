@@ -2,6 +2,18 @@
 
 define common: import: ... lib/common.oh
 
+define line-count: "/"::join (... lib/doctest) 020-generated-readme.oh
+define oh-lines: integer @`(find . -name '*.oh' |
+    grep -E 'generate|boot' | xargs cat | wc -l)
+define total-lines: add oh-lines: integer @`(find . -name '*.go' |
+    grep -Ev 'version|grammar|generated' | xargs cat | wc -l)
+
+block {
+    echo "## In fact, much of oh (currently, ${oh-lines} of ${total-lines} "
+    echo "## lines of code) is written in oh."
+    echo "##"
+} > line-count
+
 public _stdout_: open w: "/"::join _origin_ generated.go
 
 common::introduction @`(basename _0_) $GOPACKAGE
