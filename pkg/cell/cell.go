@@ -1,4 +1,4 @@
-// Released under the MIT license. See LICENSE.
+// Released under an MIT license. See LICENSE.
 
 package cell
 

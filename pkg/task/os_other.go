@@ -1,4 +1,4 @@
-// Released under the MIT license. See LICENSE.
+// Released under an MIT license. See LICENSE.
 
 // +build !linux,!darwin,!dragonfly,!freebsd,!openbsd,!netbsd,!solaris,!windows
 
