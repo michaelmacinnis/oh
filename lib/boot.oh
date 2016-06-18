@@ -28,8 +28,6 @@ define _redirect_: syntax (name mode closer) = {
 			if (and (eq mode: quote w) (exists -i c)) {
 				throw: exception "error/runtime" "${c} exists" {
 					status false
-					get-source-file
-					get-line-number
 				}
 			}
 			set f: open mode c
@@ -299,13 +297,13 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: _stdout_::write @args
-_sys_::public exception: method (type message status file line) = {
+_sys_::public exception: method (type message status) e = {
 	object {
 		public type = type
 		public status = status
 		public message = message
-		public line = line
-		public file = file
+		public line: e::eval: get-line-number
+		public file: e::eval: get-source-file
 	}
 }
 _sys_::public get-prompt: method self (suffix) = {
