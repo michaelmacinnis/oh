@@ -1916,12 +1916,12 @@ func (t *Task) Throw(file string, line int, text string) {
 	}
 	c := List(
 		throw, List(
-			NewSymbol("exception"),
+			NewSymbol("_exception"),
 			NewSymbol(kind),
-			NewSymbol(text),
 			NewStatus(NewSymbol(code).Int()),
-			NewSymbol(path.Base(file)),
+			NewSymbol(text),
 			NewInteger(int64(line)),
+			NewSymbol(path.Base(file)),
 		),
 	)
 	Call(t, c, text)

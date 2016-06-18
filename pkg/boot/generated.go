@@ -33,9 +33,7 @@ define _redirect_: syntax (name mode closer) = {
 		if (not: or (is-channel c) (is-pipe c)) {
 			set mode: e::eval mode
 			if (and (eq mode: quote w) (exists -i c)) {
-				throw: exception "error/runtime" "${c} exists" {
-					status false
-				}
+				throw: exception "${c} exists"
 			}
 			set f: open mode c
 			set c = f
@@ -304,11 +302,33 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: _stdout_::write @args
-_sys_::public exception: method (type message status) e = {
+_sys_::public _exception: method (t s m l f) e = {
 	object {
-		public type = type
-		public status = status
-		public message = message
+		public type = t
+		public status = s
+		public message = m
+		public line = l
+		public file = f
+	}
+}
+# The generator method exception can be called in three ways:
+# exception <message>
+# exception <status> <message>
+# exception <type> <status> <message>
+# If not provided status defaults to status false and type to error/runtime.
+_sys_::public exception: method (message :args) e = {
+	define s: status false
+	define t: symbol "error/runtime"
+	if (not: is-null args) {
+		set s: args::head
+		set args: args::tail
+	}
+	if (not: is-null args) {
+		set t = s
+		set s: args::head
+		set args: args::tail
+	}
+	_exception t s message {
 		public line: e::eval: get-line-number
 		public file: e::eval: get-source-file
 	}
