@@ -39,5 +39,5 @@ For more detail see: [Using oh](doc/manual.md)
 
 ## License
 
-MIT, see: [LICENSE](LICENSE)
+[MIT](LICENSE)
 
