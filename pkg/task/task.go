@@ -358,8 +358,8 @@ func (c *Command) SelfLabel() Cell {
 
 type Continuation struct {
 	Dump  Cell
-	Stack Cell
 	Frame Cell
+	Stack Cell
 }
 
 func IsContinuation(c Cell) bool {
@@ -370,11 +370,11 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(dump, stack, frame Cell) *Continuation {
+func NewContinuation(dump, frame, stack Cell) *Continuation {
 	return &Continuation{
 		Dump:  dump,
-		Stack: stack,
 		Frame: frame,
+		Stack: stack,
 	}
 }
 
@@ -1233,8 +1233,8 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 		Registers: Registers{
 			Continuation: Continuation{
 				Dump:  List(NewStatus(0)),
-				Stack: List(NewInteger(psEvalBlock)),
 				Frame: frame,
+				Stack: List(NewInteger(psEvalBlock)),
 			},
 			Code:    c,
 			Lexical: l,
@@ -1303,7 +1303,7 @@ func (t *Task) Apply(args Cell) bool {
 		c.Define(Caar(params), args)
 	}
 
-	cc := NewContinuation(Cdr(t.Dump), t.Stack, t.Frame)
+	cc := NewContinuation(Cdr(t.Dump), t.Frame, t.Stack)
 	c.Define(NewSymbol("return"), cc)
 
 	return true
