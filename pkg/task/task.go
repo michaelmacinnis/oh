@@ -360,6 +360,8 @@ type Continuation struct {
 	Dump  Cell
 	Frame Cell
 	Stack Cell
+	File  string
+	Line  int
 }
 
 func IsContinuation(c Cell) bool {
@@ -370,11 +372,13 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(dump, frame, stack Cell) *Continuation {
+func NewContinuation(dump, frame, stack Cell, f string, l int) *Continuation {
 	return &Continuation{
 		Dump:  dump,
 		Frame: frame,
 		Stack: stack,
+		File:  f,
+		Line:  l,
 	}
 }
 
@@ -1204,8 +1208,6 @@ type Task struct {
 	Registers
 	Done      chan Cell
 	Eval      chan Message
-	File      string
-	Line      int
 	children  map[*Task]bool
 	childrenl *sync.RWMutex
 	parent    *Task
@@ -1235,14 +1237,14 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 				Dump:  List(NewStatus(0)),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
+				File:  "oh",
+				Line:  0,
 			},
 			Code:    c,
 			Lexical: l,
 		},
 		Done:      make(chan Cell, 1),
 		Eval:      make(chan Message, 1),
-		File:      "oh",
-		Line:      0,
 		children:  make(map[*Task]bool),
 		childrenl: &sync.RWMutex{},
 		parent:    p,
@@ -1303,7 +1305,7 @@ func (t *Task) Apply(args Cell) bool {
 		c.Define(Caar(params), args)
 	}
 
-	cc := NewContinuation(Cdr(t.Dump), t.Frame, t.Stack)
+	cc := NewContinuation(Cdr(t.Dump), t.Frame, t.Stack, t.File, t.Line)
 	c.Define(NewSymbol("return"), cc)
 
 	return true
