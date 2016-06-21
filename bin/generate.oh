@@ -15,8 +15,8 @@ block {
     echo "# PROVIDE: middle"
     echo "# REQUIRE: header"
     echo 
-    echo "## In fact, much of oh (currently, ${oh-lines} of ${total-lines} "
-    echo "## lines of code) is written in oh."
+    echo "## In fact, much of oh is written in oh. (Currently, ${oh-lines}"
+    echo "## of ${total-lines} lines of code)."
     echo "##"
 } > line-count
 chmod 755 line-count
