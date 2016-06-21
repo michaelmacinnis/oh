@@ -1201,7 +1201,7 @@ func (m *Syntax) String() string {
 
 type Task struct {
 	*Job
-	*Registers
+	Registers
 	Done      chan Cell
 	Eval      chan Message
 	File      string
@@ -1230,7 +1230,7 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 
 	t := &Task{
 		Job: j,
-		Registers: &Registers{
+		Registers: Registers{
 			Continuation: Continuation{
 				Dump:  List(NewStatus(0)),
 				Stack: List(NewInteger(psEvalBlock)),
@@ -1477,7 +1477,7 @@ func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
 	for m := range t.Eval {
-		saved := *(t.Registers)
+		saved := t.Registers
 
 		end := Cons(nil, Null)
 
@@ -1501,7 +1501,7 @@ func (t *Task) Listen() {
 		status := t.Run(end, m.Problem)
 		var result Cell = nil
 		if status != 0 {
-			*(t.Registers) = saved
+			t.Registers = saved
 
 			SetCar(t.Code, nil)
 			SetCdr(t.Code, Null)
@@ -1982,7 +1982,7 @@ func Call(t *Task, c Cell, problem string) string {
 		return raw(evaluate(c, "", -1, problem))
 	}
 
-	saved := *(t.Registers)
+	saved := t.Registers
 
 	t.Code = c
 	t.Dump = List(NewStatus(0))
@@ -1992,7 +1992,7 @@ func Call(t *Task, c Cell, problem string) string {
 
 	status := Car(t.Dump)
 
-	*(t.Registers) = saved
+	t.Registers = saved
 
 	return raw(status)
 }
