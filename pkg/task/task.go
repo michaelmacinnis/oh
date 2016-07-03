@@ -1931,47 +1931,44 @@ func (t *Task) Throw(file string, line int, text string) {
 	Call(t, c, text)
 }
 
-func (t *Task) Validate(args Cell, extra int64, predicates ...Predicate) {
-	la := Length(args)
-	lp := int64(len(predicates))
+func (t *Task) Validate(
+	args Cell, minimum, maximum int64, predicates ...Predicate,
+) {
+	given := Length(args)
 
-	var msg string
-	if extra == 0 {
-		msg = fmt.Sprintf(
-			"expected %s", namedCount(lp, "argument", "s"),
-		)
-	} else if extra < 0 {
-		msg = fmt.Sprintf("expected %d or more arguments", lp)
-	} else {
-		msg = fmt.Sprintf(
-			"expected %d to %d arguments", lp, lp + extra,
-		)
+	if given < minimum {
+		panic(fmt.Sprintf(
+			"expected %s (%d given)",
+			namedCount(minimum, "argument", "s"),
+			given,
+		))
 	}
 
-	msg = fmt.Sprintf("%s (%d given)", msg, la)
+	if -1 < maximum && maximum < given {
+		panic(fmt.Sprintf(
+			"expected %s (%d given)",
+			namedCount(maximum, "argument", "s"),
+			given,
+		))
+	}
 
-	var i int64 = 0
-	for _, pred := range predicates {
-		i++
+	var i int64
+	for _, predicate := range predicates {
 		if args == Null {
-			t.Throw(t.File, t.Line, msg)
+			break
 		}
 
-		if !pred(Car(args)) {
-			msg = fmt.Sprintf(
-				"argument %d (of %d) is invalid", i, la,
-			)
-			t.Throw(t.File, t.Line, msg)
+		i++
+
+		if !predicate(Car(args)) {
+			panic(fmt.Sprintf(
+				"argument %d (of %d) is invalid",
+				i, given,
+			))
 		}
 
 		args = Cdr(args)
 	}
-
-	if la - lp - i <= extra || extra == -1 {
-		return
-	}
-
-	t.Throw(t.File, t.Line, msg)
 }
 
 func (t *Task) Wait() {
@@ -2046,10 +2043,6 @@ func Call(t *Task, c Cell, problem string) string {
 
 func ForegroundTask() *Task {
 	return task0
-}
-
-func IsAnything(c Cell) bool {
-	return true
 }
 
 func IsContext(c Cell) bool {
@@ -2241,34 +2234,33 @@ func conduitContext() Context {
 
 	envc = NewScope(namespace, nil)
 	envc.PublicMethod("_reader_close_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		toConduit(t.Self()).ReaderClose()
 		return t.Return(True)
 	})
 	envc.PublicMethod("_writer_close_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		toConduit(t.Self()).WriterClose()
 		return t.Return(True)
 	})
 	envc.PublicMethod("close", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		toConduit(t.Self()).Close()
 		return t.Return(True)
 	})
 	envc.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(Null)
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(toConduit(t.Self()).Read(t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(toConduit(t.Self()).ReadLine(t))
 	})
 	envc.PublicMethod("write", func(t *Task, args Cell) bool {
-		t.Validate(args, -1)
 		toConduit(t.Self()).Write(args)
 		return t.Return(True)
 	})
@@ -2380,7 +2372,7 @@ func init() {
 		panic("public members cannot be remove from this type")
 	})
 	namespace.PublicMethod("_dir_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
 		for _, s := range self.Complete("") {
@@ -2398,7 +2390,7 @@ func init() {
 		panic("private members cannot be added to this type")
 	})
 	namespace.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
 		for _, s := range self.Faces().prev.Complete("") {
@@ -2414,7 +2406,7 @@ func init() {
 
 	/* Standard Methods. */
 	object.PublicMethod("_del_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsAtom)
+		t.Validate(args, 1, 1)
 		self := toContext(t.Self())
 		s := raw(Car(args))
 
@@ -2426,7 +2418,7 @@ func init() {
 		return t.Return(NewBoolean(ok))
 	})
 	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsAtom)
+		t.Validate(args, 1, 1)
 		s := raw(Car(args))
 		k := NewSymbol(s)
 
@@ -2440,7 +2432,7 @@ func init() {
 		}
 	})
 	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsAtom, IsAnything)
+		t.Validate(args, 2, 2)
 		s := raw(Car(args))
 		v := Cadr(args)
 
@@ -2450,17 +2442,17 @@ func init() {
 		return t.Return(v)
 	})
 	object.PublicMethod("child", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		c := toContext(t.Self())
 		return t.Return(NewObject(NewScope(c.Expose(), nil)))
 	})
 	object.PublicMethod("clone", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		c := toContext(t.Self())
 		return t.Return(NewObject(c.Expose().Copy()))
 	})
 	object.PublicMethod("context", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		bare := self.Expose()
 		if self == bare {
@@ -2469,7 +2461,7 @@ func init() {
 		return t.Return(self)
 	})
 	object.PublicMethod("eval", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsAnything)
+		t.Validate(args, 1, 1)
 		scope := toContext(t.Self()).Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
@@ -2483,13 +2475,13 @@ func init() {
 		return true
 	})
 	object.PublicMethod("has", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1)
 		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
 	object.PublicMethod("interpolate", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1, IsText)
 		l := toContext(t.Self())
 		if t.Lexical == l.Expose() {
 			l = toContext(t.Lexical)
@@ -2511,7 +2503,7 @@ func init() {
 
 	/* Builtins. */
 	scope0.DefineBuiltin("bg", func(t *Task, args Cell) bool {
-		t.Validate(args, 1)
+		t.Validate(args, 0, 1, IsNumber)
 		SetCar(t.Dump, Null)
 
 		found := control(t, args)
@@ -2526,7 +2518,7 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("cd", func(t *Task, args Cell) bool {
-		t.Validate(args, 1)
+		t.Validate(args, 0, 1, IsText)
 		dir := ""
 		if args == Null {
 			c, _ := Resolve(t.Lexical, t.Frame, homesym)
@@ -2549,7 +2541,7 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("exists", func(t *Task, args Cell) bool {
-		t.Validate(args, -1, IsAnything)
+		t.Validate(args, 1, -1)
 		count := 0
 		ignore := false
 		for ; args != Null; args = Cdr(args) {
@@ -2571,7 +2563,7 @@ func init() {
 		return t.Return(NewBoolean(count > 0))
 	})
 	scope0.DefineBuiltin("fg", func(t *Task, args Cell) bool {
-		t.Validate(args, 1)
+		t.Validate(args, 0, 1, IsNumber)
 		found := control(t, args)
 		if found == nil {
 			return false
@@ -2581,7 +2573,7 @@ func init() {
 		return true
 	})
 	scope0.DefineBuiltin("jobs", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		jobsl.RLock()
 		defer jobsl.RUnlock()
 
@@ -2608,7 +2600,7 @@ func init() {
 		return false
 	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1, IsText)
 		str, err := module(raw(Car(args)))
 		if err != nil {
 			panic(err)
@@ -2624,7 +2616,7 @@ func init() {
 		return t.Return(c.Get())
 	})
 	scope0.DefineBuiltin("command", func(t *Task, args Cell) bool {
-		t.Validate(args, -1, IsText)
+		t.Validate(args, 1, -1, IsText)
 		if args == Null {
 			SetCar(t.Dump, False)
 			return false
@@ -2643,7 +2635,7 @@ func init() {
 	bindGenerators(scope0)
 
 	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
-		t.Validate(args, 1)
+		t.Validate(args, 0, 1, IsNumber)
 		cap := 0
 		if args != Null {
 			cap = int(Car(args).(Atom).Int())
@@ -2659,7 +2651,7 @@ func init() {
 	bindRelational(scope0)
 
 	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText, IsText)
+		t.Validate(args, 2, 2, IsText, IsText)
 		pattern := raw(Car(args))
 		text := raw(Cadr(args))
 
@@ -2671,7 +2663,7 @@ func init() {
 		return t.Return(NewBoolean(ok))
 	})
 	scope0.DefineMethod("ne", func(t *Task, args Cell) bool {
-		t.Validate(args, -1, IsAnything)
+		t.Validate(args, 2, -1)
 		for l1 := args; l1 != Null; l1 = Cdr(l1) {
 			for l2 := Cdr(l1); l2 != Null; l2 = Cdr(l2) {
 				v1 := Car(l1)
@@ -2686,7 +2678,7 @@ func init() {
 		return t.Return(True)
 	})
 	scope0.DefineMethod("resolves", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1, IsText)
 		c, _ := Resolve(t.Lexical, t.Frame, NewSymbol(raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
@@ -2708,15 +2700,15 @@ func init() {
 		return true
 	})
 	scope0.DefineMethod("get-line-number", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(NewInteger(int64(t.Line)))
 	})
 	scope0.DefineMethod("get-source-file", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(NewSymbol(t.File))
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText, IsText)
+		t.Validate(args, 2, 2, IsText, IsText)
 		mode := raw(Car(args))
 		path := raw(Cadr(args))
 		flags := 0
@@ -2769,23 +2761,23 @@ func init() {
 		return t.Return(NewPipe(r, w))
 	})
 	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(NewFloat(rand.Float64()))
 	})
 	scope0.DefineMethod("set-line-number", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsNumber)
+		t.Validate(args, 1, 1, IsNumber)
 		t.Line = int(Car(args).(Atom).Int())
 
 		return false
 	})
 	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1, IsText)
 		t.File = raw(Car(args))
 
 		return false
 	})
 	scope0.DefineMethod("temp-fifo", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		name, err := adapted.TempFifo("fifo-")
 		if err != nil {
 			panic(err)
@@ -2978,7 +2970,7 @@ func pairContext() Context {
 
 	envp = NewScope(namespace, nil)
 	envp.PublicMethod("append", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsAnything)
+		t.Validate(args, 1, 1)
 		var s Cell = toPair(t.Self())
 
 		n := Cons(Car(s), Null)
@@ -2992,7 +2984,7 @@ func pairContext() Context {
 		return t.Return(l)
 	})
 	envp.PublicMethod("get", func(t *Task, args Cell) bool {
-		t.Validate(args, 1)
+		t.Validate(args, 0, 1, IsNumber)
 		s := toPair(t.Self())
 
 		i := int64(0)
@@ -3009,13 +3001,13 @@ func pairContext() Context {
 		return t.Return(Car(Tail(s, i, dflt)))
 	})
 	envp.PublicMethod("head", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		s := toPair(t.Self())
 
 		return t.Return(Car(s))
 	})
 	envp.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		var s Cell = toPair(t.Self())
 		l := Null
 
@@ -3029,15 +3021,15 @@ func pairContext() Context {
 		return t.Return(Reverse(l))
 	})
 	envp.PublicMethod("length", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(NewInteger(Length(t.Self())))
 	})
 	envp.PublicMethod("reverse", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(Reverse(t.Self()))
 	})
 	envp.PublicMethod("set", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsNumber, IsAnything)
+		t.Validate(args, 2, 2, IsNumber)
 		s := toPair(t.Self())
 
 		i := Car(args).(Atom).Int()
@@ -3047,7 +3039,7 @@ func pairContext() Context {
 		return t.Return(v)
 	})
 	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, IsAnything)
+		t.Validate(args, 1, 2)
 		s := toPair(t.Self())
 
 		i := int64(0)
@@ -3064,7 +3056,7 @@ func pairContext() Context {
 		return t.Return(v)
 	})
 	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, IsNumber)
+		t.Validate(args, 1, 2, IsNumber, IsNumber)
 		s := toPair(t.Self())
 		i := Car(args).(Atom).Int()
 
@@ -3078,13 +3070,13 @@ func pairContext() Context {
 		return t.Return(Slice(s, i, j))
 	})
 	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		s := toPair(t.Self())
 
 		return t.Return(Cdr(s))
 	})
 	envp.DefineMethod("to-string", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		var s Cell
 
 		v := ""
@@ -3149,17 +3141,17 @@ func stringContext() Context {
 		return t.Return(NewString(r))
 	})
 	envs.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		return t.Return(Null)
 	})
 	envs.PublicMethod("length", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		s := raw(toString(t.Self()))
 
 		return t.Return(NewInteger(int64(len(s))))
 	})
 	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, IsNumber)
+		t.Validate(args, 1, 2, IsNumber, IsNumber)
 		s := []rune(raw(toString(t.Self())))
 
 		start := int(Car(args).(Atom).Int())
@@ -3172,7 +3164,7 @@ func stringContext() Context {
 		return t.Return(NewString(string(s[start:end])))
 	})
 	envs.PublicMethod("split", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, IsText)
+		t.Validate(args, 1, 1, IsText)
 		r := Null
 
 		sep := toString(t.Self())
@@ -3210,7 +3202,7 @@ func stringContext() Context {
 		return t.Return(NewString(s))
 	})
 	envs.PublicMethod("to-list", func(t *Task, args Cell) bool {
-		t.Validate(args, 0)
+		t.Validate(args, 0, 0)
 		s := raw(toString(t.Self()))
 		l := Null
 		for _, char := range s {

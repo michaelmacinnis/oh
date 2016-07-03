@@ -21,7 +21,7 @@ same syntax for code and data, channels and pipes can, in many cases, be
 used interchangeably. This homoiconic nature also allows oh to support
 fexprs which, in turn, allow oh to be easily extended.
 In fact, much of oh is written in oh. (Currently, 529
-of 6163 lines of code).
+of 6155 lines of code).
 
 For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
 
