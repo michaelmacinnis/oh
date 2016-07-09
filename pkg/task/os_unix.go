@@ -189,14 +189,14 @@ func broker() {
 	}
 }
 
-func evaluate(c Cell, file string, line int, problem string) Cell {
+func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	eval0 <- Message{Cmd: c, File: file, Line: line, Problem: problem}
-	v := <-done0
+	r := <-done0
 
 	task0.Job.Command = ""
 	task0.Job.Group = 0
 
-	return v
+	return r, task0.Stack != Null
 }
 
 func init() {

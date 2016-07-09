@@ -18,7 +18,6 @@ package parser
 import (
 	"github.com/michaelmacinnis/adapted"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/task"
 	"strconv"
 )
 
@@ -43,8 +42,8 @@ opt_evaluate_command: command {
 	$$.c = $1.c
 	if ($1.c != Null) {
 		s := yylex.(*scanner)
-		s.process($1.c, s.filename, s.lineno, "")
-		if task.ForegroundTask().Stack == Null {
+		_, ok := s.process($1.c, s.filename, s.lineno, "")
+		if !ok {
 			return -1
 		}
 	}

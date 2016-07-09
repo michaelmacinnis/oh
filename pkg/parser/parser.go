@@ -17,7 +17,7 @@ type scanner struct {
 	f        *os.File
 	filename string
 	input    common.ReadStringer
-	process  func(Cell, string, int, string) Cell
+	process  func(Cell, string, int, string) (Cell, bool)
 	task     *task.Task
 
 	line []rune
@@ -330,7 +330,7 @@ func (s *scanner) Error(msg string) {
 func Parse(
 	t *task.Task, r common.ReadStringer, f *os.File,
 	n string, d func(string, uintptr) Cell,
-	c func(Cell, string, int, string) Cell,
+	c func(Cell, string, int, string) (Cell, bool),
 ) bool {
 
 	s := new(scanner)

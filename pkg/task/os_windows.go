@@ -55,7 +55,7 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 
 func TerminateProcess(pid int) {}
 
-func evaluate(c Cell, file string, line int, problem string) Cell {
+func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	task0.Eval <- Message{Cmd: c, File: file, Line: line, Problem: problem}
-	return <-task0.Done
+	return <-task0.Done, task0.Stack != Null
 }

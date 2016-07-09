@@ -94,7 +94,7 @@ type ui interface {
 type reader func(
 	*Task, common.ReadStringer, *os.File,
 	string, func(string, uintptr) Cell,
-	func(Cell, string, int, string) Cell,
+	func(Cell, string, int, string) (Cell, bool),
 ) bool
 
 const (
@@ -714,11 +714,11 @@ func (p *Pipe) Read(t *Task) Cell {
 			}
 			parse(
 				t, p.reader(), f, p.r.Name(), deref,
-				func(c Cell, f string, l int, u string) Cell {
+				func(c Cell, f string, l int, u string) (Cell, bool) {
 					t.Line = l
 					p.c <- c
 					<-p.d
-					return nil
+					return nil, true
 				},
 			)
 			p.d = nil
@@ -1949,7 +1949,8 @@ func (u *Unbound) Self() Cell {
 
 func Call(t *Task, c Cell, problem string) string {
 	if t == nil {
-		return raw(evaluate(c, "", -1, problem))
+		r, _ := evaluate(c, "", -1, problem)
+		return raw(r)
 	}
 
 	saved := t.Registers
@@ -2029,10 +2030,9 @@ func Start(parser reader, cli ui) {
 	LaunchForegroundTask()
 
 	parse = parser
-	eval := func(c Cell, f string, l int, p string) Cell {
+	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
 		task0.Eval <- Message{Cmd: c, File: f, Line: l, Problem: p}
-		<-task0.Done
-		return nil
+		return <-task0.Done, true
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
