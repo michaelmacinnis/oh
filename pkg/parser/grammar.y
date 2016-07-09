@@ -208,17 +208,17 @@ expression: word { $$ = $1 };
 
 word: BANG_DOUBLE {
 	v, _ := adapted.Unquote($1.s[1:])
-	$$.c = task.NewString(v)
+	$$.c = NewString(v)
 };
 
 word: DOUBLE_QUOTED {
 	v, _ := adapted.Unquote($1.s)
-	s := task.NewString(v)
+	s := NewString(v)
 	$$.c = List(NewSymbol("interpolate"), s)
 };
 
 word: SINGLE_QUOTED {
-	$$.c = task.NewString($1.s[1:len($1.s)-1])
+	$$.c = NewString($1.s[1:len($1.s)-1])
 };
 
 word: SYMBOL { $$.c = NewSymbol($1.s) };

@@ -845,21 +845,21 @@ yydefault:
 		//line grammar.y:209
 		{
 			v, _ := adapted.Unquote(yyDollar[1].s[1:])
-			yyVAL.c = task.NewString(v)
+			yyVAL.c = NewString(v)
 		}
 	case 49:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line grammar.y:214
 		{
 			v, _ := adapted.Unquote(yyDollar[1].s)
-			s := task.NewString(v)
+			s := NewString(v)
 			yyVAL.c = List(NewSymbol("interpolate"), s)
 		}
 	case 50:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line grammar.y:220
 		{
-			yyVAL.c = task.NewString(yyDollar[1].s[1 : len(yyDollar[1].s)-1])
+			yyVAL.c = NewString(yyDollar[1].s[1 : len(yyDollar[1].s)-1])
 		}
 	case 51:
 		yyDollar = yyS[yypt-1 : yypt+1]

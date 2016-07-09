@@ -4,6 +4,7 @@ package cell
 
 import (
 	"fmt"
+	"github.com/michaelmacinnis/adapted"
 	"math/big"
 	"strconv"
 	"sync"
@@ -586,6 +587,79 @@ func (s *Status) Multiply(c Cell) Number {
 
 func (s *Status) Subtract(c Cell) Number {
 	return NewRational(new(big.Rat).Sub(s.Rat(), c.(Atom).Rat()))
+}
+
+/* String cell definition. */
+
+type String struct {
+	v string
+}
+
+func IsString(c Cell) bool {
+	switch c.(type) {
+	case *String:
+		return true
+	}
+	return false
+}
+
+func NewString(v string) *String {
+	s := String{v}
+
+	return &s
+}
+
+func (s *String) Bool() bool {
+	return true
+}
+
+func (s *String) Equal(c Cell) bool {
+	if a, ok := c.(Atom); ok {
+		return string(s.v) == a.String()
+	}
+	return false
+}
+
+func (s *String) String() string {
+	return adapted.Quote(s.v)
+}
+
+func (s *String) Float() (f float64) {
+	var err error
+	if f, err = strconv.ParseFloat(string(s.v), 64); err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func (s *String) Int() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (s *String) Rat() *big.Rat {
+	r := new(big.Rat)
+	if _, err := fmt.Sscan(string(s.v), r); err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (s *String) Status() (i int64) {
+	var err error
+	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+		panic(err)
+	}
+	return i
+}
+
+/* String-specific functions. */
+
+func (s *String) Raw() string {
+	return string(s.v)
 }
 
 /* Symbol cell definition. */
