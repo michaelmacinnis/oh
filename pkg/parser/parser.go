@@ -14,11 +14,11 @@ import (
 
 type scanner struct {
 	deref    func(string, uintptr) Cell
+	error    func(file string, line int, text string)
 	f        *os.File
 	filename string
 	input    common.ReadStringer
 	process  func(Cell, string, int, string) (Cell, bool)
-	task     *task.Task
 
 	line []rune
 
@@ -324,23 +324,23 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	s.task.Throw(s.filename, s.lineno, msg)
+	s.error(s.filename, s.lineno, msg)
 }
 
 func Parse(
-	t *task.Task, r common.ReadStringer, f *os.File,
-	n string, d func(string, uintptr) Cell,
-	c func(Cell, string, int, string) (Cell, bool),
+	input common.ReadStringer,
+	error func(file string, line int, text string), f *os.File,
+	filename string, process func(Cell, string, int, string) (Cell, bool),
 ) bool {
 
 	s := new(scanner)
 
-	s.deref = d
+	s.deref = task.Deref
+	s.error = error
 	s.f = f
-	s.filename = n
-	s.input = r
-	s.process = c
-	s.task = t
+	s.filename = filename
+	s.input = input
+	s.process = process
 
 	rval := 1
 	for rval > 0 {

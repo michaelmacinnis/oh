@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func deref(name string, address uintptr) Cell {
+func Deref(name string, address uintptr) Cell {
 	switch {
 	case name == "bound":
 		return (*Bound)(unsafe.Pointer(address))

@@ -83,7 +83,7 @@ type Message struct {
 	Problem string
 }
 
-type Predicate func(c Cell) bool
+type Validator func(c Cell) bool
 
 type ui interface {
 	Close() error
@@ -92,9 +92,8 @@ type ui interface {
 }
 
 type reader func(
-	*Task, common.ReadStringer, *os.File,
-	string, func(string, uintptr) Cell,
-	func(Cell, string, int, string) (Cell, bool),
+	common.ReadStringer, func(file string, line int, text string),
+	*os.File, string, func(Cell, string, int, string) (Cell, bool),
 ) bool
 
 const (
@@ -713,7 +712,7 @@ func (p *Pipe) Read(t *Task) Cell {
 				f = p.r
 			}
 			parse(
-				t, p.reader(), f, p.r.Name(), deref,
+				p.reader(), t.Throw, f, p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
 					t.Line = l
 					p.c <- c
@@ -1858,7 +1857,7 @@ func (t *Task) Throw(file string, line int, text string) {
 }
 
 func (t *Task) Validate(
-	args Cell, minimum, maximum int64, predicates ...Predicate,
+	args Cell, minimum, maximum int64, validators ...Validator,
 ) {
 	given := Length(args)
 
@@ -1879,14 +1878,14 @@ func (t *Task) Validate(
 	}
 
 	var i int64
-	for _, predicate := range predicates {
+	for _, validator := range validators {
 		if args == Null {
 			break
 		}
 
 		i++
 
-		if !predicate(Car(args)) {
+		if !validator(Car(args)) {
 			panic(fmt.Sprintf(
 				"argument %d (of %d) is invalid",
 				i, given,
@@ -2036,7 +2035,7 @@ func Start(parser reader, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(task0, b, nil, "boot.oh", deref, eval)
+	parse(b, task0.Throw, nil, "boot.oh", eval)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -2077,7 +2076,7 @@ func Start(parser reader, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parse(task0, b, nil, "-c", deref, eval)
+			parse(b, task0.Throw, nil, "-c", eval)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -2089,7 +2088,7 @@ func Start(parser reader, cli ui) {
 
 		pgid = BecomeProcessGroupLeader()
 
-		if parse(task0, cli, nil, "oh", deref, evaluate) {
+		if parse(cli, task0.Throw, nil, "oh", evaluate) {
 			fmt.Printf("\n")
 		}
 		cli.Close()
