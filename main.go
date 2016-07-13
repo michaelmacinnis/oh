@@ -29,7 +29,10 @@ import (
 )
 
 func main() {
-	task.Start(parser.Parse, ui.New(os.Args))
+	task.Start(
+		parser.New(task.Deref, task.ResetForegroundGroup).Parse,
+		ui.New(os.Args),
+	)
 }
 
 //go:generate bin/test.oh

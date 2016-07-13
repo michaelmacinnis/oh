@@ -5,12 +5,16 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
-	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
 	"io"
 	"os"
 	"strings"
 )
+
+type Parser struct {
+	deref func(string, uintptr) Cell
+	reset func(*os.File) bool
+}
 
 type scanner struct {
 	deref    func(string, uintptr) Cell
@@ -19,6 +23,7 @@ type scanner struct {
 	filename string
 	input    common.ReadStringer
 	process  func(Cell, string, int, string) (Cell, bool)
+	reset    func(*os.File) bool
 
 	line []rune
 
@@ -118,7 +123,7 @@ main:
 				s.token = CTRLC
 				break
 			} else if s.f != nil && retries < 1 && err != io.EOF {
-				if task.ResetForegroundGroup(s.f) {
+				if s.reset(s.f) {
 					retries++
 					goto main
 				}
@@ -327,7 +332,11 @@ func (s *scanner) Error(msg string) {
 	s.error(s.filename, s.lineno, msg)
 }
 
-func Parse(
+func New(deref func(string, uintptr) Cell, reset func(*os.File) bool) *Parser {
+	return &Parser{deref, reset}
+}
+
+func (p* Parser) Parse(
 	input common.ReadStringer,
 	error func(file string, line int, text string), f *os.File,
 	filename string, process func(Cell, string, int, string) (Cell, bool),
@@ -335,12 +344,13 @@ func Parse(
 
 	s := new(scanner)
 
-	s.deref = task.Deref
+	s.deref = p.deref
 	s.error = error
 	s.f = f
 	s.filename = filename
 	s.input = input
 	s.process = process
+	s.reset = p.reset
 
 	rval := 1
 	for rval > 0 {

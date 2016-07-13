@@ -91,7 +91,7 @@ type ui interface {
 	ReadString(delim byte) (line string, err error)
 }
 
-type reader func(
+type parser func(
 	common.ReadStringer, func(file string, line int, text string),
 	*os.File, string, func(Cell, string, int, string) (Cell, bool),
 ) bool
@@ -148,7 +148,7 @@ var (
 	jobsl       = &sync.RWMutex{}
 	namespace   Context
 	oldpwdsym   *Symbol
-	parse       reader
+	parse       parser
 	pgid        int
 	pid         int
 	pwdsym      *Symbol
@@ -2025,10 +2025,10 @@ func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(parser reader, cli ui) {
+func Start(p parser, cli ui) {
 	LaunchForegroundTask()
 
-	parse = parser
+	parse = p
 	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
 		task0.Eval <- Message{Cmd: c, File: f, Line: l, Problem: p}
 		return <-task0.Done, true
