@@ -17,12 +17,14 @@ type cli struct {
 	*liner.State
 }
 
-var CtrlCPressed error = liner.ErrPromptAborted
-
 var (
 	cooked   liner.ModeApplier
 	uncooked liner.ModeApplier
 )
+
+func CtrlCPressed(err error) bool {
+	return err == liner.ErrPromptAborted
+}
 
 func New(args []string) *cli {
 	if len(args) > 1 {

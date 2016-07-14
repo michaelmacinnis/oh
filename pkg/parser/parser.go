@@ -5,25 +5,24 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
-	"github.com/michaelmacinnis/oh/pkg/ui"
 	"io"
 	"os"
 	"strings"
 )
 
-type Parser struct {
+type parser struct {
+	ctrlc func(error) bool
 	deref func(string, uintptr) Cell
 	reset func(*os.File) bool
 }
 
 type scanner struct {
-	deref    func(string, uintptr) Cell
+	*parser
 	error    func(file string, line int, text string)
 	f        *os.File
 	filename string
 	input    common.ReadStringer
 	process  func(Cell, string, int, string) (Cell, bool)
-	reset    func(*os.File) bool
 
 	line []rune
 
@@ -118,7 +117,7 @@ main:
 			line, err := s.input.ReadString('\n')
 			if err == nil {
 				retries = 0
-			} else if err == ui.CtrlCPressed {
+			} else if s.ctrlc(err) {
 				s.start = 0
 				s.token = CTRLC
 				break
@@ -332,11 +331,15 @@ func (s *scanner) Error(msg string) {
 	s.error(s.filename, s.lineno, msg)
 }
 
-func New(deref func(string, uintptr) Cell, reset func(*os.File) bool) *Parser {
-	return &Parser{deref, reset}
+func New(
+	ctrlc func(error) bool,
+	deref func(string, uintptr) Cell,
+	reset func(*os.File) bool,
+) *parser {
+	return &parser{ctrlc, deref, reset}
 }
 
-func (p* Parser) Parse(
+func (p *parser) Parse(
 	input common.ReadStringer,
 	error func(file string, line int, text string), f *os.File,
 	filename string, process func(Cell, string, int, string) (Cell, bool),
@@ -344,13 +347,12 @@ func (p* Parser) Parse(
 
 	s := new(scanner)
 
-	s.deref = p.deref
+	s.parser = p
 	s.error = error
 	s.f = f
 	s.filename = filename
 	s.input = input
 	s.process = process
-	s.reset = p.reset
 
 	rval := 1
 	for rval > 0 {

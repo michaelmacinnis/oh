@@ -30,7 +30,9 @@ import (
 
 func main() {
 	task.Start(
-		parser.New(task.Deref, task.ResetForegroundGroup).Parse,
+		parser.New(
+			ui.CtrlCPressed, task.Deref, task.ResetForegroundGroup,
+		).Parse,
 		ui.New(os.Args),
 	)
 }
