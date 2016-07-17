@@ -11,7 +11,6 @@ import (
 )
 
 type parser struct {
-	ctrlc func(error) bool
 	deref func(string, uintptr) Cell
 	reset func(*os.File) bool
 }
@@ -117,7 +116,7 @@ main:
 			line, err := s.input.ReadString('\n')
 			if err == nil {
 				retries = 0
-			} else if s.ctrlc(err) {
+			} else if err == common.CtrlCPressed {
 				s.start = 0
 				s.token = CTRLC
 				break
@@ -332,11 +331,10 @@ func (s *scanner) Error(msg string) {
 }
 
 func New(
-	ctrlc func(error) bool,
 	deref func(string, uintptr) Cell,
 	reset func(*os.File) bool,
 ) *parser {
-	return &parser{ctrlc, deref, reset}
+	return &parser{deref, reset}
 }
 
 func (p *parser) Parse(

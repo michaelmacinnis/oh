@@ -4,6 +4,7 @@ package ui
 
 import (
 	"github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/peterh/liner"
 	"io"
@@ -96,6 +97,11 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 		}
 		line += "\n"
 	}
+
+	if err == liner.ErrPromptAborted {
+		return line, common.CtrlCPressed
+	}
+
 	return
 }
 
