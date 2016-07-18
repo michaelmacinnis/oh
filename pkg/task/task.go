@@ -9,6 +9,7 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
+	"github.com/michaelmacinnis/oh/pkg/system"
 	"github.com/peterh/liner"
 	"math/rand"
 	"os"
@@ -149,8 +150,6 @@ var (
 	namespace   Context
 	oldpwdsym   *Symbol
 	parse       parser
-	pgid        int
-	pid         int
 	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
@@ -1298,7 +1297,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 
 func (t *Task) Continue() {
 	if t.pid > 0 {
-		ContinueProcess(t.pid)
+		system.ContinueProcess(t.pid)
 	}
 
 	t.childrenl.RLock()
@@ -1321,7 +1320,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	t.Lock()
 
 	if jobControlEnabled() {
-		attr.Sys = SysProcAttr(t.Group)
+		attr.Sys = system.SysProcAttr(t.Group)
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -1340,7 +1339,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Unlock()
 
-	status := JoinProcess(proc)
+	status := exitStatus(proc)
 
 	if jobControlEnabled() {
 		if t.Group == t.pid {
@@ -1763,7 +1762,7 @@ func (t *Task) Stop() {
 	}
 
 	if t.pid > 0 {
-		TerminateProcess(t.pid)
+		system.TerminateProcess(t.pid)
 	}
 
 	t.childrenl.RLock()
@@ -1795,7 +1794,7 @@ func (t *Task) Strict() (ok bool) {
 
 func (t *Task) Suspend() {
 	if t.pid > 0 {
-		SuspendProcess(t.pid)
+		system.SuspendProcess(t.pid)
 	}
 
 	t.childrenl.RLock()
@@ -1998,10 +1997,6 @@ func PrintError(file string, line int, msg string) {
 	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
 }
 
-func Pgid() int {
-	return pgid
-}
-
 func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 	if s != nil {
 		c := toContext(s)
@@ -2084,9 +2079,9 @@ func Start(p parser, cli ui) {
 	} else if cli.Exists() {
 		interactive = true
 
-		InitSignalHandling()
+		initSignalHandling()
 
-		pgid = BecomeProcessGroupLeader()
+		system.BecomeProcessGroupLeader()
 
 		if parse(cli, task0.Throw, nil, "oh", evaluate) {
 			fmt.Printf("\n")
@@ -2804,9 +2799,9 @@ func init() {
 	scope0.Define(NewSymbol("true"), True)
 
 	scope0.Define(NewSymbol("_env_"), env)
-	scope0.Define(NewSymbol("_pid_"), NewInteger(int64(os.Getpid())))
-	scope0.Define(NewSymbol("_platform_"), NewSymbol(Platform))
-	scope0.Define(NewSymbol("_ppid_"), NewInteger(int64(os.Getppid())))
+	scope0.Define(NewSymbol("_pid_"), NewInteger(int64(system.Pid())))
+	scope0.Define(NewSymbol("_platform_"), NewSymbol(system.Platform))
+	scope0.Define(NewSymbol("_ppid_"), NewInteger(int64(system.Ppid())))
 	scope0.Define(NewSymbol("_root_"), scope0)
 	scope0.Define(NewSymbol("_sys_"), sys)
 
@@ -2822,7 +2817,7 @@ func init() {
 
 	frame0 = List(env, sys)
 
-	OSSpecificInit()
+	initPlatformSpecific()
 }
 
 func interpolate(l Context, d Cell, s string) string {
@@ -2858,7 +2853,7 @@ func isSimple(c Cell) bool {
 }
 
 func jobControlEnabled() bool {
-	return interactive && JobControlSupported()
+	return interactive && system.JobControlSupported()
 }
 
 func module(f string) (string, error) {
@@ -3030,7 +3025,7 @@ func rpipe(c Cell) *os.File {
 
 func setForegroundTask(t *Task) {
 	if t.Job.Group != 0 {
-		SetForegroundGroup(t.Job.Group)
+		system.SetForegroundGroup(t.Job.Group)
 		t.Job.mode.ApplyMode()
 	}
 	task0, t = t, task0

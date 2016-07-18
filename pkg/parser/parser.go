@@ -5,6 +5,7 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
+	"github.com/michaelmacinnis/oh/pkg/system"
 	"io"
 	"os"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 type parser struct {
 	deref func(string, uintptr) Cell
-	reset func(*os.File) bool
 }
 
 type scanner struct {
@@ -121,7 +121,7 @@ main:
 				s.token = CTRLC
 				break
 			} else if s.f != nil && retries < 1 && err != io.EOF {
-				if s.reset(s.f) {
+				if system.ResetForegroundGroup(s.f) {
 					retries++
 					goto main
 				}
@@ -330,11 +330,8 @@ func (s *scanner) Error(msg string) {
 	s.error(s.filename, s.lineno, msg)
 }
 
-func New(
-	deref func(string, uintptr) Cell,
-	reset func(*os.File) bool,
-) *parser {
-	return &parser{deref, reset}
+func New(deref func(string, uintptr) Cell) *parser {
+	return &parser{deref}
 }
 
 func (p *parser) Parse(

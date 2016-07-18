@@ -8,9 +8,7 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
-	"unsafe"
 )
 
 type notification struct {
@@ -24,116 +22,11 @@ type registration struct {
 }
 
 var (
-	Platform string = "unix"
 	done0    chan Cell
 	eval0    chan Message
-	history  string = ""
 	incoming chan os.Signal
 	register chan registration
 )
-
-func BecomeProcessGroupLeader() int {
-	pid := syscall.Getpid()
-	pgid := syscall.Getpgrp()
-	if pid != pgid {
-		syscall.Setpgid(0, 0)
-	}
-
-	return pid
-}
-
-func ContinueProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGCONT)
-}
-
-func GetHistoryFilePath() (string, error) {
-	if history == "" {
-		history = path.Join(os.Getenv("HOME"), ".oh_history")
-	}
-	return history, nil
-}
-
-func InitSignalHandling() {
-	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
-
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
-	incoming = make(chan os.Signal, len(signals))
-
-	signal.Notify(incoming, signals...)
-
-	go broker()
-}
-
-func JobControlSupported() bool {
-	return true
-}
-
-func JoinProcess(proc *os.Process) int {
-	response := make(chan notification)
-	register <- registration{proc.Pid, response}
-
-	return (<-response).status.ExitStatus()
-}
-
-func OSSpecificInit() {
-	scope0.DefineBuiltin("_umask_", func(t *Task, args Cell) bool {
-		nmask := int64(0)
-		if args != Null {
-			nmask = Car(args).(Atom).Int()
-		}
-
-		omask := syscall.Umask(int(nmask))
-
-		if nmask == 0 {
-			syscall.Umask(omask)
-		}
-
-		return t.Return(NewInteger(int64(omask)))
-	})
-}
-
-func ResetForegroundGroup(f *os.File) bool {
-	if f != os.Stdin {
-		return false
-	}
-
-	g := Pgid()
-	if g <= 0 {
-		return false
-	}
-
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&g)))
-
-	return true
-}
-
-func SetForegroundGroup(group int) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-}
-
-func SuspendProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGSTOP)
-}
-
-func SysProcAttr(group int) *syscall.SysProcAttr {
-	sys := &syscall.SysProcAttr{}
-
-	if group == 0 {
-		sys.Ctty = syscall.Stdout
-		sys.Foreground = true
-	} else {
-		sys.Setpgid = true
-		sys.Pgid = group
-	}
-
-	return sys
-}
-
-func TerminateProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGTERM)
-}
 
 func broker() {
 	for task0.Stack != Null {
@@ -199,6 +92,13 @@ func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	return r, task0.Stack != Null
 }
 
+func exitStatus(proc *os.Process) int {
+	response := make(chan notification)
+	register <- registration{proc.Pid, response}
+
+	return (<-response).status.ExitStatus()
+}
+
 func init() {
 	done0 = make(chan Cell)
 	eval0 = make(chan Message)
@@ -209,6 +109,34 @@ func init() {
 
 	go monitor(active, notify)
 	go registrar(active, notify)
+}
+
+func initPlatformSpecific() {
+	scope0.DefineBuiltin("_umask_", func(t *Task, args Cell) bool {
+		nmask := int64(0)
+		if args != Null {
+			nmask = Car(args).(Atom).Int()
+		}
+
+		omask := syscall.Umask(int(nmask))
+
+		if nmask == 0 {
+			syscall.Umask(omask)
+		}
+
+		return t.Return(NewInteger(int64(omask)))
+	})
+}
+
+func initSignalHandling() {
+	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
+
+	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	incoming = make(chan os.Signal, len(signals))
+
+	signal.Notify(incoming, signals...)
+
+	go broker()
 }
 
 func monitor(active chan bool, notify chan notification) {

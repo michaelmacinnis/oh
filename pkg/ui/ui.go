@@ -5,6 +5,7 @@ package ui
 import (
 	"github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/common"
+	"github.com/michaelmacinnis/oh/pkg/system"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/peterh/liner"
 	"io"
@@ -40,7 +41,7 @@ func New(args []string) *cli {
 
 	i := &cli{liner.NewLiner()}
 
-	if history_path, err := task.GetHistoryFilePath(); err == nil {
+	if history_path, err := system.GetHistoryFilePath(); err == nil {
 		if f, err := os.Open(history_path); err == nil {
 			i.ReadHistory(f)
 			f.Close()
@@ -59,7 +60,7 @@ func New(args []string) *cli {
 
 func (i *cli) Close() error {
 	if i.Exists() {
-		if history_path, err := task.GetHistoryFilePath(); err == nil {
+		if history_path, err := system.GetHistoryFilePath(); err == nil {
 			if f, err := os.Create(history_path); err == nil {
 				i.WriteHistory(f)
 				f.Close()
@@ -76,7 +77,7 @@ func (i *cli) Exists() bool {
 }
 
 func (i *cli) ReadString(delim byte) (line string, err error) {
-	task.SetForegroundGroup(task.Pgid())
+	system.SetForegroundGroup(system.Pgid())
 
 	uncooked.ApplyMode()
 	defer cooked.ApplyMode()
@@ -265,5 +266,5 @@ func restart(err error) bool {
 		return false
 	}
 
-	return task.ResetForegroundGroup(os.Stdin)
+	return system.ResetForegroundGroup(os.Stdin)
 }

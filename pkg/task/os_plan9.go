@@ -1,6 +1,6 @@
 // Released under an MIT license. See LICENSE.
 
-// +build windows
+// +build plan9
 
 package task
 
@@ -15,5 +15,5 @@ func exitStatus(proc *os.Process) int {
 		return -1
 	}
 
-	return status.Sys().(syscall.WaitStatus).ExitStatus()
+	return status.Sys().(syscall.Waitmsg).ExitStatus()
 }
