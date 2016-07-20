@@ -823,7 +823,7 @@ func (r *Registers) MakeEnv() []string {
 	l := make([]string, 0, len(e))
 
 	for k, v := range e {
-		l = append(l, k[1:]+"="+raw(v))
+		l = append(l, k[1:]+"="+Raw(v))
 	}
 
 	return l
@@ -1160,7 +1160,7 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 		Job: j,
 		Registers: Registers{
 			Continuation: Continuation{
-				Dump:  List(NewStatus(0)),
+				Dump:  List(ExitSuccess),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
 				File:  "oh",
@@ -1238,21 +1238,21 @@ func (t *Task) Apply(args Cell) bool {
 }
 
 func (t *Task) Chdir(dir string) bool {
-	status := 0
+	status := ExitSuccess
 
 	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
 	oldwd := c.Get().String()
 
 	err := os.Chdir(dir)
 	if err != nil {
-		status = 1
+		status = ExitFailure
 	} else if wd, err := os.Getwd(); err == nil {
 		c := toContext(t.Lexical)
 		c.Public(pwdsym, NewSymbol(wd))
 		c.Public(oldpwdsym, NewSymbol(oldwd))
 	}
 
-	return t.Return(NewStatus(int64(status)))
+	return t.Return(status)
 }
 
 func (t *Task) Closure(n ClosureGenerator) bool {
@@ -1272,13 +1272,13 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	t.Code = Cdr(t.Code)
 
 	clabel := Null
-	if raw(equals) != "=" {
+	if Raw(equals) != "=" {
 		clabel = equals
 		equals = Car(t.Code)
 		t.Code = Cdr(t.Code)
 	}
 
-	if raw(equals) != "=" {
+	if Raw(equals) != "=" {
 		panic(common.ErrSyntax + "expected '='")
 	}
 
@@ -1348,13 +1348,13 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 	t.pid = 0
 
-	return NewStatus(int64(status)), err
+	return status, err
 }
 
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
-	arg0, exe, problem := adapted.LookPath(raw(Car(t.Dump)))
+	arg0, exe, problem := adapted.LookPath(Raw(Car(t.Dump)))
 
 	SetCar(t.Dump, False)
 
@@ -1369,7 +1369,7 @@ func (t *Task) External(args Cell) bool {
 	argv := []string{arg0}
 
 	for ; args != Null; args = Cdr(args) {
-		argv = append(argv, raw(Car(args)))
+		argv = append(argv, Raw(Car(args)))
 	}
 
 	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
@@ -1448,7 +1448,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	c := t.Lexical
 	s := toContext(t.Self()).Expose()
 
-	r := raw(Car(t.Code))
+	r := Raw(Car(t.Code))
 	if t.Strict() && number(r) {
 		msg := r + " cannot be used as a variable name"
 		panic(msg)
@@ -1471,7 +1471,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	t.NewStates(psEvalElement)
 
 	if Length(t.Code) == 3 {
-		if raw(Cadr(t.Code)) != "=" {
+		if Raw(Cadr(t.Code)) != "=" {
 			msg := "expected '=' after " + r + "'"
 			panic(common.ErrSyntax + msg)
 		}
@@ -1488,7 +1488,7 @@ func (t *Task) LexicalVar(state int64) bool {
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	c, s := Resolve(t.Lexical, t.Frame, sym)
 	if c == nil {
-		r := raw(sym)
+		r := Raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, "'" + r + "' undefined"
 		}
@@ -1557,7 +1557,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 				}
 
 				if Car(t.Code) != Null &&
-					raw(Car(t.Code)) != "else" {
+					Raw(Car(t.Code)) != "else" {
 					msg := "expected 'else'"
 					panic(common.ErrSyntax + msg)
 				}
@@ -1846,7 +1846,7 @@ func (t *Task) Throw(file string, line int, text string) {
 		throw, List(
 			NewSymbol("_exception"),
 			NewSymbol(kind),
-			NewStatus(NewSymbol(code).Int()),
+			NewStatus(NewSymbol(code).Status()),
 			NewSymbol(text),
 			NewInteger(int64(line)),
 			NewSymbol(path.Base(file)),
@@ -1948,13 +1948,13 @@ func (u *Unbound) Self() Cell {
 func Call(t *Task, c Cell, problem string) string {
 	if t == nil {
 		r, _ := evaluate(c, "", -1, problem)
-		return raw(r)
+		return Raw(r)
 	}
 
 	saved := t.Registers
 
 	t.Code = c
-	t.Dump = List(NewStatus(0))
+	t.Dump = List(ExitSuccess)
 	t.Stack = List(NewInteger(psEvalCommand))
 
 	t.Run(nil, problem)
@@ -1963,7 +1963,7 @@ func Call(t *Task, c Cell, problem string) string {
 
 	t.Registers = saved
 
-	return raw(status)
+	return Raw(status)
 }
 
 func ForegroundTask() *Task {
@@ -2093,7 +2093,7 @@ func Start(p parser, cli ui) {
 			"/dev/stdin", 0, "")
 	}
 
-	os.Exit(status(Car(task0.Dump)))
+	os.Exit(int(status(Car(task0.Dump)).Int()))
 }
 
 /* Convert Cell into a Conduit. (Return nil if not possible). */
@@ -2228,7 +2228,7 @@ func expand(t *Task, args Cell) Cell {
 
 	for ; args != Null; args = Cdr(args) {
 		c := Car(args)
-		s := raw(c)
+		s := Raw(c)
 
 		done := true
 
@@ -2328,7 +2328,7 @@ func init() {
 	object.PublicMethod("_del_", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
 		self := toContext(t.Self())
-		s := raw(Car(args))
+		s := Raw(Car(args))
 
 		ok := self.Faces().prev.Remove(NewSymbol(s))
 		if !ok {
@@ -2339,7 +2339,7 @@ func init() {
 	})
 	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
-		s := raw(Car(args))
+		s := Raw(Car(args))
 		k := NewSymbol(s)
 
 		c, o := Resolve(t.Self(), nil, k)
@@ -2353,7 +2353,7 @@ func init() {
 	})
 	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2)
-		s := raw(Car(args))
+		s := Raw(Car(args))
 		v := Cadr(args)
 
 		k := NewSymbol(s)
@@ -2396,7 +2396,7 @@ func init() {
 	})
 	object.PublicMethod("has", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
-		c, _ := Resolve(t.Self(), nil, NewSymbol(raw(Car(args))))
+		c, _ := Resolve(t.Self(), nil, NewSymbol(Raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -2407,7 +2407,7 @@ func init() {
 			l = toContext(t.Lexical)
 		}
 
-		modified := interpolate(l, t.Frame, raw(Car(args)))
+		modified := interpolate(l, t.Frame, Raw(Car(args)))
 
 		return t.Return(NewString(modified))
 	})
@@ -2442,9 +2442,9 @@ func init() {
 		dir := ""
 		if args == Null {
 			c, _ := Resolve(t.Lexical, t.Frame, homesym)
-			dir = raw(c.Get())
+			dir = Raw(c.Get())
 		} else {
-			dir = raw(Car(args))
+			dir = Raw(Car(args))
 		}
 
 		if dir == "-" {
@@ -2466,7 +2466,7 @@ func init() {
 		ignore := false
 		for ; args != Null; args = Cdr(args) {
 			count++
-			path := raw(Car(args))
+			path := Raw(Car(args))
 			if path == "-i" {
 				ignore = true
 				continue
@@ -2521,7 +2521,7 @@ func init() {
 	})
 	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		str, err := module(raw(Car(args)))
+		str, err := module(Raw(Car(args)))
 		if err != nil {
 			panic(err)
 		}
@@ -2572,8 +2572,8 @@ func init() {
 
 	scope0.DefineMethod("match", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2, IsText, IsText)
-		pattern := raw(Car(args))
-		text := raw(Cadr(args))
+		pattern := Raw(Car(args))
+		text := Raw(Cadr(args))
 
 		ok, err := path.Match(pattern, text)
 		if err != nil {
@@ -2599,7 +2599,7 @@ func init() {
 	})
 	scope0.DefineMethod("resolves", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		c, _ := Resolve(t.Lexical, t.Frame, NewSymbol(raw(Car(args))))
+		c, _ := Resolve(t.Lexical, t.Frame, NewSymbol(Raw(Car(args))))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -2629,8 +2629,8 @@ func init() {
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2, IsText, IsText)
-		mode := raw(Car(args))
-		path := raw(Cadr(args))
+		mode := Raw(Car(args))
+		path := Raw(Cadr(args))
 		flags := 0
 
 		if strings.IndexAny(mode, "-") == -1 {
@@ -2692,7 +2692,7 @@ func init() {
 	})
 	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		t.File = raw(Car(args))
+		t.File = Raw(Car(args))
 
 		return false
 	})
@@ -2742,7 +2742,7 @@ func init() {
 
 		s := Null
 		if Length(t.Code) == 3 {
-			if raw(Cadr(t.Code)) != "=" {
+			if Raw(Cadr(t.Code)) != "=" {
 				panic(common.ErrSyntax + "expected '='")
 			}
 			s = Caddr(t.Code)
@@ -2841,7 +2841,7 @@ func interpolate(l Context, d Cell, s string) string {
 			return ref
 		}
 
-		return raw(c.Get())
+		return Raw(c.Get())
 	}
 
 	r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
@@ -3010,14 +3010,6 @@ func pairContext() Context {
 	return envp
 }
 
-func raw(c Cell) string {
-	if s, ok := c.(*String); ok {
-		return s.Raw()
-	}
-
-	return c.String()
-}
-
 func rpipe(c Cell) *os.File {
 	return c.(*Pipe).ReadFd()
 
@@ -3033,12 +3025,12 @@ func setForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func status(c Cell) int {
+func status(c Cell) *Status {
 	a, ok := c.(Atom)
 	if !ok {
-		return 0
+		return ExitSuccess
 	}
-	return int(a.Status())
+	return NewStatus(a.Status())
 }
 
 func stringContext() Context {
@@ -3052,11 +3044,11 @@ func stringContext() Context {
 		arr := make([]string, Length(args))
 
 		for i := 0; args != Null; i++ {
-			arr[i] = string(raw(Car(args)))
+			arr[i] = string(Raw(Car(args)))
 			args = Cdr(args)
 		}
 
-		r := strings.Join(arr, string(raw(sep)))
+		r := strings.Join(arr, string(Raw(sep)))
 
 		return t.Return(NewString(r))
 	})
@@ -3066,13 +3058,13 @@ func stringContext() Context {
 	})
 	envs.PublicMethod("length", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		s := raw(toString(t.Self()))
+		s := Raw(toString(t.Self()))
 
 		return t.Return(NewInteger(int64(len(s))))
 	})
 	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 2, IsNumber, IsNumber)
-		s := []rune(raw(toString(t.Self())))
+		s := []rune(Raw(toString(t.Self())))
 
 		start := int(Car(args).(Atom).Int())
 		end := len(s)
@@ -3090,7 +3082,7 @@ func stringContext() Context {
 		sep := toString(t.Self())
 		str := Car(args)
 
-		l := strings.Split(string(raw(str)), string(raw(sep)))
+		l := strings.Split(string(Raw(str)), string(Raw(sep)))
 
 		for i := len(l) - 1; i >= 0; i-- {
 			r = Cons(NewString(l[i]), r)
@@ -3099,7 +3091,7 @@ func stringContext() Context {
 		return t.Return(r)
 	})
 	envs.PublicMethod("sprintf", func(t *Task, args Cell) bool {
-		f := raw(toString(t.Self()))
+		f := Raw(toString(t.Self()))
 
 		argv := []interface{}{}
 		for l := args; l != Null; l = Cdr(l) {
@@ -3113,7 +3105,7 @@ func stringContext() Context {
 			case *Float:
 				argv = append(argv, *t)
 			default:
-				argv = append(argv, raw(t))
+				argv = append(argv, Raw(t))
 			}
 		}
 
@@ -3123,7 +3115,7 @@ func stringContext() Context {
 	})
 	envs.PublicMethod("to-list", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		s := raw(toString(t.Self()))
+		s := Raw(toString(t.Self()))
 		l := Null
 		for _, char := range s {
 			l = Cons(NewInteger(int64(char)), l)

@@ -5,15 +5,16 @@
 package task
 
 import (
+	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"os"
 	"syscall"
 )
 
-func exitStatus(proc *os.Process) int {
+func exitStatus(proc *os.Process) *Status {
 	status, err := proc.Wait()
 	if err != nil {
-		return -1
+		return ExitFailure
 	}
 
-	return status.Sys().(syscall.WaitStatus).ExitStatus()
+	return NewStatus(int64(status.Sys().(syscall.WaitStatus).ExitStatus()))
 }

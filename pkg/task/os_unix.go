@@ -92,11 +92,11 @@ func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	return r, task0.Stack != Null
 }
 
-func exitStatus(proc *os.Process) int {
+func exitStatus(proc *os.Process) *Status {
 	response := make(chan notification)
 	register <- registration{proc.Pid, response}
 
-	return (<-response).status.ExitStatus()
+	return NewStatus(int64((<-response).status.ExitStatus()))
 }
 
 func init() {

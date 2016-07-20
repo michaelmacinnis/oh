@@ -145,6 +145,14 @@ func List(elements ...Cell) Cell {
 	return start
 }
 
+func Raw(c Cell) string {
+	if s, ok := c.(*String); ok {
+		return s.Raw()
+	}
+
+	return c.String()
+}
+
 func Reverse(list Cell) Cell {
 	reversed := Null
 

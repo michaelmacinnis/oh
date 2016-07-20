@@ -10,15 +10,6 @@ import (
 	"sync"
 )
 
-type Atom interface {
-	Cell
-
-	Float() float64
-	Int() int64
-	Rat() *big.Rat
-	Status() int64
-}
-
 type Cell interface {
 	Bool() bool
 	Equal(c Cell) bool
@@ -54,9 +45,10 @@ var (
 	max  *big.Rat
 	min  *big.Rat
 	num  [512]*Integer
+	numl = &sync.RWMutex{}
 	one  *big.Rat
 	rat  [512]Rational
-	res  [256]*Status
+	ratl = &sync.RWMutex{}
 	sym  = map[string]*Symbol{}
 	syml = &sync.RWMutex{}
 	zip  *big.Rat
@@ -156,13 +148,6 @@ func (b *Boolean) Rat() *big.Rat {
 	return zip
 }
 
-func (b *Boolean) Status() int64 {
-	if b == True {
-		return 0
-	}
-	return 1
-}
-
 /* Constant cell definition. */
 
 type Constant struct {
@@ -225,10 +210,6 @@ func (f *Float) Rat() *big.Rat {
 	return new(big.Rat).SetFloat64(float64(*f))
 }
 
-func (f *Float) Status() int64 {
-	return f.Int()
-}
-
 func (f *Float) Greater(c Cell) bool {
 	return f.Rat().Cmp(c.(Atom).Rat()) > 0
 }
@@ -272,13 +253,18 @@ func IsInteger(c Cell) bool {
 func NewInteger(v int64) *Integer {
 	if -256 <= v && v <= 255 {
 		n := v + 256
+
+		numl.RLock()
 		p := num[n]
+		numl.RUnlock()
 
 		if p == nil {
 			i := Integer(v)
 			p = &i
 
+			numl.Lock()
 			num[n] = p
+			numl.Unlock()
 		}
 
 		return p
@@ -313,10 +299,6 @@ func (i *Integer) Int() int64 {
 
 func (i *Integer) Rat() *big.Rat {
 	return big.NewRat(int64(*i), 1)
-}
-
-func (i *Integer) Status() int64 {
-	return i.Int()
 }
 
 func (i *Integer) Greater(c Cell) bool {
@@ -428,11 +410,17 @@ func NewRational(r *big.Rat) Rational {
 
 	n := r.Num().Int64()
 	i := n + 256
+
+	ratl.RLock()
 	p := rat[i]
+	ratl.RUnlock()
 
 	if p.v == nil {
 		p = Rational{r}
+
+		ratl.Lock()
 		rat[i] = p
+		ratl.Unlock()
 	}
 
 	return p
@@ -468,10 +456,6 @@ func (r Rational) Rat() *big.Rat {
 	return r.v
 }
 
-func (r Rational) Status() int64 {
-	return r.Int()
-}
-
 func (r Rational) Greater(c Cell) bool {
 	return r.v.Cmp(c.(Atom).Rat()) > 0
 }
@@ -498,95 +482,6 @@ func (r Rational) Multiply(c Cell) Number {
 
 func (r Rational) Subtract(c Cell) Number {
 	return NewRational(new(big.Rat).Sub(r.v, c.(Atom).Rat()))
-}
-
-/* Status cell definition. */
-
-type Status int64
-
-func IsStatus(c Cell) bool {
-	switch c.(type) {
-	case *Status:
-		return true
-	}
-	return false
-}
-
-func NewStatus(v int64) *Status {
-	if 0 <= v && v <= 255 {
-		p := res[v]
-
-		if p == nil {
-			s := Status(v)
-			p = &s
-
-			res[v] = p
-		}
-
-		return p
-	}
-
-	s := Status(v)
-	return &s
-}
-
-func (s *Status) Bool() bool {
-	return int64(*s) == 0
-}
-
-func (s *Status) Equal(c Cell) bool {
-	if a, ok := c.(Atom); ok {
-		return int64(*s) == a.Status()
-	}
-	return false
-}
-
-func (s *Status) String() string {
-	return strconv.FormatInt(int64(*s), 10)
-}
-
-func (s *Status) Float() float64 {
-	return float64(*s)
-}
-
-func (s *Status) Int() int64 {
-	return int64(*s)
-}
-
-func (s *Status) Rat() *big.Rat {
-	return big.NewRat(int64(*s), 1)
-}
-
-func (s *Status) Status() int64 {
-	return s.Int()
-}
-
-func (s *Status) Greater(c Cell) bool {
-	return s.Rat().Cmp(c.(Atom).Rat()) > 0
-}
-
-func (s *Status) Less(c Cell) bool {
-	return s.Rat().Cmp(c.(Atom).Rat()) < 0
-}
-
-func (s *Status) Add(c Cell) Number {
-	return NewRational(new(big.Rat).Add(s.Rat(), c.(Atom).Rat()))
-}
-
-func (s *Status) Divide(c Cell) Number {
-	return NewRational(new(big.Rat).Quo(s.Rat(), c.(Atom).Rat()))
-}
-
-func (s *Status) Modulo(c Cell) Number {
-	return NewRational(ratmod(s.Rat(), c.(Atom).Rat()))
-}
-
-func (s *Status) Multiply(c Cell) Number {
-	return NewRational(new(big.Rat).Mul(s.Rat(), c.(Atom).Rat()))
-}
-
-func (s *Status) Subtract(c Cell) Number {
-	return NewRational(new(big.Rat).Sub(s.Rat(), c.(Atom).Rat()))
 }
 
 /* String cell definition. */
@@ -646,14 +541,6 @@ func (s *String) Rat() *big.Rat {
 		panic(err)
 	}
 	return r
-}
-
-func (s *String) Status() (i int64) {
-	var err error
-	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
-		panic(err)
-	}
-	return i
 }
 
 /* String-specific functions. */
@@ -736,10 +623,6 @@ func (s *Symbol) Rat() *big.Rat {
 		panic(err)
 	}
 	return r
-}
-
-func (s *Symbol) Status() (i int64) {
-	return s.Int()
 }
 
 func (s *Symbol) Greater(c Cell) bool {
