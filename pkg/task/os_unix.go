@@ -92,11 +92,17 @@ func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	return r, task0.Stack != Null
 }
 
-func exitStatus(proc *os.Process) *Status {
-	response := make(chan notification)
-	register <- registration{proc.Pid, response}
+func exit(c Cell) {
+	if c == Null {
+		os.Exit(0)
+	}
 
-	return NewStatus(int64((<-response).status.ExitStatus()))
+	a, ok := c.(Atom)
+	if !ok {
+		os.Exit(1)
+	}
+
+	os.Exit(int(a.Status()))
 }
 
 func init() {
@@ -201,4 +207,11 @@ func registrar(active chan bool, notify chan notification) {
 			}
 		}
 	}
+}
+
+func status(proc *os.Process) *Status {
+	response := make(chan notification)
+	register <- registration{proc.Pid, response}
+
+	return NewStatus(int64((<-response).status.ExitStatus()))
 }

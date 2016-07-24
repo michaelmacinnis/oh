@@ -1238,21 +1238,21 @@ func (t *Task) Apply(args Cell) bool {
 }
 
 func (t *Task) Chdir(dir string) bool {
-	status := ExitSuccess
+	rv := ExitSuccess
 
 	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
 	oldwd := c.Get().String()
 
 	err := os.Chdir(dir)
 	if err != nil {
-		status = ExitFailure
+		rv = ExitFailure
 	} else if wd, err := os.Getwd(); err == nil {
 		c := toContext(t.Lexical)
 		c.Public(pwdsym, NewSymbol(wd))
 		c.Public(oldpwdsym, NewSymbol(oldwd))
 	}
 
-	return t.Return(status)
+	return t.Return(rv)
 }
 
 func (t *Task) Closure(n ClosureGenerator) bool {
@@ -1339,7 +1339,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.Unlock()
 
-	status := exitStatus(proc)
+	rv := status(proc)
 
 	if jobControlEnabled() {
 		if t.Group == t.pid {
@@ -1348,7 +1348,7 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 	t.pid = 0
 
-	return status, err
+	return rv, err
 }
 
 func (t *Task) External(args Cell) bool {
@@ -1388,12 +1388,12 @@ func (t *Task) External(args Cell) bool {
 
 	attr := &os.ProcAttr{Dir: dir, Env: t.MakeEnv(), Files: files}
 
-	status, problem := t.Execute(arg0, argv, attr)
+	rv, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
 		panic(common.ErrNotExecutable + problem.Error())
 	}
 
-	return t.Return(status)
+	return t.Return(rv)
 }
 
 func (t *Task) Launch() {
@@ -1426,9 +1426,9 @@ func (t *Task) Listen() {
 		t.NewStates(SaveCode, psEvalCommand)
 
 		t.Code = m.Cmd
-		status := t.Run(end, m.Problem)
+		rv := t.Run(end, m.Problem)
 		var result Cell = nil
-		if status != 0 {
+		if rv != 0 {
 			t.Registers = saved
 
 			SetCar(t.Code, nil)
@@ -1504,8 +1504,8 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) Run(end Cell, problem string) (status int) {
-	status = 0
+func (t *Task) Run(end Cell, problem string) (rv int) {
+	rv = 0
 
 	defer func() {
 		r := recover()
@@ -1519,7 +1519,7 @@ func (t *Task) Run(end Cell, problem string) (status int) {
 			println("Catastrophic error: " + problem)
 		}
 
-		status = 1
+		rv = 1
 	}()
 
 	for t.Runnable() && t.Stack != Null {
@@ -1959,11 +1959,11 @@ func Call(t *Task, c Cell, problem string) string {
 
 	t.Run(nil, problem)
 
-	status := Car(t.Dump)
+	rv := Car(t.Dump)
 
 	t.Registers = saved
 
-	return Raw(status)
+	return Raw(rv)
 }
 
 func ForegroundTask() *Task {
@@ -2093,7 +2093,7 @@ func Start(p parser, cli ui) {
 			"/dev/stdin", 0, "")
 	}
 
-	os.Exit(int(status(Car(task0.Dump)).Int()))
+	exit(Car(task0.Dump))
 }
 
 /* Convert Cell into a Conduit. (Return nil if not possible). */
@@ -3023,14 +3023,6 @@ func setForegroundTask(t *Task) {
 	task0, t = t, task0
 	t.Stop()
 	task0.Continue()
-}
-
-func status(c Cell) *Status {
-	a, ok := c.(Atom)
-	if !ok {
-		return ExitSuccess
-	}
-	return NewStatus(a.Status())
 }
 
 func stringContext() Context {
