@@ -403,104 +403,6 @@ func (ct *Continuation) SetLine(l int) {
 	ct.line = l
 }
 
-/* Env definition. */
-
-type Env struct {
-	*sync.RWMutex
-	hash map[string]Reference
-	prev *Env
-}
-
-func NewEnv(prev *Env) *Env {
-	return &Env{&sync.RWMutex{}, make(map[string]Reference), prev}
-}
-
-/* Env-specific functions */
-
-func (e *Env) Access(key Cell) Reference {
-	for env := e; env != nil; env = env.prev {
-		env.RLock()
-		if value, ok := env.hash[key.String()]; ok {
-			env.RUnlock()
-			return value
-		}
-		env.RUnlock()
-	}
-
-	return nil
-}
-
-func (e *Env) Add(key Cell, value Cell) {
-	e.Lock()
-	defer e.Unlock()
-
-	e.hash[key.String()] = NewVariable(value)
-}
-
-func (e *Env) Complete(word string) []string {
-	p := e.Prefixed(word)
-
-	cl := make([]string, 0, len(p))
-
-	for k := range p {
-		cl = append(cl, k)
-	}
-
-	if e.prev != nil {
-		cl = append(cl, e.prev.Complete(word)...)
-	}
-
-	return cl
-}
-
-func (e *Env) Copy() *Env {
-	e.RLock()
-	defer e.RUnlock()
-
-	if e == nil {
-		return nil
-	}
-
-	fresh := NewEnv(e.prev.Copy())
-
-	for k, v := range e.hash {
-		fresh.hash[k] = v.Copy()
-	}
-
-	return fresh
-}
-
-func (e *Env) Prefixed(prefix string) map[string]Cell {
-	e.RLock()
-	defer e.RUnlock()
-
-	r := map[string]Cell{}
-
-	for k, v := range e.hash {
-		if strings.HasPrefix(k, prefix) {
-			r[k] = v.Get()
-		}
-	}
-
-	return r
-}
-
-func (e *Env) Prev() *Env {
-	return e.prev
-}
-
-func (e *Env) Remove(key Cell) bool {
-	e.Lock()
-	defer e.Unlock()
-
-	k := key.String()
-	_, ok := e.hash[k]
-	if ok {
-		delete(e.hash, k)
-	}
-	return ok
-}
-
 /* Job definition. */
 
 type Job struct {
@@ -587,7 +489,7 @@ func (o *Object) String() string {
 func (o *Object) Access(key Cell) Reference {
 	var obj Context
 	for obj = o; obj != nil; obj = obj.Prev() {
-		if value := obj.Faces().prev.Access(key); value != nil {
+		if value := obj.Faces().Prev().Access(key); value != nil {
 			return value
 		}
 	}
@@ -600,7 +502,7 @@ func (o *Object) Complete(word string) []string {
 
 	var obj Context
 	for obj = o; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().prev.Complete(word)...)
+		cl = append(cl, obj.Faces().Prev().Complete(word)...)
 	}
 
 	return cl
@@ -1043,7 +945,7 @@ func (s *Scope) Copy() Context {
 }
 
 func (s *Scope) Exported() map[string]Cell {
-	return s.env.prev.Prefixed("$")
+	return s.env.Prev().Prefixed("$")
 }
 
 func (s *Scope) Expose() Context {
@@ -1063,14 +965,14 @@ func (s *Scope) Define(key Cell, value Cell) {
 }
 
 func (s *Scope) Public(key Cell, value Cell) {
-	s.env.prev.Add(key, value)
+	s.env.Prev().Add(key, value)
 }
 
 func (s *Scope) Visibility() *Env {
 	var obj Context
 	for obj = s; obj != nil; obj = obj.Prev() {
-		env := obj.Faces().prev
-		if len(env.hash) != 0 {
+		env := obj.Faces().Prev()
+		if !env.Empty() {
 			return env
 		}
 	}
@@ -2328,7 +2230,7 @@ func init() {
 		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
-		for _, s := range self.Faces().prev.Complete("") {
+		for _, s := range self.Faces().Prev().Complete("") {
 			l = Cons(NewSymbol(s), l)
 		}
 		return t.Return(l)
@@ -2345,7 +2247,7 @@ func init() {
 		self := toContext(t.Self())
 		s := Raw(Car(args))
 
-		ok := self.Faces().prev.Remove(NewSymbol(s))
+		ok := self.Faces().Prev().Remove(NewSymbol(s))
 		if !ok {
 			panic("'" + s + "' undefined")
 		}
