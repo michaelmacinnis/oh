@@ -17,7 +17,7 @@ type parser struct {
 
 type scanner struct {
 	*parser
-	error    func(file string, line int, text string)
+	t        common.Thrower
 	f        *os.File
 	filename string
 	input    common.ReadStringer
@@ -327,7 +327,7 @@ main:
 }
 
 func (s *scanner) Error(msg string) {
-	s.error(s.filename, s.lineno, msg)
+	s.t.Throw(s.filename, s.lineno, msg)
 }
 
 func New(deref func(string, uintptr) Cell) *parser {
@@ -335,15 +335,14 @@ func New(deref func(string, uintptr) Cell) *parser {
 }
 
 func (p *parser) Parse(
-	input common.ReadStringer,
-	error func(file string, line int, text string), f *os.File,
+	input common.ReadStringer, t common.Thrower, f *os.File,
 	filename string, process func(Cell, string, int, string) (Cell, bool),
 ) bool {
 
 	s := new(scanner)
 
 	s.parser = p
-	s.error = error
+	s.t = t
 	s.f = f
 	s.filename = filename
 	s.input = input

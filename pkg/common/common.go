@@ -8,6 +8,12 @@ type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
 
+type Thrower interface {
+	Throw(filename string, lineno int, message string)
+	SetFile(filename string)
+	SetLine(lineno int)
+}
+
 const (
 	ErrNotExecutable = "oh: 126: error/runtime: "
 	ErrNotFound      = "oh: 127: error/runtime: "

@@ -48,8 +48,8 @@ type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
 type Conduit interface {
 	Close()
 	ReaderClose()
-	ReadLine(*Task) Cell
-	Read(*Task) Cell
+	ReadLine() Cell
+	Read(Parser, common.Thrower) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -92,9 +92,9 @@ type ui interface {
 	ReadString(delim byte) (line string, err error)
 }
 
-type parser func(
-	common.ReadStringer, func(file string, line int, text string),
-	*os.File, string, func(Cell, string, int, string) (Cell, bool),
+type Parser func(
+	common.ReadStringer, common.Thrower, *os.File, string,
+	func(Cell, string, int, string) (Cell, bool),
 ) bool
 
 const (
@@ -149,7 +149,7 @@ var (
 	jobsl       = &sync.RWMutex{}
 	namespace   Context
 	oldpwdsym   *Symbol
-	parse       parser
+	parse       Parser
 	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
@@ -290,7 +290,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(t *Task) Cell {
+func (ch *Channel) Read(p Parser, t common.Thrower) Cell {
 	v := <-ch.v
 	if v == nil {
 		return Null
@@ -298,7 +298,7 @@ func (ch *Channel) Read(t *Task) Cell {
 	return v
 }
 
-func (ch *Channel) ReadLine(t *Task) Cell {
+func (ch *Channel) ReadLine() Cell {
 	v := <-ch.v
 	if v == nil {
 		return False
@@ -359,8 +359,8 @@ type Continuation struct {
 	Dump  Cell
 	Frame Cell
 	Stack Cell
-	File  string
-	Line  int
+	file  string
+	line  int
 }
 
 func IsContinuation(c Cell) bool {
@@ -376,8 +376,8 @@ func NewContinuation(dump, frame, stack Cell, f string, l int) *Continuation {
 		Dump:  dump,
 		Frame: frame,
 		Stack: stack,
-		File:  f,
-		Line:  l,
+		file:  f,
+		line:  l,
 	}
 }
 
@@ -391,6 +391,16 @@ func (ct *Continuation) Equal(c Cell) bool {
 
 func (ct *Continuation) String() string {
 	return fmt.Sprintf("%%continuation %p%%", ct)
+}
+
+/* Continuation-specific functions */
+
+func (ct *Continuation) SetFile(f string) {
+	ct.file = f
+}
+
+func (ct *Continuation) SetLine(l int) {
+	ct.line = l
 }
 
 /* Env definition. */
@@ -692,7 +702,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read(t *Task) Cell {
+func (p *Pipe) Read(parse Parser, t common.Thrower) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -711,9 +721,9 @@ func (p *Pipe) Read(t *Task) Cell {
 				f = p.r
 			}
 			parse(
-				p.reader(), t.Throw, f, p.r.Name(),
+				p.reader(), t, f, p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
-					t.Line = l
+					t.SetLine(l)
 					p.c <- c
 					<-p.d
 					return nil, true
@@ -728,7 +738,7 @@ func (p *Pipe) Read(t *Task) Cell {
 	return <-p.c
 }
 
-func (p *Pipe) ReadLine(t *Task) Cell {
+func (p *Pipe) ReadLine() Cell {
 	s, err := p.reader().ReadString('\n')
 	if err != nil && len(s) == 0 {
 		p.b = nil
@@ -799,6 +809,12 @@ func (r *Registers) Complete(word string) []string {
 	}
 
 	return cl
+}
+
+func (r *Registers) CurrentContinuation() *Continuation {
+	cc := r.Continuation
+	cc.Dump = Cdr(cc.Dump)
+	return &cc
 }
 
 func (r *Registers) GetState() int64 {
@@ -1163,8 +1179,8 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 				Dump:  List(ExitSuccess),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
-				File:  "oh",
-				Line:  0,
+				file:  "oh",
+				line:  0,
 			},
 			Code:    c,
 			Lexical: l,
@@ -1231,8 +1247,7 @@ func (t *Task) Apply(args Cell) bool {
 		c.Define(Caar(params), args)
 	}
 
-	cc := NewContinuation(Cdr(t.Dump), t.Frame, t.Stack, t.File, t.Line)
-	c.Define(NewSymbol("return"), cc)
+	c.Define(NewSymbol("return"), t.CurrentContinuation())
 
 	return true
 }
@@ -1414,10 +1429,10 @@ func (t *Task) Listen() {
 		}
 
 		if m.File != "" {
-			t.File = m.File
+			t.SetFile(m.File)
 		}
 		if m.Line != -1 {
-			t.Line = m.Line
+			t.SetLine(m.Line)
 		}
 		SetCar(t.Code, m.Cmd)
 		SetCdr(t.Code, end)
@@ -1514,7 +1529,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 		}
 
 		if problem == "" {
-			t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
+			t.Throw(t.file, t.line, fmt.Sprintf("%v", r))
 		} else {
 			println("Catastrophic error: " + problem)
 		}
@@ -2020,7 +2035,7 @@ func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(p parser, cli ui) {
+func Start(p Parser, cli ui) {
 	LaunchForegroundTask()
 
 	parse = p
@@ -2030,7 +2045,7 @@ func Start(p parser, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(b, task0.Throw, nil, "boot.oh", eval)
+	parse(b, task0, nil, "boot.oh", eval)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -2071,7 +2086,7 @@ func Start(p parser, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parse(b, task0.Throw, nil, "-c", eval)
+			parse(b, task0, nil, "-c", eval)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -2083,7 +2098,7 @@ func Start(p parser, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		if parse(cli, task0.Throw, nil, "oh", evaluate) {
+		if parse(cli, task0, nil, "oh", evaluate) {
 			fmt.Printf("\n")
 		}
 		cli.Close()
@@ -2174,11 +2189,11 @@ func conduitContext() Context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(t))
+		return t.Return(toConduit(t.Self()).Read(parse, t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).ReadLine(t))
+		return t.Return(toConduit(t.Self()).ReadLine())
 	})
 	envc.PublicMethod("write", func(t *Task, args Cell) bool {
 		toConduit(t.Self()).Write(args)
@@ -2621,11 +2636,11 @@ func init() {
 	})
 	scope0.DefineMethod("get-line-number", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(NewInteger(int64(t.Line)))
+		return t.Return(NewInteger(int64(t.line)))
 	})
 	scope0.DefineMethod("get-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(NewSymbol(t.File))
+		return t.Return(NewSymbol(t.file))
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2, IsText, IsText)
@@ -2686,13 +2701,13 @@ func init() {
 	})
 	scope0.DefineMethod("set-line-number", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsNumber)
-		t.Line = int(Car(args).(Atom).Int())
+		t.SetLine(int(Car(args).(Atom).Int()))
 
 		return false
 	})
 	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		t.File = Raw(Car(args))
+		t.file = Raw(Car(args))
 
 		return false
 	})
