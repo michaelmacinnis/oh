@@ -1035,7 +1035,9 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
-	arg0, exe, problem := adapted.LookPath(Raw(Car(t.Dump)))
+	name := Raw(Car(t.Dump))
+
+	arg0, exe, problem := adapted.LookPath(name)
 
 	SetCar(t.Dump, False)
 
@@ -1047,7 +1049,7 @@ func (t *Task) External(args Cell) bool {
 		return t.Chdir(arg0)
 	}
 
-	argv := []string{arg0}
+	argv := []string{name}
 
 	for ; args != Null; args = Cdr(args) {
 		argv = append(argv, Raw(Car(args)))
@@ -1929,7 +1931,7 @@ func expand(t *Task, args Cell) Cell {
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	CacheSymbols(Symbols...)
+	CacheSymbols(symbols...)
 
 	homesym = NewSymbol("$HOME")
 	oldpwdsym = NewSymbol("$OLDPWD")

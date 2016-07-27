@@ -1,8 +1,8 @@
 // Released under an MIT license. See LICENSE.
 
-package cell
+package task
 
-var Symbols = []string{
+var symbols = []string{
 	"...", "abs", "add", "and", "append", "_append_stderr_",
 	"_append_stdout_", "arg", "_args_", "args", "_backtick_", "basename",
 	"block", "body", "boolean", "builtin", "catch", "cell", "channel",
