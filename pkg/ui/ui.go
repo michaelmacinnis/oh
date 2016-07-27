@@ -4,7 +4,6 @@ package ui
 
 import (
 	"github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/peterh/liner"
@@ -23,10 +22,6 @@ var (
 	cooked   liner.ModeApplier
 	uncooked liner.ModeApplier
 )
-
-func CtrlCPressed(err error) bool {
-	return err == liner.ErrPromptAborted
-}
 
 func New(args []string) *cli {
 	if len(args) > 1 {
@@ -100,7 +95,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	}
 
 	if err == liner.ErrPromptAborted {
-		return line, common.CtrlCPressed
+		return line, cell.CtrlCPressed
 	}
 
 	return

@@ -1,18 +1,8 @@
 // Released under an MIT license. See LICENSE.
 
-package common
+package cell
 
 import "errors"
-
-type ReadStringer interface {
-	ReadString(delim byte) (line string, err error)
-}
-
-type Thrower interface {
-	Throw(filename string, lineno int, message string)
-	SetFile(filename string)
-	SetLine(lineno int)
-}
 
 const (
 	ErrNotExecutable = "oh: 126: error/runtime: "

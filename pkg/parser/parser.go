@@ -4,7 +4,6 @@ package parser
 
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"io"
 	"os"
@@ -17,10 +16,10 @@ type parser struct {
 
 type scanner struct {
 	*parser
-	t        common.Thrower
+	t        Thrower
 	f        *os.File
 	filename string
-	input    common.ReadStringer
+	input    ReadStringer
 	process  func(Cell, string, int, string) (Cell, bool)
 
 	line []rune
@@ -116,7 +115,7 @@ main:
 			line, err := s.input.ReadString('\n')
 			if err == nil {
 				retries = 0
-			} else if err == common.CtrlCPressed {
+			} else if err == CtrlCPressed {
 				s.start = 0
 				s.token = CTRLC
 				break
@@ -335,7 +334,7 @@ func New(deref func(string, uintptr) Cell) *parser {
 }
 
 func (p *parser) Parse(
-	input common.ReadStringer, t common.Thrower, f *os.File,
+	input ReadStringer, t Thrower, f *os.File,
 	filename string, process func(Cell, string, int, string) (Cell, bool),
 ) bool {
 

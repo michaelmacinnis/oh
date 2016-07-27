@@ -3,10 +3,14 @@
 package cell
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/michaelmacinnis/adapted"
 	"math/big"
+	"os"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -14,6 +18,15 @@ type Cell interface {
 	Bool() bool
 	Equal(c Cell) bool
 	String() string
+}
+
+type Conduit interface {
+	Close()
+	ReaderClose()
+	ReadLine() Cell
+	Read(bool, Parser, Thrower) Cell
+	WriterClose()
+	Write(c Cell)
 }
 
 type Number interface {
@@ -29,12 +42,27 @@ type Number interface {
 	Subtract(c Cell) Number
 }
 
+type Parser func(
+	ReadStringer, Thrower, *os.File, string,
+	func(Cell, string, int, string) (Cell, bool),
+) bool
+
+type ReadStringer interface {
+	ReadString(delim byte) (line string, err error)
+}
+
 type Reference interface {
 	Cell
 
 	Copy() Reference
 	Get() Cell
 	Set(c Cell)
+}
+
+type Thrower interface {
+	Throw(filename string, lineno int, message string)
+	SetFile(filename string)
+	SetLine(lineno int)
 }
 
 var (
@@ -53,6 +81,21 @@ var (
 	syml = &sync.RWMutex{}
 	zip  *big.Rat
 )
+
+func CacheSymbols(symbols ...string) {
+	for _, v := range symbols {
+		sym[v] = NewSymbol(v)
+	}
+}
+
+/* Convert Cell into a Conduit. (Return nil if not possible). */
+func asConduit(o Cell) Conduit {
+	if c, ok := o.(Conduit); ok {
+		return c
+	}
+
+	return nil
+}
 
 func init() {
 	max = big.NewRat(255, 1)
@@ -74,12 +117,6 @@ func init() {
 
 	T := Boolean(true)
 	True = &T
-}
-
-func CacheSymbols(symbols ...string) {
-	for _, v := range symbols {
-		sym[v] = NewSymbol(v)
-	}
 }
 
 func ratmod(x, y *big.Rat) *big.Rat {
@@ -148,6 +185,73 @@ func (b *Boolean) Rat() *big.Rat {
 	return zip
 }
 
+/* Channel cell definition. */
+
+type Channel struct {
+	v chan Cell
+}
+
+func IsChannel(c Cell) bool {
+	conduit := asConduit(c)
+	if conduit == nil {
+		return false
+	}
+
+	switch conduit.(type) {
+	case *Channel:
+		return true
+	}
+	return false
+}
+
+func NewChannel(cap int) *Channel {
+	return &Channel{make(chan Cell, cap)}
+}
+
+func (ch *Channel) Bool() bool {
+	return true
+}
+
+func (ch *Channel) Equal(c Cell) bool {
+	return ch == c
+}
+
+func (ch *Channel) String() string {
+	return fmt.Sprintf("%%channel %p%%", ch)
+}
+
+func (ch *Channel) Close() {
+	ch.WriterClose()
+}
+
+func (ch *Channel) ReaderClose() {
+	return
+}
+
+func (ch *Channel) Read(interactive bool, p Parser, t Thrower) Cell {
+	v := <-ch.v
+	if v == nil {
+		return Null
+	}
+	return v
+}
+
+func (ch *Channel) ReadLine() Cell {
+	v := <-ch.v
+	if v == nil {
+		return False
+	}
+	return NewString(v.String())
+}
+
+func (ch *Channel) WriterClose() {
+	close(ch.v)
+}
+
+func (ch *Channel) Write(c Cell) {
+	ch.v <- c
+}
+
 /* Constant cell definition. */
 
 type Constant struct {
@@ -164,6 +268,106 @@ func (ct *Constant) String() string {
 
 func (ct *Constant) Set(c Cell) {
 	panic("constant cannot be set")
+}
+
+/* Env definition. */
+
+type Env struct {
+	*sync.RWMutex
+	hash map[string]Reference
+	prev *Env
+}
+
+func NewEnv(prev *Env) *Env {
+	return &Env{&sync.RWMutex{}, make(map[string]Reference), prev}
+}
+
+func (e *Env) Access(key Cell) Reference {
+	for env := e; env != nil; env = env.prev {
+		env.RLock()
+		if value, ok := env.hash[key.String()]; ok {
+			env.RUnlock()
+			return value
+		}
+		env.RUnlock()
+	}
+
+	return nil
+}
+
+func (e *Env) Add(key Cell, value Cell) {
+	e.Lock()
+	defer e.Unlock()
+
+	e.hash[key.String()] = NewVariable(value)
+}
+
+func (e *Env) Complete(word string) []string {
+	p := e.Prefixed(word)
+
+	cl := make([]string, 0, len(p))
+
+	for k := range p {
+		cl = append(cl, k)
+	}
+
+	if e.prev != nil {
+		cl = append(cl, e.prev.Complete(word)...)
+	}
+
+	return cl
+}
+
+func (e *Env) Copy() *Env {
+	e.RLock()
+	defer e.RUnlock()
+
+	if e == nil {
+		return nil
+	}
+
+	fresh := NewEnv(e.prev.Copy())
+
+	for k, v := range e.hash {
+		fresh.hash[k] = v.Copy()
+	}
+
+	return fresh
+}
+
+func (e *Env) Empty() bool {
+	return len(e.hash) == 0
+}
+
+func (e *Env) Prefixed(prefix string) map[string]Cell {
+	e.RLock()
+	defer e.RUnlock()
+
+	r := map[string]Cell{}
+
+	for k, v := range e.hash {
+		if strings.HasPrefix(k, prefix) {
+			r[k] = v.Get()
+		}
+	}
+
+	return r
+}
+
+func (e *Env) Prev() *Env {
+	return e.prev
+}
+
+func (e *Env) Remove(key Cell) bool {
+	e.Lock()
+	defer e.Unlock()
+
+	k := key.String()
+	_, ok := e.hash[k]
+	if ok {
+		delete(e.hash, k)
+	}
+	return ok
 }
 
 /* Float cell definition. */
@@ -387,6 +591,159 @@ func (p *Pair) String() (s string) {
 	s += p.cdr.String()
 
 	return s
+}
+
+/* Pipe cell definition. */
+
+type Pipe struct {
+	b *bufio.Reader
+	c chan Cell
+	d chan bool
+	r *os.File
+	w *os.File
+}
+
+func IsPipe(c Cell) bool {
+	conduit := asConduit(c)
+	if conduit == nil {
+		return false
+	}
+
+	switch conduit.(type) {
+	case *Pipe:
+		return true
+	}
+	return false
+}
+
+func NewPipe(r *os.File, w *os.File) *Pipe {
+	p := &Pipe{
+		b: nil,
+		c: nil,
+		d: nil,
+		r: r,
+		w: w,
+	}
+
+	if r == nil && w == nil {
+		var err error
+
+		if p.r, p.w, err = os.Pipe(); err != nil {
+			p.r, p.w = nil, nil
+		}
+	}
+
+	runtime.SetFinalizer(p, (*Pipe).Close)
+
+	return p
+}
+
+func (p *Pipe) Bool() bool {
+	return true
+}
+
+func (p *Pipe) Equal(c Cell) bool {
+	return p == c
+}
+
+func (p *Pipe) String() string {
+	return fmt.Sprintf("%%pipe %p%%", p)
+}
+
+func (p *Pipe) Close() {
+	if p.r != nil && len(p.r.Name()) > 0 {
+		p.ReaderClose()
+	}
+
+	if p.w != nil && len(p.w.Name()) > 0 {
+		p.WriterClose()
+	}
+}
+
+func (p *Pipe) reader() *bufio.Reader {
+	if p.b == nil {
+		p.b = bufio.NewReader(p.r)
+	}
+
+	return p.b
+}
+
+func (p *Pipe) ReaderClose() {
+	if p.r != nil {
+		p.r.Close()
+		p.r = nil
+	}
+}
+
+func (p *Pipe) Read(interactive bool, parse Parser, t Thrower) Cell {
+	if p.r == nil {
+		return Null
+	}
+
+	if p.d == nil {
+		p.d = make(chan bool)
+	} else {
+		p.d <- true
+	}
+
+	if p.c == nil {
+		p.c = make(chan Cell)
+		go func() {
+			var f *os.File = nil
+			if interactive && p.r == os.Stdin {
+				f = p.r
+			}
+			parse(
+				p.reader(), t, f, p.r.Name(),
+				func(c Cell, f string, l int, u string) (Cell, bool) {
+					t.SetLine(l)
+					p.c <- c
+					<-p.d
+					return nil, true
+				},
+			)
+			p.d = nil
+			p.c <- Null
+			p.c = nil
+		}()
+	}
+
+	return <-p.c
+}
+
+func (p *Pipe) ReadLine() Cell {
+	s, err := p.reader().ReadString('\n')
+	if err != nil && len(s) == 0 {
+		p.b = nil
+		return Null
+	}
+
+	return NewString(strings.TrimRight(s, "\n"))
+}
+
+func (p *Pipe) WriterClose() {
+	if p.w != nil {
+		p.w.Close()
+		p.w = nil
+	}
+}
+
+func (p *Pipe) Write(c Cell) {
+	if p.w == nil {
+		panic("write to closed pipe")
+	}
+
+	fmt.Fprintln(p.w, c)
+}
+
+/* Pipe-specific functions */
+
+func (p *Pipe) ReadFd() *os.File {
+	return p.r
+}
+
+func (p *Pipe) WriteFd() *os.File {
+	return p.w
 }
 
 /* Rational cell definition. */

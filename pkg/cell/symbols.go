@@ -1,6 +1,6 @@
 // Released under an MIT license. See LICENSE.
 
-package common
+package cell
 
 var Symbols = []string{
 	"...", "abs", "add", "and", "append", "_append_stderr_",

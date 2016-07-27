@@ -8,7 +8,6 @@ import (
 	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/common"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"github.com/peterh/liner"
 	"math/rand"
@@ -16,7 +15,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,15 +42,6 @@ type Closure interface {
 }
 
 type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
-
-type Conduit interface {
-	Close()
-	ReaderClose()
-	ReadLine() Cell
-	Read(Parser, common.Thrower) Cell
-	WriterClose()
-	Write(c Cell)
-}
 
 type Context interface {
 	Cell
@@ -91,11 +80,6 @@ type ui interface {
 	Exists() bool
 	ReadString(delim byte) (line string, err error)
 }
-
-type Parser func(
-	common.ReadStringer, common.Thrower, *os.File, string,
-	func(Cell, string, int, string) (Cell, bool),
-) bool
 
 const (
 	SaveCarCode = 1 << iota
@@ -245,73 +229,6 @@ func (b *Builtin) Equal(c Cell) bool {
 
 func (b *Builtin) String() string {
 	return fmt.Sprintf("%%builtin %p%%", b)
-}
-
-/* Channel cell definition. */
-
-type Channel struct {
-	v chan Cell
-}
-
-func IsChannel(c Cell) bool {
-	conduit := asConduit(c)
-	if conduit == nil {
-		return false
-	}
-
-	switch conduit.(type) {
-	case *Channel:
-		return true
-	}
-	return false
-}
-
-func NewChannel(cap int) *Channel {
-	return &Channel{make(chan Cell, cap)}
-}
-
-func (ch *Channel) Bool() bool {
-	return true
-}
-
-func (ch *Channel) Equal(c Cell) bool {
-	return ch == c
-}
-
-func (ch *Channel) String() string {
-	return fmt.Sprintf("%%channel %p%%", ch)
-}
-
-func (ch *Channel) Close() {
-	ch.WriterClose()
-}
-
-func (ch *Channel) ReaderClose() {
-	return
-}
-
-func (ch *Channel) Read(p Parser, t common.Thrower) Cell {
-	v := <-ch.v
-	if v == nil {
-		return Null
-	}
-	return v
-}
-
-func (ch *Channel) ReadLine() Cell {
-	v := <-ch.v
-	if v == nil {
-		return False
-	}
-	return NewString(v.String())
-}
-
-func (ch *Channel) WriterClose() {
-	close(ch.v)
-}
-
-func (ch *Channel) Write(c Cell) {
-	ch.v <- c
 }
 
 /* Command cell definition. */
@@ -520,159 +437,6 @@ func (o *Object) Expose() Context {
 
 func (o *Object) Define(key Cell, value Cell) {
 	panic("private members cannot be added to an object")
-}
-
-/* Pipe cell definition. */
-
-type Pipe struct {
-	b *bufio.Reader
-	c chan Cell
-	d chan bool
-	r *os.File
-	w *os.File
-}
-
-func IsPipe(c Cell) bool {
-	conduit := asConduit(c)
-	if conduit == nil {
-		return false
-	}
-
-	switch conduit.(type) {
-	case *Pipe:
-		return true
-	}
-	return false
-}
-
-func NewPipe(r *os.File, w *os.File) *Pipe {
-	p := &Pipe{
-		b: nil,
-		c: nil,
-		d: nil,
-		r: r,
-		w: w,
-	}
-
-	if r == nil && w == nil {
-		var err error
-
-		if p.r, p.w, err = os.Pipe(); err != nil {
-			p.r, p.w = nil, nil
-		}
-	}
-
-	runtime.SetFinalizer(p, (*Pipe).Close)
-
-	return p
-}
-
-func (p *Pipe) Bool() bool {
-	return true
-}
-
-func (p *Pipe) Equal(c Cell) bool {
-	return p == c
-}
-
-func (p *Pipe) String() string {
-	return fmt.Sprintf("%%pipe %p%%", p)
-}
-
-func (p *Pipe) Close() {
-	if p.r != nil && len(p.r.Name()) > 0 {
-		p.ReaderClose()
-	}
-
-	if p.w != nil && len(p.w.Name()) > 0 {
-		p.WriterClose()
-	}
-}
-
-func (p *Pipe) reader() *bufio.Reader {
-	if p.b == nil {
-		p.b = bufio.NewReader(p.r)
-	}
-
-	return p.b
-}
-
-func (p *Pipe) ReaderClose() {
-	if p.r != nil {
-		p.r.Close()
-		p.r = nil
-	}
-}
-
-func (p *Pipe) Read(parse Parser, t common.Thrower) Cell {
-	if p.r == nil {
-		return Null
-	}
-
-	if p.d == nil {
-		p.d = make(chan bool)
-	} else {
-		p.d <- true
-	}
-
-	if p.c == nil {
-		p.c = make(chan Cell)
-		go func() {
-			var f *os.File = nil
-			if interactive && p.r == os.Stdin {
-				f = p.r
-			}
-			parse(
-				p.reader(), t, f, p.r.Name(),
-				func(c Cell, f string, l int, u string) (Cell, bool) {
-					t.SetLine(l)
-					p.c <- c
-					<-p.d
-					return nil, true
-				},
-			)
-			p.d = nil
-			p.c <- Null
-			p.c = nil
-		}()
-	}
-
-	return <-p.c
-}
-
-func (p *Pipe) ReadLine() Cell {
-	s, err := p.reader().ReadString('\n')
-	if err != nil && len(s) == 0 {
-		p.b = nil
-		return Null
-	}
-
-	return NewString(strings.TrimRight(s, "\n"))
-}
-
-func (p *Pipe) WriterClose() {
-	if p.w != nil {
-		p.w.Close()
-		p.w = nil
-	}
-}
-
-func (p *Pipe) Write(c Cell) {
-	if p.w == nil {
-		panic("write to closed pipe")
-	}
-
-	fmt.Fprintln(p.w, c)
-}
-
-/* Pipe-specific functions */
-
-func (p *Pipe) ReadFd() *os.File {
-	return p.r
-}
-
-func (p *Pipe) WriteFd() *os.File {
-	return p.w
 }
 
 /* Registers cell definition. */
@@ -1196,7 +960,7 @@ func (t *Task) Closure(n ClosureGenerator) bool {
 	}
 
 	if Raw(equals) != "=" {
-		panic(common.ErrSyntax + "expected '='")
+		panic(ErrSyntax + "expected '='")
 	}
 
 	body := t.Code
@@ -1276,7 +1040,7 @@ func (t *Task) External(args Cell) bool {
 	SetCar(t.Dump, False)
 
 	if problem != nil {
-		panic(common.ErrNotFound + problem.Error())
+		panic(ErrNotFound + problem.Error())
 	}
 
 	if !exe {
@@ -1307,7 +1071,7 @@ func (t *Task) External(args Cell) bool {
 
 	rv, problem := t.Execute(arg0, argv, attr)
 	if problem != nil {
-		panic(common.ErrNotExecutable + problem.Error())
+		panic(ErrNotExecutable + problem.Error())
 	}
 
 	return t.Return(rv)
@@ -1390,7 +1154,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	if Length(t.Code) == 3 {
 		if Raw(Cadr(t.Code)) != "=" {
 			msg := "expected '=' after " + r + "'"
-			panic(common.ErrSyntax + msg)
+			panic(ErrSyntax + msg)
 		}
 		t.Code = Caddr(t.Code)
 	} else {
@@ -1476,7 +1240,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 				if Car(t.Code) != Null &&
 					Raw(Car(t.Code)) != "else" {
 					msg := "expected 'else'"
-					panic(common.ErrSyntax + msg)
+					panic(ErrSyntax + msg)
 				}
 			}
 
@@ -1983,7 +1747,7 @@ func Start(p Parser, cli ui) {
 		if os.Args[1] == "-c" {
 			if argc == 2 {
 				msg := "-c requires an argument"
-				println(common.ErrSyntax + msg)
+				println(ErrSyntax + msg)
 				os.Exit(1)
 			}
 			s := os.Args[2] + "\n"
@@ -2011,32 +1775,6 @@ func Start(p Parser, cli ui) {
 	}
 
 	exit(Car(task0.Dump))
-}
-
-/* Convert Cell into a Conduit. (Return nil if not possible). */
-func asConduit(o Cell) Conduit {
-	if c, ok := o.(Conduit); ok {
-		return c
-	}
-
-	return nil
-}
-
-/* Convert Cell into a Context. (Return nil if not possible). */
-func asContext(c Cell) Context {
-	switch t := c.(type) {
-	case Context:
-		return t
-	case *Channel:
-		return conduitContext()
-	case *Pair:
-		return pairContext()
-	case *Pipe:
-		return conduitContext()
-	case *String:
-		return stringContext()
-	}
-	return nil
 }
 
 func braceExpand(arg string) []string {
@@ -2091,7 +1829,7 @@ func conduitContext() Context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(parse, t))
+		return t.Return(toConduit(t.Self()).Read(interactive, parse, t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -2191,7 +1929,7 @@ func expand(t *Task, args Cell) Cell {
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	CacheSymbols(common.Symbols...)
+	CacheSymbols(Symbols...)
 
 	homesym = NewSymbol("$HOME")
 	oldpwdsym = NewSymbol("$OLDPWD")
@@ -2660,7 +2398,7 @@ func init() {
 		s := Null
 		if Length(t.Code) == 3 {
 			if Raw(Cadr(t.Code)) != "=" {
-				panic(common.ErrSyntax + "expected '='")
+				panic(ErrSyntax + "expected '='")
 			}
 			s = Caddr(t.Code)
 		} else {
@@ -3040,8 +2778,8 @@ func stringContext() Context {
 
 /* Convert Context into a Conduit. */
 func toConduit(c Cell) Conduit {
-	conduit := asConduit(c)
-	if conduit == nil {
+	conduit, ok := c.(Conduit)
+	if !ok {
 		panic("not a conduit")
 	}
 
@@ -3050,12 +2788,19 @@ func toConduit(c Cell) Conduit {
 
 /* Convert Cell into a Context. */
 func toContext(c Cell) Context {
-	context := asContext(c)
-	if context == nil {
-		panic("not an object ")
+	switch t := c.(type) {
+	case Context:
+		return t
+	case *Channel:
+		return conduitContext()
+	case *Pair:
+		return pairContext()
+	case *Pipe:
+		return conduitContext()
+	case *String:
+		return stringContext()
 	}
-
-	return context
+	panic("not an object ")
 }
 
 /* Convert Cell into a Pair. */
