@@ -1,0 +1,31 @@
+#!/usr/bin/env oh
+
+# KEYWORD: manual
+# PROVIDE: method
+# REQUIRE: channels
+
+## #### Syntax
+##
+## Oh can be extended with the `syntax` command. The `syntax` command is
+## very similar to the `method` command except that the methods it creates
+## are passed their arguments unevaluated. The `eval` command can be used
+## to explicitly evaluate arguments. The calling context can be given a name
+## by specifying it after the list of arguments and the calling context's
+## eval method can be used to evaluate in the calling environment. Oh's
+## short-circuit `and` command is implemented using the syntax command:
+##
+#{
+define and-again: syntax (: lst) e = {
+        define r = false
+        while (not: is-null lst) {
+                set r: e::eval: lst::head
+                if (not r): return r
+                set lst: lst::tail
+        }
+        return r
+}
+write: and-again (status 0) (boolean false) "we never make it here"
+#}
+##
+
+#-     false
