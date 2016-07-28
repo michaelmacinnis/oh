@@ -16,7 +16,7 @@
 mkdir /tmp/simple-commands
 cd /tmp/simple-commands
 touch 1 2 3
-ls -l | awk "{ print $1 FS $9 }"
+ls -l | awk "{ print $1 FS $9 }" | tr -d '.' # Remove dots
 rm 1 2 3
 cd _origin_
 rmdir /tmp/simple-commands

@@ -6,7 +6,7 @@
 
 ## #### While
 ##
-## The command,
+## Oh has a fairly standard pre-test loop. The commands,
 ##
 #{
 define x = 0
@@ -16,7 +16,7 @@ while (lt x 10) {
 }
 #}
 ##
-## produces the output,
+## produce the output,
 ##
 #+     0
 #+     1

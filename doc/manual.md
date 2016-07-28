@@ -83,7 +83,7 @@ including the empty string. In general patterns are specified as follows.
 |:-------:|:---------------------------------------------------------------|
 |   `*`   | Matches any sequence of zero or more characters.               |
 |   `?`   | Matches any single character.                                  |
-| `[...]` | Matches any one of the characters enclosed. A pair separated by a minus will match a lexical range of characters.|
+| `[...]` | Matches any one of the characters enclosed. A pair separated by a minus will match a lexical range of characters. If the first enclosed character is a `^` the match is negated. |
 
 For example,
 
@@ -404,7 +404,7 @@ If statements can be chained:
 
 #### While
 
-The command,
+Oh has a fairly standard pre-test loop. The commands,
 
     define x = 0
     while (lt x 10) {
@@ -412,7 +412,7 @@ The command,
         set x: add x 1
     }
 
-produces the output,
+produce the output,
 
     0
     1
@@ -485,7 +485,7 @@ Once defined, a method can be called in the same way as other commands.
 
     hello
 
-Arguments allow a method to be parameterized.
+Methods can have named parameters.
 
     define sum3: method (a b c) = {
         add a b c
@@ -571,19 +571,19 @@ which produces the output,
 Using oh, it is relatively simple to record the exit status for each stage
 in a pipeline. The example below,
 
-    define exit-status: object
+    define exit-status: map
     
     define pipe-fitting: method (label cmd: args) = {
-        exit-status::_set_ label: cmd @args
+        exit-status::set label: cmd @args
     }
     
     pipe-fitting "1st" echo 1 2 3 |
     pipe-fitting "2nd" tr " " "\n" |
     pipe-fitting "3rd" grep 2
     
-    echo "1st stage exit status =>" exit-status::1st
-    echo "2nd stage exit status =>" exit-status::2nd
-    echo "3rd stage exit status =>" exit-status::3rd
+    echo "1st stage exit status =>": exit-status::get "1st"
+    echo "2nd stage exit status =>": exit-status::get "2nd"
+    echo "3rd stage exit status =>": exit-status::get "3rd"
 
 produces the output,
 

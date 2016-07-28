@@ -24,7 +24,7 @@ hello
 
 #-     Hello, World!
 
-## Arguments allow a method to be parameterized.
+## Methods can have named parameters.
 ##
 #{
 define sum3: method (a b c) = {
