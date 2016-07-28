@@ -650,8 +650,13 @@ are passed their arguments unevaluated. The `eval` command can be used
 to explicitly evaluate arguments. The calling context can be given a name.
 The name must after the list of arguments. The calling context's
 eval method can be used to evaluate in the calling environment. Oh's
-short-circuit `and` command is implemented using the syntax command:
+short-circuit `and` command is implemented using the syntax command. We
+implement it again below.
 
+    define x = (integer 1)
+    define y = (status 0)
+    define z = (boolean false)
+    
     define and-again: syntax (: lst) e = {
             define r = false
             while (not: is-null lst) {
@@ -661,5 +666,6 @@ short-circuit `and` command is implemented using the syntax command:
             }
             return r
     }
-    write: and-again (status 0) (boolean false) "we never make it here"
+    
+    write: and-again x y z "we never make it here"
 
