@@ -642,13 +642,13 @@ with Mice").
         }
     } <prime-numbers
 
-#### Syntax
+### Syntax
 
 Oh can be extended with the `syntax` command. The `syntax` command is
 very similar to the `method` command except that the methods it creates
 are passed their arguments unevaluated. The `eval` command can be used
-to explicitly evaluate arguments. The calling context can be given a name
-by specifying it after the list of arguments and the calling context's
+to explicitly evaluate arguments. The calling context can be given a name.
+The name must after the list of arguments. The calling context's
 eval method can be used to evaluate in the calling environment. Oh's
 short-circuit `and` command is implemented using the syntax command:
 
