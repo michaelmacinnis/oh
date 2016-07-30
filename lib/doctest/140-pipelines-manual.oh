@@ -33,6 +33,14 @@ ls >file; wc -l file
 ls | grep old | wc -l
 #}
 ##
+## To redirect the output of a command to a file that already exists (replacing
+## the contents of the file), pipe the output of the command to the `clobber`
+## command.
+##
+#{
+ls | clobber file
+#}
+##
 
 #-     3
 #-     4 file

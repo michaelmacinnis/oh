@@ -30,9 +30,9 @@ to the terminal. Standard output may be sent to a file.
     ls > file
 
 The notation `>file` is interpreted by the shell and is not passed as an
-argument to `ls`. If the file does not exist then the shell creates it,
-otherwise the original contents of the file are replaced with the output
-from ls. Output may also be appended to a file.
+argument to `ls`. If the file does not exist then the shell creates it.
+If the file already exists, oh will refuse to clobber the file.
+Output may also be appended to a file.
 
     ls >> file
 
@@ -66,6 +66,12 @@ pipe and are run in parallel.
 A pipeline may consist of more than two commands.
 
     ls | grep old | wc -l
+
+To redirect the output of a command to a file that already exists (replacing
+the contents of the file), pipe the output of the command to the `clobber`
+command.
+
+    ls | clobber file
 
 ### File Name Generation
 
