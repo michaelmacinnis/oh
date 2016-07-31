@@ -6,7 +6,7 @@
 
 ## #### Object
 ##
-## Oh's first-class environments form the basis for its object system. In fact,
+## Oh's first-class contexts form the basis for its object system. In fact,
 ## oh's `object` command is really just a convenience wrapper around a `block`
 ## command with a `context` command as the final action.
 ##
@@ -28,6 +28,6 @@ echo "private member" o::y
 
 ## #### _root_
 ##
-## All variables in oh belong to an environment. These environments are
-## chained. The top-level environment is called `_root_`.
+## All variables in oh belong to a context. These contexts are chained.
+## The top-level context is called `_root_`.
 ##
