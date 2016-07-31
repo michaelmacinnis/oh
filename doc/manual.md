@@ -469,10 +469,10 @@ produce the output,
 #### Context
 
 In oh, environments are first-class values. The command `context` returns
-the current environment. The `context` command along with the `::` operator
-can be used to evaluate a public variable in an explicit context. For a
-variable to be public it must be created with the `public` command instead
-of the `define` command.
+the current environment or context. The `context` command along with the
+`::` operator can be used to evaluate a public variable in an explicit
+context. For a variable to be public it must be created with the `public`
+command instead of the `define` command.
 
 The commands,
 
@@ -492,7 +492,7 @@ produce the output,
 
 #### Object
 
-Oh's first-class environments form the basis for its object system. In fact,
+Oh's first-class contexts form the basis for its object system. In fact,
 oh's `object` command is really just a convenience wrapper around a `block`
 command with a `context` command as the final action.
 
@@ -508,8 +508,8 @@ The previous example can be rewritten as,
 
 #### _root_
 
-All variables in oh belong to an environment. These environments are
-chained. The top-level environment is called `_root_`.
+All variables in oh belong to a context. These contexts are chained.
+The top-level context is called `_root_`.
 
 #### Method
 
@@ -589,7 +589,7 @@ which produces the output,
     my name is: y
     my name is: y
 
-An object may redirect a call to another object, as shown in the code below,
+An object may redirect a call to another object. The code below,
 
     define z: object {
         define name = "z"
@@ -599,15 +599,15 @@ An object may redirect a call to another object, as shown in the code below,
     z::me
     z::you
 
-which produces the output,
+produces the output,
 
     my name is: z
     my name is: x
 
-### Pipes
+### Maps
 
-Using oh, it is relatively simple to record the exit status for each stage
-in a pipeline. The example below,
+Using oh's map type, it is relatively simple to record the exit status
+for each stage in a pipeline. The code below,
 
     define exit-status: map
     
@@ -619,6 +619,7 @@ in a pipeline. The example below,
     pipe-fitting "2nd" tr " " "\n" |
     pipe-fitting "3rd" grep 2
     
+    echo: exit-status::keys
     echo "1st stage exit status =>": exit-status::get "1st"
     echo "2nd stage exit status =>": exit-status::get "2nd"
     echo "3rd stage exit status =>": exit-status::get "3rd"
@@ -626,6 +627,7 @@ in a pipeline. The example below,
 produces the output,
 
     2
+    3rd 2nd 1st
     1st stage exit status => true
     2nd stage exit status => 0
     3rd stage exit status => 0

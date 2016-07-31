@@ -1,0 +1,66 @@
+#!/usr/bin/env oh
+
+## ### Channels
+##
+## Oh exposes channels as first-class values. Channels allow particularly
+## elegant solutions to some problems, as shown in the prime sieve example
+## below (adapted from "Newsqueak: A Language for Communicating with Mice").
+##
+#{
+define counter: method (n) = {
+    while true {
+        write: set n: add n 1
+    }
+}
+
+define filter: method (base) = {
+    while true {
+	define n: (read)::head
+        if (mod n base): write n
+    }
+}
+
+define prime-numbers: channel
+
+counter 2 |+ block {
+    define in = _stdin_
+
+    while true {
+        define prime: (in::read)::head
+        write prime
+
+        define out: channel
+        spawn: filter prime <in >out
+
+        set in = out
+    }
+} >prime-numbers &
+
+define count: integer 100
+printf "The first %d prime numbers" count
+
+define line = ""
+while count {
+    define p: (read)::head
+    set line: ""::join line ("%7.7s"::sprintf p)
+    set count: sub count 1
+    if (not: mod count 10) {
+        echo line
+	set line = ""
+    }
+} <prime-numbers
+#}
+##
+
+#-     The first 100 prime numbers
+#-           3      4      5      7     11     13     17     19     23     29
+#-          31     37     41     43     47     53     59     61     67     71
+#-          73     79     83     89     97    101    103    107    109    113
+#-         127    131    137    139    149    151    157    163    167    173
+#-         179    181    191    193    197    199    211    223    227    229
+#-         233    239    241    251    257    263    269    271    277    281
+#-         283    293    307    311    313    317    331    337    347    349
+#-         353    359    367    373    379    383    389    397    401    409
+#-         419    421    431    433    439    443    449    457    461    463
+#-         467    479    487    491    499    503    509    521    523    541
+
