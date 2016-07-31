@@ -619,7 +619,6 @@ for each stage in a pipeline. The code below,
     pipe-fitting "2nd" tr " " "\n" |
     pipe-fitting "3rd" grep 2
     
-    echo: exit-status::keys
     echo "1st stage exit status =>": exit-status::get "1st"
     echo "2nd stage exit status =>": exit-status::get "2nd"
     echo "3rd stage exit status =>": exit-status::get "3rd"
@@ -627,17 +626,15 @@ for each stage in a pipeline. The code below,
 produces the output,
 
     2
-    3rd 2nd 1st
     1st stage exit status => true
     2nd stage exit status => 0
     3rd stage exit status => 0
 
 ### Channels
 
-In addition to pipes, oh exposes channels as first-class values. Channels
-allow particularly elegant solutions to some problems, as shown in the prime
-sieve example below (adapted from "Newsqueak: A Language for Communicating
-with Mice").
+Oh exposes channels as first-class values. Channels allow particularly
+elegant solutions to some problems, as shown in the prime sieve example
+below (adapted from "Newsqueak: A Language for Communicating with Mice").
 
     define counter: method (n) = {
         while true {
@@ -647,7 +644,7 @@ with Mice").
     
     define filter: method (base) = {
         while true {
-    	define n: (read)::head
+            define n: (read)::head
             if (mod n base): write n
         }
     }
@@ -678,7 +675,82 @@ with Mice").
         set count: sub count 1
         if (not: mod count 10) {
             echo line
-    	set line = ""
+            set line = ""
+        }
+    } <prime-numbers
+
+### Pipes
+
+Oh exposes pipes as first-class values. Pipes are created implicitly when
+running commands as part of a pipeline but they may also be created
+explicitly using the `pipe` command. Pipes are useful for communicating,
+particularly with external commands, but as pipes are buffered they are
+not as convenient as channels for synchronization. Compare the example
+below to the same example (shown previously) using channels.
+
+    define counter: method (n) = {
+        define welcome: pipe
+    
+        while true {
+            write welcome: set n: add n 1
+    
+            welcome::read
+        }
+    }
+    
+    define filter: method (base) = {
+        define welcome: pipe
+        while true {
+            define msg: read
+    
+            define thanks: msg::get 0
+            define n: msg::get 1
+    
+            if (mod n base) {
+                    write welcome n
+    
+                    welcome::read
+            }
+    
+            thanks::write
+        }
+    }
+    
+    define prime-numbers: pipe
+    
+    counter 2 | block {
+        define in = _stdin_
+    
+        while true {
+            define msg: in::read
+    
+            define thanks: msg::get 0
+            define prime: msg::get 1
+    
+            write prime
+    
+            define out: pipe
+            block {
+                filter prime &
+            } <in >out
+    
+            thanks::write
+    
+            set in = out
+        }
+    } >prime-numbers &
+    
+    define count: integer 100
+    printf "The first %d prime numbers" count
+    
+    define line = ""
+    while count {
+        define p: (read)::head
+        set line: ""::join line ("%7.7s"::sprintf p)
+        set count: sub count 1
+        if (not: mod count 10) {
+            echo line
+            set line = ""
         }
     } <prime-numbers
 

@@ -15,7 +15,7 @@ define counter: method (n) = {
 
 define filter: method (base) = {
     while true {
-	define n: (read)::head
+        define n: (read)::head
         if (mod n base): write n
     }
 }
@@ -46,7 +46,7 @@ while count {
     set count: sub count 1
     if (not: mod count 10) {
         echo line
-	set line = ""
+        set line = ""
     }
 } <prime-numbers
 #}
