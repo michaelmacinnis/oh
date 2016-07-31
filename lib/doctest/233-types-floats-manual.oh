@@ -20,18 +20,6 @@ write: float "3.14"
 ##
 #+     3.14
 ##
-## Again, like integers, oh will try to help by converting symbols that will
-## parse correctly as a float when used in a context where that would be
-## appropriate. For example,
-##
-#{
-write: float: add 3.14 2.72 1.41 2.50 4.67
-#}
-##
-## produces the output,
-##
-#+     14.44
-##
 
 define common: import: ... lib/common.oh
 

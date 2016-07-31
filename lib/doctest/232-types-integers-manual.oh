@@ -45,18 +45,6 @@ write: is-symbol: integer -1
 #-     true
 #-     false
 ##
-## Oh will also try to help by converting symbols that will parse correctly
-## as an integer when used in a context where that would be appropriate. For
-## example,
-##
-#{
-write: add 1 2 3
-#}
-##
-## produces the output,
-##
-#+     6
-##
 ## Note that oh does not have infix arithmetic operators instead the commands
 ## `add`, `sub`, `mul`, `div` and `mod` must be used.
 ##

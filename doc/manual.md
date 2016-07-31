@@ -89,7 +89,7 @@ including the empty string. In general patterns are specified as follows.
 |:-------:|:---------------------------------------------------------------|
 |   `*`   | Matches any sequence of zero or more characters.               |
 |   `?`   | Matches any single character.                                  |
-| `[...]` | Matches any one of the characters enclosed. A pair separated by a minus will match a lexical range of characters. If the first enclosed character is a `^` the match is negated. |
+| `[...]` | Matches any one of the characters enclosed. A pair separated by a hyphen, `-`, will match a lexical range of characters. If the first enclosed character is a `^` the match is negated. |
 
 For example,
 
@@ -144,6 +144,14 @@ no way to escape it.
     echo "Hello,
     World!"
 
+Double quoted strings also automatically perform string interpolation.
+In a double quoted string, a dollar sign, `$`, followed by a variable name,
+optionally enclosed in braces, will be replaced by the variable's value.
+If no variable exists with the name specified the dollar sign, optional
+opening brace, `{`, variable name, and optional closing brace, `}`, are
+not replaced. While the opening and closing braces are not required their
+use is encouraged to avoid ambiguity.
+
 ## Using oh Programmatically
 
 In addition to providing a command-line interface to Unix and Unix-like
@@ -153,10 +161,13 @@ systems, oh is also a programming language.
 
 #### Symbols
 
-Oh's default data type is the symbol. A symbol is one or more alphanumeric
-or `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`, `?`, `[`, `]`, or  `_` 
-characters. Unless a symbol has been used as a variable name, it evaluates
-to itself.
+Oh's default data type is the symbol. Like other programming languages,
+a symbol in oh, can be one or more alphanumeric characters. Unlike other
+programming languages, there is no restriction that a symbol start with,
+or even contain, an alphabetic character. Oh also permits the following
+characters in symbols: `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`,
+`]`, and `_`. Unless a symbol has been used as a variable name, it
+evaluates to itself.
 
 The command,
 
@@ -196,16 +207,6 @@ superfluous parentheses when constructing more compilcated commands:
     write: is-integer: integer -1
     write: is-symbol: integer -1
 
-Oh will also try to help by converting symbols that will parse correctly
-as an integer when used in a context where that would be appropriate. For
-example,
-
-    write: add 1 2 3
-
-produces the output,
-
-    6
-
 Note that oh does not have infix arithmetic operators instead the commands
 `add`, `sub`, `mul`, `div` and `mod` must be used.
 
@@ -228,30 +229,11 @@ produces the output,
 
     3.14
 
-Again, like integers, oh will try to help by converting symbols that will
-parse correctly as a float when used in a context where that would be
-appropriate. For example,
-
-    write: float: add 3.14 2.72 1.41 2.50 4.67
-
-produces the output,
-
-    14.44
-
 #### Rationals
-
-Without the `float` command in the previous example the command,
-
-    write: add 3.14 2.72 1.41 2.50 4.67
-
-produces the output,
-
-    361/25
 
 All arithmetic operations in oh are performed by first converting all
 operands to rational numbers. The result is a rational number which can
 be explicitly converted with the `float`, `integer` or `status` commands.
-
 A rational number can be explicitly declared with the `rational` command,
 
     define r: rational 100/3
@@ -260,13 +242,23 @@ A rational number can be explicitly declared with the `rational` command,
     write: integer r
     write: status r
 
+Oh will also try to help by converting symbols that will parse correctly
+as a number when used in a context where that would be appropriate. For
+example,
+
+    write: add 3.14 2.72 1.41 2.50 4.67
+
+produces the output,
+
+    361/25
+
 #### Booleans
 
 Oh has a boolean type and the boolean values `true` and `false`.
 The `boolean` command can be used to create a boolean value. Passing
-`boolean` a non-zero number, any string (including the empty string),
-and any symbol with the exception of the symbol `false` will result
-in a value of `true`.
+`boolean` a non-zero number, the zero status, any string (including
+the empty string), and any symbol with the exception of the symbol
+`false` will result in a value of `true`.
 
 The command,
 
@@ -309,17 +301,21 @@ Oh also provides a set of relational operators:
 Typical Unix commands return 0 on success and non-zero on failure. This
 makes sense as there are many ways to fail but typicaly only one way to
 succeed. As a result, most Unix shells treat the zero value as true and
-non-zero values as false - unlike most other mainstream programming
+non-zero values as false. This is unlike most other mainstream programming
 languages. To cause less confusion, oh introduces a status type. The status
 type is an integer that evaluates to true only when it has the value 0.
 
 The command,
 
-    write: boolean: status 11
+    if (status 11) {
+        echo "A zero status is true"
+    } else {
+        echo "A non-zero status is false"
+    }
 
 produces the output,
 
-    false
+    A non-zero status is false
 
 #### Conses
 

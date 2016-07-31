@@ -8,9 +8,9 @@
 ##
 ## Oh has a boolean type and the boolean values `true` and `false`.
 ## The `boolean` command can be used to create a boolean value. Passing
-## `boolean` a non-zero number, any string (including the empty string),
-## and any symbol with the exception of the symbol `false` will result
-## in a value of `true`.
+## `boolean` a non-zero number, the zero status, any string (including
+## the empty string), and any symbol with the exception of the symbol
+## `false` will result in a value of `true`.
 ##
 ## The command,
 ##
