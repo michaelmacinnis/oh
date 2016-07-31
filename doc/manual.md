@@ -381,8 +381,17 @@ produce the output,
 
 #### Block
 
-The most basic control structure in oh is the block. A block creates a new
-scope and evaluates to the value returned by the final command in the block.
+The most basic control structure in oh is the block. A block creates a
+new context and evaluates to the value returned by the final command in
+the block.
+
+##### Variables
+
+Variables can be created with the `define` command. A variable's value
+can be changed with the `set` (or, in the same context, `define`)
+command. With the exception of public variables, which are discussed
+later, a variable cannot be accessed outsid the context in which it was
+defined.
 
 The command,
 
@@ -395,11 +404,9 @@ produces the output,
 
     oh: error/runtime: 'x' undefined
 
-as the variable x is not accessible outside the scope in which it was
-defined.
-
-Variable are created with the `define` command. A variable's value can be
-changed with the `set` (or, in the same scope, `define`) command.
+as the variable x is not accessible outside the context in which it was
+defined. (Note: the equal sign, `=`, in both the `define` and `set`
+commands, is optional).
 
 #### If
 
