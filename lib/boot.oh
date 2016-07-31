@@ -147,6 +147,25 @@ define is-list: method (l) = {
 	is-list: l::tail
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
+# Last File Manager cd.
+define lcd: method () e = {
+	catch unused {
+		return
+	}
+	if (not: which lfm >/dev/null) {
+		return
+	}
+	public $LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
+	lfm -1
+	if (not: exists $LFMPATHFILE) {
+		return
+	}
+	define f: open "r" $LFMPATHFILE
+	define dn: f::readline
+	f::close
+	rm $LFMPATHFILE
+	e::eval: quasiquote: cd (unquote dn)
+}
 define map: syntax (: literal) e = {
     define o: object
     for literal: method (entry) = {
