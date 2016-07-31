@@ -611,25 +611,19 @@ very similar to the `method` command except that the methods it creates
 are passed their arguments unevaluated. The `eval` command can be used
 to explicitly evaluate arguments. The calling context can be given a name.
 The name must after the list of arguments. The calling context's
-eval method can be used to evaluate in the calling environment. Oh's
-short-circuit `and` command is implemented using the syntax command. We
-implement it again below.
+eval method can be used to evaluate in the calling environment. The
+example below uses the `syntax` command to define a new `until` command.
 
-    define x = (integer 1)
-    define y = (status 0)
-    define z = (boolean false)
-    
-    define and-again: syntax (: lst) e = {
-            define r = false
-            while (not: is-null lst) {
-                    set r: e::eval: lst::head
-                    if (not r): return r
-                    set lst: lst::tail
-            }
-            return r
+    define until: syntax (condition: body) e = {
+        set condition: list (symbol "not") condition
+        e::eval: list (symbol "while") condition @body
     }
     
-    write: and-again x y z "we never make it here"
+    define x = 10
+    until (eq x 0) {
+        write x
+        set x: sub x 1
+    }
 
 ### Maps
 
