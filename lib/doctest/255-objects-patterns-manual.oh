@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual readme
-# PROVIDE: patterns
-# REQUIRE: point
-
 ## Shared behavior can be implemented by defining a method in an outer scope.
 ##
 ## The following code,

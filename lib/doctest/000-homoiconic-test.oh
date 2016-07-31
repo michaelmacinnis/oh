@@ -1,8 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: test
-# PROVIDE: homoiconic
-
 ## Oh uses the same syntax for code and data. This enables it to be easily
 ## extended:
 ##

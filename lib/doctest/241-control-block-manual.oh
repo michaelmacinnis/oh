@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: block
-# REQUIRE: control
-
 ## #### Block
 ##
 ## The most basic control structure in oh is the block. A block creates a
@@ -30,7 +26,7 @@ set x = 3
 ## produces the output,
 ##
 ##     oh: error/runtime: 'x' undefined
-#-     241-control-block-manual.oh: 27: error/runtime: 'x' undefined
+#-     241-control-block-manual.oh: 23: error/runtime: 'x' undefined
 ##
 ## as the variable x is not accessible outside the context in which it was
 ## defined. (Note: the equal sign, `=`, in both the `define` and `set`

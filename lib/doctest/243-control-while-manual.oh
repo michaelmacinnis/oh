@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: while
-# REQUIRE: if
-
 ## #### While
 ##
 ## Oh has a fairly standard pre-test loop. The commands,

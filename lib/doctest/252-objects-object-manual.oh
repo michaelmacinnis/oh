@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: object
-# REQUIRE: context
-
 ## #### Object
 ##
 ## Oh's first-class contexts form the basis for its object system. In fact,
@@ -24,7 +20,7 @@ echo "private member" o::y
 ##
 
 #-     public member 1
-#-     252-objects-object-manual.oh: 22: error/runtime: 'y' undefined
+#-     252-objects-object-manual.oh: 18: error/runtime: 'y' undefined
 
 ## #### _root_
 ##

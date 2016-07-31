@@ -1,8 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual readme
-# PROVIDE: point
-
 #{
 define point: method (r s) =: object {
     define x: integer r

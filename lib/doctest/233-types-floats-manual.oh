@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: floats
-# REQUIRE: integers
-
 ## #### Floats
 ##
 ## Just like integers in oh, things that look like floats are still symbols

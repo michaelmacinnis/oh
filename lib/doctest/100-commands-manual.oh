@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: commands
-# REQUIRE: intro
-
 ## ## Using oh Interactively
 ##
 ## The oh shell provides a command-line interface to Unix and Unix-like

@@ -1,8 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: control
-
 ## ### Control Structures
 ##
 

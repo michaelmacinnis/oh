@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: globs
-# REQUIRE: pipelines
-
 mkdir /tmp/globs
 cd /tmp/globs
 touch a.1 b.2 3.go 4 .hidden

@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: booleans
-# REQUIRE: floats
-
 ## #### Booleans
 ##
 ## Oh has a boolean type and the boolean values `true` and `false`.

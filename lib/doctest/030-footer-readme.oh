@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: readme
-# PROVIDE: footer
-# REQUIRE: middle
-
 ## For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
 ##
 ## ## Installing

@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: pipelines
-# REQUIRE: redirection
-
 mkdir /tmp/pipelines
 cd /tmp/pipelines
 touch 1 2 3

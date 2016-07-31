@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: simple
-# REQUIRE: commands
-
 ## ### Simple Commands
 ##
 ## Simple commands consist of one or more words separated by blanks. The first

@@ -1,8 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: test
-# PROVIDE: pipes
-
 ## Oh exposes pipes, which are implicit in other shells, as first-class
 ## values:
 ##

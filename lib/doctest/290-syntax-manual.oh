@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: method
-# REQUIRE: channels
-
 ## ### Syntax
 ##
 ## Oh can be extended with the `syntax` command. The `syntax` command is

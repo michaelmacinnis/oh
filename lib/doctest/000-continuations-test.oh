@@ -1,8 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: test
-# PROVIDE: continuations
-
 ## Oh is properly tail-recursive and exposes continuations as first-class
 ## values:
 ##

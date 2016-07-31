@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: conses
-# REQUIRE: status
-
 ## #### Lists
 ##
 ## Lists, in oh, are formed by chaining cons cells. A cons cell is a pair

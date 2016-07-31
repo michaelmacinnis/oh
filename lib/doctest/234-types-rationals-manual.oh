@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: rationals
-# REQUIRE: floats
-
 ## #### Rationals
 ##
 ## All arithmetic operations in oh are performed by first converting all

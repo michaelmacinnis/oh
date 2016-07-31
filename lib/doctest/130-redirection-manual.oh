@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: redirection
-# REQUIRE: simple
-
 mkdir /tmp/redirection
 cd /tmp/redirection
 touch 1 2 3

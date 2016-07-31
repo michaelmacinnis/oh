@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: symbols
-# REQUIRE: types
-
 ## #### Symbols
 ##
 ## Oh's default data type is the symbol. Like other programming languages,

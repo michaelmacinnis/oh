@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: status
-# REQUIRE: booleans
-
 ## #### Status
 ##
 ## Typical Unix commands return 0 on success and non-zero on failure. This

@@ -1,10 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: method
-# REQUIRE: object
-# BEFORE: point
-
 ## #### Method
 ##
 ## A sequence of actions can be saved with the `method` command.

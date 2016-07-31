@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: programming
-# REQUIRE: end-commands
-
 ## ## Using oh Programmatically
 ##
 ## In addition to providing a command-line interface to Unix and Unix-like

@@ -1,9 +1,5 @@
 #!/usr/bin/env oh
 
-# KEYWORD: manual
-# PROVIDE: context
-# REQUIRE: objects
-
 ## #### Context
 ##
 ## In oh, environments are first-class values. The command `context` returns
@@ -29,6 +25,6 @@ echo "private variable" o::y
 ##
 #+     public variable 1
 ##     oh: error/runtime: 'y' undefined
-#-     251-objects-context-manual.oh: 25: error/runtime: 'y' undefined
+#-     251-objects-context-manual.oh: 21: error/runtime: 'y' undefined
 ##
 
