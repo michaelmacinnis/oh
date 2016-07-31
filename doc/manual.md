@@ -604,6 +604,33 @@ produces the output,
     my name is: z
     my name is: x
 
+#### Syntax
+
+Oh can be extended with the `syntax` command. The `syntax` command is
+very similar to the `method` command except that the methods it creates
+are passed their arguments unevaluated. The `eval` command can be used
+to explicitly evaluate arguments. The calling context can be given a name.
+The name must after the list of arguments. The calling context's
+eval method can be used to evaluate in the calling environment. Oh's
+short-circuit `and` command is implemented using the syntax command. We
+implement it again below.
+
+    define x = (integer 1)
+    define y = (status 0)
+    define z = (boolean false)
+    
+    define and-again: syntax (: lst) e = {
+            define r = false
+            while (not: is-null lst) {
+                    set r: e::eval: lst::head
+                    if (not r): return r
+                    set lst: lst::tail
+            }
+            return r
+    }
+    
+    write: and-again x y z "we never make it here"
+
 ### Maps
 
 Using oh's map type, it is relatively simple to record the exit status
@@ -753,31 +780,4 @@ to the same example (shown previously) using channels.
             set line = ""
         }
     } <prime-numbers
-
-### Syntax
-
-Oh can be extended with the `syntax` command. The `syntax` command is
-very similar to the `method` command except that the methods it creates
-are passed their arguments unevaluated. The `eval` command can be used
-to explicitly evaluate arguments. The calling context can be given a name.
-The name must after the list of arguments. The calling context's
-eval method can be used to evaluate in the calling environment. Oh's
-short-circuit `and` command is implemented using the syntax command. We
-implement it again below.
-
-    define x = (integer 1)
-    define y = (status 0)
-    define z = (boolean false)
-    
-    define and-again: syntax (: lst) e = {
-            define r = false
-            while (not: is-null lst) {
-                    set r: e::eval: lst::head
-                    if (not r): return r
-                    set lst: lst::tail
-            }
-            return r
-    }
-    
-    write: and-again x y z "we never make it here"
 

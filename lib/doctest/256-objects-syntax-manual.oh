@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-## ### Syntax
+## #### Syntax
 ##
 ## Oh can be extended with the `syntax` command. The `syntax` command is
 ## very similar to the `method` command except that the methods it creates
