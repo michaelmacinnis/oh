@@ -5,9 +5,9 @@
 ## Oh exposes pipes as first-class values. Pipes are created implicitly when
 ## running commands as part of a pipeline but they may also be created
 ## explicitly using the `pipe` command. Pipes are useful for communicating,
-## particularly with external commands, but as pipes are buffered they are
-## not as convenient as channels for synchronization. Compare the example
-## below to the same example (shown previously) using channels.
+## particularly with external commands, but, due to buffering, they are not
+## as convenient as channels for synchronization. Compare the example below
+## to the same example (shown previously) using channels.
 ##
 #{
 define counter: method (n) = {
