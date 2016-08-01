@@ -25,58 +25,56 @@ type ApplyModer interface {
 	ApplyMode() error
 }
 
-type Binding interface {
+type binding interface {
 	Cell
 
-	Bind(c Cell) Binding
-	Ref() Closure
+	Bind(c Cell) binding
+	Ref() closure
 	Self() Cell
 }
 
-type Closure interface {
+type closure interface {
 	Cell
 
-	Applier() Function
+	Applier() function
 	Body() Cell
 	CallerLabel() Cell
 	Params() Cell
-	Scope() Context
+	Scope() context
 	SelfLabel() Cell
 }
 
-type ClosureGenerator func(a Function, b, c, l, p Cell, s Context) Closure
+type closurer func(a function, b, c, l, p Cell, s context) closure
 
-type Context interface {
+type context interface {
 	Cell
 
 	Access(key Cell) Reference
-	Copy() Context
+	Copy() context
 	Complete(word string) []string
 	Define(key, value Cell)
 	Exported() map[string]Cell
-	Expose() Context
+	Expose() context
 	Faces() *Env
-	Prev() Context
+	Prev() context
 	Public(key, value Cell)
 	Visibility() *Env
 
-	DefineBuiltin(k string, f Function)
-	DefineMethod(k string, f Function)
-	DefineSyntax(k string, f Function)
-	PublicMethod(k string, f Function)
-	PublicSyntax(k string, f Function)
+	DefineBuiltin(k string, f function)
+	DefineMethod(k string, f function)
+	DefineSyntax(k string, f function)
+	PublicMethod(k string, f function)
+	PublicSyntax(k string, f function)
 }
 
-type Function func(t *Task, args Cell) bool
+type function func(t *Task, args Cell) bool
 
-type Message struct {
+type message struct {
 	Cmd     Cell
 	File    string
 	Line    int
 	Problem string
 }
-
-type Validator func(c Cell) bool
 
 type ui interface {
 	Close() error
@@ -85,17 +83,19 @@ type ui interface {
 	TerminalMode() (ApplyModer, error)
 }
 
+type validator func(c Cell) bool
+
 const (
-	SaveCarCode = 1 << iota
-	SaveCdrCode
-	SaveDump
-	SaveFrame
-	SaveLexical
-	SaveMax
+	svCarCode = 1 << iota
+	svCdrCode
+	svDump
+	svFrame
+	svLexical
+	svMax
 )
 
 const (
-	psChangeContext = SaveMax + iota
+	psChangeContext = svMax + iota
 
 	psEvalArguments
 	psEvalArgumentsBuiltin
@@ -121,13 +121,13 @@ const (
 	psReturn
 
 	psMax
-	SaveCode = SaveCarCode | SaveCdrCode
+	svCode = svCarCode | svCdrCode
 )
 
 var (
-	envc        Context
-	envp        Context
-	envs        Context
+	envc        context
+	envp        context
+	envs        context
 	frame0      Cell
 	external    Cell
 	home        = "-"
@@ -135,32 +135,32 @@ var (
 	interactive = false
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
-	namespace   Context
+	namespace   context
 	oldpwdsym   *Symbol
 	parse       Parser
 	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
-	sys         Context
+	sys         context
 	task0       *Task
 )
 
 var next = map[int64][]int64{
-	psEvalArguments:        {SaveCdrCode, psEvalElement},
-	psEvalArgumentsBuiltin: {SaveCdrCode, psEvalElementBuiltin},
+	psEvalArguments:        {svCdrCode, psEvalElement},
+	psEvalArgumentsBuiltin: {svCdrCode, psEvalElementBuiltin},
 	psExecIf:               {psEvalBlock},
-	psExecWhileBody:        {psExecWhileTest, SaveCode, psEvalBlock},
+	psExecWhileBody:        {psExecWhileTest, svCode, psEvalBlock},
 }
 
 /* Bound cell definition. */
 
 type Bound struct {
-	ref     Closure
-	context Cell
+	ref  closure
+	self Cell
 }
 
-func NewBound(ref Closure, context Cell) *Bound {
-	return &Bound{ref, context}
+func NewBound(ref closure, self Cell) *Bound {
+	return &Bound{ref, self}
 }
 
 func (b *Bound) Bool() bool {
@@ -169,7 +169,7 @@ func (b *Bound) Bool() bool {
 
 func (b *Bound) Equal(c Cell) bool {
 	if m, ok := c.(*Bound); ok {
-		return b.ref == m.Ref() && b.context == m.Self()
+		return b.ref == m.Ref() && b.self == m.Self()
 	}
 	return false
 }
@@ -180,19 +180,19 @@ func (b *Bound) String() string {
 
 /* Bound-specific functions */
 
-func (b *Bound) Bind(c Cell) Binding {
-	if c == b.context {
+func (b *Bound) Bind(c Cell) binding {
+	if c == b.self {
 		return b
 	}
 	return NewBound(b.ref, c)
 }
 
-func (b *Bound) Ref() Closure {
+func (b *Bound) Ref() closure {
 	return b.ref
 }
 
 func (b *Bound) Self() Cell {
-	return b.context
+	return b.self
 }
 
 /* Builtin cell definition. */
@@ -202,7 +202,7 @@ type Builtin struct {
 }
 
 func IsBuiltin(c Cell) bool {
-	b, ok := c.(Binding)
+	b, ok := c.(binding)
 	if !ok {
 		return false
 	}
@@ -214,7 +214,7 @@ func IsBuiltin(c Cell) bool {
 	return false
 }
 
-func NewBuiltin(a Function, b, c, l, p Cell, s Context) Closure {
+func NewBuiltin(a function, b, c, l, p Cell, s context) closure {
 	return &Builtin{
 		Command{
 			applier: a,
@@ -238,19 +238,19 @@ func (b *Builtin) String() string {
 /* Command cell definition. */
 
 type Command struct {
-	applier Function
+	applier function
 	body    Cell
 	clabel  Cell
 	slabel  Cell
 	params  Cell
-	scope   Context
+	scope   context
 }
 
 func (c *Command) Bool() bool {
 	return true
 }
 
-func (c *Command) Applier() Function {
+func (c *Command) Applier() function {
 	return c.applier
 }
 
@@ -266,7 +266,7 @@ func (c *Command) Params() Cell {
 	return c.params
 }
 
-func (c *Command) Scope() Context {
+func (c *Command) Scope() context {
 	return c.scope
 }
 
@@ -345,7 +345,7 @@ type Method struct {
 }
 
 func IsMethod(c Cell) bool {
-	b, ok := c.(Binding)
+	b, ok := c.(binding)
 	if !ok {
 		return false
 	}
@@ -357,7 +357,7 @@ func IsMethod(c Cell) bool {
 	return false
 }
 
-func NewMethod(a Function, b, c, l, p Cell, s Context) Closure {
+func NewMethod(a function, b, c, l, p Cell, s context) closure {
 	return &Method{
 		Command{
 			applier: a,
@@ -384,10 +384,10 @@ func (m *Method) String() string {
  */
 
 type Object struct {
-	Context
+	context
 }
 
-func NewObject(v Context) *Object {
+func NewObject(v context) *Object {
 	return &Object{v.Expose()}
 }
 
@@ -396,7 +396,7 @@ func (o *Object) Equal(c Cell) bool {
 		return true
 	}
 	if o, ok := c.(*Object); ok {
-		return o.Context == o.Expose()
+		return o.context == o.Expose()
 	}
 	return false
 }
@@ -408,7 +408,7 @@ func (o *Object) String() string {
 /* Object-specific functions */
 
 func (o *Object) Access(key Cell) Reference {
-	var obj Context
+	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Prev().Access(key); value != nil {
 			return value
@@ -421,7 +421,7 @@ func (o *Object) Access(key Cell) Reference {
 func (o *Object) Complete(word string) []string {
 	cl := []string{}
 
-	var obj Context
+	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
 		cl = append(cl, obj.Faces().Prev().Complete(word)...)
 	}
@@ -429,14 +429,14 @@ func (o *Object) Complete(word string) []string {
 	return cl
 }
 
-func (o *Object) Copy() Context {
+func (o *Object) Copy() context {
 	return &Object{
-		&Scope{o.Expose().Faces().Copy(), o.Context.Prev()},
+		&Scope{o.Expose().Faces().Copy(), o.context.Prev()},
 	}
 }
 
-func (o *Object) Expose() Context {
-	return o.Context
+func (o *Object) Expose() context {
+	return o.context
 }
 
 func (o *Object) Define(key Cell, value Cell) {
@@ -474,7 +474,7 @@ func (r *Registers) Complete(word string) []string {
 	cl := toContext(r.Lexical).Complete(word)
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
-		o := Car(f).(Context)
+		o := Car(f).(context)
 		cl = append(cl, o.Complete(word)...)
 	}
 
@@ -498,7 +498,7 @@ func (r *Registers) MakeEnv() []string {
 	e := toContext(r.Lexical).Exported()
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
-		o := Car(f).(Context)
+		o := Car(f).(context)
 		for k, v := range o.Exported() {
 			if _, ok := e[k]; !ok {
 				e[k] = v
@@ -515,22 +515,22 @@ func (r *Registers) MakeEnv() []string {
 	return l
 }
 
-func (r *Registers) NewBlock(lexical Context) {
+func (r *Registers) NewBlock(lexical context) {
 	r.Lexical = NewScope(lexical, nil)
 }
 
-func (r *Registers) NewFrame(lexical Context) {
-	state := int64(SaveLexical)
+func (r *Registers) NewFrame(lexical context) {
+	state := int64(svLexical)
 
 	c := toContext(r.Lexical)
 	v := c.Visibility()
-	if v != nil && v != Car(r.Frame).(Context).Visibility() {
-		state |= SaveFrame
+	if v != nil && v != Car(r.Frame).(context).Visibility() {
+		state |= svFrame
 	}
 
 	r.ReplaceStates(state, psEvalBlock)
 
-	if state&SaveFrame > 0 {
+	if state&svFrame > 0 {
 		r.Frame = Cons(NewObject(c), r.Frame)
 	}
 
@@ -539,7 +539,7 @@ func (r *Registers) NewFrame(lexical Context) {
 
 func (r *Registers) NewStates(l ...int64) {
 	for _, f := range l {
-		if f >= SaveMax {
+		if f >= svMax {
 			r.Stack = Cons(NewInteger(f), r.Stack)
 			continue
 		}
@@ -547,11 +547,11 @@ func (r *Registers) NewStates(l ...int64) {
 		p := *r
 
 		s := r.GetState()
-		if s < SaveMax && f < SaveMax {
+		if s < svMax && f < svMax {
 			// Previous and current states are save states.
 			c := f & s
-			if f&SaveCode > 0 || s&SaveCode > 0 {
-				c |= SaveCode
+			if f&svCode > 0 || s&svCode > 0 {
+				c |= svCode
 			}
 			if c&f == f {
 				// Nothing new to save.
@@ -560,31 +560,31 @@ func (r *Registers) NewStates(l ...int64) {
 				// Previous save state is a subset.
 				p.RestoreState()
 				r.Stack = p.Stack
-				if c&SaveCode > 0 {
-					f |= SaveCode
+				if c&svCode > 0 {
+					f |= svCode
 				}
 			}
 		}
 
-		if f&SaveCode > 0 {
-			if f&SaveCode == SaveCode {
+		if f&svCode > 0 {
+			if f&svCode == svCode {
 				r.Stack = Cons(p.Code, r.Stack)
-			} else if f&SaveCarCode > 0 {
+			} else if f&svCarCode > 0 {
 				r.Stack = Cons(Car(p.Code), r.Stack)
-			} else if f&SaveCdrCode > 0 {
+			} else if f&svCdrCode > 0 {
 				r.Stack = Cons(Cdr(p.Code), r.Stack)
 			}
 		}
 
-		if f&SaveDump > 0 {
+		if f&svDump > 0 {
 			r.Stack = Cons(p.Dump, r.Stack)
 		}
 
-		if f&SaveFrame > 0 {
+		if f&svFrame > 0 {
 			r.Stack = Cons(p.Frame, r.Stack)
 		}
 
-		if f&SaveLexical > 0 {
+		if f&svLexical > 0 {
 			r.Stack = Cons(p.Lexical, r.Stack)
 		}
 
@@ -596,23 +596,23 @@ func (r *Registers) RemoveState() {
 	f := r.GetState()
 
 	r.Stack = Cdr(r.Stack)
-	if f >= SaveMax {
+	if f >= svMax {
 		return
 	}
 
-	if f&SaveLexical > 0 {
+	if f&svLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&SaveFrame > 0 {
+	if f&svFrame > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&SaveDump > 0 {
+	if f&svDump > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&SaveCode > 0 {
+	if f&svCode > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 }
@@ -625,26 +625,26 @@ func (r *Registers) ReplaceStates(l ...int64) {
 func (r *Registers) RestoreState() {
 	f := r.GetState()
 
-	if f == 0 || f >= SaveMax {
+	if f == 0 || f >= svMax {
 		return
 	}
 
-	if f&SaveLexical > 0 {
+	if f&svLexical > 0 {
 		r.Stack = Cdr(r.Stack)
-		r.Lexical = Car(r.Stack).(Context)
+		r.Lexical = Car(r.Stack).(context)
 	}
 
-	if f&SaveFrame > 0 {
+	if f&svFrame > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Frame = Car(r.Stack)
 	}
 
-	if f&SaveDump > 0 {
+	if f&svDump > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Dump = Car(r.Stack)
 	}
 
-	if f&SaveCode > 0 {
+	if f&svCode > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Code = Car(r.Stack)
 	}
@@ -665,10 +665,10 @@ func (r *Registers) Return(rv Cell) bool {
 
 type Scope struct {
 	env  *Env
-	prev Context
+	prev context
 }
 
-func NewScope(prev Context, fixed *Env) *Scope {
+func NewScope(prev context, fixed *Env) *Scope {
 	return &Scope{NewEnv(NewEnv(fixed)), prev}
 }
 
@@ -687,7 +687,7 @@ func (s *Scope) String() string {
 /* Scope-specific functions */
 
 func (s *Scope) Access(key Cell) Reference {
-	var obj Context
+	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
 			return value
@@ -700,7 +700,7 @@ func (s *Scope) Access(key Cell) Reference {
 func (s *Scope) Complete(word string) []string {
 	cl := []string{}
 
-	var obj Context
+	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		cl = append(cl, obj.Faces().Complete(word)...)
 	}
@@ -708,7 +708,7 @@ func (s *Scope) Complete(word string) []string {
 	return cl
 }
 
-func (s *Scope) Copy() Context {
+func (s *Scope) Copy() context {
 	return &Scope{s.env.Copy(), s.prev}
 }
 
@@ -716,7 +716,7 @@ func (s *Scope) Exported() map[string]Cell {
 	return s.env.Prev().Prefixed("$")
 }
 
-func (s *Scope) Expose() Context {
+func (s *Scope) Expose() context {
 	return s
 }
 
@@ -724,7 +724,7 @@ func (s *Scope) Faces() *Env {
 	return s.env
 }
 
-func (s *Scope) Prev() Context {
+func (s *Scope) Prev() context {
 	return s.prev
 }
 
@@ -737,7 +737,7 @@ func (s *Scope) Public(key Cell, value Cell) {
 }
 
 func (s *Scope) Visibility() *Env {
-	var obj Context
+	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		env := obj.Faces().Prev()
 		if !env.Empty() {
@@ -748,27 +748,27 @@ func (s *Scope) Visibility() *Env {
 	return nil
 }
 
-func (s *Scope) DefineBuiltin(k string, a Function) {
+func (s *Scope) DefineBuiltin(k string, a function) {
 	s.Define(NewSymbol(k),
 		NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s)))
 }
 
-func (s *Scope) DefineMethod(k string, a Function) {
+func (s *Scope) DefineMethod(k string, a function) {
 	s.Define(NewSymbol(k),
 		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
-func (s *Scope) PublicMethod(k string, a Function) {
+func (s *Scope) PublicMethod(k string, a function) {
 	s.Public(NewSymbol(k),
 		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
-func (s *Scope) DefineSyntax(k string, a Function) {
+func (s *Scope) DefineSyntax(k string, a function) {
 	s.Define(NewSymbol(k),
 		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
 
-func (s *Scope) PublicSyntax(k string, a Function) {
+func (s *Scope) PublicSyntax(k string, a function) {
 	s.Public(NewSymbol(k),
 		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
@@ -780,7 +780,7 @@ type Syntax struct {
 }
 
 func IsSyntax(c Cell) bool {
-	b, ok := c.(Binding)
+	b, ok := c.(binding)
 	if !ok {
 		return false
 	}
@@ -792,7 +792,7 @@ func IsSyntax(c Cell) bool {
 	return false
 }
 
-func NewSyntax(a Function, b, c, l, p Cell, s Context) Closure {
+func NewSyntax(a function, b, c, l, p Cell, s context) closure {
 	return &Syntax{
 		Command{
 			applier: a,
@@ -819,7 +819,7 @@ type Task struct {
 	*Job
 	Registers
 	Done      chan Cell
-	Eval      chan Message
+	Eval      chan message
 	children  map[*Task]bool
 	childrenl *sync.RWMutex
 	parent    *Task
@@ -827,7 +827,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, l Context, p *Task, cli ui) *Task {
+func NewTask(c Cell, l context, p *Task, cli ui) *Task {
 	if l == nil {
 		l = scope0
 	}
@@ -856,7 +856,7 @@ func NewTask(c Cell, l Context, p *Task, cli ui) *Task {
 			Lexical: l,
 		},
 		Done:      make(chan Cell, 1),
-		Eval:      make(chan Message, 1),
+		Eval:      make(chan message, 1),
 		children:  make(map[*Task]bool),
 		childrenl: &sync.RWMutex{},
 		parent:    p,
@@ -890,7 +890,7 @@ func (t *Task) Equal(c Cell) bool {
 func (t *Task) Apply(args Cell) bool {
 	caller := t.Lexical
 
-	m := Car(t.Dump).(Binding)
+	m := Car(t.Dump).(binding)
 
 	t.NewFrame(m.Ref().Scope())
 
@@ -940,7 +940,7 @@ func (t *Task) Chdir(dir string) bool {
 	return t.Return(rv)
 }
 
-func (t *Task) Closure(n ClosureGenerator) bool {
+func (t *Task) Closure(n closurer) bool {
 	slabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
@@ -1083,7 +1083,7 @@ func (t *Task) External(args Cell) bool {
 	return t.Return(rv)
 }
 
-func (t *Task) Launch() {
+func (t *Task) launch() {
 	t.Run(nil, "")
 	close(t.Done)
 }
@@ -1110,7 +1110,7 @@ func (t *Task) Listen() {
 		SetCdr(t.Code, end)
 
 		t.Code = end
-		t.NewStates(SaveCode, psEvalCommand)
+		t.NewStates(svCode, psEvalCommand)
 
 		t.Code = m.Cmd
 		rv := t.Run(end, m.Problem)
@@ -1142,17 +1142,17 @@ func (t *Task) LexicalVar(state int64) bool {
 	}
 
 	if s != c {
-		t.NewStates(SaveLexical)
+		t.NewStates(svLexical)
 		t.Lexical = s
 	}
 
 	t.NewStates(state)
 
 	if s != c {
-		t.NewStates(SaveCarCode | SaveLexical)
+		t.NewStates(svCarCode | svLexical)
 		t.Lexical = c
 	} else {
-		t.NewStates(SaveCarCode)
+		t.NewStates(svCarCode)
 	}
 
 	t.NewStates(psEvalElement)
@@ -1182,7 +1182,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 		t.Dump = Cons(sym, t.Dump)
 	} else if simple && !isSimple(c.Get()) {
 		t.Dump = Cons(sym, t.Dump)
-	} else if a, ok := c.Get().(Binding); ok {
+	} else if a, ok := c.Get().(binding); ok {
 		t.Dump = Cons(a.Bind(s), t.Dump)
 	} else {
 		t.Dump = Cons(c.Get(), t.Dump)
@@ -1228,7 +1228,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 
 			fallthrough
 		case psExecSyntax:
-			m := Car(t.Dump).(Binding)
+			m := Car(t.Dump).(binding)
 
 			if m.Ref().Applier()(t, t.Code) {
 				continue
@@ -1273,7 +1273,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 			if Cdr(t.Code) == Null || !IsCons(Cadr(t.Code)) {
 				t.ReplaceStates(psEvalCommand)
 			} else {
-				t.NewStates(SaveCdrCode, psEvalCommand)
+				t.NewStates(svCdrCode, psEvalCommand)
 			}
 
 			t.Code = Car(t.Code)
@@ -1287,7 +1287,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 			}
 
 			t.ReplaceStates(psExecCommand,
-				SaveCdrCode,
+				svCdrCode,
 				psEvalElement)
 			t.Code = Car(t.Code)
 
@@ -1300,7 +1300,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 
 				t.ReplaceStates(psExecBuiltin,
 					psEvalArgumentsBuiltin)
-			case Binding:
+			case binding:
 				switch k.Ref().(type) {
 				case *Builtin:
 					t.ReplaceStates(psExecBuiltin,
@@ -1341,10 +1341,10 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 				break
 			} else if IsCons(t.Code) {
 				if IsAtom(Cdr(t.Code)) {
-					t.ReplaceStates(SaveLexical,
+					t.ReplaceStates(svLexical,
 						psEvalMember,
 						psChangeContext,
-						SaveCdrCode,
+						svCdrCode,
 						psEvalElement)
 					t.Code = Car(t.Code)
 				} else {
@@ -1395,7 +1395,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 
 		case psExecWhileTest:
 			t.ReplaceStates(psExecWhileBody,
-				SaveCode,
+				svCode,
 				psEvalElement)
 			t.Code = Car(t.Code)
 			t.Dump = Cdr(t.Dump)
@@ -1414,7 +1414,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 			break
 
 		default:
-			if state >= SaveMax {
+			if state >= svMax {
 				msg := fmt.Sprintf("invalid state: %s",
 					t.Code)
 				panic(msg)
@@ -1435,7 +1435,7 @@ func (t *Task) Runnable() bool {
 }
 
 func (t *Task) Self() Cell {
-	return Car(t.Dump).(Binding).Self()
+	return Car(t.Dump).(binding).Self()
 }
 
 func (t *Task) Stop() {
@@ -1509,7 +1509,7 @@ func (t *Task) Throw(file string, line int, text string) {
 		}
 
 		switch t.Lexical.(type) {
-		case Context:
+		case context:
 			resolved, _ = Resolve(t.Lexical, t.Frame, throw)
 		}
 
@@ -1543,7 +1543,7 @@ func (t *Task) Throw(file string, line int, text string) {
 }
 
 func (t *Task) Validate(
-	args Cell, minimum, maximum int64, validators ...Validator,
+	args Cell, minimum, maximum int64, validators ...validator,
 ) {
 	given := Length(args)
 
@@ -1596,10 +1596,10 @@ func (t *Task) Wait() {
 /* Unbound cell definition. */
 
 type Unbound struct {
-	ref Closure
+	ref closure
 }
 
-func NewUnbound(Ref Closure) *Unbound {
+func NewUnbound(Ref closure) *Unbound {
 	return &Unbound{Ref}
 }
 
@@ -1620,11 +1620,11 @@ func (u *Unbound) String() string {
 
 /* Unbound-specific functions */
 
-func (u *Unbound) Bind(c Cell) Binding {
+func (u *Unbound) Bind(c Cell) binding {
 	return u
 }
 
-func (u *Unbound) Ref() Closure {
+func (u *Unbound) Ref() closure {
 	return u.ref
 }
 
@@ -1659,7 +1659,7 @@ func ForegroundTask() *Task {
 
 func IsContext(c Cell) bool {
 	switch c.(type) {
-	case Context:
+	case context:
 		return true
 	}
 	return false
@@ -1669,7 +1669,7 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func LaunchForegroundTask(cli ui) {
+func launchForegroundTask(cli ui) {
 	if task0 != nil {
 		mode, _ := cli.TerminalMode()
 		task0.Job.mode = mode
@@ -1708,11 +1708,11 @@ func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 }
 
 func Start(p Parser, cli ui) {
-	LaunchForegroundTask(cli)
+	launchForegroundTask(cli)
 
 	parse = p
 	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
-		task0.Eval <- Message{Cmd: c, File: f, Line: l, Problem: p}
+		task0.Eval <- message{Cmd: c, File: f, Line: l, Problem: p}
 		return <-task0.Done, true
 	}
 
@@ -1808,7 +1808,7 @@ func braceExpand(arg string) []string {
 	return expanded
 }
 
-func conduitContext() Context {
+func conduitContext() context {
 	if envc != nil {
 		return envc
 	}
@@ -2006,7 +2006,7 @@ func init() {
 		c, o := Resolve(t.Self(), nil, k)
 		if c == nil {
 			panic("'" + s + "' undefined")
-		} else if a, ok := c.Get().(Binding); ok {
+		} else if a, ok := c.Get().(binding); ok {
 			return t.Return(a.Bind(o))
 		} else {
 			return t.Return(c.Get())
@@ -2046,7 +2046,7 @@ func init() {
 		scope := toContext(t.Self()).Expose()
 		t.RemoveState()
 		if t.Lexical != scope {
-			t.NewStates(SaveLexical)
+			t.NewStates(svLexical)
 			t.Lexical = scope
 		}
 		t.NewStates(psEvalElement)
@@ -2381,15 +2381,15 @@ func init() {
 
 	/* Syntax. */
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveLexical, psEvalBlock)
+		t.ReplaceStates(svLexical, psEvalBlock)
 
 		t.NewBlock(toContext(t.Lexical))
 
 		return true
 	})
 	scope0.DefineSyntax("if", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveLexical,
-			psExecIf, SaveCode, psEvalElement)
+		t.ReplaceStates(svLexical,
+			psExecIf, svCode, psEvalElement)
 
 		t.NewBlock(toContext(t.Lexical))
 
@@ -2413,12 +2413,12 @@ func init() {
 
 		t.Code = Car(t.Code)
 		if !IsCons(t.Code) {
-			t.ReplaceStates(psExecSet, SaveCode)
+			t.ReplaceStates(psExecSet, svCode)
 		} else {
-			t.ReplaceStates(SaveLexical,
-				psExecSet, SaveCdrCode,
+			t.ReplaceStates(svLexical,
+				psExecSet, svCdrCode,
 				psChangeContext, psEvalElement,
-				SaveCarCode)
+				svCarCode)
 		}
 
 		t.NewStates(psEvalElement)
@@ -2430,7 +2430,7 @@ func init() {
 		c := toContext(t.Lexical)
 		child := NewTask(t.Code, NewScope(c, nil), t, nil)
 
-		go child.Launch()
+		go child.launch()
 
 		SetCar(t.Dump, child)
 
@@ -2445,7 +2445,7 @@ func init() {
 		return true
 	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
-		t.ReplaceStates(SaveLexical, psExecWhileTest)
+		t.ReplaceStates(svLexical, psExecWhileTest)
 
 		return true
 	})
@@ -2481,7 +2481,7 @@ func init() {
 	initPlatformSpecific()
 }
 
-func interpolate(l Context, d Cell, s string) string {
+func interpolate(l context, d Cell, s string) string {
 	f := func(ref string) string {
 		if ref == "$$" {
 			return "$"
@@ -2544,7 +2544,7 @@ func number(s string) bool {
 	return err == nil && m
 }
 
-func pairContext() Context {
+func pairContext() context {
 	if envp != nil {
 		return envp
 	}
@@ -2686,7 +2686,7 @@ func setForegroundTask(t *Task) {
 	task0.Continue()
 }
 
-func stringContext() Context {
+func stringContext() context {
 	if envs != nil {
 		return envs
 	}
@@ -2782,7 +2782,7 @@ func stringContext() Context {
 	return envs
 }
 
-/* Convert Context into a Conduit. */
+/* Convert cell into a Conduit. */
 func toConduit(c Cell) Conduit {
 	conduit, ok := c.(Conduit)
 	if !ok {
@@ -2792,10 +2792,10 @@ func toConduit(c Cell) Conduit {
 	return conduit
 }
 
-/* Convert Cell into a Context. */
-func toContext(c Cell) Context {
+/* Convert Cell into a context. */
+func toContext(c Cell) context {
 	switch t := c.(type) {
-	case Context:
+	case context:
 		return t
 	case *Channel:
 		return conduitContext()

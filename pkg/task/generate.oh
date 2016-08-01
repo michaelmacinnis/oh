@@ -118,7 +118,7 @@ for t: method (l) = {
 }
 echo "}"
 
-echo "\nfunc bindStringPredicates(e Context) {"
+echo "\nfunc bindStringPredicates(e context) {"
 
 define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-graphic IsGraphic) (is-letter IsLetter) \
@@ -131,7 +131,7 @@ for t: method (l) = {
 	define m: l::get 1
 	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.${m}(c) {
@@ -150,7 +150,7 @@ for t: method (l) = {
 	define m: l::get 1
 	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		return t.Return(NewString(strings.${m}(s)))
 	})"

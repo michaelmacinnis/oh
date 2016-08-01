@@ -4,8 +4,7 @@ define line-count-file: "/"::join (... lib/doctest) 020-generated-readme.oh
 define go-gloc: integer @`(find . -name 'generated.go' | xargs cat | wc -l)
 define oh-gloc: integer @`(find . -name 'generate.oh' |
     grep -v '/bin/' | xargs cat | wc -l)
-define oh-loc: integer @`(find . -name '*.oh' |
-    grep -v '/bin/' | grep -E 'generate|boot' | xargs cat | wc -l)
+define oh-loc: integer @`(find . -name 'boot.oh' | xargs cat | wc -l)
 define total-loc: add oh-loc: integer @`(find . -name '*.go' |
     sed -e 's/grammar.go/grammar.y/g' |
     grep -Ev 'version|generated' | xargs cat | wc -l)

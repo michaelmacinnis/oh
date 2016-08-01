@@ -23,7 +23,7 @@ type registration struct {
 
 var (
 	done0    chan Cell
-	eval0    chan Message
+	eval0    chan message
 	incoming chan os.Signal
 	register chan registration
 )
@@ -67,7 +67,7 @@ func broker(cli ui) {
 					task0.Stop()
 				}
 
-				LaunchForegroundTask(cli)
+				launchForegroundTask(cli)
 
 			case v = <-task0.Done:
 				if task0 != prev {
@@ -83,7 +83,7 @@ func broker(cli ui) {
 }
 
 func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
-	eval0 <- Message{Cmd: c, File: file, Line: line, Problem: problem}
+	eval0 <- message{Cmd: c, File: file, Line: line, Problem: problem}
 	r := <-done0
 
 	task0.Job.Command = ""
@@ -107,7 +107,7 @@ func exit(c Cell) {
 
 func init() {
 	done0 = make(chan Cell)
-	eval0 = make(chan Message)
+	eval0 = make(chan message)
 
 	active := make(chan bool)
 	notify := make(chan notification)

@@ -318,10 +318,10 @@ func bindTheRest(s *Scope) {
 	})
 }
 
-func bindStringPredicates(e Context) {
+func bindStringPredicates(e context) {
 
 	e.PublicMethod("is-control", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsControl(c) {
@@ -333,7 +333,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-digit", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsDigit(c) {
@@ -345,7 +345,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-graphic", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsGraphic(c) {
@@ -357,7 +357,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-letter", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLetter(c) {
@@ -369,7 +369,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-lower", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsLower(c) {
@@ -381,7 +381,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-mark", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsMark(c) {
@@ -393,7 +393,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-print", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPrint(c) {
@@ -405,7 +405,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-punct", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsPunct(c) {
@@ -417,7 +417,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-space", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSpace(c) {
@@ -429,7 +429,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-symbol", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsSymbol(c) {
@@ -441,7 +441,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-title", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsTitle(c) {
@@ -453,7 +453,7 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("is-upper", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		for _, c := range s {
 			if !unicode.IsUpper(c) {
@@ -465,19 +465,19 @@ func bindStringPredicates(e Context) {
 	})
 
 	e.PublicMethod("lower", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		return t.Return(NewString(strings.ToLower(s)))
 	})
 
 	e.PublicMethod("title", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		return t.Return(NewString(strings.ToTitle(s)))
 	})
 
 	e.PublicMethod("upper", func(t *Task, args Cell) bool {
-		s := Raw(toString(Car(t.Dump).(Binding).Self()))
+		s := Raw(toString(Car(t.Dump).(binding).Self()))
 
 		return t.Return(NewString(strings.ToUpper(s)))
 	})
