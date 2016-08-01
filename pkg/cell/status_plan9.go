@@ -5,9 +5,9 @@
 package cell
 
 import (
-        "fmt"
-        "math/big"
-        "strconv"
+	"fmt"
+	"math/big"
+	"strconv"
 )
 
 type Atom interface {
@@ -22,8 +22,8 @@ type Atom interface {
 var (
 	ExitFailure *Status
 	ExitSuccess *Status
-	failure = "failure"
-	success = ""
+	failure     = "failure"
+	success     = ""
 )
 
 func init() {

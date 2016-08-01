@@ -9,7 +9,6 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/system"
-	"github.com/peterh/liner"
 	"math/rand"
 	"os"
 	"path"
@@ -21,6 +20,10 @@ import (
 	"sync"
 	"time"
 )
+
+type ApplyModer interface {
+	ApplyMode() error
+}
 
 type Binding interface {
 	Cell
@@ -78,7 +81,8 @@ type Validator func(c Cell) bool
 type ui interface {
 	Close() error
 	Exists() bool
-	ReadString(delim byte) (line string, err error)
+	ReadString(delim byte) (string, error)
+	TerminalMode() (ApplyModer, error)
 }
 
 const (
@@ -326,11 +330,11 @@ type Job struct {
 	*sync.Mutex
 	Command string
 	Group   int
-	mode    liner.ModeApplier
+	mode    ApplyModer
 }
 
-func NewJob() *Job {
-	mode, _ := liner.TerminalMode()
+func NewJob(cli ui) *Job {
+	mode, _ := cli.TerminalMode()
 	return &Job{&sync.Mutex{}, "", 0, mode}
 }
 
@@ -823,7 +827,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, l Context, p *Task) *Task {
+func NewTask(c Cell, l Context, p *Task, cli ui) *Task {
 	if l == nil {
 		l = scope0
 	}
@@ -832,7 +836,7 @@ func NewTask(c Cell, l Context, p *Task) *Task {
 	var j *Job
 	if p == nil {
 		frame = frame0
-		j = NewJob()
+		j = NewJob(cli)
 	} else {
 		frame = p.Frame
 		j = p.Job
@@ -1665,12 +1669,12 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func LaunchForegroundTask() {
+func LaunchForegroundTask(cli ui) {
 	if task0 != nil {
-		mode, _ := liner.TerminalMode()
+		mode, _ := cli.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(nil, nil, nil)
+	task0 = NewTask(nil, nil, nil, cli)
 
 	go task0.Listen()
 }
@@ -1704,7 +1708,7 @@ func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
 }
 
 func Start(p Parser, cli ui) {
-	LaunchForegroundTask()
+	LaunchForegroundTask(cli)
 
 	parse = p
 	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
@@ -1762,7 +1766,7 @@ func Start(p Parser, cli ui) {
 	} else if cli.Exists() {
 		interactive = true
 
-		initSignalHandling()
+		initSignalHandling(cli)
 
 		system.BecomeProcessGroupLeader()
 
@@ -2424,7 +2428,7 @@ func init() {
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		c := toContext(t.Lexical)
-		child := NewTask(t.Code, NewScope(c, nil), t)
+		child := NewTask(t.Code, NewScope(c, nil), t, nil)
 
 		go child.Launch()
 

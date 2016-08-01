@@ -10,7 +10,7 @@ import (
 
 func initPlatformSpecific() {}
 
-func initSignalHandling() {}
+func initSignalHandling(ui) {}
 
 func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
 	task0.Eval <- Message{Cmd: c, File: file, Line: line, Problem: problem}

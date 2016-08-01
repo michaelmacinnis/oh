@@ -28,7 +28,7 @@ var (
 	register chan registration
 )
 
-func broker() {
+func broker(cli ui) {
 	for task0.Stack != Null {
 		for reading := true; reading; {
 			select {
@@ -67,7 +67,7 @@ func broker() {
 					task0.Stop()
 				}
 
-				LaunchForegroundTask()
+				LaunchForegroundTask(cli)
 
 			case v = <-task0.Done:
 				if task0 != prev {
@@ -134,7 +134,7 @@ func initPlatformSpecific() {
 	})
 }
 
-func initSignalHandling() {
+func initSignalHandling(cli ui) {
 	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
 
 	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
@@ -142,7 +142,7 @@ func initSignalHandling() {
 
 	signal.Notify(incoming, signals...)
 
-	go broker()
+	go broker(cli)
 }
 
 func monitor(active chan bool, notify chan notification) {

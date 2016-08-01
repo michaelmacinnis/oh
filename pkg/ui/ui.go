@@ -101,6 +101,10 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	return
 }
 
+func (i *cli) TerminalMode() (task.ApplyModer, error) {
+	return liner.TerminalMode()
+}
+
 func complete(line string, pos int) (string, []string, string) {
 	head := line[:pos]
 	tail := line[pos:]
