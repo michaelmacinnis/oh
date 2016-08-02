@@ -470,27 +470,35 @@ func (r *Registers) Arguments() Cell {
 	return l
 }
 
-func (r *Registers) Complete(fields []string, word string) (completions []string) {
+func (r *Registers) Complete(fields []string, word string) (cmpltns []string) {
 	defer func() {
 		r := recover()
 		if r == nil {
 			return
 		}
 
-		completions = []string{word}
+		cmpltns = []string{word}
 	}()
 
-	parts := strings.SplitN(word, "::", 2)
+	parts := strings.Split(word, "::")
 	if len(parts) == 2 {
+		var c context = nil
+
 		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(parts[0]))
 		if ref != nil {
-			methods := toContext(ref.Get()).Complete(false, parts[1])
-			for k, v := range methods {
-				methods[k] = parts[0] + "::" + v
-			}
-
-			return methods
+			c = toContext(ref.Get())
+		} else if len(parts[0]) > 1 &&
+			strings.HasPrefix(parts[0], "\"") &&
+			strings.HasSuffix(parts[0], "\"") {
+			c = stringContext()
 		}
+
+		methods := c.Complete(false, parts[1])
+		for k, v := range methods {
+			methods[k] = parts[0] + "::" + v
+		}
+
+		return methods
 	}
 
 	simple := false
