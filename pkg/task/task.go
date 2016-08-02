@@ -470,7 +470,29 @@ func (r *Registers) Arguments() Cell {
 	return l
 }
 
-func (r *Registers) Complete(fields []string, word string) []string {
+func (r *Registers) Complete(fields []string, word string) (completions []string) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+
+		completions = []string{word}
+	}()
+
+	parts := strings.SplitN(word, "::", 2)
+	if len(parts) == 2 {
+		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(parts[0]))
+		if ref != nil {
+			methods := toContext(ref.Get()).Complete(false, parts[1])
+			for k, v := range methods {
+				methods[k] = parts[0] + "::" + v
+			}
+
+			return methods
+		}
+	}
+
 	simple := false
 	if len(fields) > 1 {
 		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(fields[0]))
