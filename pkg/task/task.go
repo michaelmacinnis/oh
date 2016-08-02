@@ -51,7 +51,7 @@ type context interface {
 
 	Access(key Cell) Reference
 	Copy() context
-	Complete(word string) []string
+	Complete(simple bool, word string) []string
 	Define(key, value Cell)
 	Exported() map[string]Cell
 	Expose() context
@@ -418,12 +418,12 @@ func (o *Object) Access(key Cell) Reference {
 	return nil
 }
 
-func (o *Object) Complete(word string) []string {
+func (o *Object) Complete(simple bool, word string) []string {
 	cl := []string{}
 
 	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Prev().Complete(word)...)
+		cl = append(cl, obj.Faces().Prev().Complete(simple, word)...)
 	}
 
 	return cl
@@ -470,12 +470,24 @@ func (r *Registers) Arguments() Cell {
 	return l
 }
 
-func (r *Registers) Complete(word string) []string {
-	cl := toContext(r.Lexical).Complete(word)
+func (r *Registers) Complete(fields []string, word string) []string {
+	simple := false
+	if len(fields) > 1 {
+		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(fields[0]))
+		if ref != nil {
+			v := ref.Get()
+			if IsBuiltin(v) {
+				simple = true
+			}
+		} else {
+			simple = true
+		}
+	}
+	cl := toContext(r.Lexical).Complete(simple, word)
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(context)
-		cl = append(cl, o.Complete(word)...)
+		cl = append(cl, o.Complete(simple, word)...)
 	}
 
 	return cl
@@ -697,12 +709,12 @@ func (s *Scope) Access(key Cell) Reference {
 	return nil
 }
 
-func (s *Scope) Complete(word string) []string {
+func (s *Scope) Complete(simple bool, word string) []string {
 	cl := []string{}
 
 	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Complete(word)...)
+		cl = append(cl, obj.Faces().Complete(simple, word)...)
 	}
 
 	return cl
@@ -713,7 +725,7 @@ func (s *Scope) Copy() context {
 }
 
 func (s *Scope) Exported() map[string]Cell {
-	return s.env.Prev().Prefixed("$")
+	return s.env.Prev().Prefixed(true, "$")
 }
 
 func (s *Scope) Expose() context {
@@ -1180,7 +1192,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 			return false, "'" + r + "' undefined"
 		}
 		t.Dump = Cons(sym, t.Dump)
-	} else if simple && !isSimple(c.Get()) {
+	} else if simple && !IsSimple(c.Get()) {
 		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(binding); ok {
 		t.Dump = Cons(a.Bind(s), t.Dump)
@@ -1956,7 +1968,7 @@ func init() {
 		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
-		for _, s := range self.Complete("") {
+		for _, s := range self.Complete(false, "") {
 			l = Cons(NewSymbol(s), l)
 		}
 		return t.Return(l)
@@ -1974,7 +1986,7 @@ func init() {
 		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
-		for _, s := range self.Faces().Prev().Complete("") {
+		for _, s := range self.Faces().Prev().Complete(false, "") {
 			l = Cons(NewSymbol(s), l)
 		}
 		return t.Return(l)
@@ -2507,10 +2519,6 @@ func interpolate(l context, d Cell, s string) string {
 
 	r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
 	return r.ReplaceAllStringFunc(s, f)
-}
-
-func isSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
 }
 
 func jobControlEnabled() bool {

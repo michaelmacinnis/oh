@@ -302,8 +302,8 @@ func (e *Env) Add(key Cell, value Cell) {
 	e.hash[key.String()] = NewVariable(value)
 }
 
-func (e *Env) Complete(word string) []string {
-	p := e.Prefixed(word)
+func (e *Env) Complete(simple bool, word string) []string {
+	p := e.Prefixed(simple, word)
 
 	cl := make([]string, 0, len(p))
 
@@ -312,7 +312,7 @@ func (e *Env) Complete(word string) []string {
 	}
 
 	if e.prev != nil {
-		cl = append(cl, e.prev.Complete(word)...)
+		cl = append(cl, e.prev.Complete(simple, word)...)
 	}
 
 	return cl
@@ -339,15 +339,18 @@ func (e *Env) Empty() bool {
 	return len(e.hash) == 0
 }
 
-func (e *Env) Prefixed(prefix string) map[string]Cell {
+func (e *Env) Prefixed(simple bool, prefix string) map[string]Cell {
 	e.RLock()
 	defer e.RUnlock()
 
 	r := map[string]Cell{}
 
-	for k, v := range e.hash {
+	for k, ref := range e.hash {
 		if strings.HasPrefix(k, prefix) {
-			r[k] = v.Get()
+			v := ref.Get()
+			if !simple || IsSimple(v) {
+				r[k] = ref.Get()
+			}
 		}
 	}
 

@@ -74,6 +74,10 @@ func IsNull(c Cell) bool {
 	return c == Null
 }
 
+func IsSimple(c Cell) bool {
+	return IsAtom(c) || IsCons(c)
+}
+
 func IsNumber(c Cell) bool {
 	switch t := c.(type) {
 	case *Symbol:

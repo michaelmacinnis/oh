@@ -110,23 +110,30 @@ func complete(line string, pos int) (string, []string, string) {
 	tail := line[pos:]
 
 	fields := strings.Fields(head)
+	count := len(fields)
 
-	if len(fields) == 0 {
+	if count == 0 {
 		return head, []string{"    "}, tail
 	}
 
-	word := fields[len(fields)-1]
+	word := fields[count-1]
 	if !strings.HasSuffix(head, word) {
 		return head, []string{}, tail
 	}
 
+	// Remove word from head so line == head + word + tail
 	head = head[0 : len(head)-len(word)]
 
-	completions := task.ForegroundTask().Complete(word)
-	completions = append(completions, files(word)...)
-	if len(fields) == 1 {
-		completions = append(completions, executables(word)...)
+	var completions []string
+	if count == 1 {
+		completions = executables(word)
+	} else {
+		completions = files(word)
 	}
+	completions = append(
+		completions,
+		task.ForegroundTask().Complete(fields, word)...,
+	)
 
 	if len(completions) == 0 {
 		return head, []string{word}, tail
