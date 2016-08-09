@@ -39,7 +39,3 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 }
 
 func TerminateProcess(pid int) {}
-
-func getpgrp() int {
-	return -1
-}

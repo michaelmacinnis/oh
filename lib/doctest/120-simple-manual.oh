@@ -12,15 +12,15 @@
 mkdir /tmp/simple-commands
 cd /tmp/simple-commands
 touch 1 2 3
-ls -l | awk "{ print $1 FS $9 }" | tr -cd '\n 0-9a-z-' # Remove characters.
+ls -l | awk "{ print $9 }"
 rm 1 2 3
 cd _origin_
 rmdir /tmp/simple-commands
 
-#-     total 
-#-     -rw-rw-r-- 1
-#-     -rw-rw-r-- 2
-#-     -rw-rw-r-- 3
+#-     
+#-     1
+#-     2
+#-     3
 
 ## is a command that prints a list of files in the current directory. The
 ## argument `-l` tells `ls` to print status information, the size and the

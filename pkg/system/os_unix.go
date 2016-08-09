@@ -5,10 +5,10 @@
 package system
 
 import (
+	"golang.org/x/sys/unix"
 	"os"
 	"path"
 	"syscall"
-	"unsafe"
 )
 
 var (
@@ -18,12 +18,12 @@ var (
 
 func BecomeProcessGroupLeader() {
 	if pid != pgid {
-		syscall.Setpgid(0, 0)
+		unix.Setpgid(0, 0)
 	}
 }
 
 func ContinueProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGCONT)
+	unix.Kill(pid, unix.SIGCONT)
 }
 
 func GetHistoryFilePath() (string, error) {
@@ -46,26 +46,20 @@ func ResetForegroundGroup(f *os.File) bool {
 		return false
 	}
 
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&pgid)))
+	SetForegroundGroup(pgid)
 
 	return true
 }
 
-func SetForegroundGroup(group int) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
-}
-
 func SuspendProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGSTOP)
+	unix.Kill(pid, unix.SIGSTOP)
 }
 
 func SysProcAttr(group int) *syscall.SysProcAttr {
 	sys := &syscall.SysProcAttr{}
 
 	if group == 0 {
-		sys.Ctty = syscall.Stdout
+		sys.Ctty = unix.Stdout
 		sys.Foreground = true
 	} else {
 		sys.Setpgid = true
@@ -76,9 +70,11 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 }
 
 func TerminateProcess(pid int) {
-	syscall.Kill(pid, syscall.SIGTERM)
+	unix.Kill(pid, unix.SIGTERM)
 }
 
-func getpgrp() int {
-	return syscall.Getpgrp()
+func init() {
+	pgid = unix.Getpgrp()
+	pid = unix.Getpid()
+	ppid = unix.Getppid()
 }

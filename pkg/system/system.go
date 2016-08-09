@@ -2,10 +2,6 @@
 
 package system
 
-import (
-	"syscall"
-)
-
 var (
 	pgid int
 	pid  int
@@ -24,9 +20,3 @@ func Ppid() int {
 	return ppid
 }
 
-func init() {
-	pgid = getpgrp()
-
-	pid = syscall.Getpid()
-	ppid = syscall.Getppid()
-}

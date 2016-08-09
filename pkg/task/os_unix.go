@@ -6,14 +6,14 @@ package task
 
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"golang.org/x/sys/unix"
 	"os"
 	"os/signal"
-	"syscall"
 )
 
 type notification struct {
 	pid    int
-	status syscall.WaitStatus
+	status unix.WaitStatus
 }
 
 type registration struct {
@@ -46,7 +46,7 @@ func broker(cli ui) {
 			select {
 			case sig := <-incoming: // Handle signals.
 				switch sig {
-				case syscall.SIGTSTP:
+				case unix.SIGTSTP:
 					task0.Suspend()
 
 					last := 0
@@ -63,7 +63,7 @@ func broker(cli ui) {
 					jobs[last] = task0
 					jobsl.Unlock()
 
-				case syscall.SIGINT:
+				case unix.SIGINT:
 					task0.Stop()
 				}
 
@@ -124,10 +124,10 @@ func initPlatformSpecific() {
 			nmask = Car(args).(Atom).Int()
 		}
 
-		omask := syscall.Umask(int(nmask))
+		omask := unix.Umask(int(nmask))
 
 		if nmask == 0 {
-			syscall.Umask(omask)
+			unix.Umask(omask)
 		}
 
 		return t.Return(NewInteger(int64(omask)))
@@ -135,9 +135,9 @@ func initPlatformSpecific() {
 }
 
 func initSignalHandling(cli ui) {
-	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
+	signal.Ignore(unix.SIGTTOU, unix.SIGTTIN)
 
-	signals := []os.Signal{syscall.SIGINT, syscall.SIGTSTP}
+	signals := []os.Signal{unix.SIGINT, unix.SIGTSTP}
 	incoming = make(chan os.Signal, len(signals))
 
 	signal.Notify(incoming, signals...)
@@ -149,10 +149,10 @@ func monitor(active chan bool, notify chan notification) {
 	for {
 		monitoring := <-active
 		for monitoring {
-			var rusage syscall.Rusage
-			var status syscall.WaitStatus
-			options := syscall.WUNTRACED
-			pid, err := syscall.Wait4(-1, &status, options, &rusage)
+			var rusage unix.Rusage
+			var status unix.WaitStatus
+			options := unix.WUNTRACED
+			pid, err := unix.Wait4(-1, &status, options, &rusage)
 			if err != nil {
 				println("Wait4:", err.Error())
 			}
@@ -162,15 +162,15 @@ func monitor(active chan bool, notify chan notification) {
 
 			if status.Stopped() {
 				if pid == task0.Job.Group {
-					incoming <- syscall.SIGTSTP
+					incoming <- unix.SIGTSTP
 				}
 				continue
 			}
 
 			if status.Signaled() {
-				if status.Signal() == syscall.SIGINT &&
+				if status.Signal() == unix.SIGINT &&
 					pid == task0.Job.Group {
-					incoming <- syscall.SIGINT
+					incoming <- unix.SIGINT
 				}
 				status += 128
 			}

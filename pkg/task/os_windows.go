@@ -6,8 +6,8 @@ package task
 
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"golang.org/x/sys/windows"
 	"os"
-	"syscall"
 )
 
 func exit(c Cell) {
@@ -29,5 +29,5 @@ func status(proc *os.Process) *Status {
 		return ExitFailure
 	}
 
-	return NewStatus(int64(status.Sys().(syscall.WaitStatus).ExitStatus()))
+	return NewStatus(int64(status.Sys().(windows.WaitStatus).ExitStatus()))
 }
