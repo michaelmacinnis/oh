@@ -19,4 +19,3 @@ func Pid() int {
 func Ppid() int {
 	return ppid
 }
-

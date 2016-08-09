@@ -11,4 +11,3 @@ import (
 func SetForegroundGroup(group int) {
 	unix.IoctlSetInt(unix.Stdin, sys.TIOCSPGRP, group)
 }
-
