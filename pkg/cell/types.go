@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type Cell interface {
@@ -257,7 +258,15 @@ type Constant struct {
 }
 
 func NewConstant(v Cell) *Constant {
-	return &Constant{Variable{v}}
+	ct := new(Constant)
+
+	ct.v.Store(v)
+
+	return ct
+}
+
+func (ct *Constant) Copy() Reference {
+	return NewConstant(ct.Get())
 }
 
 func (ct *Constant) Set(c Cell) {
@@ -1018,21 +1027,25 @@ func (s *Symbol) isNumeric() bool {
 /* Variable definition. */
 
 type Variable struct {
-	v Cell
+	v atomic.Value
 }
 
-func NewVariable(v Cell) Reference {
-	return &Variable{v}
+func NewVariable(v Cell) *Variable {
+	vr := new(Variable)
+
+	vr.v.Store(v)
+
+	return vr
 }
 
 func (vr *Variable) Copy() Reference {
-	return NewVariable(vr.v)
+	return NewVariable(vr.Get())
 }
 
 func (vr *Variable) Get() Cell {
-	return vr.v
+	return vr.v.Load().(Cell)
 }
 
 func (vr *Variable) Set(c Cell) {
-	vr.v = c
+	vr.v.Store(c)
 }
