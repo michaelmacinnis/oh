@@ -15,8 +15,6 @@ func Deref(name string, address uintptr) Cell {
 		return (*Builtin)(unsafe.Pointer(address))
 	case name == "channel":
 		return (*Channel)(unsafe.Pointer(address))
-	case name == "constant":
-		return (*Constant)(unsafe.Pointer(address))
 	case name == "continuation":
 		return (*Continuation)(unsafe.Pointer(address))
 	case name == "method":
@@ -33,8 +31,6 @@ func Deref(name string, address uintptr) Cell {
 		return (*Task)(unsafe.Pointer(address))
 	case name == "unbound":
 		return (*Unbound)(unsafe.Pointer(address))
-	case name == "variable":
-		return (*Variable)(unsafe.Pointer(address))
 	}
 
 	return Null
