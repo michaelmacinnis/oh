@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 )
 
 type Cell interface {
@@ -254,19 +253,23 @@ func (ch *Channel) Write(c Cell) {
 /* Constant cell definition. */
 
 type Constant struct {
-	Variable
+	v Cell
 }
 
 func NewConstant(v Cell) *Constant {
 	ct := new(Constant)
 
-	ct.v.Store(v)
+	ct.v = v
 
 	return ct
 }
 
 func (ct *Constant) Copy() Reference {
 	return NewConstant(ct.Get())
+}
+
+func (ct *Constant) Get() Cell {
+	return ct.v
 }
 
 func (ct *Constant) Set(c Cell) {
@@ -1027,13 +1030,15 @@ func (s *Symbol) isNumeric() bool {
 /* Variable definition. */
 
 type Variable struct {
-	v atomic.Value
+	sync.RWMutex
+
+	v Cell
 }
 
 func NewVariable(v Cell) *Variable {
 	vr := new(Variable)
 
-	vr.v.Store(v)
+	vr.v = v
 
 	return vr
 }
@@ -1043,9 +1048,15 @@ func (vr *Variable) Copy() Reference {
 }
 
 func (vr *Variable) Get() Cell {
-	return vr.v.Load().(Cell)
+	vr.RLock()
+	defer vr.RUnlock()
+
+	return vr.v
 }
 
-func (vr *Variable) Set(c Cell) {
-	vr.v.Store(c)
+func (vr *Variable) Set(v Cell) {
+	vr.Lock()
+	defer vr.Unlock()
+
+	vr.v = v
 }
