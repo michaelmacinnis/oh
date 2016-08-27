@@ -73,7 +73,7 @@ var (
 	num  [512]*Integer
 	numl = &sync.RWMutex{}
 	one  *big.Rat
-	rat  [512]Rational
+	rat  [512]*Rational
 	ratl = &sync.RWMutex{}
 	sym  = map[string]*Symbol{}
 	syml = &sync.RWMutex{}
@@ -101,8 +101,8 @@ func init() {
 
 	one = big.NewRat(1, 1)
 	zip = big.NewRat(0, 1)
-	rat[257] = Rational{one}
-	rat[256] = Rational{zip}
+	rat[257] = NewRational(one)
+	rat[256] = NewRational(zip)
 
 	pair := new(Pair)
 	pair.car = pair
@@ -757,21 +757,19 @@ func (p *Pipe) WriteFd() *os.File {
 
 /* Rational cell definition. */
 
-type Rational struct {
-	v *big.Rat
-}
+type Rational big.Rat
 
 func IsRational(c Cell) bool {
 	switch c.(type) {
-	case Rational:
+	case *Rational:
 		return true
 	}
 	return false
 }
 
-func NewRational(r *big.Rat) Rational {
+func NewRational(r *big.Rat) *Rational {
 	if !r.IsInt() || r.Cmp(min) < 0 || r.Cmp(max) > 0 {
-		return Rational{r}
+		return (*Rational)(r)
 	}
 
 	n := r.Num().Int64()
@@ -781,8 +779,8 @@ func NewRational(r *big.Rat) Rational {
 	p := rat[i]
 	ratl.RUnlock()
 
-	if p.v == nil {
-		p = Rational{r}
+	if p == nil {
+		p = (*Rational)(r)
 
 		ratl.Lock()
 		rat[i] = p
@@ -792,62 +790,62 @@ func NewRational(r *big.Rat) Rational {
 	return p
 }
 
-func (r Rational) Bool() bool {
-	return r.v.Cmp(zip) != 0
+func (r *Rational) Bool() bool {
+	return (*big.Rat)(r).Cmp(zip) != 0
 }
 
-func (r Rational) Equal(c Cell) bool {
+func (r *Rational) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return r.v.Cmp(a.Rat()) == 0
+		return (*big.Rat)(r).Cmp(a.Rat()) == 0
 	}
 	return false
 }
 
-func (r Rational) String() string {
-	return r.v.RatString()
+func (r *Rational) String() string {
+	return (*big.Rat)(r).RatString()
 }
 
-func (r Rational) Float() float64 {
-	f, _ := r.v.Float64()
+func (r *Rational) Float() float64 {
+	f, _ := (*big.Rat)(r).Float64()
 	return f
 }
 
-func (r Rational) Int() int64 {
-	n := r.v.Num()
-	d := r.v.Denom()
+func (r *Rational) Int() int64 {
+	n := (*big.Rat)(r).Num()
+	d := (*big.Rat)(r).Denom()
 	return new(big.Int).Div(n, d).Int64()
 }
 
-func (r Rational) Rat() *big.Rat {
-	return r.v
+func (r *Rational) Rat() *big.Rat {
+	return (*big.Rat)(r)
 }
 
-func (r Rational) Greater(c Cell) bool {
-	return r.v.Cmp(c.(Atom).Rat()) > 0
+func (r *Rational) Greater(c Cell) bool {
+	return (*big.Rat)(r).Cmp(c.(Atom).Rat()) > 0
 }
 
-func (r Rational) Less(c Cell) bool {
-	return r.v.Cmp(c.(Atom).Rat()) < 0
+func (r *Rational) Less(c Cell) bool {
+	return (*big.Rat)(r).Cmp(c.(Atom).Rat()) < 0
 }
 
-func (r Rational) Add(c Cell) Number {
-	return NewRational(new(big.Rat).Add(r.v, c.(Atom).Rat()))
+func (r *Rational) Add(c Cell) Number {
+	return NewRational(new(big.Rat).Add((*big.Rat)(r), c.(Atom).Rat()))
 }
 
-func (r Rational) Divide(c Cell) Number {
-	return NewRational(new(big.Rat).Quo(r.v, c.(Atom).Rat()))
+func (r *Rational) Divide(c Cell) Number {
+	return NewRational(new(big.Rat).Quo((*big.Rat)(r), c.(Atom).Rat()))
 }
 
-func (r Rational) Modulo(c Cell) Number {
-	return NewRational(ratmod(r.v, c.(Atom).Rat()))
+func (r *Rational) Modulo(c Cell) Number {
+	return NewRational(ratmod((*big.Rat)(r), c.(Atom).Rat()))
 }
 
-func (r Rational) Multiply(c Cell) Number {
-	return NewRational(new(big.Rat).Mul(r.v, c.(Atom).Rat()))
+func (r *Rational) Multiply(c Cell) Number {
+	return NewRational(new(big.Rat).Mul((*big.Rat)(r), c.(Atom).Rat()))
 }
 
-func (r Rational) Subtract(c Cell) Number {
-	return NewRational(new(big.Rat).Sub(r.v, c.(Atom).Rat()))
+func (r *Rational) Subtract(c Cell) Number {
+	return NewRational(new(big.Rat).Sub((*big.Rat)(r), c.(Atom).Rat()))
 }
 
 /* String cell definition. */
