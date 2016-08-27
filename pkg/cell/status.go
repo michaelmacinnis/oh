@@ -141,7 +141,7 @@ func (s *Status) Subtract(c Cell) Number {
 
 func (s *String) Status() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i

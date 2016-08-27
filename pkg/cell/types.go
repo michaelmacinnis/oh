@@ -850,9 +850,7 @@ func (r *Rational) Subtract(c Cell) Number {
 
 /* String cell definition. */
 
-type String struct {
-	v string
-}
+type String string
 
 func IsString(c Cell) bool {
 	switch c.(type) {
@@ -863,8 +861,7 @@ func IsString(c Cell) bool {
 }
 
 func NewString(v string) *String {
-	s := String{v}
-
+	s := String(v)
 	return &s
 }
 
@@ -874,18 +871,18 @@ func (s *String) Bool() bool {
 
 func (s *String) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return string(s.v) == a.String()
+		return string(*s) == a.String()
 	}
 	return false
 }
 
 func (s *String) String() string {
-	return adapted.Quote(s.v)
+	return adapted.Quote(string(*s))
 }
 
 func (s *String) Float() (f float64) {
 	var err error
-	if f, err = strconv.ParseFloat(string(s.v), 64); err != nil {
+	if f, err = strconv.ParseFloat(string(*s), 64); err != nil {
 		panic(err)
 	}
 	return f
@@ -893,7 +890,7 @@ func (s *String) Float() (f float64) {
 
 func (s *String) Int() (i int64) {
 	var err error
-	if i, err = strconv.ParseInt(string(s.v), 0, 64); err != nil {
+	if i, err = strconv.ParseInt(string(*s), 0, 64); err != nil {
 		panic(err)
 	}
 	return i
@@ -901,7 +898,7 @@ func (s *String) Int() (i int64) {
 
 func (s *String) Rat() *big.Rat {
 	r := new(big.Rat)
-	if _, err := fmt.Sscan(string(s.v), r); err != nil {
+	if _, err := fmt.Sscan(string(*s), r); err != nil {
 		panic(err)
 	}
 	return r
@@ -910,7 +907,7 @@ func (s *String) Rat() *big.Rat {
 /* String-specific functions. */
 
 func (s *String) Raw() string {
-	return string(s.v)
+	return string(*s)
 }
 
 /* Symbol cell definition. */
