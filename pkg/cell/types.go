@@ -185,9 +185,7 @@ func (b *Boolean) Rat() *big.Rat {
 
 /* Channel cell definition. */
 
-type Channel struct {
-	v chan Cell
-}
+type Channel chan Cell
 
 func IsChannel(c Cell) bool {
 	conduit := asConduit(c)
@@ -203,7 +201,8 @@ func IsChannel(c Cell) bool {
 }
 
 func NewChannel(cap int) *Channel {
-	return &Channel{make(chan Cell, cap)}
+	c := Channel(make(chan Cell, cap))
+	return &c
 }
 
 func (ch *Channel) Bool() bool {
@@ -227,7 +226,7 @@ func (ch *Channel) ReaderClose() {
 }
 
 func (ch *Channel) Read(interactive bool, p Parser, t Thrower) Cell {
-	v := <-ch.v
+	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null
 	}
@@ -235,7 +234,7 @@ func (ch *Channel) Read(interactive bool, p Parser, t Thrower) Cell {
 }
 
 func (ch *Channel) ReadLine() Cell {
-	v := <-ch.v
+	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return False
 	}
@@ -243,11 +242,11 @@ func (ch *Channel) ReadLine() Cell {
 }
 
 func (ch *Channel) WriterClose() {
-	close(ch.v)
+	close((chan Cell)(*ch))
 }
 
 func (ch *Channel) Write(c Cell) {
-	ch.v <- c
+	(chan Cell)(*ch) <- c
 }
 
 /* Constant cell definition. */
