@@ -2519,7 +2519,7 @@ func interpolate(l context, d Cell, s string) string {
 
 		c, _ := Resolve(l, d, name)
 		if c == nil {
-			c, _ = Resolve(l, d, "$" + name)
+			c, _ = Resolve(l, d, "$"+name)
 		}
 		if c == nil {
 			return ref
