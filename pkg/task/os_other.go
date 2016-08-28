@@ -12,7 +12,7 @@ func initPlatformSpecific() {}
 
 func initSignalHandling(ui) {}
 
-func evaluate(c Cell, file string, line int, problem string) (Cell, bool) {
-	task0.Eval <- message{Cmd: c, File: file, Line: line, Problem: problem}
+func evaluate(c Cell, f string, l int, p string) (Cell, bool) {
+	task0.Eval <- message{cmd: c, file: f, line: l, problem: p}
 	return <-task0.Done, task0.Stack != Null
 }

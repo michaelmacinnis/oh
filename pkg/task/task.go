@@ -28,9 +28,9 @@ type ApplyModer interface {
 type binding interface {
 	Cell
 
-	Bind(c Cell) binding
-	Ref() closure
-	Self() Cell
+	bind(c Cell) binding
+	ref() closure
+	self() Cell
 }
 
 type closure interface {
@@ -70,10 +70,10 @@ type context interface {
 type function func(t *Task, args Cell) bool
 
 type message struct {
-	Cmd     Cell
-	File    string
-	Line    int
-	Problem string
+	cmd     Cell
+	file    string
+	line    int
+	problem string
 }
 
 type ui interface {
@@ -152,8 +152,8 @@ var next = map[int64][]int64{
 /* Bound cell definition. */
 
 type bound struct {
-	ref  closure
-	self Cell
+	r closure
+	s Cell
 }
 
 func NewBound(c closure, self Cell) *bound {
@@ -166,7 +166,7 @@ func (b *bound) Bool() bool {
 
 func (b *bound) Equal(c Cell) bool {
 	if m, ok := c.(*bound); ok {
-		return b.ref == m.Ref() && b.self == m.Self()
+		return b.r == m.ref() && b.s == m.self()
 	}
 	return false
 }
@@ -177,19 +177,19 @@ func (b *bound) String() string {
 
 /* Bound-specific functions */
 
-func (b *bound) Bind(c Cell) binding {
-	if c == b.self {
+func (b *bound) bind(c Cell) binding {
+	if c == b.s {
 		return b
 	}
-	return NewBound(b.ref, c)
+	return NewBound(b.r, c)
 }
 
-func (b *bound) Ref() closure {
-	return b.ref
+func (b *bound) ref() closure {
+	return b.r
 }
 
-func (b *bound) Self() Cell {
-	return b.self
+func (b *bound) self() Cell {
+	return b.s
 }
 
 /* Builtin cell definition. */
@@ -204,20 +204,20 @@ func IsBuiltin(c Cell) bool {
 		return false
 	}
 
-	switch b.Ref().(type) {
+	switch b.ref().(type) {
 	case *builtin:
 		return true
 	}
 	return false
 }
 
-func NewBuiltin(a function, b, c, l, p Cell, s context) closure {
+func NewBuiltin(a function, b, c, o, p Cell, s context) closure {
 	return &builtin{
 		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
-			slabel:  l,
+			olabel:  o,
 			params:  p,
 			scope:   s,
 		},
@@ -242,7 +242,7 @@ type command struct {
 	applier function
 	body    Cell
 	clabel  Cell
-	slabel  Cell
+	olabel  Cell
 	params  Cell
 	scope   context
 }
@@ -272,7 +272,7 @@ func (c *command) Scope() context {
 }
 
 func (c *command) SelfLabel() Cell {
-	return c.slabel
+	return c.olabel
 }
 
 /* Continuation cell definition. */
@@ -351,20 +351,20 @@ func IsMethod(c Cell) bool {
 		return false
 	}
 
-	switch b.Ref().(type) {
+	switch b.ref().(type) {
 	case *method:
 		return true
 	}
 	return false
 }
 
-func NewMethod(a function, b, c, l, p Cell, s context) closure {
+func NewMethod(a function, b, c, o, p Cell, s context) closure {
 	return &method{
 		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
-			slabel:  l,
+			olabel:  o,
 			params:  p,
 			scope:   s,
 		},
@@ -827,20 +827,20 @@ func IsSyntax(c Cell) bool {
 		return false
 	}
 
-	switch b.Ref().(type) {
+	switch b.ref().(type) {
 	case *syntax:
 		return true
 	}
 	return false
 }
 
-func NewSyntax(a function, b, c, l, p Cell, s context) closure {
+func NewSyntax(a function, b, c, o, p Cell, s context) closure {
 	return &syntax{
 		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
-			slabel:  l,
+			olabel:  o,
 			params:  p,
 			scope:   s,
 		},
@@ -938,23 +938,23 @@ func (t *Task) Apply(args Cell) bool {
 
 	m := Car(t.Dump).(binding)
 
-	t.NewFrame(m.Ref().Scope())
+	t.NewFrame(m.ref().Scope())
 
-	t.Code = m.Ref().Body()
+	t.Code = m.ref().Body()
 
 	c := toContext(t.Lexical)
 
-	clabel := m.Ref().CallerLabel()
+	clabel := m.ref().CallerLabel()
 	if clabel != Null {
 		c.Define(Raw(clabel), caller)
 	}
 
-	slabel := m.Ref().SelfLabel()
-	if slabel != Null {
-		c.Define(Raw(slabel), toContext(m.Self()).Expose())
+	olabel := m.ref().SelfLabel()
+	if olabel != Null {
+		c.Define(Raw(olabel), toContext(m.self()).Expose())
 	}
 
-	params := m.Ref().Params()
+	params := m.ref().Params()
 	for args != Null && params != Null && IsAtom(Car(params)) {
 		c.Define(Raw(Car(params)), Car(args))
 		args, params = Cdr(args), Cdr(params)
@@ -987,16 +987,16 @@ func (t *Task) Chdir(dir string) bool {
 }
 
 func (t *Task) Closure(n closurer) bool {
-	slabel := Car(t.Code)
+	olabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
 	params := Null
-	if IsSymbol(slabel) {
+	if IsSymbol(olabel) {
 		params = Car(t.Code)
 		t.Code = Cdr(t.Code)
 	} else {
-		params = slabel
-		slabel = Null
+		params = olabel
+		olabel = Null
 	}
 
 	equals := Car(t.Code)
@@ -1016,8 +1016,8 @@ func (t *Task) Closure(n closurer) bool {
 	body := t.Code
 	scope := toContext(t.Lexical)
 
-	c := n((*Task).Apply, body, clabel, slabel, params, scope)
-	if slabel == Null {
+	c := n((*Task).Apply, body, clabel, olabel, params, scope)
+	if olabel == Null {
 		SetCar(t.Dump, NewUnbound(c))
 	} else {
 		SetCar(t.Dump, NewBound(c, scope))
@@ -1146,20 +1146,20 @@ func (t *Task) Listen() {
 			break
 		}
 
-		if m.File != "" {
-			t.SetFile(m.File)
+		if m.file != "" {
+			t.SetFile(m.file)
 		}
-		if m.Line != -1 {
-			t.SetLine(m.Line)
+		if m.line != -1 {
+			t.SetLine(m.line)
 		}
-		SetCar(t.Code, m.Cmd)
+		SetCar(t.Code, m.cmd)
 		SetCdr(t.Code, end)
 
 		t.Code = end
 		t.NewStates(svCode, psEvalCommand)
 
-		t.Code = m.Cmd
-		rv := t.Run(end, m.Problem)
+		t.Code = m.cmd
+		rv := t.Run(end, m.problem)
 		var result Cell
 		if rv != 0 {
 			t.registers = saved
@@ -1229,7 +1229,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	} else if simple && !IsSimple(c.Get()) {
 		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(binding); ok {
-		t.Dump = Cons(a.Bind(s), t.Dump)
+		t.Dump = Cons(a.bind(s), t.Dump)
 	} else {
 		t.Dump = Cons(c.Get(), t.Dump)
 	}
@@ -1276,7 +1276,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 		case psExecSyntax:
 			m := Car(t.Dump).(binding)
 
-			if m.Ref().Applier()(t, t.Code) {
+			if m.ref().Applier()(t, t.Code) {
 				continue
 			}
 
@@ -1347,7 +1347,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 				t.ReplaceStates(psExecBuiltin,
 					psEvalArgumentsBuiltin)
 			case binding:
-				switch k.Ref().(type) {
+				switch k.ref().(type) {
 				case *builtin:
 					t.ReplaceStates(psExecBuiltin,
 						psEvalArgumentsBuiltin)
@@ -1481,7 +1481,7 @@ func (t *Task) Runnable() bool {
 }
 
 func (t *Task) Self() Cell {
-	return Car(t.Dump).(binding).Self()
+	return Car(t.Dump).(binding).self()
 }
 
 func (t *Task) Stop() {
@@ -1642,7 +1642,7 @@ func (t *Task) Wait() {
 /* Unbound cell definition. */
 
 type unbound struct {
-	ref closure
+	r closure
 }
 
 func NewUnbound(c closure) *unbound {
@@ -1655,7 +1655,7 @@ func (u *unbound) Bool() bool {
 
 func (u *unbound) Equal(c Cell) bool {
 	if u, ok := c.(*unbound); ok {
-		return u.ref == u.Ref()
+		return u.r == u.ref()
 	}
 	return false
 }
@@ -1666,15 +1666,15 @@ func (u *unbound) String() string {
 
 /* Unbound-specific functions */
 
-func (u *unbound) Bind(c Cell) binding {
+func (u *unbound) bind(c Cell) binding {
 	return u
 }
 
-func (u *unbound) Ref() closure {
-	return u.ref
+func (u *unbound) ref() closure {
+	return u.r
 }
 
-func (u *unbound) Self() Cell {
+func (u *unbound) self() Cell {
 	return nil
 }
 
@@ -1758,7 +1758,7 @@ func Start(p Parser, cli ui) {
 
 	parse = p
 	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
-		task0.Eval <- message{Cmd: c, File: f, Line: l, Problem: p}
+		task0.Eval <- message{cmd: c, file: f, line: l, problem: p}
 		return <-task0.Done, true
 	}
 
@@ -2047,7 +2047,7 @@ func init() {
 		if c == nil {
 			panic("'" + k + "' undefined")
 		} else if a, ok := c.Get().(binding); ok {
-			return t.Return(a.Bind(o))
+			return t.Return(a.bind(o))
 		} else {
 			return t.Return(c.Get())
 		}
