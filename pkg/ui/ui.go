@@ -36,8 +36,8 @@ func New(args []string) *cli {
 
 	i := &cli{liner.NewLiner()}
 
-	if history_path, err := system.GetHistoryFilePath(); err == nil {
-		if f, err := os.Open(history_path); err == nil {
+	if hpath, err := system.GetHistoryFilePath(); err == nil {
+		if f, err := os.Open(hpath); err == nil {
 			i.ReadHistory(f)
 			f.Close()
 		}
@@ -55,8 +55,8 @@ func New(args []string) *cli {
 
 func (i *cli) Close() error {
 	if i.Exists() {
-		if history_path, err := system.GetHistoryFilePath(); err == nil {
-			if f, err := os.Create(history_path); err == nil {
+		if hpath, err := system.GetHistoryFilePath(); err == nil {
+			if f, err := os.Create(hpath); err == nil {
 				i.WriteHistory(f)
 				f.Close()
 			} else {
@@ -95,7 +95,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	}
 
 	if err == liner.ErrPromptAborted {
-		return line, cell.CtrlCPressed
+		return line, cell.ErrCtrlCPressed
 	}
 
 	return

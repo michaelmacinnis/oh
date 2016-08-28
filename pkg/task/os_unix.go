@@ -39,7 +39,7 @@ func broker(cli ui) {
 			}
 		}
 
-		var v Cell = nil
+		var v Cell
 		for evaluating := true; evaluating; {
 			prev := task0
 

@@ -115,7 +115,7 @@ main:
 			line, err := s.input.ReadString('\n')
 			if err == nil {
 				retries = 0
-			} else if err == CtrlCPressed {
+			} else if err == ErrCtrlCPressed {
 				s.start = 0
 				s.token = CTRLC
 				break

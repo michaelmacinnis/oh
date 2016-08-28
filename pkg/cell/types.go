@@ -696,7 +696,7 @@ func (p *Pipe) Read(interactive bool, parse Parser, t Thrower) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			var f *os.File = nil
+			var f *os.File
 			if interactive && p.r == os.Stdin {
 				f = p.r
 			}

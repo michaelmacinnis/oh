@@ -487,7 +487,7 @@ func (r *registers) Complete(fields []string, word string) (cmpltns []string) {
 
 	parts := strings.Split(word, "::")
 	if len(parts) == 2 {
-		var c context = nil
+		var c context
 
 		ref, _ := Resolve(r.Lexical, r.Frame, parts[0])
 		if ref != nil {
@@ -1160,7 +1160,7 @@ func (t *Task) Listen() {
 
 		t.Code = m.Cmd
 		rv := t.Run(end, m.Problem)
-		var result Cell = nil
+		var result Cell
 		if rv != 0 {
 			t.registers = saved
 
@@ -1544,7 +1544,7 @@ func (t *Task) Suspend() {
 func (t *Task) Throw(file string, line int, text string) {
 	throw := NewSymbol("throw")
 
-	var resolved Reference = nil
+	var resolved Reference
 
 	/* Unwind stack until we can resolve 'throw'. */
 	for t.Lexical != scope0 {
@@ -2604,7 +2604,7 @@ func pairContext() context {
 			args = Cdr(args)
 		}
 
-		var dflt Cell = nil
+		var dflt Cell
 		if args != Null {
 			dflt = args
 		}

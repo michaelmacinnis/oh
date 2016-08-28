@@ -10,4 +10,4 @@ const (
 	ErrSyntax        = "oh: 1: error/syntax: "
 )
 
-var CtrlCPressed = errors.New("ctrl-c pressed")
+var ErrCtrlCPressed = errors.New("ctrl-c pressed")
