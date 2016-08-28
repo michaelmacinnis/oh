@@ -10,7 +10,7 @@ import (
 func Deref(name string, address uintptr) Cell {
 	switch {
 	case name == "bound":
-		return (*Bound)(unsafe.Pointer(address))
+		return (*bound)(unsafe.Pointer(address))
 	case name == "builtin":
 		return (*builtin)(unsafe.Pointer(address))
 	case name == "channel":
@@ -30,7 +30,7 @@ func Deref(name string, address uintptr) Cell {
 	case name == "task":
 		return (*Task)(unsafe.Pointer(address))
 	case name == "unbound":
-		return (*Unbound)(unsafe.Pointer(address))
+		return (*unbound)(unsafe.Pointer(address))
 	}
 
 	return Null

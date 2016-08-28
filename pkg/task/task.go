@@ -151,44 +151,44 @@ var next = map[int64][]int64{
 
 /* Bound cell definition. */
 
-type Bound struct {
+type bound struct {
 	ref  closure
 	self Cell
 }
 
-func NewBound(ref closure, self Cell) *Bound {
-	return &Bound{ref, self}
+func NewBound(c closure, self Cell) *bound {
+	return &bound{c, self}
 }
 
-func (b *Bound) Bool() bool {
+func (b *bound) Bool() bool {
 	return true
 }
 
-func (b *Bound) Equal(c Cell) bool {
-	if m, ok := c.(*Bound); ok {
+func (b *bound) Equal(c Cell) bool {
+	if m, ok := c.(*bound); ok {
 		return b.ref == m.Ref() && b.self == m.Self()
 	}
 	return false
 }
 
-func (b *Bound) String() string {
+func (b *bound) String() string {
 	return fmt.Sprintf("%%bound %p%%", b)
 }
 
 /* Bound-specific functions */
 
-func (b *Bound) Bind(c Cell) binding {
+func (b *bound) Bind(c Cell) binding {
 	if c == b.self {
 		return b
 	}
 	return NewBound(b.ref, c)
 }
 
-func (b *Bound) Ref() closure {
+func (b *bound) Ref() closure {
 	return b.ref
 }
 
-func (b *Bound) Self() Cell {
+func (b *bound) Self() Cell {
 	return b.self
 }
 
@@ -1641,40 +1641,40 @@ func (t *Task) Wait() {
 
 /* Unbound cell definition. */
 
-type Unbound struct {
+type unbound struct {
 	ref closure
 }
 
-func NewUnbound(Ref closure) *Unbound {
-	return &Unbound{Ref}
+func NewUnbound(c closure) *unbound {
+	return &unbound{c}
 }
 
-func (u *Unbound) Bool() bool {
+func (u *unbound) Bool() bool {
 	return true
 }
 
-func (u *Unbound) Equal(c Cell) bool {
-	if u, ok := c.(*Unbound); ok {
+func (u *unbound) Equal(c Cell) bool {
+	if u, ok := c.(*unbound); ok {
 		return u.ref == u.Ref()
 	}
 	return false
 }
 
-func (u *Unbound) String() string {
+func (u *unbound) String() string {
 	return fmt.Sprintf("%%unbound %p%%", u)
 }
 
 /* Unbound-specific functions */
 
-func (u *Unbound) Bind(c Cell) binding {
+func (u *unbound) Bind(c Cell) binding {
 	return u
 }
 
-func (u *Unbound) Ref() closure {
+func (u *unbound) Ref() closure {
 	return u.ref
 }
 
-func (u *Unbound) Self() Cell {
+func (u *unbound) Self() Cell {
 	return nil
 }
 
