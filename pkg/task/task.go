@@ -137,7 +137,7 @@ var (
 	namespace   context
 	parse       Parser
 	runnable    chan bool
-	scope0      *Scope
+	scope0      *scope
 	sys         context
 	task0       *Task
 )
@@ -277,7 +277,7 @@ func (c *command) SelfLabel() Cell {
 
 /* Continuation cell definition. */
 
-type Continuation struct {
+type continuation struct {
 	Dump  Cell
 	Frame Cell
 	Stack Cell
@@ -287,14 +287,14 @@ type Continuation struct {
 
 func IsContinuation(c Cell) bool {
 	switch c.(type) {
-	case *Continuation:
+	case *continuation:
 		return true
 	}
 	return false
 }
 
-func NewContinuation(dump, frame, stack Cell, f string, l int) *Continuation {
-	return &Continuation{
+func NewContinuation(dump, frame, stack Cell, f string, l int) *continuation {
+	return &continuation{
 		Dump:  dump,
 		Frame: frame,
 		Stack: stack,
@@ -303,25 +303,25 @@ func NewContinuation(dump, frame, stack Cell, f string, l int) *Continuation {
 	}
 }
 
-func (ct *Continuation) Bool() bool {
+func (ct *continuation) Bool() bool {
 	return true
 }
 
-func (ct *Continuation) Equal(c Cell) bool {
+func (ct *continuation) Equal(c Cell) bool {
 	return ct == c
 }
 
-func (ct *Continuation) String() string {
+func (ct *continuation) String() string {
 	return fmt.Sprintf("%%continuation %p%%", ct)
 }
 
 /* Continuation-specific functions */
 
-func (ct *Continuation) SetFile(f string) {
+func (ct *continuation) SetFile(f string) {
 	ct.file = f
 }
 
-func (ct *Continuation) SetLine(l int) {
+func (ct *continuation) SetLine(l int) {
 	ct.line = l
 }
 
@@ -388,31 +388,31 @@ func (m *method) String() string {
  * (An object cell only allows access to a context's public members).
  */
 
-type Object struct {
+type object struct {
 	context
 }
 
-func NewObject(v context) *Object {
-	return &Object{v.Expose()}
+func NewObject(v context) *object {
+	return &object{v.Expose()}
 }
 
-func (o *Object) Equal(c Cell) bool {
+func (o *object) Equal(c Cell) bool {
 	if o == c {
 		return true
 	}
-	if o, ok := c.(*Object); ok {
+	if o, ok := c.(*object); ok {
 		return o.context == o.Expose()
 	}
 	return false
 }
 
-func (o *Object) String() string {
+func (o *object) String() string {
 	return fmt.Sprintf("%%object %p%%", o)
 }
 
 /* Object-specific functions */
 
-func (o *Object) Access(key string) Reference {
+func (o *object) Access(key string) Reference {
 	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Prev().Access(key); value != nil {
@@ -423,7 +423,7 @@ func (o *Object) Access(key string) Reference {
 	return nil
 }
 
-func (o *Object) Complete(simple bool, word string) []string {
+func (o *object) Complete(simple bool, word string) []string {
 	cl := []string{}
 
 	var obj context
@@ -434,24 +434,24 @@ func (o *Object) Complete(simple bool, word string) []string {
 	return cl
 }
 
-func (o *Object) Copy() context {
-	return &Object{
-		&Scope{o.Expose().Faces().Copy(), o.context.Prev()},
+func (o *object) Copy() context {
+	return &object{
+		&scope{o.Expose().Faces().Copy(), o.context.Prev()},
 	}
 }
 
-func (o *Object) Expose() context {
+func (o *object) Expose() context {
 	return o.context
 }
 
-func (o *Object) Define(key string, value Cell) {
+func (o *object) Define(key string, value Cell) {
 	panic("private members cannot be added to an object")
 }
 
 /* Registers cell definition. */
 
-type Registers struct {
-	Continuation // Stack and Dump
+type registers struct {
+	continuation // Stack and Dump
 
 	Code    Cell // Control
 	Lexical Cell
@@ -459,7 +459,7 @@ type Registers struct {
 
 /* Registers-specific functions. */
 
-func (r *Registers) Arguments() Cell {
+func (r *registers) Arguments() Cell {
 	e := Car(r.Dump)
 	l := Null
 
@@ -475,7 +475,7 @@ func (r *Registers) Arguments() Cell {
 	return l
 }
 
-func (r *Registers) Complete(fields []string, word string) (cmpltns []string) {
+func (r *registers) Complete(fields []string, word string) (cmpltns []string) {
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -528,20 +528,20 @@ func (r *Registers) Complete(fields []string, word string) (cmpltns []string) {
 	return cl
 }
 
-func (r *Registers) CurrentContinuation() *Continuation {
-	cc := r.Continuation
+func (r *registers) CurrentContinuation() *continuation {
+	cc := r.continuation
 	cc.Dump = Cdr(cc.Dump)
 	return &cc
 }
 
-func (r *Registers) GetState() int64 {
+func (r *registers) GetState() int64 {
 	if r.Stack == Null {
 		return 0
 	}
 	return Car(r.Stack).(Atom).Int()
 }
 
-func (r *Registers) MakeEnv() []string {
+func (r *registers) MakeEnv() []string {
 	e := toContext(r.Lexical).Exported()
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
@@ -562,11 +562,11 @@ func (r *Registers) MakeEnv() []string {
 	return l
 }
 
-func (r *Registers) NewBlock(lexical context) {
+func (r *registers) NewBlock(lexical context) {
 	r.Lexical = NewScope(lexical, nil)
 }
 
-func (r *Registers) NewFrame(lexical context) {
+func (r *registers) NewFrame(lexical context) {
 	state := int64(svLexical)
 
 	c := toContext(r.Lexical)
@@ -584,7 +584,7 @@ func (r *Registers) NewFrame(lexical context) {
 	r.Lexical = NewScope(lexical, nil)
 }
 
-func (r *Registers) NewStates(l ...int64) {
+func (r *registers) NewStates(l ...int64) {
 	for _, f := range l {
 		if f >= svMax {
 			r.Stack = Cons(NewInteger(f), r.Stack)
@@ -639,7 +639,7 @@ func (r *Registers) NewStates(l ...int64) {
 	}
 }
 
-func (r *Registers) RemoveState() {
+func (r *registers) RemoveState() {
 	f := r.GetState()
 
 	r.Stack = Cdr(r.Stack)
@@ -664,12 +664,12 @@ func (r *Registers) RemoveState() {
 	}
 }
 
-func (r *Registers) ReplaceStates(l ...int64) {
+func (r *registers) ReplaceStates(l ...int64) {
 	r.RemoveState()
 	r.NewStates(l...)
 }
 
-func (r *Registers) RestoreState() {
+func (r *registers) RestoreState() {
 	f := r.GetState()
 
 	if f == 0 || f >= svMax {
@@ -699,7 +699,7 @@ func (r *Registers) RestoreState() {
 	r.Stack = Cdr(r.Stack)
 }
 
-func (r *Registers) Return(rv Cell) bool {
+func (r *registers) Return(rv Cell) bool {
 	SetCar(r.Dump, rv)
 
 	return false
@@ -710,30 +710,30 @@ func (r *Registers) Return(rv Cell) bool {
  * (A scope cell allows access to a context's public and private members).
  */
 
-type Scope struct {
+type scope struct {
 	env  *Env
 	prev context
 }
 
-func NewScope(prev context, fixed *Env) *Scope {
-	return &Scope{NewEnv(NewEnv(fixed)), prev}
+func NewScope(prev context, fixed *Env) *scope {
+	return &scope{NewEnv(NewEnv(fixed)), prev}
 }
 
-func (s *Scope) Bool() bool {
+func (s *scope) Bool() bool {
 	return true
 }
 
-func (s *Scope) Equal(c Cell) bool {
+func (s *scope) Equal(c Cell) bool {
 	return s == c
 }
 
-func (s *Scope) String() string {
+func (s *scope) String() string {
 	return fmt.Sprintf("%%scope %p%%", s)
 }
 
 /* Scope-specific functions */
 
-func (s *Scope) Access(key string) Reference {
+func (s *scope) Access(key string) Reference {
 	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
@@ -744,7 +744,7 @@ func (s *Scope) Access(key string) Reference {
 	return nil
 }
 
-func (s *Scope) Complete(simple bool, word string) []string {
+func (s *scope) Complete(simple bool, word string) []string {
 	cl := []string{}
 
 	var obj context
@@ -755,35 +755,35 @@ func (s *Scope) Complete(simple bool, word string) []string {
 	return cl
 }
 
-func (s *Scope) Copy() context {
-	return &Scope{s.env.Copy(), s.prev}
+func (s *scope) Copy() context {
+	return &scope{s.env.Copy(), s.prev}
 }
 
-func (s *Scope) Exported() map[string]Cell {
+func (s *scope) Exported() map[string]Cell {
 	return s.env.Prev().Prefixed(true, "$")
 }
 
-func (s *Scope) Expose() context {
+func (s *scope) Expose() context {
 	return s
 }
 
-func (s *Scope) Faces() *Env {
+func (s *scope) Faces() *Env {
 	return s.env
 }
 
-func (s *Scope) Prev() context {
+func (s *scope) Prev() context {
 	return s.prev
 }
 
-func (s *Scope) Define(key string, value Cell) {
+func (s *scope) Define(key string, value Cell) {
 	s.env.Add(key, value)
 }
 
-func (s *Scope) Public(key string, value Cell) {
+func (s *scope) Public(key string, value Cell) {
 	s.env.Prev().Add(key, value)
 }
 
-func (s *Scope) Visibility() *Env {
+func (s *scope) Visibility() *Env {
 	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		env := obj.Faces().Prev()
@@ -795,23 +795,23 @@ func (s *Scope) Visibility() *Env {
 	return nil
 }
 
-func (s *Scope) DefineBuiltin(k string, a function) {
+func (s *scope) DefineBuiltin(k string, a function) {
 	s.Define(k, NewUnboundBuiltin(a, s))
 }
 
-func (s *Scope) DefineMethod(k string, a function) {
+func (s *scope) DefineMethod(k string, a function) {
 	s.Define(k, NewBoundMethod(a, s))
 }
 
-func (s *Scope) PublicMethod(k string, a function) {
+func (s *scope) PublicMethod(k string, a function) {
 	s.Public(k, NewBoundMethod(a, s))
 }
 
-func (s *Scope) DefineSyntax(k string, a function) {
+func (s *scope) DefineSyntax(k string, a function) {
 	s.Define(k, NewBoundSyntax(a, s))
 }
 
-func (s *Scope) PublicSyntax(k string, a function) {
+func (s *scope) PublicSyntax(k string, a function) {
 	s.Public(k, NewBoundSyntax(a, s))
 }
 
@@ -863,7 +863,7 @@ func (m *syntax) String() string {
 
 type Task struct {
 	*Job
-	Registers
+	registers
 	Done      chan Cell
 	Eval      chan message
 	children  map[*Task]bool
@@ -890,8 +890,8 @@ func NewTask(c Cell, l context, p *Task, cli ui) *Task {
 
 	t := &Task{
 		Job: j,
-		Registers: Registers{
-			Continuation: Continuation{
+		registers: registers{
+			continuation: continuation{
 				Dump:  List(ExitSuccess),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
@@ -1138,7 +1138,7 @@ func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
 	for m := range t.Eval {
-		saved := t.Registers
+		saved := t.registers
 
 		end := Cons(nil, Null)
 
@@ -1162,7 +1162,7 @@ func (t *Task) Listen() {
 		rv := t.Run(end, m.Problem)
 		var result Cell = nil
 		if rv != 0 {
-			t.Registers = saved
+			t.registers = saved
 
 			SetCar(t.Code, nil)
 			SetCdr(t.Code, Null)
@@ -1360,7 +1360,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 					continue
 				}
 
-			case *Continuation:
+			case *continuation:
 				t.ReplaceStates(psReturn, psEvalArguments)
 
 			default:
@@ -1454,7 +1454,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 		case psReturn:
 			args := t.Arguments()
 
-			t.Continuation = *Car(t.Dump).(*Continuation)
+			t.continuation = *Car(t.Dump).(*continuation)
 			t.Dump = Cons(Car(args), t.Dump)
 
 			break
@@ -1684,7 +1684,7 @@ func Call(t *Task, c Cell, problem string) string {
 		return Raw(r)
 	}
 
-	saved := t.Registers
+	saved := t.registers
 
 	t.Code = c
 	t.Dump = List(ExitSuccess)
@@ -1694,7 +1694,7 @@ func Call(t *Task, c Cell, problem string) string {
 
 	rv := Car(t.Dump)
 
-	t.Registers = saved
+	t.registers = saved
 
 	return Raw(rv)
 }
@@ -2836,7 +2836,7 @@ func toContext(c Cell) context {
 	case *String:
 		return stringContext()
 	}
-	panic("not an object ")
+	panic("not an object")
 }
 
 /* Convert Cell into a Pair. */

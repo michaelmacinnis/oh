@@ -15,7 +15,7 @@ echo "import (
 define t: quote: (add Add) (sub Subtract) (div Divide) \
                  (mod Modulo) (mul Multiply)
 
-echo "\nfunc bindArithmetic(s *Scope) {"
+echo "\nfunc bindArithmetic(s *scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
@@ -42,7 +42,7 @@ define t: quote: (boolean 'NewBoolean(Car(args).Bool())') \
                  (string 'NewString(Raw(Car(args)))') \
                  (symbol 'NewSymbol(Raw(Car(args)))')
 
-echo "\nfunc bindGenerators(s *Scope) {"
+echo "\nfunc bindGenerators(s *scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define o: l::get 1
@@ -53,7 +53,7 @@ for t: method (l) = {
 }
 echo "}"
 
-echo "\nfunc bindPredicates(s *Scope) {"
+echo "\nfunc bindPredicates(s *scope) {"
 for common::predicates: method (l) = {
 	define n: l::get 0
 	define m: l::get 1
@@ -72,7 +72,7 @@ define t: quote: \
         (le 'prev.Greater(curr)' '.(Number)') \
         (lt '!prev.Less(curr)' '.(Number)')
 
-echo "\nfunc bindRelational(s *Scope) {"
+echo "\nfunc bindRelational(s *scope) {"
 for t: method (l) = {
 	define n: l::get 0
 	define o: l::get 1
@@ -106,7 +106,7 @@ define t: quote: (DefineSyntax builtin 't.Closure(NewBuiltin)') \
                  (DefineMethod not 't.Return(NewBoolean(!Car(args).Bool()))') \
                  (DefineMethod reverse 't.Return(Reverse(Car(args)))')
 
-echo "\nfunc bindTheRest(s *Scope) {"
+echo "\nfunc bindTheRest(s *scope) {"
 for t: method (l) = {
 	define d: l::get 0
 	define n: l::get 1

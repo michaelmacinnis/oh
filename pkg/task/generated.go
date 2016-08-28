@@ -10,7 +10,7 @@ import (
 	"unicode"
 )
 
-func bindArithmetic(s *Scope) {
+func bindArithmetic(s *scope) {
 
 	s.DefineMethod("add", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
@@ -68,7 +68,7 @@ func bindArithmetic(s *Scope) {
 	})
 }
 
-func bindGenerators(s *Scope) {
+func bindGenerators(s *scope) {
 
 	s.DefineMethod("boolean", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(Car(args).Bool()))
@@ -103,7 +103,7 @@ func bindGenerators(s *Scope) {
 	})
 }
 
-func bindPredicates(s *Scope) {
+func bindPredicates(s *scope) {
 
 	s.DefineMethod("is-atom", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(IsAtom(Car(args))))
@@ -178,7 +178,7 @@ func bindPredicates(s *Scope) {
 	})
 }
 
-func bindRelational(s *Scope) {
+func bindRelational(s *scope) {
 
 	s.DefineMethod("eq", func(t *Task, args Cell) bool {
 		prev := Car(args)
@@ -283,7 +283,7 @@ func bindRelational(s *Scope) {
 	})
 }
 
-func bindTheRest(s *Scope) {
+func bindTheRest(s *scope) {
 
 	s.DefineSyntax("builtin", func(t *Task, args Cell) bool {
 		return t.Closure(NewBuiltin)
