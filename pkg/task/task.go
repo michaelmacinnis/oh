@@ -49,15 +49,15 @@ type closurer func(a function, b, c, l, p Cell, s context) closure
 type context interface {
 	Cell
 
-	Access(key Cell) Reference
+	Access(key string) Reference
 	Copy() context
 	Complete(simple bool, word string) []string
-	Define(key, value Cell)
+	Define(key string, value Cell)
 	Exported() map[string]Cell
 	Expose() context
 	Faces() *Env
 	Prev() context
-	Public(key, value Cell)
+	Public(key string, value Cell)
 	Visibility() *Env
 
 	DefineBuiltin(k string, f function)
@@ -131,14 +131,11 @@ var (
 	frame0      Cell
 	external    Cell
 	home        = "-"
-	homesym     *Symbol
 	interactive = false
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
-	oldpwdsym   *Symbol
 	parse       Parser
-	pwdsym      *Symbol
 	runnable    chan bool
 	scope0      *Scope
 	sys         context
@@ -407,7 +404,7 @@ func (o *Object) String() string {
 
 /* Object-specific functions */
 
-func (o *Object) Access(key Cell) Reference {
+func (o *Object) Access(key string) Reference {
 	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Prev().Access(key); value != nil {
@@ -439,7 +436,7 @@ func (o *Object) Expose() context {
 	return o.context
 }
 
-func (o *Object) Define(key Cell, value Cell) {
+func (o *Object) Define(key string, value Cell) {
 	panic("private members cannot be added to an object")
 }
 
@@ -484,7 +481,7 @@ func (r *Registers) Complete(fields []string, word string) (cmpltns []string) {
 	if len(parts) == 2 {
 		var c context = nil
 
-		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(parts[0]))
+		ref, _ := Resolve(r.Lexical, r.Frame, parts[0])
 		if ref != nil {
 			c = toContext(ref.Get())
 		} else if len(parts[0]) > 1 &&
@@ -503,7 +500,7 @@ func (r *Registers) Complete(fields []string, word string) (cmpltns []string) {
 
 	simple := false
 	if len(fields) > 1 {
-		ref, _ := Resolve(r.Lexical, r.Frame, NewSymbol(fields[0]))
+		ref, _ := Resolve(r.Lexical, r.Frame, fields[0])
 		if ref != nil {
 			v := ref.Get()
 			if IsBuiltin(v) {
@@ -728,7 +725,7 @@ func (s *Scope) String() string {
 
 /* Scope-specific functions */
 
-func (s *Scope) Access(key Cell) Reference {
+func (s *Scope) Access(key string) Reference {
 	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
 		if value := obj.Faces().Access(key); value != nil {
@@ -770,11 +767,11 @@ func (s *Scope) Prev() context {
 	return s.prev
 }
 
-func (s *Scope) Define(key Cell, value Cell) {
+func (s *Scope) Define(key string, value Cell) {
 	s.env.Add(key, value)
 }
 
-func (s *Scope) Public(key Cell, value Cell) {
+func (s *Scope) Public(key string, value Cell) {
 	s.env.Prev().Add(key, value)
 }
 
@@ -791,28 +788,23 @@ func (s *Scope) Visibility() *Env {
 }
 
 func (s *Scope) DefineBuiltin(k string, a function) {
-	s.Define(NewSymbol(k),
-		NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s)))
+	s.Define(k, NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s)))
 }
 
 func (s *Scope) DefineMethod(k string, a function) {
-	s.Define(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
+	s.Define(k, NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) PublicMethod(k string, a function) {
-	s.Public(NewSymbol(k),
-		NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
+	s.Public(k, NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) DefineSyntax(k string, a function) {
-	s.Define(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
+	s.Define(k, NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
 
 func (s *Scope) PublicSyntax(k string, a function) {
-	s.Public(NewSymbol(k),
-		NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
+	s.Public(k, NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
 }
 
 /* Syntax cell definition. */
@@ -942,24 +934,24 @@ func (t *Task) Apply(args Cell) bool {
 
 	clabel := m.Ref().CallerLabel()
 	if clabel != Null {
-		c.Define(clabel, caller)
+		c.Define(Raw(clabel), caller)
 	}
 
 	slabel := m.Ref().SelfLabel()
 	if slabel != Null {
-		c.Define(slabel, toContext(m.Self()).Expose())
+		c.Define(Raw(slabel), toContext(m.Self()).Expose())
 	}
 
 	params := m.Ref().Params()
 	for args != Null && params != Null && IsAtom(Car(params)) {
-		c.Define(Car(params), Car(args))
+		c.Define(Raw(Car(params)), Car(args))
 		args, params = Cdr(args), Cdr(params)
 	}
 	if IsCons(Car(params)) {
-		c.Define(Caar(params), args)
+		c.Define(Raw(Caar(params)), args)
 	}
 
-	c.Define(NewSymbol("return"), t.CurrentContinuation())
+	c.Define("return", t.CurrentContinuation())
 
 	return true
 }
@@ -967,7 +959,7 @@ func (t *Task) Apply(args Cell) bool {
 func (t *Task) Chdir(dir string) bool {
 	rv := ExitSuccess
 
-	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
+	c, _ := Resolve(t.Lexical, t.Frame, "$PWD")
 	oldwd := c.Get().String()
 
 	err := os.Chdir(dir)
@@ -975,8 +967,8 @@ func (t *Task) Chdir(dir string) bool {
 		rv = ExitFailure
 	} else if wd, err := os.Getwd(); err == nil {
 		c := toContext(t.Lexical)
-		c.Public(pwdsym, NewSymbol(wd))
-		c.Public(oldpwdsym, NewSymbol(oldwd))
+		c.Public("$PWD", NewSymbol(wd))
+		c.Public("$OLDPWD", NewSymbol(oldwd))
 	}
 
 	return t.Return(rv)
@@ -1101,16 +1093,16 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, Raw(Car(args)))
 	}
 
-	c, _ := Resolve(t.Lexical, t.Frame, pwdsym)
+	c, _ := Resolve(t.Lexical, t.Frame, "$PWD")
 	dir := c.Get().String()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdin_"))
+	c, _ = Resolve(t.Lexical, t.Frame, "_stdin_")
 	in := c.Get()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stdout_"))
+	c, _ = Resolve(t.Lexical, t.Frame, "_stdout_")
 	out := c.Get()
 
-	c, _ = Resolve(t.Lexical, t.Frame, NewSymbol("_stderr_"))
+	c, _ = Resolve(t.Lexical, t.Frame, "_stderr_")
 	err := c.Get()
 
 	files := []*os.File{rpipe(in), wpipe(out), wpipe(err)}
@@ -1215,7 +1207,7 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
-	c, s := Resolve(t.Lexical, t.Frame, sym)
+	c, s := Resolve(t.Lexical, t.Frame, Raw(sym))
 	if c == nil {
 		r := Raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
@@ -1406,16 +1398,16 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 			}
 
 		case psExecDefine:
-			toContext(t.Lexical).Define(t.Code, Car(t.Dump))
+			toContext(t.Lexical).Define(Raw(t.Code), Car(t.Dump))
 
 		case psExecPublic:
-			toContext(t.Lexical).Public(t.Code, Car(t.Dump))
+			toContext(t.Lexical).Public(Raw(t.Code), Car(t.Dump))
 
 		case psExecSet:
-			k := t.Code.(*Symbol)
+			k := Raw(t.Code.(*Symbol))
 			r, _ := Resolve(t.Lexical, t.Frame, k)
 			if r == nil {
-				msg := "'" + k.String() + "' undefined"
+				msg := "'" + k + "' undefined"
 				panic(msg)
 			}
 
@@ -1513,7 +1505,7 @@ func (t *Task) Strict() (ok bool) {
 		ok = false
 	}()
 
-	c, _ := Resolve(t.Lexical, nil, NewSymbol("strict"))
+	c, _ := Resolve(t.Lexical, nil, "strict")
 	if c == nil {
 		return false
 	}
@@ -1552,7 +1544,7 @@ func (t *Task) Throw(file string, line int, text string) {
 
 		switch t.Lexical.(type) {
 		case context:
-			resolved, _ = Resolve(t.Lexical, t.Frame, throw)
+			resolved, _ = Resolve(t.Lexical, t.Frame, "throw")
 		}
 
 		if resolved != nil {
@@ -1726,7 +1718,7 @@ func PrintError(file string, line int, msg string) {
 	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
 }
 
-func Resolve(s Cell, f Cell, k *Symbol) (Reference, Cell) {
+func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	if s != nil {
 		c := toContext(s)
 		if c != nil {
@@ -1767,29 +1759,29 @@ func Start(p Parser, cli ui) {
 	origin := ""
 	if argc > 1 && os.Args[1] != "-c" {
 		origin = filepath.Dir(os.Args[1])
-		scope0.Define(NewSymbol("_0_"), NewSymbol(os.Args[1]))
+		scope0.Define("_0_", NewSymbol(os.Args[1]))
 
 		for i, v := range os.Args[2:] {
 			k := "_" + strconv.Itoa(i+1) + "_"
-			scope0.Define(NewSymbol(k), NewSymbol(v))
+			scope0.Define(k, NewSymbol(v))
 		}
 
 		for i := argc - 1; i > 1; i-- {
 			args = Cons(NewSymbol(os.Args[i]), args)
 		}
 	} else {
-		scope0.Define(NewSymbol("_0_"), NewSymbol(os.Args[0]))
+		scope0.Define("_0_", NewSymbol(os.Args[0]))
 	}
-	scope0.Define(NewSymbol("_args_"), args)
+	scope0.Define("_args_", args)
 
 	if wd, err := os.Getwd(); err == nil {
-		sys.Public(oldpwdsym, NewSymbol(wd))
-		sys.Public(pwdsym, NewSymbol(wd))
+		sys.Public("$OLDPWD", NewSymbol(wd))
+		sys.Public("$PWD", NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
 	}
-	scope0.Define(NewSymbol("_origin_"), NewSymbol(origin))
+	scope0.Define("_origin_", NewSymbol(origin))
 
 	if argc > 1 {
 		if os.Args[1] == "-c" {
@@ -1979,10 +1971,6 @@ func init() {
 
 	CacheSymbols(symbols...)
 
-	homesym = NewSymbol("$HOME")
-	oldpwdsym = NewSymbol("$OLDPWD")
-	pwdsym = NewSymbol("$PWD")
-
 	runnable = make(chan bool)
 	close(runnable)
 
@@ -2033,7 +2021,7 @@ func init() {
 		self := toContext(t.Self())
 		s := Raw(Car(args))
 
-		ok := self.Faces().Prev().Remove(NewSymbol(s))
+		ok := self.Faces().Prev().Remove(s)
 		if !ok {
 			panic("'" + s + "' undefined")
 		}
@@ -2042,12 +2030,11 @@ func init() {
 	})
 	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
-		s := Raw(Car(args))
-		k := NewSymbol(s)
+		k := Raw(Car(args))
 
 		c, o := Resolve(t.Self(), nil, k)
 		if c == nil {
-			panic("'" + s + "' undefined")
+			panic("'" + k + "' undefined")
 		} else if a, ok := c.Get().(binding); ok {
 			return t.Return(a.Bind(o))
 		} else {
@@ -2056,10 +2043,8 @@ func init() {
 	})
 	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2)
-		s := Raw(Car(args))
+		k := Raw(Car(args))
 		v := Cadr(args)
-
-		k := NewSymbol(s)
 
 		toContext(t.Self()).Public(k, v)
 		return t.Return(v)
@@ -2099,7 +2084,7 @@ func init() {
 	})
 	object.PublicMethod("has", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
-		c, _ := Resolve(t.Self(), nil, NewSymbol(Raw(Car(args))))
+		c, _ := Resolve(t.Self(), nil, Raw(Car(args)))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -2144,14 +2129,14 @@ func init() {
 		t.Validate(args, 0, 1, IsText)
 		dir := ""
 		if args == Null {
-			c, _ := Resolve(t.Lexical, t.Frame, homesym)
+			c, _ := Resolve(t.Lexical, t.Frame, "$HOME")
 			dir = Raw(c.Get())
 		} else {
 			dir = Raw(Car(args))
 		}
 
 		if dir == "-" {
-			c, _ := Resolve(t.Lexical, t.Frame, oldpwdsym)
+			c, _ := Resolve(t.Lexical, t.Frame, "$OLDPWD")
 			dir = c.Get().String()
 
 		}
@@ -2229,11 +2214,9 @@ func init() {
 			panic(err)
 		}
 
-		sym := NewSymbol(str)
-		c, _ := Resolve(t.Lexical, t.Frame, sym)
-
+		c, _ := Resolve(t.Lexical, t.Frame, str)
 		if c == nil {
-			return t.Return(sym)
+			return t.Return(NewSymbol(str))
 		}
 
 		return t.Return(c.Get())
@@ -2302,7 +2285,7 @@ func init() {
 	})
 	scope0.DefineMethod("resolves", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		c, _ := Resolve(t.Lexical, t.Frame, NewSymbol(Raw(Car(args))))
+		c, _ := Resolve(t.Lexical, t.Frame, Raw(Car(args)))
 
 		return t.Return(NewBoolean(c != nil))
 	})
@@ -2498,24 +2481,24 @@ func init() {
 	env := NewObject(NewScope(object, nil))
 	sys = NewObject(NewScope(object, nil))
 
-	scope0.Define(NewSymbol("false"), False)
-	scope0.Define(NewSymbol("true"), True)
+	scope0.Define("false", False)
+	scope0.Define("true", True)
 
-	scope0.Define(NewSymbol("_env_"), env)
-	scope0.Define(NewSymbol("_pid_"), NewInteger(int64(system.Pid())))
-	scope0.Define(NewSymbol("_platform_"), NewSymbol(system.Platform))
-	scope0.Define(NewSymbol("_ppid_"), NewInteger(int64(system.Ppid())))
-	scope0.Define(NewSymbol("_root_"), scope0)
-	scope0.Define(NewSymbol("_sys_"), sys)
+	scope0.Define("_env_", env)
+	scope0.Define("_pid_", NewInteger(int64(system.Pid())))
+	scope0.Define("_platform_", NewSymbol(system.Platform))
+	scope0.Define("_ppid_", NewInteger(int64(system.Ppid())))
+	scope0.Define("_root_", scope0)
+	scope0.Define("_sys_", sys)
 
-	sys.Public(NewSymbol("_stdin_"), NewPipe(os.Stdin, nil))
-	sys.Public(NewSymbol("_stdout_"), NewPipe(nil, os.Stdout))
-	sys.Public(NewSymbol("_stderr_"), NewPipe(nil, os.Stderr))
+	sys.Public("_stdin_", NewPipe(os.Stdin, nil))
+	sys.Public("_stdout_", NewPipe(nil, os.Stdout))
+	sys.Public("_stderr_", NewPipe(nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
-		env.Public(NewSymbol("$"+kv[0]), NewSymbol(kv[1]))
+		env.Public("$"+kv[0], NewSymbol(kv[1]))
 	}
 
 	frame0 = List(env, sys)
@@ -2533,12 +2516,10 @@ func interpolate(l context, d Cell, s string) string {
 		if name[0] == '{' {
 			name = name[1 : len(name)-1]
 		}
-		sym := NewSymbol(name)
 
-		c, _ := Resolve(l, d, sym)
+		c, _ := Resolve(l, d, name)
 		if c == nil {
-			sym := NewSymbol("$" + name)
-			c, _ = Resolve(l, d, sym)
+			c, _ = Resolve(l, d, "$" + name)
 		}
 		if c == nil {
 			return ref

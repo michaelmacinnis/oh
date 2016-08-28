@@ -287,10 +287,10 @@ func NewEnv(prev *Env) *Env {
 	return &Env{&sync.RWMutex{}, make(map[string]Reference), prev}
 }
 
-func (e *Env) Access(key Cell) Reference {
+func (e *Env) Access(key string) Reference {
 	for env := e; env != nil; env = env.prev {
 		env.RLock()
-		if value, ok := env.hash[key.String()]; ok {
+		if value, ok := env.hash[key]; ok {
 			env.RUnlock()
 			return value
 		}
@@ -300,11 +300,11 @@ func (e *Env) Access(key Cell) Reference {
 	return nil
 }
 
-func (e *Env) Add(key Cell, value Cell) {
+func (e *Env) Add(key string, value Cell) {
 	e.Lock()
 	defer e.Unlock()
 
-	e.hash[key.String()] = NewVariable(value)
+	e.hash[key] = NewVariable(value)
 }
 
 func (e *Env) Complete(simple bool, word string) []string {
@@ -366,14 +366,13 @@ func (e *Env) Prev() *Env {
 	return e.prev
 }
 
-func (e *Env) Remove(key Cell) bool {
+func (e *Env) Remove(key string) bool {
 	e.Lock()
 	defer e.Unlock()
 
-	k := key.String()
-	_, ok := e.hash[k]
+	_, ok := e.hash[key]
 	if ok {
-		delete(e.hash, k)
+		delete(e.hash, key)
 	}
 	return ok
 }
