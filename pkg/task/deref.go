@@ -12,13 +12,13 @@ func Deref(name string, address uintptr) Cell {
 	case name == "bound":
 		return (*Bound)(unsafe.Pointer(address))
 	case name == "builtin":
-		return (*Builtin)(unsafe.Pointer(address))
+		return (*builtin)(unsafe.Pointer(address))
 	case name == "channel":
 		return (*Channel)(unsafe.Pointer(address))
 	case name == "continuation":
 		return (*Continuation)(unsafe.Pointer(address))
 	case name == "method":
-		return (*Method)(unsafe.Pointer(address))
+		return (*method)(unsafe.Pointer(address))
 	case name == "object":
 		return (*Object)(unsafe.Pointer(address))
 	case name == "pipe":
@@ -26,7 +26,7 @@ func Deref(name string, address uintptr) Cell {
 	case name == "scope":
 		return (*Scope)(unsafe.Pointer(address))
 	case name == "syntax":
-		return (*Syntax)(unsafe.Pointer(address))
+		return (*syntax)(unsafe.Pointer(address))
 	case name == "task":
 		return (*Task)(unsafe.Pointer(address))
 	case name == "unbound":

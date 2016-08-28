@@ -194,8 +194,8 @@ func (b *Bound) Self() Cell {
 
 /* Builtin cell definition. */
 
-type Builtin struct {
-	Command
+type builtin struct {
+	command
 }
 
 func IsBuiltin(c Cell) bool {
@@ -205,15 +205,15 @@ func IsBuiltin(c Cell) bool {
 	}
 
 	switch b.Ref().(type) {
-	case *Builtin:
+	case *builtin:
 		return true
 	}
 	return false
 }
 
 func NewBuiltin(a function, b, c, l, p Cell, s context) closure {
-	return &Builtin{
-		Command{
+	return &builtin{
+		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
@@ -224,17 +224,21 @@ func NewBuiltin(a function, b, c, l, p Cell, s context) closure {
 	}
 }
 
-func (b *Builtin) Equal(c Cell) bool {
+func NewUnboundBuiltin(a function, s context) binding {
+	return NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s))
+}
+
+func (b *builtin) Equal(c Cell) bool {
 	return b == c
 }
 
-func (b *Builtin) String() string {
+func (b *builtin) String() string {
 	return fmt.Sprintf("%%builtin %p%%", b)
 }
 
 /* Command cell definition. */
 
-type Command struct {
+type command struct {
 	applier function
 	body    Cell
 	clabel  Cell
@@ -243,31 +247,31 @@ type Command struct {
 	scope   context
 }
 
-func (c *Command) Bool() bool {
+func (c *command) Bool() bool {
 	return true
 }
 
-func (c *Command) Applier() function {
+func (c *command) Applier() function {
 	return c.applier
 }
 
-func (c *Command) Body() Cell {
+func (c *command) Body() Cell {
 	return c.body
 }
 
-func (c *Command) CallerLabel() Cell {
+func (c *command) CallerLabel() Cell {
 	return c.clabel
 }
 
-func (c *Command) Params() Cell {
+func (c *command) Params() Cell {
 	return c.params
 }
 
-func (c *Command) Scope() context {
+func (c *command) Scope() context {
 	return c.scope
 }
 
-func (c *Command) SelfLabel() Cell {
+func (c *command) SelfLabel() Cell {
 	return c.slabel
 }
 
@@ -337,8 +341,8 @@ func NewJob(cli ui) *Job {
 
 /* Method cell definition. */
 
-type Method struct {
-	Command
+type method struct {
+	command
 }
 
 func IsMethod(c Cell) bool {
@@ -348,15 +352,15 @@ func IsMethod(c Cell) bool {
 	}
 
 	switch b.Ref().(type) {
-	case *Method:
+	case *method:
 		return true
 	}
 	return false
 }
 
 func NewMethod(a function, b, c, l, p Cell, s context) closure {
-	return &Method{
-		Command{
+	return &method{
+		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
@@ -367,11 +371,15 @@ func NewMethod(a function, b, c, l, p Cell, s context) closure {
 	}
 }
 
-func (m *Method) Equal(c Cell) bool {
+func NewBoundMethod(a function, s context) binding {
+	return NewBound(NewMethod(a, Null, Null, Null, Null, s), s)
+}
+
+func (m *method) Equal(c Cell) bool {
 	return m == c
 }
 
-func (m *Method) String() string {
+func (m *method) String() string {
 	return fmt.Sprintf("%%method %p%%", m)
 }
 
@@ -788,29 +796,29 @@ func (s *Scope) Visibility() *Env {
 }
 
 func (s *Scope) DefineBuiltin(k string, a function) {
-	s.Define(k, NewUnbound(NewBuiltin(a, Null, Null, Null, Null, s)))
+	s.Define(k, NewUnboundBuiltin(a, s))
 }
 
 func (s *Scope) DefineMethod(k string, a function) {
-	s.Define(k, NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
+	s.Define(k, NewBoundMethod(a, s))
 }
 
 func (s *Scope) PublicMethod(k string, a function) {
-	s.Public(k, NewBound(NewMethod(a, Null, Null, Null, Null, s), s))
+	s.Public(k, NewBoundMethod(a, s))
 }
 
 func (s *Scope) DefineSyntax(k string, a function) {
-	s.Define(k, NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
+	s.Define(k, NewBoundSyntax(a, s))
 }
 
 func (s *Scope) PublicSyntax(k string, a function) {
-	s.Public(k, NewBound(NewSyntax(a, Null, Null, Null, Null, s), s))
+	s.Public(k, NewBoundSyntax(a, s))
 }
 
 /* Syntax cell definition. */
 
-type Syntax struct {
-	Command
+type syntax struct {
+	command
 }
 
 func IsSyntax(c Cell) bool {
@@ -820,15 +828,15 @@ func IsSyntax(c Cell) bool {
 	}
 
 	switch b.Ref().(type) {
-	case *Syntax:
+	case *syntax:
 		return true
 	}
 	return false
 }
 
 func NewSyntax(a function, b, c, l, p Cell, s context) closure {
-	return &Syntax{
-		Command{
+	return &syntax{
+		command{
 			applier: a,
 			body:    b,
 			clabel:  c,
@@ -839,11 +847,15 @@ func NewSyntax(a function, b, c, l, p Cell, s context) closure {
 	}
 }
 
-func (m *Syntax) Equal(c Cell) bool {
+func NewBoundSyntax(a function, s context) binding {
+	return NewBound(NewSyntax(a, Null, Null, Null, Null, s), s)
+}
+
+func (m *syntax) Equal(c Cell) bool {
 	return m == c
 }
 
-func (m *Syntax) String() string {
+func (m *syntax) String() string {
 	return fmt.Sprintf("%%syntax %p%%", m)
 }
 
@@ -1336,14 +1348,14 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 					psEvalArgumentsBuiltin)
 			case binding:
 				switch k.Ref().(type) {
-				case *Builtin:
+				case *builtin:
 					t.ReplaceStates(psExecBuiltin,
 						psEvalArgumentsBuiltin)
 
-				case *Method:
+				case *method:
 					t.ReplaceStates(psExecMethod,
 						psEvalArguments)
-				case *Syntax:
+				case *syntax:
 					t.ReplaceStates(psExecSyntax)
 					continue
 				}
@@ -1974,8 +1986,7 @@ func init() {
 	runnable = make(chan bool)
 	close(runnable)
 
-	builtin := NewBuiltin((*Task).External, Null, Null, Null, Null, nil)
-	external = NewUnbound(builtin)
+	external = NewUnboundBuiltin((*Task).External, nil)
 
 	namespace = NewScope(nil, nil)
 
