@@ -9,5 +9,5 @@ import (
 )
 
 func SetForegroundGroup(group int) {
-	unix.IoctlSetInt(unix.Stdin, sys.TIOCSPGRP, group)
+	unix.IoctlSetInt(unix.Stdin, unix.TIOCSPGRP, group)
 }

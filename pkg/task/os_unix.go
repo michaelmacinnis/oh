@@ -9,11 +9,12 @@ import (
 	"golang.org/x/sys/unix"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 type notification struct {
 	pid    int
-	status unix.WaitStatus
+	status syscall.WaitStatus
 }
 
 type registration struct {
@@ -149,10 +150,10 @@ func monitor(active chan bool, notify chan notification) {
 	for {
 		monitoring := <-active
 		for monitoring {
-			var rusage unix.Rusage
-			var status unix.WaitStatus
-			options := unix.WUNTRACED
-			pid, err := unix.Wait4(-1, &status, options, &rusage)
+			var rusage syscall.Rusage
+			var status syscall.WaitStatus
+			options := syscall.WUNTRACED
+			pid, err := syscall.Wait4(-1, &status, options, &rusage)
 			if err != nil {
 				println("Wait4:", err.Error())
 			}

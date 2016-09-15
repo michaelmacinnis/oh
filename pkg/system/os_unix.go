@@ -74,7 +74,7 @@ func TerminateProcess(pid int) {
 }
 
 func init() {
-	pgid = unix.Getpgrp()
 	pid = unix.Getpid()
+	pgid, _ = unix.Getpgid(pid)
 	ppid = unix.Getppid()
 }

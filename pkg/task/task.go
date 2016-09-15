@@ -44,7 +44,7 @@ type closure interface {
 	SelfLabel() Cell
 }
 
-type closurer func(a function, b, c, l, p Cell, s context) closure
+type closurer func(a function, b, c, o, p Cell, s context) closure
 
 type context interface {
 	Cell
