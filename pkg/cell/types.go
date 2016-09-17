@@ -24,7 +24,7 @@ type Conduit interface {
 	Close()
 	ReaderClose()
 	ReadLine() Cell
-	Read(bool, Parser, Thrower) Cell
+	Read(Parser, Thrower) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -225,7 +225,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(interactive bool, p Parser, t Thrower) Cell {
+func (ch *Channel) Read(p Parser, t Thrower) Cell {
 	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null
@@ -606,6 +606,7 @@ type Pipe struct {
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
+	i bool
 	r *os.File
 	w *os.File
 }
@@ -623,11 +624,12 @@ func IsPipe(c Cell) bool {
 	return false
 }
 
-func NewPipe(r *os.File, w *os.File) *Pipe {
+func NewPipe(i bool, r *os.File, w *os.File) *Pipe {
 	p := &Pipe{
 		b: nil,
 		c: nil,
 		d: nil,
+		i: i,
 		r: r,
 		w: w,
 	}
@@ -682,7 +684,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read(interactive bool, parse Parser, t Thrower) Cell {
+func (p *Pipe) Read(parse Parser, t Thrower) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -697,7 +699,7 @@ func (p *Pipe) Read(interactive bool, parse Parser, t Thrower) Cell {
 		p.c = make(chan Cell)
 		go func() {
 			var f *os.File
-			if interactive && p.r == os.Stdin {
+			if p.i {
 				f = p.r
 			}
 			parse(

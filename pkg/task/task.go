@@ -1881,7 +1881,7 @@ func conduitContext() context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(interactive, parse, t))
+		return t.Return(toConduit(t.Self()).Read(parse, t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -2375,7 +2375,7 @@ func init() {
 			w = nil
 		}
 
-		return t.Return(NewPipe(r, w))
+		return t.Return(NewPipe(interactive, r, w))
 	})
 	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -2502,9 +2502,9 @@ func init() {
 	scope0.Define("_root_", scope0)
 	scope0.Define("_sys_", sys)
 
-	sys.Public("_stdin_", NewPipe(os.Stdin, nil))
-	sys.Public("_stdout_", NewPipe(nil, os.Stdout))
-	sys.Public("_stderr_", NewPipe(nil, os.Stderr))
+	sys.Public("_stdin_", NewPipe(interactive, os.Stdin, nil))
+	sys.Public("_stdout_", NewPipe(interactive, nil, os.Stdout))
+	sys.Public("_stderr_", NewPipe(interactive, nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {

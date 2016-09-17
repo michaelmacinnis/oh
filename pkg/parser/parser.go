@@ -119,7 +119,7 @@ main:
 				s.start = 0
 				s.token = CTRLC
 				break
-			} else if s.f != nil && retries < 1 && err != io.EOF {
+			} else if retries < 1 && err != io.EOF {
 				if system.ResetForegroundGroup(s.f) {
 					retries++
 					goto main

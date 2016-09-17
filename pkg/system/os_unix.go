@@ -5,6 +5,7 @@
 package system
 
 import (
+	"github.com/mattn/go-isatty"
 	"golang.org/x/sys/unix"
 	"os"
 	"path"
@@ -38,7 +39,7 @@ func JobControlSupported() bool {
 }
 
 func ResetForegroundGroup(f *os.File) bool {
-	if f != os.Stdin {
+	if !isatty.IsTerminal(f.Fd()) {
 		return false
 	}
 

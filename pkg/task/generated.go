@@ -83,7 +83,7 @@ func bindGenerators(s *scope) {
 	})
 
 	s.DefineMethod("pipe", func(t *Task, args Cell) bool {
-		return t.Return(NewPipe(nil, nil))
+		return t.Return(NewPipe(interactive, nil, nil))
 	})
 
 	s.DefineMethod("rational", func(t *Task, args Cell) bool {
