@@ -43,7 +43,7 @@ type Number interface {
 }
 
 type Parser func(
-	ReadStringer, Thrower, *os.File, string,
+	ReadStringer, Thrower, string,
 	func(Cell, string, int, string) (Cell, bool),
 ) bool
 
@@ -606,7 +606,6 @@ type Pipe struct {
 	b *bufio.Reader
 	c chan Cell
 	d chan bool
-	i bool
 	r *os.File
 	w *os.File
 }
@@ -624,12 +623,11 @@ func IsPipe(c Cell) bool {
 	return false
 }
 
-func NewPipe(i bool, r *os.File, w *os.File) *Pipe {
+func NewPipe(r *os.File, w *os.File) *Pipe {
 	p := &Pipe{
 		b: nil,
 		c: nil,
 		d: nil,
-		i: i,
 		r: r,
 		w: w,
 	}
@@ -698,12 +696,8 @@ func (p *Pipe) Read(parse Parser, t Thrower) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			var f *os.File
-			if p.i {
-				f = p.r
-			}
 			parse(
-				p.reader(), t, f, p.r.Name(),
+				p.reader(), t, p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
 					t.SetLine(l)
 					p.c <- c

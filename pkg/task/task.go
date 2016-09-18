@@ -1763,7 +1763,7 @@ func Start(p Parser, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(b, task0, nil, "boot.oh", eval)
+	parse(b, task0, "boot.oh", eval)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1804,7 +1804,7 @@ func Start(p Parser, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parse(b, task0, nil, "-c", eval)
+			parse(b, task0, "-c", eval)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -1816,7 +1816,7 @@ func Start(p Parser, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		if parse(cli, task0, nil, "oh", evaluate) {
+		if parse(cli, task0, "oh", evaluate) {
 			fmt.Printf("\n")
 		}
 		cli.Close()
@@ -2375,7 +2375,7 @@ func init() {
 			w = nil
 		}
 
-		return t.Return(NewPipe(interactive, r, w))
+		return t.Return(NewPipe(r, w))
 	})
 	scope0.DefineMethod("random", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -2502,9 +2502,9 @@ func init() {
 	scope0.Define("_root_", scope0)
 	scope0.Define("_sys_", sys)
 
-	sys.Public("_stdin_", NewPipe(interactive, os.Stdin, nil))
-	sys.Public("_stdout_", NewPipe(interactive, nil, os.Stdout))
-	sys.Public("_stderr_", NewPipe(interactive, nil, os.Stderr))
+	sys.Public("_stdin_", NewPipe(os.Stdin, nil))
+	sys.Public("_stdout_", NewPipe(nil, os.Stdout))
+	sys.Public("_stderr_", NewPipe(nil, os.Stderr))
 
 	/* Environment variables. */
 	for _, s := range os.Environ() {

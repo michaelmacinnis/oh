@@ -7,7 +7,6 @@ import (
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/peterh/liner"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -47,7 +46,7 @@ func New(args []string) *cli {
 
 	i.SetCtrlCAborts(true)
 	i.SetTabCompletionStyle(liner.TabPrints)
-	i.SetShouldRestart(restart)
+	i.SetShouldRestart(system.ResetForegroundGroup)
 	i.SetWordCompleter(complete)
 
 	return i
@@ -264,12 +263,4 @@ func files(word string) []string {
 	})
 
 	return completions
-}
-
-func restart(err error) bool {
-	if err == io.EOF {
-		return false
-	}
-
-	return system.ResetForegroundGroup(os.Stdin)
 }

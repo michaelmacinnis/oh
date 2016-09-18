@@ -6,7 +6,6 @@ package system
 
 import (
 	"errors"
-	"os"
 	"syscall"
 )
 
@@ -26,7 +25,7 @@ func JobControlSupported() bool {
 	return false
 }
 
-func ResetForegroundGroup(f *os.File) bool {
+func ResetForegroundGroup(err error) bool {
 	return false
 }
 

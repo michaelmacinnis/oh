@@ -5,8 +5,6 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/system"
-	"io"
-	"os"
 	"strings"
 )
 
@@ -17,7 +15,6 @@ type parser struct {
 type scanner struct {
 	*parser
 	t        Thrower
-	f        *os.File
 	filename string
 	input    ReadStringer
 	process  func(Cell, string, int, string) (Cell, bool)
@@ -119,11 +116,9 @@ main:
 				s.start = 0
 				s.token = CTRLC
 				break
-			} else if retries < 1 && err != io.EOF {
-				if system.ResetForegroundGroup(s.f) {
-					retries++
-					goto main
-				}
+			} else if system.ResetForegroundGroup(err) {
+				retries++
+				goto main
 			}
 
 			s.lineno++
@@ -334,18 +329,17 @@ func New(deref func(string, uintptr) Cell) *parser {
 }
 
 func (p *parser) Parse(
-	input ReadStringer, t Thrower, f *os.File,
-	filename string, process func(Cell, string, int, string) (Cell, bool),
+	input ReadStringer, t Thrower, filename string,
+	process func(Cell, string, int, string) (Cell, bool),
 ) bool {
 
 	s := new(scanner)
 
-	s.parser = p
-	s.t = t
-	s.f = f
 	s.filename = filename
 	s.input = input
+	s.parser = p
 	s.process = process
+	s.t = t
 
 	rval := 1
 	for rval > 0 {
