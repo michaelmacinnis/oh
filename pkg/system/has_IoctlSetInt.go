@@ -8,6 +8,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func SetForegroundGroup(group int) {
-	unix.IoctlSetInt(unix.Stdin, unix.TIOCSPGRP, group)
+func setForegroundGroup(fd, group int) {
+	unix.IoctlSetInt(fd, unix.TIOCSPGRP, group)
 }

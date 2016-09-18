@@ -5,6 +5,7 @@
 package system
 
 import (
+	"github.com/mattn/go-isatty"
 	"golang.org/x/sys/unix"
 	"os"
 	"path"
@@ -48,6 +49,13 @@ func ResetForegroundGroup(err error) bool {
 	return true
 }
 
+func SetForegroundGroup(pgid int) {
+	if terminal < 0 {
+		return
+	}
+	setForegroundGroup(terminal, pgid)
+}
+
 func SuspendProcess(pid int) {
 	unix.Kill(pid, unix.SIGSTOP)
 }
@@ -74,4 +82,9 @@ func init() {
 	pid = unix.Getpid()
 	pgid, _ = unix.Getpgid(pid)
 	ppid = unix.Getppid()
+	for _, fd := range []int{unix.Stdin, unix.Stdout, unix.Stderr} {
+		if isatty.IsTerminal(uintptr(fd)) {
+			terminal = fd
+		}
+	}
 }

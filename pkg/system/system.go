@@ -6,6 +6,7 @@ var (
 	pgid int
 	pid  int
 	ppid int
+	terminal = -1
 )
 
 func Pgid() int {

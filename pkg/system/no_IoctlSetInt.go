@@ -9,7 +9,9 @@ import (
 	"unsafe"
 )
 
-func SetForegroundGroup(group int) {
-	syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdin),
-		syscall.TIOCSPGRP, uintptr(unsafe.Pointer(&group)))
+func setForegroundGroup(fd, group int) {
+	syscall.Syscall(
+		syscall.SYS_IOCTL, uintptr(fd), syscall.TIOCSPGRP,
+		uintptr(unsafe.Pointer(&group)),
+	)
 }
