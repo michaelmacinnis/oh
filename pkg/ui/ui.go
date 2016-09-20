@@ -104,9 +104,18 @@ func (i *cli) TerminalMode() (task.ApplyModer, error) {
 	return liner.TerminalMode()
 }
 
-func complete(line string, pos int) (string, []string, string) {
-	head := line[:pos]
-	tail := line[pos:]
+func complete(line string, pos int) (head string, completions []string, tail string) {
+	head = line[:pos]
+	tail = line[pos:]
+
+        defer func() {
+                r := recover()
+                if r == nil {
+                        return
+                }
+
+		completions = []string{}
+        }()
 
 	fields := strings.Fields(head)
 	count := len(fields)
@@ -120,22 +129,22 @@ func complete(line string, pos int) (string, []string, string) {
 		return head, []string{}, tail
 	}
 
-	// Remove word from head so line == head + word + tail
-	head = head[0 : len(head)-len(word)]
+	// Set prefix to head - word so so line == prefix + word + tail
+	prefix := head[0 : len(head)-len(word)]
 
-	var completions []string
 	if count == 1 {
 		completions = executables(word)
 	} else {
 		completions = files(word)
 	}
+
 	completions = append(
 		completions,
 		task.ForegroundTask().Complete(fields, word)...,
 	)
 
 	if len(completions) == 0 {
-		return head, []string{word}, tail
+		return prefix, []string{word}, tail
 	}
 
 	unique := make(map[string]bool)
@@ -148,7 +157,7 @@ func complete(line string, pos int) (string, []string, string) {
 		completions = append(completions, completion)
 	}
 
-	return head, completions, tail
+	return prefix, completions, tail
 }
 
 func executables(word string) []string {
@@ -214,7 +223,7 @@ func files(word string) []string {
 	}
 
 	dirname, basename := filepath.Split(candidate)
-	if strings.HasSuffix(word, "/") {
+	if candidate != "/" && strings.HasSuffix(word, "/") {
 		dirname, basename = path.Join(dirname, basename)+"/", ""
 	}
 
@@ -239,7 +248,7 @@ func files(word string) []string {
 		}
 
 		full := path.Join(dirname, basename)
-		if len(basename) == 0 {
+		if candidate != "/" && len(basename) == 0 {
 			if p == dirname {
 				return nil
 			}
@@ -248,7 +257,7 @@ func files(word string) []string {
 			return nil
 		}
 
-		if i.IsDir() {
+		if p != "/" && i.IsDir() {
 			p += "/"
 		}
 
