@@ -2218,20 +2218,6 @@ func init() {
 		}
 		return false
 	})
-	scope0.DefineBuiltin("module", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 1, IsText)
-		str, err := module(Raw(Car(args)))
-		if err != nil {
-			panic(err)
-		}
-
-		c, _ := Resolve(t.Lexical, t.Frame, str)
-		if c == nil {
-			return t.Return(NewSymbol(str))
-		}
-
-		return t.Return(c.Get())
-	})
 	scope0.DefineBuiltin("command", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, -1, IsText)
 		if args == Null {
@@ -2545,19 +2531,6 @@ func interpolate(l context, d Cell, s string) string {
 
 func jobControlEnabled() bool {
 	return interactive && system.JobControlSupported()
-}
-
-func module(f string) (string, error) {
-	i, err := os.Stat(f)
-	if err != nil {
-		return "", err
-	}
-
-	m := "$" + i.Name() + "-" + strconv.FormatInt(i.Size(), 10) + "-" +
-		strconv.Itoa(i.ModTime().Second()) + "." +
-		strconv.Itoa(i.ModTime().Nanosecond())
-
-	return m, nil
 }
 
 func namedCount(c int64, n string, p string) string {

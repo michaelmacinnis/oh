@@ -129,16 +129,20 @@ define for: method (l m) = {
 	return: r::tail
 }
 define glob: builtin (: args) =: return args
-define import: syntax (name) e = {
-	set name: e::eval name
-	define m: module name
-	if (or (is-null m) (is-object m)) {
-		return m
+define import: method (module-path) = {
+	define import-return = return
+	define module-name = module-path
+	define module: method (name) = {
+		if (_root_::has name) {
+			import-return: _root_::_get_ name
+		}
+		set module-name = name
 	}
-
-	e::eval: quasiquote: _root_::define (unquote m): object {
-		source (unquote name)
+	define module-object: object {
+		source module-path
 	}
+	_root_::_set_ module-name module-object
+	return module-object
 }
 define is-list: method (l) = {
 	if (is-null l): return false
@@ -166,6 +170,7 @@ define lcd: method () e = {
 	rm $LFMPATHFILE
 	e::eval: quasiquote: cd (unquote dn)
 }
+define module: method (name) = # no-op
 define map: syntax (: literal) e = {
     define o: object
     for literal: method (entry) = {
