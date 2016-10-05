@@ -170,6 +170,25 @@ define lcd: method () e = {
 	rm $LFMPATHFILE
 	e::eval: quasiquote: cd (unquote dn)
 }
+# Change working dir to last dir on exit from lf.
+define lf: builtin (:args) e = {
+	catch unused {
+		return
+	}
+	if (not: which lf >/dev/null) {
+		return
+	}
+	define temp-file @(_backtick_: mktemp)
+	command lf "--last-dir-path=${temp-file}" @args
+	if (not: test -f temp-file) {
+		return
+	}
+	define dn @(_backtick_: cat temp-file)
+	rm temp-file
+	if dn {
+		e::eval: quasiquote: cd (unquote dn)
+	}
+}
 define module: method (name) = # no-op
 define map: syntax (: literal) e = {
     define o: object
