@@ -178,22 +178,23 @@ func aAfterAmpersand(l *lexer) *action {
 }
 
 func aAfterBang(l *lexer) *action {
-	r := l.next()
+	r, w := l.peek()
 
 	switch r {
 	case EOF:
 		return nil
 	case '"':
+		l.skip(w)
 		return ScanBangString
 	case '>':
+		l.skip(w)
 		return AfterBangGreater
 	case '|':
+		l.skip(w)
 		return AfterPipe
-	default:
-		return ScanSymbol
 	}
 
-	return SkipWhitespace
+	return ScanSymbol
 }
 
 func aAfterBangGreater(l *lexer) *action {
@@ -380,6 +381,7 @@ func aSkipComment(l *lexer) *action {
 		case EOF:
 			return nil
 		case '\n':
+			l.emit(int('\n'))
 			return SkipWhitespace
 		}
 	}
