@@ -14,10 +14,10 @@ type lexer struct {
 	index int             // Current position in the input.
 	input string          // The string being scanned.
 	items chan *yySymType // Channel of scanned items.
+	saved *action         // The previous action.
 	start int             // Start position of this item.
 	state *action         // The action the lexer is currently performing.
 	width int             // Width of last rune read.
-
 }
 
 type action struct {
@@ -26,10 +26,12 @@ type action struct {
 }
 
 const EOF = -1
+const ERROR = 0
 
 // Declared but initialized in init to avoid initialization loop.
 var (
 	AfterAmpersand         *action
+	AfterBackslash         *action
 	AfterBang              *action
 	AfterBangGreater       *action
 	AfterColon             *action
@@ -37,9 +39,7 @@ var (
 	AfterLessThan          *action
 	AfterPipe              *action
 	ScanBangString         *action
-	ScanBangStringEscape   *action
 	ScanDoubleQuoted       *action
-	ScanDoubleQuotedEscape *action
 	ScanSingleQuoted       *action
 	ScanSymbol             *action
 	SkipComment            *action
@@ -72,6 +72,7 @@ func (l *lexer) clear() {
 	l.after = 0
 	l.index = 0
 	l.input = ""
+	l.saved = nil
 	l.start = 0
 	l.state = SkipWhitespace
 	l.width = 0
@@ -127,6 +128,11 @@ func (l *lexer) emit(yys int) {
 	l.items <- &yySymType{yys: yys, s: s}
 }
 
+func (l *lexer) error(msg string) *action {
+	l.items <- &yySymType{yys: ERROR, s: msg}
+	return nil
+}
+
 func (l *lexer) next() rune {
 	r, w := l.peek()
 	l.skip(w)
@@ -145,6 +151,12 @@ func (l *lexer) reset() {
 	l.input = l.input[l.start:]
 	l.index -= l.start
 	l.start = 0
+}
+
+func (l *lexer) resume() *action {
+	saved := l.saved
+	l.saved = nil
+	return saved
 }
 
 func (l *lexer) run() {
@@ -175,6 +187,17 @@ func aAfterAmpersand(l *lexer) *action {
 	}
 
 	return SkipWhitespace
+}
+
+func aAfterBackslash(l *lexer) *action {
+	r := l.next()
+
+	switch r {
+	case EOF:
+		return nil
+	}
+
+	return l.resume()
 }
 
 func aAfterBang(l *lexer) *action {
@@ -296,22 +319,12 @@ func aScanBangString(l *lexer) *action {
 		case EOF:
 			return nil
 		case '"':
-			l.emit(BANG_DOUBLE)
+			l.emit(BANG_STRING)
 			return SkipWhitespace
 		case '\\':
-			return ScanBangStringEscape
+			l.saved = ScanBangString
+			return AfterBackslash
 		}
-	}
-}
-
-func aScanBangStringEscape(l *lexer) *action {
-	for {
-		c := l.next()
-		switch c {
-		case EOF:
-			return nil
-		}
-		return ScanBangString
 	}
 }
 
@@ -326,19 +339,9 @@ func aScanDoubleQuoted(l *lexer) *action {
 			l.emit(DOUBLE_QUOTED)
 			return SkipWhitespace
 		case '\\':
-			return ScanDoubleQuotedEscape
+			l.saved = ScanDoubleQuoted
+			return AfterBackslash
 		}
-	}
-}
-
-func aScanDoubleQuotedEscape(l *lexer) *action {
-	for {
-		c := l.next()
-		switch c {
-		case EOF:
-			return nil
-		}
-		return ScanDoubleQuoted
 	}
 }
 
@@ -363,10 +366,14 @@ func aScanSymbol(l *lexer) *action {
 		switch r {
 		case EOF:
 			return nil
-		case '\n', '%', '&', '\'', '(', ')', ';', '<', '@',
-			'`', '|', '\t', ' ', '"', '#', ':', '>':
+		case '\n', '\r', '%', '&', '\'', '(', ')', ';', '<',
+			'@', '`', '|', '\t', ' ', '"', '#', ':', '>':
 			l.emit(SYMBOL)
 			return SkipWhitespace
+		case '\\':
+			l.skip(w)
+			l.saved = ScanSymbol
+			return AfterBackslash
 		default:
 			l.skip(w)
 		}
@@ -395,17 +402,15 @@ func aSkipWhitespace(l *lexer) *action {
 		switch r {
 		case EOF:
 			return nil
-		default:
-			return ScanSymbol // {
-		case '%', '(', ')', ';', '@', '`', '}':
-			l.emit(int(r))
 		case '\n':
 			switch l.after {
 			case ORF, ANDF, PIPE, REDIRECT:
 				continue
 			}
+			fallthrough              // {
+		case '%', '(', ')', ';', '@', '`', '}':
 			l.emit(int(r))
-		case '\t', ' ':
+		case '\t', '\r', ' ':
 			continue
 		case '!':
 			return AfterBang
@@ -423,8 +428,13 @@ func aSkipWhitespace(l *lexer) *action {
 			return AfterLessThan
 		case '>':
 			return AfterGreaterThan
+		case '\\':
+			l.saved = ScanSymbol
+			return AfterBackslash
 		case '|':
 			return AfterPipe
+		default:
+			return ScanSymbol
 		}
 	}
 
@@ -434,15 +444,14 @@ func aSkipWhitespace(l *lexer) *action {
 func init() {
 	AfterAmpersand = &action{aAfterAmpersand, "&"}
 	AfterBang = &action{aAfterBang, "!"}
+	AfterBackslash = &action{aAfterBackslash, "\\"}
 	AfterBangGreater = &action{aAfterBangGreater, "BG"}
 	AfterColon = &action{aAfterColon, ":"}
 	AfterGreaterThan = &action{aAfterGreaterThan, ">"}
 	AfterLessThan = &action{aAfterLessThan, "<"}
 	AfterPipe = &action{aAfterPipe, "|"}
 	ScanBangString = &action{aScanBangString, "BDQ"}
-	ScanBangStringEscape = &action{aScanBangStringEscape, "BDQE"}
 	ScanDoubleQuoted = &action{aScanDoubleQuoted, "DQ"}
-	ScanDoubleQuotedEscape = &action{aScanDoubleQuotedEscape, "DQE"}
 	ScanSingleQuoted = &action{aScanSingleQuoted, "SQ"}
 	ScanSymbol = &action{aScanSymbol, "SYM"}
 	SkipComment = &action{aSkipComment, "#"}

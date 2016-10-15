@@ -16,7 +16,7 @@ type yySymType struct {
 	s   string
 }
 
-const BANG_DOUBLE = 57346
+const BANG_STRING = 57346
 const BRACE_EXPANSION = 57347
 const CTRLC = 57348
 const DOUBLE_QUOTED = 57349
@@ -34,7 +34,7 @@ var yyToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
-	"BANG_DOUBLE",
+	"BANG_STRING",
 	"BRACE_EXPANSION",
 	"CTRLC",
 	"DOUBLE_QUOTED",

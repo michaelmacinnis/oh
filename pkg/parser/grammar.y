@@ -1,6 +1,6 @@
 // Released under an MIT license. See LICENSE. -*- mode: Go -*-
 
-%token BANG_DOUBLE BRACE_EXPANSION CTRLC
+%token BANG_STRING BRACE_EXPANSION CTRLC
 %token DOUBLE_QUOTED SINGLE_QUOTED SYMBOL
 %left BACKGROUND /* & */
 %left ORF        /* || */
@@ -205,7 +205,7 @@ expression: "(" ")" { $$.c = Null };
 
 expression: word { $$ = $1 };
 
-word: BANG_DOUBLE {
+word: BANG_STRING {
 	v, _ := adapted.Unquote($1.s[1:])
 	$$.c = NewString(v)
 };
