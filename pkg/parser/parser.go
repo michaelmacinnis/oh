@@ -5,6 +5,7 @@ package parser
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/system"
+	"strings"
 )
 
 type parser struct {
@@ -56,15 +57,7 @@ read:
 
 	s.lineno++
 
-	last := len(line) - 2
-	if last >= 0 && line[last] == '\r' {
-		line = line[:last] + "\n"
-		last--
-	}
-	if last >= 0 && line[last] == '\\' {
-		line = line[0:last]
-	}
-
+	line = strings.Replace(line, "\\\n", "", -1)
 
 	if err != nil {
 		line += "\n"
