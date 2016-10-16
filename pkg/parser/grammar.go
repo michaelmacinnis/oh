@@ -417,6 +417,10 @@ yynewstate:
 	}
 	if yyrcvr.char < 0 {
 		yyrcvr.char, yytoken = yylex1(yylex, &yyrcvr.lval)
+		if yyrcvr.char == CTRLC {
+			goto start
+		}
+
 	}
 	yyn += yytoken
 	if yyn < 0 || yyn >= yyLast {
@@ -440,6 +444,10 @@ yydefault:
 	if yyn == -2 {
 		if yyrcvr.char < 0 {
 			yyrcvr.char, yytoken = yylex1(yylex, &yyrcvr.lval)
+			if yyrcvr.char == CTRLC {
+				goto start
+			}
+
 		}
 
 		/* look through exception table */

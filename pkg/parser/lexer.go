@@ -30,25 +30,28 @@ const ERROR = 0
 
 // Declared but initialized in init to avoid initialization loop.
 var (
-	AfterAmpersand         *action
-	AfterBackslash         *action
-	AfterBang              *action
-	AfterBangGreater       *action
-	AfterColon             *action
-	AfterGreaterThan       *action
-	AfterLessThan          *action
-	AfterPipe              *action
-	ScanBangString         *action
-	ScanDoubleQuoted       *action
-	ScanSingleQuoted       *action
-	ScanSymbol             *action
-	SkipComment            *action
-	SkipWhitespace         *action
+	AfterAmpersand   *action
+	AfterBackslash   *action
+	AfterBang        *action
+	AfterBangGreater *action
+	AfterColon       *action
+	AfterGreaterThan *action
+	AfterLessThan    *action
+	AfterPipe        *action
+	ScanBangString   *action
+	ScanDoubleQuoted *action
+	ScanSingleQuoted *action
+	ScanSymbol       *action
+	SkipComment      *action
+	SkipWhitespace   *action
 )
 
 func NewLexer() *lexer {
+	closed := make(chan *yySymType)
+	close(closed)
+
 	return &lexer{
-		items: make(chan *yySymType),
+		items: closed,
 		state: SkipWhitespace,
 	}
 }
@@ -65,6 +68,7 @@ func (l *lexer) Scan(input string) {
 		l.input = input
 	}
 
+	l.items = make(chan *yySymType)
 	go l.run()
 }
 
@@ -164,8 +168,8 @@ func (l *lexer) run() {
 		l.state = state
 		state = state.f(l)
 	}
+	close(l.items)
 	l.reset()
-	l.items <- nil
 }
 
 func (l *lexer) skip(w int) {
@@ -407,7 +411,7 @@ func aSkipWhitespace(l *lexer) *action {
 			case ORF, ANDF, PIPE, REDIRECT:
 				continue
 			}
-			fallthrough              // {
+			fallthrough // {
 		case '%', '(', ')', ';', '@', '`', '}':
 			l.emit(int(r))
 		case '\t', '\r', ' ':

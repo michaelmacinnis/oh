@@ -13,14 +13,15 @@ type parser struct {
 }
 
 type scanner struct {
+	*lexer
 	*parser
-	t        Thrower
-	filename string
-	input    ReadStringer
-	l        *lexer
-	process  func(Cell, string, int, string) (Cell, bool)
+	input   ReadStringer
+	process func(Cell, string, int, string) (Cell, bool)
+	thrower Thrower
 
+	filename string
 	lineno   int
+
 	finished bool
 }
 
@@ -28,50 +29,44 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 	var item *yySymType
 	var retries int
 
-	if s.l == nil {
-		s.l = NewLexer()
-		goto read
-	}
+	for {
+		item = s.Item()
+		if item != nil {
+			lval.s = item.s
+			return item.yys
+		}
 
-scan:
-	item = s.l.Item()
-	if item != nil {
-		lval.s = item.s
-		return item.yys
-	}
+		if s.finished {
+			return 0
+		}
 
-	if s.finished {
-		return 0
-	}
+		line, err := s.input.ReadString('\n')
+		if err == nil {
+			retries = 0
+		} else if err == ErrCtrlCPressed {
+			return CTRLC
+		} else if system.ResetForegroundGroup(err) {
+			retries++
+			continue
+		}
 
-read:
-	line, err := s.input.ReadString('\n')
-	if err == nil {
+		s.lineno++
+
+		line = strings.Replace(line, "\\\n", "", -1)
+
+		if err != nil {
+			line += "\n"
+			s.finished = true
+		}
+
+		s.Scan(line)
+
 		retries = 0
-	} else if err == ErrCtrlCPressed {
-		return CTRLC
-	} else if system.ResetForegroundGroup(err) {
-		retries++
-		goto scan
 	}
-
-	s.lineno++
-
-	line = strings.Replace(line, "\\\n", "", -1)
-
-	if err != nil {
-		line += "\n"
-		s.finished = true
-	}
-
-	s.l.Scan(line)
-
-	retries = 0
-	goto scan
 }
 
 func (s *scanner) Error(msg string) {
-	s.t.Throw(s.filename, s.lineno, msg)
+	s.thrower.Throw(s.filename, s.lineno, msg)
 }
 
 func New(deref func(string, uintptr) Cell) *parser {
@@ -85,18 +80,19 @@ func (p *parser) Parse(
 
 	s := new(scanner)
 
-	s.filename = filename
-	s.input = input
+	s.lexer = NewLexer()
 	s.parser = p
+
+	s.input = input
 	s.process = process
-	s.t = t
+	s.thrower = t
+
+	s.filename = filename
 
 	rval := 1
 	for rval > 0 {
 		s.finished = false
-		if s.l != nil {
-			s.l.clear()
-		}
+		s.clear()
 
 		rval = yyParse(s)
 	}

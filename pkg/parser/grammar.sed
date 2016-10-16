@@ -3,13 +3,13 @@ s/\(^.*yyS := .*$\)/\1\
 	startyyVAL := yyVAL\
 start:\
 	yyVAL = startyyVAL/g
-s/\(^		yychar, yytoken = yylex1(yylex, &yylval)$\)/\1\
-		if yychar == CTRLC {\
+s/\(^		yyrcvr\.char, yytoken = yylex1(yylex, &yyrcvr\.lval)$\)/\1\
+		if yyrcvr.char == CTRLC {\
 			goto start\
 		}\
 /g
-s/\(^			yychar, yytoken = yylex1(yylex, &yylval)$\)/\1\
-			if yychar == CTRLC {\
+s/\(^			yyrcvr\.char, yytoken = yylex1(yylex, &yyrcvr\.lval)$\)/\1\
+			if yyrcvr.char == CTRLC {\
 				goto start\
 			}\
 /g
