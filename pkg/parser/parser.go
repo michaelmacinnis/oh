@@ -25,6 +25,10 @@ type scanner struct {
 	finished bool
 }
 
+func New(deref func(string, uintptr) Cell) *parser {
+	return &parser{deref}
+}
+
 func (s *scanner) Error(msg string) {
 	s.thrower.Throw(s.filename, s.lineno, msg)
 }
@@ -71,10 +75,6 @@ func (s *scanner) Lex(lval *ohSymType) (token int) {
 
 func (s *scanner) Restart(r int) bool {
 	return r == CTRLC
-}
-
-func New(deref func(string, uintptr) Cell) *parser {
-	return &parser{deref}
 }
 
 func (p *parser) Parse(
