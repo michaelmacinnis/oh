@@ -20,13 +20,18 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"strconv"
 )
+%}
 
-type yySymType struct {
-	yys int
+%union{
 	c Cell
 	s string
 }
-%}
+
+%type <c> block clauses command expression list opt_clauses opt_command
+%type <c> opt_evaluate_command opt_statement opt_substitution sequence
+%type <c> statement sub_block sub_statement substitution word
+%type <s> ANDF BACKGROUND BANG_STRING BRACE_EXPANSION DOUBLE_QUOTED
+%type <s> ORF PIPE REDIRECT SINGLE_QUOTED SUBSTITUTE SYMBOL
 
 %%
 
@@ -36,13 +41,13 @@ top_block: opt_evaluate_command;
 
 top_block: top_block "\n" opt_evaluate_command;
 
-opt_evaluate_command: { $$.c = Null }; /* Empty */
+opt_evaluate_command: { $$ = Null }; /* Empty */
 
 opt_evaluate_command: command {
-	$$.c = $1.c
-	if ($1.c != Null) {
+	$$ = $1
+	if ($1 != Null) {
 		s := yylex.(*scanner)
-		_, ok := s.process($1.c, s.filename, s.lineno, "")
+		_, ok := s.process($1, s.filename, s.lineno, "")
 		if !ok {
 			return -1
 		}
@@ -51,34 +56,34 @@ opt_evaluate_command: command {
 };
 
 command: command BACKGROUND {
-	$$.c = List(NewSymbol($2.s), $1.c)
+	$$ = List(NewSymbol($2), $1)
 };
 
 command: command ORF command {
-	$$.c = List(NewSymbol($2.s), $1.c, $3.c)
+	$$ = List(NewSymbol($2), $1, $3)
 };
 
 command: command ANDF command  {
-	$$.c = List(NewSymbol($2.s), $1.c, $3.c)
+	$$ = List(NewSymbol($2), $1, $3)
 };
 
 command: command PIPE command  {
-	$$.c = List(NewSymbol($2.s), $1.c, $3.c)
+	$$ = List(NewSymbol($2), $1, $3)
 };
 
 command: command REDIRECT expression {
-	$$.c = List(NewSymbol($2.s), $3.c, $1.c)
+	$$ = List(NewSymbol($2), $3, $1)
 };
 
-command: sequence { $$.c = $1.c };
+command: sequence { $$ = $1 };
 
-sequence: semicolon { $$.c = Null };
+sequence: semicolon { $$ = Null };
 
 sequence: opt_semicolon substitution opt_clauses {
-	if $3.c == Null {
-		$$.c = $2.c
+	if $3 == Null {
+		$$ = $2
 	} else {
-		$$.c = Cons(NewSymbol("block"), Cons($2.c, $3.c))
+		$$ = Cons(NewSymbol("block"), Cons($2, $3))
 	}
 };
 
@@ -90,139 +95,139 @@ semicolon: ";";
 
 semicolon: semicolon ";";
 
-opt_clauses: opt_semicolon { $$.c = Null };
+opt_clauses: opt_semicolon { $$ = Null };
 
-opt_clauses: semicolon clauses opt_semicolon { $$.c = $2.c };
+opt_clauses: semicolon clauses opt_semicolon { $$ = $2 };
 
-clauses: substitution { $$.c = Cons($1.c, Null) };
+clauses: substitution { $$ = Cons($1, Null) };
 
-clauses: clauses semicolon substitution { $$.c = AppendTo($1.c, $3.c) };
+clauses: clauses semicolon substitution { $$ = AppendTo($1, $3) };
 
-opt_substitution: { $$.c = Null };
+opt_substitution: { $$ = Null };
 
 opt_substitution: SUBSTITUTE command ")" opt_statement opt_substitution {
-	lst := List(Cons(NewSymbol($1.s), $2.c))
-	if $4.c != Null {
-		lst = JoinTo(lst, $4.c)
+	lst := List(Cons(NewSymbol($1), $2))
+	if $4 != Null {
+		lst = JoinTo(lst, $4)
 	}
-	if $5.c != Null {
-		lst = JoinTo(lst, $5.c)
+	if $5 != Null {
+		lst = JoinTo(lst, $5)
 	}
-	$$.c = lst
+	$$ = lst
 }
 
 substitution: statement opt_substitution {
-	if $2.c != Null {
+	if $2 != Null {
 		sym := NewSymbol("_process_substitution_")
-		$$.c = JoinTo(Cons(sym, $1.c), $2.c)
+		$$ = JoinTo(Cons(sym, $1), $2)
 	} else {
-		$$.c = $1.c
+		$$ = $1
 	}
 }
 
-opt_statement: { $$.c = Null };
+opt_statement: { $$ = Null };
 
-opt_statement: statement { $$.c = $1.c };
+opt_statement: statement { $$ = $1 };
 
-statement: list { $$.c = $1.c };
+statement: list { $$ = $1 };
 
 statement: list sub_statement {
-	$$.c = JoinTo($1.c, $2.c)
+	$$ = JoinTo($1, $2)
 };
 
-statement: sub_statement { $$.c = $1.c };
+statement: sub_statement { $$ = $1 };
 
-sub_statement: ":" statement { $$.c = Cons($2.c, Null) };
+sub_statement: ":" statement { $$ = Cons($2, Null) };
 
 sub_statement: "{" sub_block statement {
-	if $2.c == Null {
-		$$.c = $3.c
+	if $2 == Null {
+		$$ = $3
 	} else {
-		$$.c = JoinTo($2.c, $3.c)
+		$$ = JoinTo($2, $3)
 	}
 };
 
 sub_statement: "{" sub_block {
-	$$.c = $2.c
+	$$ = $2
 };
 
-sub_block: "\n" "}" { $$.c = Null };
+sub_block: "\n" "}" { $$ = Null };
 
-sub_block: "\n" block "\n" "}" { $$.c = $2.c };
+sub_block: "\n" block "\n" "}" { $$ = $2 };
 
 block: opt_command {
-	if $1.c == Null {
-		$$.c = $1.c
+	if $1 == Null {
+		$$ = $1
 	} else {
-		$$.c = Cons($1.c, Null)
+		$$ = Cons($1, Null)
 	}
 };
 
 block: block "\n" opt_command {
-	if $1.c == Null {
-		if $3.c == Null {
-			$$.c = $3.c
+	if $1 == Null {
+		if $3 == Null {
+			$$ = $3
 		} else {
-			$$.c = Cons($3.c, Null)
+			$$ = Cons($3, Null)
 		}
 	} else {
-		if $3.c == Null {
-			$$.c = $1.c
+		if $3 == Null {
+			$$ = $1
 		} else {
-			$$.c = AppendTo($1.c, $3.c)
+			$$ = AppendTo($1, $3)
 		}
 	}
 };
 
-opt_command: { $$.c = Null };
+opt_command: { $$ = Null };
 
-opt_command: command { $$.c = $1.c };
+opt_command: command { $$ = $1 };
 
-list: expression { $$.c = Cons($1.c, Null) };
+list: expression { $$ = Cons($1, Null) };
 
-list: list expression { $$.c = AppendTo($1.c, $2.c) };
+list: list expression { $$ = AppendTo($1, $2) };
 
 expression: "@" expression {
-	$$.c = List(NewSymbol("_splice_"), $2.c)
+	$$ = List(NewSymbol("_splice_"), $2)
 };
 
 expression: "`" expression {
-	$$.c = List(NewSymbol("_backtick_"), $2.c)
+	$$ = List(NewSymbol("_backtick_"), $2)
 };
 
 expression: expression CONS expression {
-	$$.c = Cons($1.c, $3.c)
+	$$ = Cons($1, $3)
 };
 
 expression: "%" SYMBOL SYMBOL "%" {
-	value, _ := strconv.ParseUint($3.s, 0, 64)
-	$$.c = yylex.(*scanner).deref($2.s, uintptr(value))
+	value, _ := strconv.ParseUint($3, 0, 64)
+	$$ = yylex.(*scanner).deref($2, uintptr(value))
 };
 
 expression: "(" command ")" { $$ = $2 };
 
-expression: "(" ")" { $$.c = Null };
+expression: "(" ")" { $$ = Null };
 
 expression: word { $$ = $1 };
 
 word: BANG_STRING {
-	v, _ := adapted.Unquote($1.s[1:])
-	$$.c = NewString(v)
+	v, _ := adapted.Unquote($1[1:])
+	$$ = NewString(v)
 };
 
 word: DOUBLE_QUOTED {
-	v, _ := adapted.Unquote($1.s)
+	v, _ := adapted.Unquote($1)
 	s := NewString(v)
-	$$.c = List(NewSymbol("interpolate"), s)
+	$$ = List(NewSymbol("interpolate"), s)
 };
 
 word: SINGLE_QUOTED {
-	$$.c = NewString($1.s[1:len($1.s)-1])
+	$$ = NewString($1[1:len($1)-1])
 };
 
-word: SYMBOL { $$.c = NewSymbol($1.s) };
+word: SYMBOL { $$ = NewSymbol($1) };
 
-word: BRACE_EXPANSION { $$.c = NewSymbol($1.s) };
+word: BRACE_EXPANSION { $$ = NewSymbol($1) };
 
 %%
 
