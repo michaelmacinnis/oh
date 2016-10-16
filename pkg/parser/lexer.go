@@ -13,7 +13,7 @@ type lexer struct {
 	after int             // The previous scanned item type.
 	index int             // Current position in the input.
 	input string          // The string being scanned.
-	items chan *yySymType // Channel of scanned items.
+	items chan *ohSymType // Channel of scanned items.
 	saved *action         // The previous action.
 	start int             // Start position of this item.
 	state *action         // The action the lexer is currently performing.
@@ -47,7 +47,7 @@ var (
 )
 
 func NewLexer() *lexer {
-	closed := make(chan *yySymType)
+	closed := make(chan *ohSymType)
 	close(closed)
 
 	return &lexer{
@@ -56,7 +56,7 @@ func NewLexer() *lexer {
 	}
 }
 
-func (l *lexer) Item() *yySymType {
+func (l *lexer) Item() *ohSymType {
 	return <-l.items
 }
 
@@ -68,7 +68,7 @@ func (l *lexer) Scan(input string) {
 		l.input = input
 	}
 
-	l.items = make(chan *yySymType)
+	l.items = make(chan *ohSymType)
 	go l.run()
 }
 
@@ -129,11 +129,11 @@ func (l *lexer) emit(yys int) {
 
 	l.after = yys
 
-	l.items <- &yySymType{yys: yys, s: s}
+	l.items <- &ohSymType{yys: yys, s: s}
 }
 
 func (l *lexer) error(msg string) *action {
-	l.items <- &yySymType{yys: ERROR, s: msg}
+	l.items <- &ohSymType{yys: ERROR, s: msg}
 	return nil
 }
 

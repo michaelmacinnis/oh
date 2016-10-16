@@ -25,8 +25,12 @@ type scanner struct {
 	finished bool
 }
 
-func (s *scanner) Lex(lval *yySymType) (token int) {
-	var item *yySymType
+func (s *scanner) Error(msg string) {
+	s.thrower.Throw(s.filename, s.lineno, msg)
+}
+
+func (s *scanner) Lex(lval *ohSymType) (token int) {
+	var item *ohSymType
 	var retries int
 
 	for {
@@ -65,8 +69,8 @@ func (s *scanner) Lex(lval *yySymType) (token int) {
 	}
 }
 
-func (s *scanner) Error(msg string) {
-	s.thrower.Throw(s.filename, s.lineno, msg)
+func (s *scanner) Restart(r int) bool {
+	return r == CTRLC
 }
 
 func New(deref func(string, uintptr) Cell) *parser {
@@ -94,13 +98,11 @@ func (p *parser) Parse(
 		s.finished = false
 		s.clear()
 
-		rval = yyParse(s)
+		rval = ohParse(s)
 	}
 
 	return rval == 0
 }
 
-//go:generate goyacc -o grammar.go grammar.y
-//go:generate sed -i.save -f grammar.sed grammar.go
+//go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y
 //go:generate go fmt grammar.go
-//go:generate rm -f y.output grammar.go.save
