@@ -152,8 +152,13 @@ func (l *lexer) peek() (r rune, w int) {
 }
 
 func (l *lexer) reset() {
-	l.input = l.input[l.start:]
-	l.index -= l.start
+	if l.start >= len(l.input) {
+		l.input = ""
+		l.index = 0
+	} else {
+		l.input = l.input[l.start:]
+		l.index -= l.start
+	}
 	l.start = 0
 }
 

@@ -25,6 +25,9 @@ type scanner struct {
 	finished bool
 }
 
+var CtrlCPressed = &ohSymType{yys: CTRLC}
+var Finished = &ohSymType{yys: 0}
+
 func New(deref func(string, uintptr) Cell) *parser {
 	return &parser{deref}
 }
@@ -33,26 +36,24 @@ func (s *scanner) Error(msg string) {
 	s.thrower.Throw(s.filename, s.lineno, msg)
 }
 
-func (s *scanner) Lex(lval *ohSymType) (token int) {
-	var item *ohSymType
+func (s *scanner) Lex() *ohSymType {
 	var retries int
 
 	for {
-		item = s.Item()
+		item := s.Item()
 		if item != nil {
-			lval.s = item.s
-			return item.yys
+			return item
 		}
 
 		if s.finished {
-			return 0
+			return Finished
 		}
 
 		line, err := s.input.ReadString('\n')
 		if err == nil {
 			retries = 0
 		} else if err == ErrCtrlCPressed {
-			return CTRLC
+			return CtrlCPressed
 		} else if system.ResetForegroundGroup(err) {
 			retries++
 			continue
@@ -73,8 +74,8 @@ func (s *scanner) Lex(lval *ohSymType) (token int) {
 	}
 }
 
-func (s *scanner) Restart(r int) bool {
-	return r == CTRLC
+func (s *scanner) Restart(lval *ohSymType) bool {
+	return lval == CtrlCPressed
 }
 
 func (p *parser) Parse(

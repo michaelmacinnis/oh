@@ -219,20 +219,20 @@ var (
 )
 
 type ohLexer interface {
-	Lex(lval *ohSymType) int
 	Error(s string)
-	Restart(int) bool
+	Lex() *ohSymType
+	Restart(*ohSymType) bool
 }
 
 type ohParser interface {
-	Parse(ohLexer) int
 	Lookahead() int
+	Parse(ohLexer) int
 }
 
 type ohParserImpl struct {
-	lval  ohSymType
-	stack [ohInitialStackSize]ohSymType
 	char  int
+	lval  *ohSymType
+	stack [ohInitialStackSize]ohSymType
 }
 
 func (p *ohParserImpl) Lookahead() int {
@@ -327,9 +327,11 @@ func ohErrorMessage(state, lookAhead int) string {
 	return res
 }
 
-func ohlex1(lex ohLexer, lval *ohSymType) (char, token int) {
+func ohlex1(lex ohLexer) (lval *ohSymType, char, token int) {
 	token = 0
-	char = lex.Lex(lval)
+	lval = lex.Lex()
+
+	char = lval.yys
 	if char <= 0 {
 		token = ohTok1[0]
 		goto out
@@ -359,7 +361,7 @@ out:
 	if ohDebug >= 3 {
 		__yyfmt__.Printf("lex %s(%d)\n", ohTokname(token), uint(char))
 	}
-	return char, token
+	return lval, char, token
 }
 
 func ohParse(ohlex ohLexer) int {
@@ -419,8 +421,8 @@ ohnewstate:
 		goto ohdefault /* simple state */
 	}
 	if ohrcvr.char < 0 {
-		ohrcvr.char, ohtoken = ohlex1(ohlex, &ohrcvr.lval)
-		if ohlex.Restart(ohrcvr.char) {
+		ohrcvr.lval, ohrcvr.char, ohtoken = ohlex1(ohlex)
+		if ohlex.Restart(ohrcvr.lval) {
 			goto ohstart
 		}
 	}
@@ -432,7 +434,7 @@ ohnewstate:
 	if ohChk[ohn] == ohtoken { /* valid shift */
 		ohrcvr.char = -1
 		ohtoken = -1
-		ohVAL = ohrcvr.lval
+		ohVAL = *ohrcvr.lval
 		ohstate = ohn
 		if Errflag > 0 {
 			Errflag--
@@ -445,8 +447,8 @@ ohdefault:
 	ohn = ohDef[ohstate]
 	if ohn == -2 {
 		if ohrcvr.char < 0 {
-			ohrcvr.char, ohtoken = ohlex1(ohlex, &ohrcvr.lval)
-			if ohlex.Restart(ohrcvr.char) {
+			ohrcvr.lval, ohrcvr.char, ohtoken = ohlex1(ohlex)
+			if ohlex.Restart(ohrcvr.lval) {
 				goto ohstart
 			}
 		}
