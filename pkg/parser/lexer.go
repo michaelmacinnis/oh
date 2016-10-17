@@ -6,9 +6,9 @@ import (
 	"unicode/utf8"
 )
 
-// Inspired by "Lexical Scanning in Go"; adapted to work with goyacc.
+// Inspired by "Lexical Scanning in Go"; adapted to work with yacc and liner.
 
-// The type lexer holds the state of the scanner.
+// The type lexer holds the lexer's state.
 type lexer struct {
 	after int             // The previous scanned item type.
 	index int             // Current position in the input.
@@ -22,7 +22,6 @@ type lexer struct {
 
 type action struct {
 	f func(*lexer) *action
-	n string
 }
 
 const EOF = -1
@@ -182,7 +181,10 @@ func (l *lexer) skip(w int) {
 	l.index += l.width
 }
 
-func aAfterAmpersand(l *lexer) *action {
+
+/* Lexer states. */
+
+func afterAmpersand(l *lexer) *action {
 	r, w := l.peek()
 
 	switch r {
@@ -198,7 +200,7 @@ func aAfterAmpersand(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aAfterBackslash(l *lexer) *action {
+func afterBackslash(l *lexer) *action {
 	r := l.next()
 
 	switch r {
@@ -209,7 +211,7 @@ func aAfterBackslash(l *lexer) *action {
 	return l.resume()
 }
 
-func aAfterBang(l *lexer) *action {
+func afterBang(l *lexer) *action {
 	r, w := l.peek()
 
 	switch r {
@@ -229,7 +231,7 @@ func aAfterBang(l *lexer) *action {
 	return ScanSymbol
 }
 
-func aAfterBangGreater(l *lexer) *action {
+func afterBangGreater(l *lexer) *action {
 	r, w := l.peek()
 
 	switch r {
@@ -244,7 +246,7 @@ func aAfterBangGreater(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aAfterColon(l *lexer) *action {
+func afterColon(l *lexer) *action {
 	r, w := l.peek()
 
 	switch r {
@@ -260,7 +262,7 @@ func aAfterColon(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aAfterGreaterThan(l *lexer) *action {
+func afterGreaterThan(l *lexer) *action {
 	r, w := l.peek()
 
 	t := REDIRECT
@@ -280,7 +282,7 @@ func aAfterGreaterThan(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aAfterLessThan(l *lexer) *action {
+func afterLessThan(l *lexer) *action {
 	r, w := l.peek()
 
 	t := REDIRECT
@@ -298,7 +300,7 @@ func aAfterLessThan(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aAfterPipe(l *lexer) *action {
+func afterPipe(l *lexer) *action {
 	r, w := l.peek()
 
 	t := PIPE
@@ -320,7 +322,7 @@ func aAfterPipe(l *lexer) *action {
 	return SkipWhitespace
 }
 
-func aScanBangString(l *lexer) *action {
+func scanBangString(l *lexer) *action {
 	for {
 		c := l.next()
 
@@ -337,7 +339,7 @@ func aScanBangString(l *lexer) *action {
 	}
 }
 
-func aScanDoubleQuoted(l *lexer) *action {
+func scanDoubleQuoted(l *lexer) *action {
 	for {
 		c := l.next()
 
@@ -354,7 +356,7 @@ func aScanDoubleQuoted(l *lexer) *action {
 	}
 }
 
-func aScanSingleQuoted(l *lexer) *action {
+func scanSingleQuoted(l *lexer) *action {
 	for {
 		r := l.next()
 
@@ -368,7 +370,7 @@ func aScanSingleQuoted(l *lexer) *action {
 	}
 }
 
-func aScanSymbol(l *lexer) *action {
+func scanSymbol(l *lexer) *action {
 	for {
 		r, w := l.peek()
 
@@ -389,7 +391,7 @@ func aScanSymbol(l *lexer) *action {
 	}
 }
 
-func aSkipComment(l *lexer) *action {
+func skipComment(l *lexer) *action {
 	for {
 		r := l.next()
 
@@ -403,7 +405,7 @@ func aSkipComment(l *lexer) *action {
 	}
 }
 
-func aSkipWhitespace(l *lexer) *action {
+func skipWhitespace(l *lexer) *action {
 	for {
 		l.start = l.index
 		r := l.next()
@@ -451,18 +453,18 @@ func aSkipWhitespace(l *lexer) *action {
 }
 
 func init() {
-	AfterAmpersand = &action{aAfterAmpersand, "&"}
-	AfterBang = &action{aAfterBang, "!"}
-	AfterBackslash = &action{aAfterBackslash, "\\"}
-	AfterBangGreater = &action{aAfterBangGreater, "BG"}
-	AfterColon = &action{aAfterColon, ":"}
-	AfterGreaterThan = &action{aAfterGreaterThan, ">"}
-	AfterLessThan = &action{aAfterLessThan, "<"}
-	AfterPipe = &action{aAfterPipe, "|"}
-	ScanBangString = &action{aScanBangString, "BDQ"}
-	ScanDoubleQuoted = &action{aScanDoubleQuoted, "DQ"}
-	ScanSingleQuoted = &action{aScanSingleQuoted, "SQ"}
-	ScanSymbol = &action{aScanSymbol, "SYM"}
-	SkipComment = &action{aSkipComment, "#"}
-	SkipWhitespace = &action{aSkipWhitespace, "WS"}
+	AfterAmpersand = &action{afterAmpersand}
+	AfterBang = &action{afterBang}
+	AfterBackslash = &action{afterBackslash}
+	AfterBangGreater = &action{afterBangGreater}
+	AfterColon = &action{afterColon}
+	AfterGreaterThan = &action{afterGreaterThan}
+	AfterLessThan = &action{afterLessThan}
+	AfterPipe = &action{afterPipe}
+	ScanBangString = &action{scanBangString}
+	ScanDoubleQuoted = &action{scanDoubleQuoted}
+	ScanSingleQuoted = &action{scanSingleQuoted}
+	ScanSymbol = &action{scanSymbol}
+	SkipComment = &action{skipComment}
+	SkipWhitespace = &action{skipWhitespace}
 }
