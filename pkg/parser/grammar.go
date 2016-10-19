@@ -566,8 +566,8 @@ ohdefault:
 		{
 			ohVAL.c = ohDollar[1].c
 			if ohDollar[1].c != Null {
-				s := ohlex.(*scanner)
-				_, ok := s.process(ohDollar[1].c, s.filename, s.lineno, "")
+				s := ohlex.(*lexer)
+				_, ok := s.yield(ohDollar[1].c, s.filename, s.lineno, "")
 				if !ok {
 					return -1
 				}
@@ -819,7 +819,7 @@ ohdefault:
 		//line grammar.y:202
 		{
 			value, _ := strconv.ParseUint(ohDollar[3].s, 0, 64)
-			ohVAL.c = ohlex.(*scanner).deref(ohDollar[2].s, uintptr(value))
+			ohVAL.c = ohlex.(*lexer).deref(ohDollar[2].s, uintptr(value))
 		}
 	case 45:
 		ohDollar = ohS[ohpt-3 : ohpt+1]

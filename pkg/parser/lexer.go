@@ -3,6 +3,9 @@
 package parser
 
 import (
+	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/system"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -11,13 +14,24 @@ import (
 // The type lexer holds the lexer's state.
 type lexer struct {
 	after int             // The previous scanned item type.
-	index int             // Current position in the input.
-	input string          // The string being scanned.
 	items chan *ohSymType // Channel of scanned items.
 	saved *action         // The previous action.
-	start int             // Start position of this item.
 	state *action         // The action the lexer is currently performing.
-	width int             // Width of last rune read.
+
+	bytes string // The buffer being scanned.
+	index int    // Current position in the 'bytes' buffer.
+	start int    // Start position of this item.
+	width int    // Width of last rune read.
+
+	deref func(string, uintptr) Cell
+	input func(byte) (string, error)
+	throw func(string, int, string)
+	yield func(Cell, string, int, string) (Cell, bool)
+
+	filename string
+	lineno   int
+
+	finished bool
 }
 
 type action struct {
@@ -45,40 +59,88 @@ var (
 	SkipWhitespace   *action
 )
 
-func NewLexer() *lexer {
+var CtrlCPressed = &ohSymType{yys: CTRLC}
+var Finished = &ohSymType{yys: 0}
+
+func NewLexer(
+	deref func(string, uintptr) Cell,
+	input func(byte) (string, error),
+	throw func(string, int, string),
+	yield func(Cell, string, int, string) (Cell, bool),
+	filename string,
+) *lexer {
 	closed := make(chan *ohSymType)
 	close(closed)
 
 	return &lexer{
 		items: closed,
 		state: SkipWhitespace,
+
+		deref: deref,
+		input: input,
+		throw: throw,
+		yield: yield,
+
+		filename: filename,
 	}
 }
 
-func (l *lexer) Item() *ohSymType {
-	return <-l.items
+func (s *lexer) Error(msg string) {
+	s.throw(s.filename, s.lineno, msg)
 }
 
-func (l *lexer) Scan(input string) {
-	l.reset()
-	if l.input != "" {
-		l.input += input
-	} else {
-		l.input = input
-	}
+func (s *lexer) Lex() *ohSymType {
+	var retries int
 
-	l.items = make(chan *ohSymType)
-	go l.run()
+	for {
+		item := s.item()
+		if item != nil {
+			return item
+		}
+
+		if s.finished {
+			return Finished
+		}
+
+		line, err := s.input('\n')
+		if err == nil {
+			retries = 0
+		} else if err == ErrCtrlCPressed {
+			return CtrlCPressed
+		} else if system.ResetForegroundGroup(err) {
+			retries++
+			continue
+		}
+
+		s.lineno++
+
+		line = strings.Replace(line, "\\\n", "", -1)
+
+		if err != nil {
+			line += "\n"
+			s.finished = true
+		}
+
+		s.scan(line)
+
+		retries = 0
+	}
+}
+
+func (s *lexer) Restart(lval *ohSymType) bool {
+	return lval == CtrlCPressed
 }
 
 func (l *lexer) clear() {
 	l.after = 0
+	l.bytes = ""
 	l.index = 0
-	l.input = ""
 	l.saved = nil
 	l.start = 0
 	l.state = SkipWhitespace
 	l.width = 0
+
+	l.finished = false
 }
 
 func (l *lexer) emit(yys int) {
@@ -99,7 +161,7 @@ func (l *lexer) emit(yys int) {
 		"||":  "or",
 	}
 
-	s := l.input[l.start:l.index]
+	s := l.bytes[l.start:l.index]
 	l.start = l.index
 
 	switch yys {
@@ -136,6 +198,10 @@ func (l *lexer) error(msg string) *action {
 	return nil
 }
 
+func (l *lexer) item() *ohSymType {
+	return <-l.items
+}
+
 func (l *lexer) next() rune {
 	r, w := l.peek()
 	l.skip(w)
@@ -144,18 +210,30 @@ func (l *lexer) next() rune {
 
 func (l *lexer) peek() (r rune, w int) {
 	r, w = EOF, 0
-	if l.index < len(l.input) {
-		r, w = utf8.DecodeRuneInString(l.input[l.index:])
+	if l.index < len(l.bytes) {
+		r, w = utf8.DecodeRuneInString(l.bytes[l.index:])
 	}
 	return r, w
 }
 
+func (l *lexer) scan(bytes string) {
+	l.reset()
+	if l.bytes != "" {
+		l.bytes += bytes
+	} else {
+		l.bytes = bytes
+	}
+
+	l.items = make(chan *ohSymType)
+	go l.run()
+}
+
 func (l *lexer) reset() {
-	if l.start >= len(l.input) {
-		l.input = ""
+	if l.start >= len(l.bytes) {
+		l.bytes = ""
 		l.index = 0
 	} else {
-		l.input = l.input[l.start:]
+		l.bytes = l.bytes[l.start:]
 		l.index -= l.start
 	}
 	l.start = 0
@@ -180,7 +258,6 @@ func (l *lexer) skip(w int) {
 	l.width = w
 	l.index += l.width
 }
-
 
 /* Lexer states. */
 
@@ -311,7 +388,7 @@ func afterPipe(l *lexer) *action {
 	case '+':
 		l.skip(w)
 	case '|':
-		if l.input[l.start] != '!' {
+		if l.bytes[l.start] != '!' {
 			t = ORF
 			l.skip(w)
 		}

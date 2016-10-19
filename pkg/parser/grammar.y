@@ -46,8 +46,8 @@ opt_evaluate_command: { $$ = Null }; /* Empty */
 opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
-		s := ohlex.(*scanner)
-		_, ok := s.process($1, s.filename, s.lineno, "")
+		s := ohlex.(*lexer)
+		_, ok := s.yield($1, s.filename, s.lineno, "")
 		if !ok {
 			return -1
 		}
@@ -201,7 +201,7 @@ expression: expression CONS expression {
 
 expression: "%" SYMBOL SYMBOL "%" {
 	value, _ := strconv.ParseUint($3, 0, 64)
-	$$ = ohlex.(*scanner).deref($2, uintptr(value))
+	$$ = ohlex.(*lexer).deref($2, uintptr(value))
 };
 
 expression: "(" command ")" { $$ = $2 };
