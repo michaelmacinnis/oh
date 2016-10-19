@@ -47,7 +47,7 @@ opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
 		s := ohlex.(*lexer)
-		_, ok := s.yield($1, s.filename, s.lineno, "")
+		_, ok := s.yield($1, s.label, s.lines, "")
 		if !ok {
 			return -1
 		}

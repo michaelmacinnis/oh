@@ -11,15 +11,19 @@ import (
 
 // Inspired by "Lexical Scanning in Go"; adapted to work with yacc and liner.
 
+type action struct {
+	f func(*lexer) *action
+}
+
 // The type lexer holds the lexer's state.
 type lexer struct {
 	after int             // The previous scanned item type.
 	items chan *ohSymType // Channel of scanned items.
 	saved *action         // The previous action.
-	state *action         // The action the lexer is currently performing.
+	state *action         // The current lexer action.
 
 	bytes string // The buffer being scanned.
-	index int    // Current position in the 'bytes' buffer.
+	index int    // Position in the 'bytes' buffer.
 	start int    // Start position of this item.
 	width int    // Width of last rune read.
 
@@ -28,14 +32,8 @@ type lexer struct {
 	throw func(string, int, string)
 	yield func(Cell, string, int, string) (Cell, bool)
 
-	filename string
-	lineno   int
-
-	finished bool
-}
-
-type action struct {
-	f func(*lexer) *action
+	label string // The name of the thing being parsed.
+	lines int    // The number of lines read.
 }
 
 const EOF = -1
@@ -67,7 +65,7 @@ func NewLexer(
 	input func(byte) (string, error),
 	throw func(string, int, string),
 	yield func(Cell, string, int, string) (Cell, bool),
-	filename string,
+	label string,
 ) *lexer {
 	closed := make(chan *ohSymType)
 	close(closed)
@@ -81,28 +79,28 @@ func NewLexer(
 		throw: throw,
 		yield: yield,
 
-		filename: filename,
+		label: label,
 	}
 }
 
-func (s *lexer) Error(msg string) {
-	s.throw(s.filename, s.lineno, msg)
+func (l *lexer) Error(msg string) {
+	l.throw(l.label, l.lines, msg)
 }
 
-func (s *lexer) Lex() *ohSymType {
+func (l *lexer) Lex() *ohSymType {
 	var retries int
 
 	for {
-		item := s.item()
+		item := l.item()
 		if item != nil {
 			return item
 		}
 
-		if s.finished {
+		if l.input == nil {
 			return Finished
 		}
 
-		line, err := s.input('\n')
+		line, err := l.input('\n')
 		if err == nil {
 			retries = 0
 		} else if err == ErrCtrlCPressed {
@@ -112,35 +110,34 @@ func (s *lexer) Lex() *ohSymType {
 			continue
 		}
 
-		s.lineno++
+		l.lines++
 
 		line = strings.Replace(line, "\\\n", "", -1)
 
 		if err != nil {
 			line += "\n"
-			s.finished = true
+			l.input = nil
 		}
 
-		s.scan(line)
+		l.scan(line)
 
 		retries = 0
 	}
 }
 
-func (s *lexer) Restart(lval *ohSymType) bool {
+func (l *lexer) Restart(lval *ohSymType) bool {
 	return lval == CtrlCPressed
 }
 
 func (l *lexer) clear() {
 	l.after = 0
+	l.saved = nil
+	l.state = SkipWhitespace
+
 	l.bytes = ""
 	l.index = 0
-	l.saved = nil
 	l.start = 0
-	l.state = SkipWhitespace
 	l.width = 0
-
-	l.finished = false
 }
 
 func (l *lexer) emit(yys int) {

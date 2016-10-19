@@ -567,7 +567,7 @@ ohdefault:
 			ohVAL.c = ohDollar[1].c
 			if ohDollar[1].c != Null {
 				s := ohlex.(*lexer)
-				_, ok := s.yield(ohDollar[1].c, s.filename, s.lineno, "")
+				_, ok := s.yield(ohDollar[1].c, s.label, s.lines, "")
 				if !ok {
 					return -1
 				}
