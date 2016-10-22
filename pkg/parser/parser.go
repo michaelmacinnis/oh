@@ -46,5 +46,13 @@ func (p *parser) Start() bool {
 	return rval == 0
 }
 
+func (p *parser) State(line string) int {
+	lval := p.ohParserImpl.lval
+	if lval == nil {
+		return 0
+	}
+	return lval.yys
+}
+
 //go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y
 //go:generate go fmt grammar.go

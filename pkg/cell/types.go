@@ -44,6 +44,7 @@ type Number interface {
 
 type Parser interface {
 	Start() bool
+	State(string) int
 }
 
 type ParserTemplate interface {

@@ -135,6 +135,7 @@ var (
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
+	parser      Parser
 	pt          ParserTemplate
 	runnable    chan bool
 	scope0      *scope
@@ -1703,6 +1704,10 @@ func ForegroundTask() *Task {
 	return task0
 }
 
+func GlobalParser() Parser {
+	return parser
+}
+
 func IsContext(c Cell) bool {
 	switch c.(type) {
 	case context:
@@ -1816,7 +1821,8 @@ func Start(p ParserTemplate, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		if pt.MakeParser(cli, task0, "oh", evaluate).Start() {
+		parser = pt.MakeParser(cli, task0, "oh", evaluate)
+		if parser.Start() {
 			fmt.Printf("\n")
 		}
 		cli.Close()
