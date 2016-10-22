@@ -105,17 +105,19 @@ func (i *cli) TerminalMode() (task.ApplyModer, error) {
 }
 
 func complete(line string, pos int) (head string, completions []string, tail string) {
+	_ = task.GlobalParser().State(line[:pos])
+
 	head = line[:pos]
 	tail = line[pos:]
 
-        defer func() {
-                r := recover()
-                if r == nil {
-                        return
-                }
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
 
 		completions = []string{}
-        }()
+	}()
 
 	fields := strings.Fields(head)
 	count := len(fields)

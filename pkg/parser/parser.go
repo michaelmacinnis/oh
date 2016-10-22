@@ -16,7 +16,7 @@ type template struct {
 }
 
 func Template(deref func(string, uintptr) Cell) *template {
-        return &template{deref}
+	return &template{deref}
 }
 
 func (t *template) MakeParser(
@@ -46,12 +46,13 @@ func (p *parser) Start() bool {
 	return rval == 0
 }
 
-func (p *parser) State(line string) int {
-	lval := p.ohParserImpl.lval
-	if lval == nil {
-		return 0
-	}
-	return lval.yys
+func (p *parser) State(line string) string {
+	pcopy := *p.ohParserImpl
+	lcopy := p.lexer.Partial(line)
+
+	pcopy.Parse(lcopy)
+
+	return lcopy.state.n
 }
 
 //go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y

@@ -331,6 +331,10 @@ func ohlex1(lex ohLexer) (lval *ohSymType, char, token int) {
 	token = 0
 	lval = lex.Lex()
 
+	if lval == nil {
+		return nil, 0, 0
+	}
+
 	char = lval.yys
 	if char <= 0 {
 		token = ohTok1[0]
@@ -422,6 +426,9 @@ ohnewstate:
 	}
 	if ohrcvr.char < 0 {
 		ohrcvr.lval, ohrcvr.char, ohtoken = ohlex1(ohlex)
+		if ohrcvr.lval == nil {
+			goto ret0
+		}
 		if ohlex.Restart(ohrcvr.lval) {
 			goto ohstart
 		}
@@ -448,6 +455,9 @@ ohdefault:
 	if ohn == -2 {
 		if ohrcvr.char < 0 {
 			ohrcvr.lval, ohrcvr.char, ohtoken = ohlex1(ohlex)
+			if ohrcvr.lval == nil {
+				goto ret0
+			}
 			if ohlex.Restart(ohrcvr.lval) {
 				goto ohstart
 			}

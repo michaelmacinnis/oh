@@ -13,6 +13,7 @@ import (
 
 type action struct {
 	f func(*lexer) *action
+	n string
 }
 
 // The type lexer holds the lexer's state.
@@ -34,6 +35,10 @@ type lexer struct {
 	input func(byte) (string, error)
 	throw func(string, int, string)
 	yield func(Cell, string, int, string) (Cell, bool)
+}
+
+type partial struct {
+	lexer
 }
 
 const EOF = -1
@@ -83,8 +88,29 @@ func NewLexer(
 	}
 }
 
+func (l *lexer) Partial(line string) *partial {
+	copy := &partial{*l}
+
+	closed := make(chan *ohSymType)
+	close(closed)
+
+	copy.input = nil
+	copy.items = closed
+
+	copy.scan(line)
+	copy.yield = func(Cell, string, int, string) (Cell, bool) {
+		return Null, true
+	}
+
+	return copy
+}
+
 func (l *lexer) Error(msg string) {
 	l.throw(l.label, l.lines, msg)
+}
+
+func (p *partial) Lex() *ohSymType {
+	return p.item()
 }
 
 func (l *lexer) Lex() *ohSymType {
@@ -527,18 +553,18 @@ func skipWhitespace(l *lexer) *action {
 }
 
 func init() {
-	AfterAmpersand = &action{afterAmpersand}
-	AfterBang = &action{afterBang}
-	AfterBackslash = &action{afterBackslash}
-	AfterBangGreater = &action{afterBangGreater}
-	AfterColon = &action{afterColon}
-	AfterGreaterThan = &action{afterGreaterThan}
-	AfterLessThan = &action{afterLessThan}
-	AfterPipe = &action{afterPipe}
-	ScanBangString = &action{scanBangString}
-	ScanDoubleQuoted = &action{scanDoubleQuoted}
-	ScanSingleQuoted = &action{scanSingleQuoted}
-	ScanSymbol = &action{scanSymbol}
-	SkipComment = &action{skipComment}
-	SkipWhitespace = &action{skipWhitespace}
+	AfterAmpersand = &action{afterAmpersand, "AfterAmpersand"}
+	AfterBang = &action{afterBang, "AfterBang"}
+	AfterBackslash = &action{afterBackslash, "AfterBackslash"}
+	AfterBangGreater = &action{afterBangGreater, "AfterBangGreater"}
+	AfterColon = &action{afterColon, "AfterColon"}
+	AfterGreaterThan = &action{afterGreaterThan, "AfterGreaterThan"}
+	AfterLessThan = &action{afterLessThan, "AfterLessThan"}
+	AfterPipe = &action{afterPipe, "AfterPipe"}
+	ScanBangString = &action{scanBangString, "ScanBangString"}
+	ScanDoubleQuoted = &action{scanDoubleQuoted, "ScanDoubleQuoted"}
+	ScanSingleQuoted = &action{scanSingleQuoted, "ScanSingleQuoted"}
+	ScanSymbol = &action{scanSymbol, "ScanSymbol"}
+	SkipComment = &action{skipComment, "SkipComment"}
+	SkipWhitespace = &action{skipWhitespace, "SkipWhitespace"}
 }
