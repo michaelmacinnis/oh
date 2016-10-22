@@ -24,7 +24,7 @@ type Conduit interface {
 	Close()
 	ReaderClose()
 	ReadLine() Cell
-	Read(Parser, Thrower) Cell
+	Read(ParserTemplate, Thrower) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -42,10 +42,16 @@ type Number interface {
 	Subtract(c Cell) Number
 }
 
-type Parser func(
-	ReadStringer, Thrower, string,
-	func(Cell, string, int, string) (Cell, bool),
-) bool
+type Parser interface {
+	Start() bool
+}
+
+type ParserTemplate interface {
+	MakeParser(
+		ReadStringer, Thrower, string,
+		func(Cell, string, int, string) (Cell, bool),
+	) Parser
+}
 
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
@@ -225,7 +231,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(p Parser, t Thrower) Cell {
+func (ch *Channel) Read(p ParserTemplate, t Thrower) Cell {
 	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null
@@ -682,7 +688,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read(parse Parser, t Thrower) Cell {
+func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -696,7 +702,7 @@ func (p *Pipe) Read(parse Parser, t Thrower) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			parse(
+			pt.MakeParser(
 				p.reader(), t, p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
 					t.SetLine(l)
@@ -704,7 +710,7 @@ func (p *Pipe) Read(parse Parser, t Thrower) Cell {
 					<-p.d
 					return nil, true
 				},
-			)
+			).Start()
 			p.d = nil
 			p.c <- Null
 			p.c = nil

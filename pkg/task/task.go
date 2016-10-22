@@ -135,7 +135,7 @@ var (
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
-	parse       Parser
+	pt          ParserTemplate
 	runnable    chan bool
 	scope0      *scope
 	sys         context
@@ -1753,17 +1753,17 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(p Parser, cli ui) {
+func Start(p ParserTemplate, cli ui) {
 	launchForegroundTask(cli)
 
-	parse = p
+	pt = p
 	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
 		task0.Eval <- message{cmd: c, file: f, line: l, problem: p}
 		return <-task0.Done, true
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parse(b, task0, "boot.oh", eval)
+	pt.MakeParser(b, task0, "boot.oh", eval).Start()
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1804,7 +1804,7 @@ func Start(p Parser, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parse(b, task0, "-c", eval)
+			pt.MakeParser(b, task0, "-c", eval).Start()
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -1816,7 +1816,7 @@ func Start(p Parser, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		if parse(cli, task0, "oh", evaluate) {
+		if pt.MakeParser(cli, task0, "oh", evaluate).Start() {
 			fmt.Printf("\n")
 		}
 		cli.Close()
@@ -1881,7 +1881,7 @@ func conduitContext() context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(parse, t))
+		return t.Return(toConduit(t.Self()).Read(pt, t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)

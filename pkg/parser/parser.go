@@ -7,24 +7,40 @@ import (
 )
 
 type parser struct {
+	*ohParserImpl
+	*lexer
+}
+
+type template struct {
 	deref func(string, uintptr) Cell
 }
 
-func New(deref func(string, uintptr) Cell) *parser {
-        return &parser{deref}
+func Template(deref func(string, uintptr) Cell) *template {
+        return &template{deref}
 }
 
-func (p *parser) Parse(
-	input ReadStringer, t Thrower, filename string,
+func (t *template) MakeParser(
+	input ReadStringer, thrower Thrower, filename string,
 	yield func(Cell, string, int, string) (Cell, bool),
-) bool {
-	lexer := NewLexer(p.deref, input.ReadString, t.Throw, yield, filename)
+) Parser {
+	return &parser{
+		&ohParserImpl{},
+		NewLexer(
+			t.deref,
+			input.ReadString,
+			thrower.Throw,
+			yield,
+			filename,
+		),
+	}
+}
 
+func (p *parser) Start() bool {
 	rval := 1
 	for rval > 0 {
-		lexer.clear()
+		p.clear()
 
-		rval = ohParse(lexer)
+		rval = p.Parse(p.lexer)
 	}
 
 	return rval == 0

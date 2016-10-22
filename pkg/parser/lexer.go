@@ -27,13 +27,13 @@ type lexer struct {
 	start int    // Start position of this item.
 	width int    // Width of last rune read.
 
+	label string // The name of the thing being parsed.
+	lines int    // The number of lines read.
+
 	deref func(string, uintptr) Cell
 	input func(byte) (string, error)
 	throw func(string, int, string)
 	yield func(Cell, string, int, string) (Cell, bool)
-
-	label string // The name of the thing being parsed.
-	lines int    // The number of lines read.
 }
 
 const EOF = -1
