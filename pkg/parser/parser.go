@@ -46,13 +46,18 @@ func (p *parser) Start() bool {
 	return rval == 0
 }
 
-func (p *parser) State(line string) string {
+func (p *parser) State(line string) (string, string, string) {
 	pcopy := *p.ohParserImpl
 	lcopy := p.lexer.Partial(line)
 
 	pcopy.Parse(lcopy)
 
-	return lcopy.state.n
+	completing := ""
+	if lcopy.start < len(lcopy.bytes) {
+		completing = lcopy.bytes[lcopy.start:]
+	}
+
+	return lcopy.first, lcopy.state.n, completing
 }
 
 //go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y

@@ -105,7 +105,7 @@ func (i *cli) TerminalMode() (task.ApplyModer, error) {
 }
 
 func complete(line string, pos int) (head string, completions []string, tail string) {
-	_ = task.GlobalParser().State(line[:pos])
+	first, state, completing := task.GlobalParser().State(line[:pos])
 
 	head = line[:pos]
 	tail = line[pos:]
@@ -122,7 +122,7 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	fields := strings.Fields(head)
 	count := len(fields)
 
-	if count == 0 {
+	if state == "SkipWhitespace" {
 		return head, []string{"    "}, tail
 	}
 
@@ -134,10 +134,10 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	// Set prefix to head - word so so line == prefix + word + tail
 	prefix := head[0 : len(head)-len(word)]
 
-	if count == 1 {
-		completions = executables(word)
+	if first == "" {
+		completions = executables(completing)
 	} else {
-		completions = files(word)
+		completions = files(completing)
 	}
 
 	completions = append(

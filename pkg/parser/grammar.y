@@ -29,7 +29,7 @@ import (
 
 %type <c> block clauses command expression list opt_clauses opt_command
 %type <c> opt_evaluate_command opt_statement opt_substitution sequence
-%type <c> statement sub_block sub_statement substitution word
+%type <c> statement sub_block sub_statement substitution word subsequent
 %type <s> ANDF BACKGROUND BANG_STRING BRACE_EXPANSION DOUBLE_QUOTED
 %type <s> ORF PIPE REDIRECT SINGLE_QUOTED SUBSTITUTE SYMBOL
 
@@ -46,7 +46,7 @@ opt_evaluate_command: { $$ = Null }; /* Empty */
 opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
-		s := ohlex.(*lexer)
+		s := GetLexer(ohlex)
 		_, ok := s.yield($1, s.label, s.lines, "")
 		if !ok {
 			return -1
@@ -129,7 +129,11 @@ opt_statement: { $$ = Null };
 
 opt_statement: statement { $$ = $1 };
 
-statement: list { $$ = $1 };
+statement: list {
+	GetLexer(ohlex).first = ""
+	
+	$$ = $1
+};
 
 statement: list sub_statement {
 	$$ = JoinTo($1, $2)
@@ -185,11 +189,13 @@ opt_command: command { $$ = $1 };
 
 list: expression { $$ = Cons($1, Null) };
 
-list: list expression { $$ = AppendTo($1, $2) };
+list: list subsequent { $$ = AppendTo($1, $2) };
 
-expression: "@" expression {
+subsequent: "@" expression {
 	$$ = List(NewSymbol("_splice_"), $2)
 };
+
+subsequent: expression { $$ = $1 };
 
 expression: "`" expression {
 	$$ = List(NewSymbol("_backtick_"), $2)
@@ -201,7 +207,7 @@ expression: expression CONS expression {
 
 expression: "%" SYMBOL SYMBOL "%" {
 	value, _ := strconv.ParseUint($3, 0, 64)
-	$$ = ohlex.(*lexer).deref($2, uintptr(value))
+	$$ = GetLexer(ohlex).deref($2, uintptr(value))
 };
 
 expression: "(" command ")" { $$ = $2 };
@@ -225,7 +231,14 @@ word: SINGLE_QUOTED {
 	$$ = NewString($1[1:len($1)-1])
 };
 
-word: SYMBOL { $$ = NewSymbol($1) };
+word: SYMBOL {
+	s := GetLexer(ohlex)
+	if s.first == "" {
+		s.first = $1
+	}
+
+	$$ = NewSymbol($1)
+};
 
 word: BRACE_EXPANSION { $$ = NewSymbol($1) };
 

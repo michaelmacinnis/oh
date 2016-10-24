@@ -28,6 +28,7 @@ type lexer struct {
 	start int    // Start position of this item.
 	width int    // Width of last rune read.
 
+	first string // The first word in a command.
 	label string // The name of the thing being parsed.
 	lines int    // The number of lines read.
 
@@ -86,6 +87,14 @@ func NewLexer(
 
 		label: label,
 	}
+}
+
+func GetLexer(ohlex ohLexer) *lexer {
+	p, ok := ohlex.(*partial)
+	if ok {
+		return &p.lexer
+	}
+	return ohlex.(*lexer)
 }
 
 func (l *lexer) Partial(line string) *partial {
