@@ -19,6 +19,7 @@ type action struct {
 // The type lexer holds the lexer's state.
 type lexer struct {
 	after int             // The previous scanned item type.
+	alive chan struct{}   // Closed to signal the scanner to shut down.
 	items chan *ohSymType // Channel of scanned items.
 	saved *action         // The previous action.
 	state *action         // The current lexer action.
@@ -77,6 +78,7 @@ func NewLexer(
 	close(closed)
 
 	return &lexer{
+		alive: make(chan struct{}),
 		items: closed,
 		state: SkipWhitespace,
 
@@ -114,8 +116,15 @@ func (l *lexer) Partial(line string) *partial {
 	return copy
 }
 
+func (p *partial) Error(msg string) { }
+
 func (l *lexer) Error(msg string) {
 	l.throw(l.label, l.lines, msg)
+	close(l.alive)
+}
+
+func (l *lexer) Fatal(lval *ohSymType) bool {
+	return lval == CtrlCPressed
 }
 
 func (p *partial) Lex() *ohSymType {
@@ -160,22 +169,11 @@ func (l *lexer) Lex() *ohSymType {
 	}
 }
 
-func (l *lexer) Restart(lval *ohSymType) bool {
-	return lval == CtrlCPressed
-}
-
-func (l *lexer) clear() {
-	l.after = 0
-	l.saved = nil
-	l.state = SkipWhitespace
-
-	l.bytes = ""
-	l.index = 0
-	l.start = 0
-	l.width = 0
-}
-
 func (l *lexer) emit(yys int) {
+	if !l.running() {
+		return
+	}
+
 	operator := map[string]string{
 		"!>":  "_redirect_stderr_",
 		"!>>": "_append_stderr_",
@@ -278,12 +276,21 @@ func (l *lexer) resume() *action {
 }
 
 func (l *lexer) run() {
-	for state := l.state; state != nil; {
+	for state := l.state; l.running() && state != nil; {
 		l.state = state
 		state = state.f(l)
 	}
 	close(l.items)
 	l.reset()
+}
+
+func (l* lexer) running() bool {
+	select {
+	case <-l.alive:
+		return false
+	default:
+		return true
+	}
 }
 
 func (l *lexer) skip(w int) {

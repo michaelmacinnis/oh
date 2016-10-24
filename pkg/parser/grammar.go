@@ -220,8 +220,8 @@ var (
 
 type ohLexer interface {
 	Error(s string)
+	Fatal(*ohSymType) bool
 	Lex() *ohSymType
-	Restart(*ohSymType) bool
 }
 
 type ohParser interface {
@@ -382,6 +382,7 @@ func (ohrcvr *ohParserImpl) Parse(ohlex ohLexer) int {
 	zeroohVAL := ohVAL
 
 ohstart:
+	ohn = 0
 	ohVAL = zeroohVAL
 
 	Nerrs := 0   /* number of errors */
@@ -429,8 +430,8 @@ ohnewstate:
 		if ohrcvr.lval == nil {
 			goto ret0
 		}
-		if ohlex.Restart(ohrcvr.lval) {
-			goto ohstart
+		if ohlex.Fatal(ohrcvr.lval) {
+			goto ret1
 		}
 	}
 	ohn += ohtoken
@@ -458,8 +459,8 @@ ohdefault:
 			if ohrcvr.lval == nil {
 				goto ret0
 			}
-			if ohlex.Restart(ohrcvr.lval) {
-				goto ohstart
+			if ohlex.Fatal(ohrcvr.lval) {
+				goto ret1
 			}
 		}
 
@@ -487,6 +488,7 @@ ohdefault:
 		switch Errflag {
 		case 0: /* brand new error */
 			ohlex.Error(ohErrorMessage(ohstate, ohtoken))
+			goto ret1
 			Nerrs++
 			if ohDebug >= 1 {
 				__yyfmt__.Printf("%s", ohStatname(ohstate))

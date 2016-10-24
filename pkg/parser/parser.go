@@ -36,14 +36,19 @@ func (t *template) MakeParser(
 }
 
 func (p *parser) Start() bool {
-	rval := 1
-	for rval > 0 {
-		p.clear()
+	for {
+		rval := p.Parse(p.lexer)
+		if rval <= 0 {
+			return rval == 0
+		}
 
-		rval = p.Parse(p.lexer)
+		l := p.lexer
+
+		p.lexer = NewLexer(l.deref, l.input, l.throw, l.yield, l.label)
+		p.lexer.lines = l.lines
+
+		p.ohParserImpl = &ohParserImpl{}
 	}
-
-	return rval == 0
 }
 
 func (p *parser) State(line string) (string, string, string) {
