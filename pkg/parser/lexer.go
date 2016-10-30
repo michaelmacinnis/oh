@@ -116,11 +116,14 @@ func (l *lexer) Partial(line string) *partial {
 	return copy
 }
 
-func (p *partial) Error(msg string) { }
+func (p *partial) Error(msg string) bool {
+	return true
+}
 
-func (l *lexer) Error(msg string) {
+func (l *lexer) Error(msg string) bool {
 	l.throw(l.label, l.lines, msg)
 	close(l.alive)
+	return true
 }
 
 func (l *lexer) Fatal(lval *ohSymType) bool {
