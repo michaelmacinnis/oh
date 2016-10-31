@@ -62,6 +62,18 @@ func (p *parser) State(line string) (string, string, string) {
 		completing = lcopy.bytes[lcopy.start:]
 	}
 
+/*
+	println("\nStack {")
+	for i := 0; i <= pcopy.p; i++ {
+		s := ""
+		if pcopy.stack[i].c != nil {
+			s = Raw(pcopy.stack[i].c)
+		}
+		println(pcopy.stack[i].yys, pcopy.stack[i].s, s)
+	}
+	println("}\n")
+*/
+
 	return lcopy.first, lcopy.state.n, completing
 }
 

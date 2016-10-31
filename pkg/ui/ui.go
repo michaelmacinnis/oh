@@ -107,6 +107,8 @@ func (i *cli) TerminalMode() (task.ApplyModer, error) {
 func complete(line string, pos int) (head string, completions []string, tail string) {
 	first, state, completing := task.GlobalParser().State(line[:pos])
 
+	//println("Debug:", yys, first, state, completing)
+
 	head = line[:pos]
 	tail = line[pos:]
 

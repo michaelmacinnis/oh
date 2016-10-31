@@ -65,7 +65,7 @@ const ohEofCode = 1
 const ohErrCode = 2
 const ohInitialStackSize = 16
 
-//line grammar.y:245
+//line grammar.y:251
 
 //line yacctab:1
 var ohExca = [...]int{
@@ -91,61 +91,61 @@ var ohExca = [...]int{
 	-1, 49,
 	19, 37,
 	-2, 14,
-	-1, 69,
+	-1, 70,
 	19, 37,
 	-2, 14,
 }
 
-const ohNprod = 54
+const ohNprod = 55
 const ohPrivate = 57344
 
 var ohTokenNames []string
 var ohStates []string
 
-const ohLast = 133
+const ohLast = 132
 
 var ohAct = [...]int{
 
-	4, 40, 17, 62, 16, 7, 6, 8, 70, 8,
-	20, 74, 33, 34, 35, 8, 8, 53, 15, 60,
-	69, 49, 38, 39, 47, 36, 52, 27, 31, 45,
-	28, 29, 30, 9, 50, 19, 46, 12, 13, 14,
-	23, 41, 56, 15, 55, 21, 22, 14, 24, 25,
-	63, 59, 13, 14, 42, 57, 64, 58, 51, 3,
-	66, 67, 2, 27, 31, 1, 28, 29, 30, 32,
-	63, 73, 71, 75, 76, 44, 23, 43, 26, 48,
-	5, 21, 22, 72, 24, 25, 27, 31, 37, 28,
-	29, 30, 18, 27, 31, 54, 28, 29, 30, 23,
-	61, 0, 0, 0, 21, 22, 23, 24, 25, 10,
-	11, 12, 13, 14, 24, 25, 0, 0, 0, 0,
-	68, 10, 11, 12, 13, 14, 10, 11, 12, 13,
-	14, 0, 65,
+	4, 41, 17, 62, 16, 7, 6, 8, 71, 8,
+	54, 75, 34, 35, 36, 28, 32, 23, 29, 30,
+	31, 8, 39, 40, 47, 60, 8, 53, 24, 21,
+	22, 15, 37, 21, 22, 15, 25, 26, 46, 70,
+	49, 9, 51, 57, 50, 56, 19, 12, 13, 14,
+	63, 59, 42, 10, 11, 12, 13, 14, 13, 14,
+	14, 67, 68, 58, 69, 43, 65, 52, 64, 2,
+	1, 63, 74, 72, 76, 77, 28, 32, 44, 29,
+	30, 31, 27, 3, 48, 5, 73, 28, 32, 24,
+	29, 30, 31, 33, 21, 22, 38, 25, 26, 45,
+	24, 28, 32, 20, 29, 30, 31, 18, 25, 26,
+	55, 61, 0, 0, 24, 10, 11, 12, 13, 14,
+	0, 0, 25, 26, 0, 0, 66, 10, 11, 12,
+	13, 14,
 }
 var ohPact = [...]int{
 
-	-11, -1000, 14, -1000, 116, -1000, -2, 82, -1000, -11,
-	-1000, -11, -11, -11, 89, -1000, -11, 26, 59, -1000,
-	18, 82, 2, 89, 49, -4, -1000, -1000, -1000, -1000,
-	-1000, -1000, -1000, 25, 39, 33, 18, -1000, -1000, 23,
-	-1000, -11, -1000, -1000, 89, 18, 89, -1000, 82, -5,
-	18, 47, 111, -1000, -11, -1000, 99, 18, -1000, -1000,
-	-1000, 1, -1000, 116, -17, -1000, -1000, 23, 82, -13,
-	-1000, -1000, 26, -1000, -1000, -1000, -1000,
+	6, -1000, 22, -1000, 117, -1000, 15, 72, -1000, 6,
+	-1000, 6, 6, 6, 97, -1000, 6, 37, 7, -1000,
+	83, 72, 21, 26, 97, 58, -11, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, 35, 45, 46, 26, -1000, -1000,
+	11, -1000, 6, -1000, -1000, 97, 26, -1000, 72, 1,
+	97, 26, 57, 105, -1000, 6, -1000, 43, 26, -1000,
+	-1000, 20, -1000, 117, -1000, -17, -1000, -1000, 11, 72,
+	-13, -1000, -1000, 37, -1000, -1000, -1000, -1000,
 }
 var ohPgo = [...]int{
 
-	0, 100, 95, 0, 10, 92, 88, 3, 59, 83,
-	1, 80, 2, 79, 35, 4, 78, 77, 65, 62,
-	6, 5,
+	0, 111, 110, 107, 0, 17, 103, 96, 3, 83,
+	86, 1, 85, 2, 84, 46, 4, 82, 78, 70,
+	69, 6, 5,
 }
 var ohR1 = [...]int{
 
-	0, 18, 19, 19, 8, 8, 3, 3, 3, 3,
-	3, 3, 11, 11, 21, 21, 20, 20, 6, 6,
-	2, 2, 10, 10, 15, 9, 9, 12, 12, 12,
-	14, 14, 14, 13, 13, 1, 1, 7, 7, 5,
-	5, 17, 17, 4, 4, 4, 4, 4, 4, 16,
-	16, 16, 16, 16,
+	0, 19, 20, 20, 9, 9, 4, 4, 4, 4,
+	4, 4, 12, 12, 22, 22, 21, 21, 7, 7,
+	2, 2, 11, 11, 16, 10, 10, 13, 13, 13,
+	15, 15, 15, 14, 14, 1, 1, 8, 8, 3,
+	6, 6, 18, 18, 5, 5, 5, 5, 5, 5,
+	17, 17, 17, 17, 17,
 }
 var ohR2 = [...]int{
 
@@ -153,30 +153,30 @@ var ohR2 = [...]int{
 	3, 1, 1, 3, 0, 1, 1, 2, 1, 3,
 	1, 3, 0, 5, 2, 0, 1, 1, 2, 1,
 	2, 3, 2, 2, 4, 1, 3, 0, 1, 1,
-	2, 2, 1, 2, 3, 4, 3, 2, 1, 1,
-	1, 1, 1, 1,
+	1, 2, 2, 1, 2, 3, 4, 3, 2, 1,
+	1, 1, 1, 1, 1,
 }
 var ohChk = [...]int{
 
-	-1000, -18, -19, -8, -3, -11, -20, -21, 20, 19,
-	10, 11, 12, 13, 14, 20, -15, -12, -5, -14,
-	-4, 22, 23, 17, 25, 26, -16, 4, 7, 8,
-	9, 5, -8, -3, -3, -3, -4, -6, -21, -20,
-	-10, 15, -14, -17, 16, -4, 18, -12, -13, 19,
-	-4, 9, -3, 21, -2, -15, -3, -4, -4, -12,
-	24, -1, -7, -3, 9, 21, -21, -20, 21, 19,
-	25, -15, -9, -12, 24, -7, -10,
+	-1000, -19, -20, -9, -4, -12, -21, -22, 20, 19,
+	10, 11, 12, 13, 14, 20, -16, -13, -3, -15,
+	-6, 22, 23, -5, 17, 25, 26, -17, 4, 7,
+	8, 9, 5, -9, -4, -4, -4, -5, -7, -22,
+	-21, -11, 15, -15, -18, 16, -5, -13, -14, 19,
+	18, -5, 9, -4, 21, -2, -16, -4, -5, -13,
+	24, -1, -8, -4, -5, 9, 21, -22, -21, 21,
+	19, 25, -16, -10, -13, 24, -8, -11,
 }
 var ohDef = [...]int{
 
 	-2, -2, 0, 2, 5, 11, -2, 0, 16, -2,
 	6, 14, 14, 14, 0, 17, 14, 22, 27, 29,
-	39, 0, 0, 0, 0, 14, 48, 49, 50, 51,
-	52, 53, 3, 7, 8, 9, 10, 13, 18, 15,
-	24, 14, 28, 40, 0, 42, 0, 30, 32, -2,
-	43, 0, 0, 47, 14, 20, 0, 41, 44, 31,
-	33, 0, 35, 38, 0, 46, 19, 15, 25, -2,
-	45, 21, 22, 26, 34, 36, 23,
+	39, 0, 0, 40, 0, 0, 14, 49, 50, 51,
+	52, 53, 54, 3, 7, 8, 9, 10, 13, 18,
+	15, 24, 14, 28, 41, 0, 43, 30, 32, -2,
+	0, 44, 0, 0, 48, 14, 20, 0, 42, 31,
+	33, 0, 35, 38, 45, 0, 47, 19, 15, 25,
+	-2, 46, 21, 22, 26, 34, 36, 23,
 }
 var ohTok1 = [...]int{
 
@@ -232,6 +232,8 @@ type ohParser interface {
 type ohParserImpl struct {
 	char  int
 	lval  *ohSymType
+	n     int
+	p     int
 	stack [ohInitialStackSize]ohSymType
 }
 
@@ -569,13 +571,13 @@ ohdefault:
 
 	case 4:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:44
+		//line grammar.y:47
 		{
 			ohVAL.c = Null
 		}
 	case 5:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:46
+		//line grammar.y:49
 		{
 			ohVAL.c = ohDollar[1].c
 			if ohDollar[1].c != Null {
@@ -589,49 +591,49 @@ ohdefault:
 		}
 	case 6:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:58
+		//line grammar.y:61
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c)
 		}
 	case 7:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:62
+		//line grammar.y:65
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 8:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:66
+		//line grammar.y:69
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 9:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:70
+		//line grammar.y:73
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 10:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:74
+		//line grammar.y:77
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[3].c, ohDollar[1].c)
 		}
 	case 11:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:78
+		//line grammar.y:81
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 12:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:80
+		//line grammar.y:83
 		{
 			ohVAL.c = Null
 		}
 	case 13:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:82
+		//line grammar.y:85
 		{
 			if ohDollar[3].c == Null {
 				ohVAL.c = ohDollar[2].c
@@ -641,37 +643,37 @@ ohdefault:
 		}
 	case 18:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:98
+		//line grammar.y:101
 		{
 			ohVAL.c = Null
 		}
 	case 19:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:100
+		//line grammar.y:103
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 20:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:102
+		//line grammar.y:105
 		{
 			ohVAL.c = Cons(ohDollar[1].c, Null)
 		}
 	case 21:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:104
+		//line grammar.y:107
 		{
 			ohVAL.c = AppendTo(ohDollar[1].c, ohDollar[3].c)
 		}
 	case 22:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:106
+		//line grammar.y:109
 		{
 			ohVAL.c = Null
 		}
 	case 23:
 		ohDollar = ohS[ohpt-5 : ohpt+1]
-		//line grammar.y:108
+		//line grammar.y:111
 		{
 			lst := List(Cons(NewSymbol(ohDollar[1].s), ohDollar[2].c))
 			if ohDollar[4].c != Null {
@@ -684,7 +686,7 @@ ohdefault:
 		}
 	case 24:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:119
+		//line grammar.y:122
 		{
 			if ohDollar[2].c != Null {
 				sym := NewSymbol("_process_substitution_")
@@ -695,45 +697,43 @@ ohdefault:
 		}
 	case 25:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:128
+		//line grammar.y:131
 		{
 			ohVAL.c = Null
 		}
 	case 26:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:130
+		//line grammar.y:133
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 27:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:132
+		//line grammar.y:135
 		{
-			GetLexer(ohlex).first = ""
-
 			ohVAL.c = ohDollar[1].c
 		}
 	case 28:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:138
+		//line grammar.y:137
 		{
 			ohVAL.c = JoinTo(ohDollar[1].c, ohDollar[2].c)
 		}
 	case 29:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:142
+		//line grammar.y:141
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 30:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:144
+		//line grammar.y:143
 		{
 			ohVAL.c = Cons(ohDollar[2].c, Null)
 		}
 	case 31:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:146
+		//line grammar.y:145
 		{
 			if ohDollar[2].c == Null {
 				ohVAL.c = ohDollar[3].c
@@ -743,25 +743,25 @@ ohdefault:
 		}
 	case 32:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:154
+		//line grammar.y:153
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 33:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:158
+		//line grammar.y:157
 		{
 			ohVAL.c = Null
 		}
 	case 34:
 		ohDollar = ohS[ohpt-4 : ohpt+1]
-		//line grammar.y:160
+		//line grammar.y:159
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 35:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:162
+		//line grammar.y:161
 		{
 			if ohDollar[1].c == Null {
 				ohVAL.c = ohDollar[1].c
@@ -771,7 +771,7 @@ ohdefault:
 		}
 	case 36:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:170
+		//line grammar.y:169
 		{
 			if ohDollar[1].c == Null {
 				if ohDollar[3].c == Null {
@@ -789,101 +789,110 @@ ohdefault:
 		}
 	case 37:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:186
+		//line grammar.y:185
 		{
 			ohVAL.c = Null
 		}
 	case 38:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:188
+		//line grammar.y:187
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 39:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:190
+		//line grammar.y:189
+		{
+			s := GetLexer(ohlex)
+			s.first = ""
+
+			ohVAL.c = ohDollar[1].c
+		}
+	case 40:
+		ohDollar = ohS[ohpt-1 : ohpt+1]
+		//line grammar.y:196
 		{
 			ohVAL.c = Cons(ohDollar[1].c, Null)
 		}
-	case 40:
+	case 41:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:192
+		//line grammar.y:198
 		{
 			ohVAL.c = AppendTo(ohDollar[1].c, ohDollar[2].c)
 		}
-	case 41:
-		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:194
-		{
-			ohVAL.c = List(NewSymbol("_splice_"), ohDollar[2].c)
-		}
 	case 42:
-		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:198
-		{
-			ohVAL.c = ohDollar[1].c
-		}
-	case 43:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
 		//line grammar.y:200
 		{
-			ohVAL.c = List(NewSymbol("_backtick_"), ohDollar[2].c)
+			ohVAL.c = List(NewSymbol("_splice_"), ohDollar[2].c)
+		}
+	case 43:
+		ohDollar = ohS[ohpt-1 : ohpt+1]
+		//line grammar.y:204
+		{
+			ohVAL.c = ohDollar[1].c
 		}
 	case 44:
+		ohDollar = ohS[ohpt-2 : ohpt+1]
+		//line grammar.y:206
+		{
+			ohVAL.c = List(NewSymbol("_backtick_"), ohDollar[2].c)
+		}
+	case 45:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:204
+		//line grammar.y:210
 		{
 			ohVAL.c = Cons(ohDollar[1].c, ohDollar[3].c)
 		}
-	case 45:
+	case 46:
 		ohDollar = ohS[ohpt-4 : ohpt+1]
-		//line grammar.y:208
+		//line grammar.y:214
 		{
 			value, _ := strconv.ParseUint(ohDollar[3].s, 0, 64)
 			ohVAL.c = GetLexer(ohlex).deref(ohDollar[2].s, uintptr(value))
 		}
-	case 46:
+	case 47:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:213
+		//line grammar.y:219
 		{
 			ohVAL.c = ohDollar[2].c
 		}
-	case 47:
+	case 48:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:215
+		//line grammar.y:221
 		{
 			ohVAL.c = Null
 		}
-	case 48:
+	case 49:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:217
+		//line grammar.y:223
 		{
 			ohVAL.c = ohDollar[1].c
 		}
-	case 49:
+	case 50:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:219
+		//line grammar.y:225
 		{
 			v, _ := adapted.Unquote(ohDollar[1].s[1:])
 			ohVAL.c = NewString(v)
-		}
-	case 50:
-		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:224
-		{
-			v, _ := adapted.Unquote(ohDollar[1].s)
-			s := NewString(v)
-			ohVAL.c = List(NewSymbol("interpolate"), s)
 		}
 	case 51:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
 		//line grammar.y:230
 		{
-			ohVAL.c = NewString(ohDollar[1].s[1 : len(ohDollar[1].s)-1])
+			v, _ := adapted.Unquote(ohDollar[1].s)
+			s := NewString(v)
+			ohVAL.c = List(NewSymbol("interpolate"), s)
 		}
 	case 52:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:234
+		//line grammar.y:236
+		{
+			ohVAL.c = NewString(ohDollar[1].s[1 : len(ohDollar[1].s)-1])
+		}
+	case 53:
+		ohDollar = ohS[ohpt-1 : ohpt+1]
+		//line grammar.y:240
 		{
 			s := GetLexer(ohlex)
 			if s.first == "" {
@@ -892,12 +901,15 @@ ohdefault:
 
 			ohVAL.c = NewSymbol(ohDollar[1].s)
 		}
-	case 53:
+	case 54:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:243
+		//line grammar.y:249
 		{
 			ohVAL.c = NewSymbol(ohDollar[1].s)
 		}
 	}
+
+	ohrcvr.n = ohn
+	ohrcvr.p = ohp
 	goto ohstack /* stack new state and value */
 }

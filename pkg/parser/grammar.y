@@ -27,11 +27,14 @@ import (
 	s string
 }
 
-%type <c> block clauses command expression list opt_clauses opt_command
-%type <c> opt_evaluate_command opt_statement opt_substitution sequence
-%type <c> statement sub_block sub_statement substitution word subsequent
-%type <s> ANDF BACKGROUND BANG_STRING BRACE_EXPANSION DOUBLE_QUOTED
-%type <s> ORF PIPE REDIRECT SINGLE_QUOTED SUBSTITUTE SYMBOL
+%type <c> block clauses clear command expression list
+%type <c> opt_clauses opt_command opt_evaluate_command
+%type <c> opt_statement opt_substitution
+%type <c> sequence statement sub_block sub_statement
+%type <c> substitution word tail
+%type <s> ANDF BACKGROUND BANG_STRING BRACE_EXPANSION
+%type <s> DOUBLE_QUOTED ORF PIPE REDIRECT SINGLE_QUOTED
+%type <s> SUBSTITUTE SYMBOL
 
 %%
 
@@ -129,13 +132,9 @@ opt_statement: { $$ = Null };
 
 opt_statement: statement { $$ = $1 };
 
-statement: list {
-	GetLexer(ohlex).first = ""
+statement: clear { $$ = $1 };
 	
-	$$ = $1
-};
-
-statement: list sub_statement {
+statement: clear sub_statement {
 	$$ = JoinTo($1, $2)
 };
 
@@ -187,15 +186,22 @@ opt_command: { $$ = Null };
 
 opt_command: command { $$ = $1 };
 
+clear: list {
+	s := GetLexer(ohlex)
+	s.first = ""
+
+	$$ = $1
+}
+
 list: expression { $$ = Cons($1, Null) };
 
-list: list subsequent { $$ = AppendTo($1, $2) };
+list: list tail { $$ = AppendTo($1, $2) };
 
-subsequent: "@" expression {
+tail: "@" expression {
 	$$ = List(NewSymbol("_splice_"), $2)
 };
 
-subsequent: expression { $$ = $1 };
+tail: expression { $$ = $1 };
 
 expression: "`" expression {
 	$$ = List(NewSymbol("_backtick_"), $2)
