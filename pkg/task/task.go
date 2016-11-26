@@ -476,7 +476,7 @@ func (r *registers) Arguments() Cell {
 	return l
 }
 
-func (r *registers) Complete(fields []string, word string) (cmpltns []string) {
+func (r *registers) Complete(first string, word string) (cmpltns []string) {
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -508,8 +508,8 @@ func (r *registers) Complete(fields []string, word string) (cmpltns []string) {
 	}
 
 	simple := false
-	if len(fields) > 1 {
-		ref, _ := Resolve(r.Lexical, r.Frame, fields[0])
+	if first != "" {
+		ref, _ := Resolve(r.Lexical, r.Frame, first)
 		if ref != nil {
 			v := ref.Get()
 			if IsBuiltin(v) {

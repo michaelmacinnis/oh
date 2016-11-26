@@ -29,7 +29,7 @@ type lexer struct {
 	start int    // Start position of this item.
 	width int    // Width of last rune read.
 
-	first string // The first word in a command.
+	first Cell   // The first word in a command.
 	label string // The name of the thing being parsed.
 	lines int    // The number of lines read.
 
@@ -80,6 +80,7 @@ func NewLexer(
 	return &lexer{
 		alive: make(chan struct{}),
 		items: closed,
+		first: Cons(NewSymbol(""), Null),
 		state: SkipWhitespace,
 
 		deref: deref,
@@ -122,6 +123,7 @@ func (p *partial) Error(msg string) bool {
 
 func (l *lexer) Error(msg string) bool {
 	l.throw(l.label, l.lines, msg)
+	l.first = Cons(NewSymbol(""), Null)
 	close(l.alive)
 	return true
 }
@@ -219,6 +221,24 @@ func (l *lexer) emit(yys int) {
 		if exists {
 			s = op
 		}
+	}
+
+	first := Raw(Car(l.first))
+
+	switch yys {
+	case SYMBOL:
+		if first == "" {
+			SetCar(l.first, NewSymbol(s))
+		}
+	case '(', '{':
+		l.first = Cons(NewSymbol(""), l.first);
+	case ')', '}':
+		tail := Cdr(l.first)
+		if tail != Null {
+			l.first = tail
+		}
+	case ':':
+		SetCar(l.first, NewSymbol(""))
 	}
 
 	l.after = yys

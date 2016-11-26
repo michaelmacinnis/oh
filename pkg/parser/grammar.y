@@ -27,7 +27,7 @@ import (
 	s string
 }
 
-%type <c> block clauses clear command expression list
+%type <c> block clauses command expression list
 %type <c> opt_clauses opt_command opt_evaluate_command
 %type <c> opt_statement opt_substitution
 %type <c> sequence statement sub_block sub_statement
@@ -132,9 +132,9 @@ opt_statement: { $$ = Null };
 
 opt_statement: statement { $$ = $1 };
 
-statement: clear { $$ = $1 };
+statement: list { $$ = $1 };
 	
-statement: clear sub_statement {
+statement: list sub_statement {
 	$$ = JoinTo($1, $2)
 };
 
@@ -186,13 +186,6 @@ opt_command: { $$ = Null };
 
 opt_command: command { $$ = $1 };
 
-clear: list {
-	s := GetLexer(ohlex)
-	s.first = ""
-
-	$$ = $1
-}
-
 list: expression { $$ = Cons($1, Null) };
 
 list: list tail { $$ = AppendTo($1, $2) };
@@ -238,11 +231,6 @@ word: SINGLE_QUOTED {
 };
 
 word: SYMBOL {
-	s := GetLexer(ohlex)
-	if s.first == "" {
-		s.first = $1
-	}
-
 	$$ = NewSymbol($1)
 };
 

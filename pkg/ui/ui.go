@@ -107,8 +107,6 @@ func (i *cli) TerminalMode() (task.ApplyModer, error) {
 func complete(line string, pos int) (head string, completions []string, tail string) {
 	first, state, completing := task.GlobalParser().State(line[:pos])
 
-	//println("Debug:", yys, first, state, completing)
-
 	head = line[:pos]
 	tail = line[pos:]
 
@@ -121,20 +119,16 @@ func complete(line string, pos int) (head string, completions []string, tail str
 		completions = []string{}
 	}()
 
-	fields := strings.Fields(head)
-	count := len(fields)
-
 	if state == "SkipWhitespace" {
 		return head, []string{"    "}, tail
 	}
 
-	word := fields[count-1]
-	if !strings.HasSuffix(head, word) {
+	if !strings.HasSuffix(head, completing) {
 		return head, []string{}, tail
 	}
 
-	// Set prefix to head - word so so line == prefix + word + tail
-	prefix := head[0 : len(head)-len(word)]
+	// Ensure line == prefix + completing + tail
+	prefix := head[0 : len(head)-len(completing)]
 
 	if first == "" {
 		completions = executables(completing)
@@ -144,11 +138,11 @@ func complete(line string, pos int) (head string, completions []string, tail str
 
 	completions = append(
 		completions,
-		task.ForegroundTask().Complete(fields, word)...,
+		task.ForegroundTask().Complete(first, completing)...,
 	)
 
 	if len(completions) == 0 {
-		return prefix, []string{word}, tail
+		return prefix, []string{completing}, tail
 	}
 
 	unique := make(map[string]bool)
