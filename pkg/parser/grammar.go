@@ -65,7 +65,7 @@ const ohEofCode = 1
 const ohErrCode = 2
 const ohInitialStackSize = 16
 
-//line grammar.y:239
+//line grammar.y:240
 
 //line yacctab:1
 var ohExca = [...]int{
@@ -581,59 +581,60 @@ ohdefault:
 		{
 			ohVAL.c = ohDollar[1].c
 			if ohDollar[1].c != Null {
-				s := GetLexer(ohlex)
-				_, ok := s.yield(ohDollar[1].c, s.label, s.lines, "")
+				l := GetLexer(ohlex)
+				_, ok := l.yield(ohDollar[1].c, l.label, l.lines, "")
 				if !ok {
 					return -1
 				}
+				l.first = Cons(NewSymbol(""), Null)
 			}
 			goto ohstart
 		}
 	case 6:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:61
+		//line grammar.y:62
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c)
 		}
 	case 7:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:65
+		//line grammar.y:66
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 8:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:69
+		//line grammar.y:70
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 9:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:73
+		//line grammar.y:74
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[1].c, ohDollar[3].c)
 		}
 	case 10:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:77
+		//line grammar.y:78
 		{
 			ohVAL.c = List(NewSymbol(ohDollar[2].s), ohDollar[3].c, ohDollar[1].c)
 		}
 	case 11:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:81
+		//line grammar.y:82
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 12:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:83
+		//line grammar.y:84
 		{
 			ohVAL.c = Null
 		}
 	case 13:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:85
+		//line grammar.y:86
 		{
 			if ohDollar[3].c == Null {
 				ohVAL.c = ohDollar[2].c
@@ -643,37 +644,37 @@ ohdefault:
 		}
 	case 18:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:101
+		//line grammar.y:102
 		{
 			ohVAL.c = Null
 		}
 	case 19:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:103
+		//line grammar.y:104
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 20:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:105
+		//line grammar.y:106
 		{
 			ohVAL.c = Cons(ohDollar[1].c, Null)
 		}
 	case 21:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:107
+		//line grammar.y:108
 		{
 			ohVAL.c = AppendTo(ohDollar[1].c, ohDollar[3].c)
 		}
 	case 22:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:109
+		//line grammar.y:110
 		{
 			ohVAL.c = Null
 		}
 	case 23:
 		ohDollar = ohS[ohpt-5 : ohpt+1]
-		//line grammar.y:111
+		//line grammar.y:112
 		{
 			lst := List(Cons(NewSymbol(ohDollar[1].s), ohDollar[2].c))
 			if ohDollar[4].c != Null {
@@ -686,7 +687,7 @@ ohdefault:
 		}
 	case 24:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:122
+		//line grammar.y:123
 		{
 			if ohDollar[2].c != Null {
 				sym := NewSymbol("_process_substitution_")
@@ -697,43 +698,43 @@ ohdefault:
 		}
 	case 25:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:131
+		//line grammar.y:132
 		{
 			ohVAL.c = Null
 		}
 	case 26:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:133
+		//line grammar.y:134
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 27:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:135
+		//line grammar.y:136
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 28:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:137
+		//line grammar.y:138
 		{
 			ohVAL.c = JoinTo(ohDollar[1].c, ohDollar[2].c)
 		}
 	case 29:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:141
+		//line grammar.y:142
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 30:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:143
+		//line grammar.y:144
 		{
 			ohVAL.c = Cons(ohDollar[2].c, Null)
 		}
 	case 31:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:145
+		//line grammar.y:146
 		{
 			if ohDollar[2].c == Null {
 				ohVAL.c = ohDollar[3].c
@@ -743,25 +744,25 @@ ohdefault:
 		}
 	case 32:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:153
+		//line grammar.y:154
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 33:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:157
+		//line grammar.y:158
 		{
 			ohVAL.c = Null
 		}
 	case 34:
 		ohDollar = ohS[ohpt-4 : ohpt+1]
-		//line grammar.y:159
+		//line grammar.y:160
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 35:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:161
+		//line grammar.y:162
 		{
 			if ohDollar[1].c == Null {
 				ohVAL.c = ohDollar[1].c
@@ -771,7 +772,7 @@ ohdefault:
 		}
 	case 36:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:169
+		//line grammar.y:170
 		{
 			if ohDollar[1].c == Null {
 				if ohDollar[3].c == Null {
@@ -789,87 +790,87 @@ ohdefault:
 		}
 	case 37:
 		ohDollar = ohS[ohpt-0 : ohpt+1]
-		//line grammar.y:185
+		//line grammar.y:186
 		{
 			ohVAL.c = Null
 		}
 	case 38:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:187
+		//line grammar.y:188
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 39:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:189
+		//line grammar.y:190
 		{
 			ohVAL.c = Cons(ohDollar[1].c, Null)
 		}
 	case 40:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:191
+		//line grammar.y:192
 		{
 			ohVAL.c = AppendTo(ohDollar[1].c, ohDollar[2].c)
 		}
 	case 41:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:193
+		//line grammar.y:194
 		{
 			ohVAL.c = List(NewSymbol("_splice_"), ohDollar[2].c)
 		}
 	case 42:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:197
+		//line grammar.y:198
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 43:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:199
+		//line grammar.y:200
 		{
 			ohVAL.c = List(NewSymbol("_backtick_"), ohDollar[2].c)
 		}
 	case 44:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:203
+		//line grammar.y:204
 		{
 			ohVAL.c = Cons(ohDollar[1].c, ohDollar[3].c)
 		}
 	case 45:
 		ohDollar = ohS[ohpt-4 : ohpt+1]
-		//line grammar.y:207
+		//line grammar.y:208
 		{
 			value, _ := strconv.ParseUint(ohDollar[3].s, 0, 64)
 			ohVAL.c = GetLexer(ohlex).deref(ohDollar[2].s, uintptr(value))
 		}
 	case 46:
 		ohDollar = ohS[ohpt-3 : ohpt+1]
-		//line grammar.y:212
+		//line grammar.y:213
 		{
 			ohVAL.c = ohDollar[2].c
 		}
 	case 47:
 		ohDollar = ohS[ohpt-2 : ohpt+1]
-		//line grammar.y:214
+		//line grammar.y:215
 		{
 			ohVAL.c = Null
 		}
 	case 48:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:216
+		//line grammar.y:217
 		{
 			ohVAL.c = ohDollar[1].c
 		}
 	case 49:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:218
+		//line grammar.y:219
 		{
 			v, _ := adapted.Unquote(ohDollar[1].s[1:])
 			ohVAL.c = NewString(v)
 		}
 	case 50:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:223
+		//line grammar.y:224
 		{
 			v, _ := adapted.Unquote(ohDollar[1].s)
 			s := NewString(v)
@@ -877,19 +878,19 @@ ohdefault:
 		}
 	case 51:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:229
+		//line grammar.y:230
 		{
 			ohVAL.c = NewString(ohDollar[1].s[1 : len(ohDollar[1].s)-1])
 		}
 	case 52:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:233
+		//line grammar.y:234
 		{
 			ohVAL.c = NewSymbol(ohDollar[1].s)
 		}
 	case 53:
 		ohDollar = ohS[ohpt-1 : ohpt+1]
-		//line grammar.y:237
+		//line grammar.y:238
 		{
 			ohVAL.c = NewSymbol(ohDollar[1].s)
 		}

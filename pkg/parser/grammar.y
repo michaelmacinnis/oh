@@ -49,11 +49,12 @@ opt_evaluate_command: { $$ = Null }; /* Empty */
 opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
-		s := GetLexer(ohlex)
-		_, ok := s.yield($1, s.label, s.lines, "")
+		l := GetLexer(ohlex)
+		_, ok := l.yield($1, l.label, l.lines, "")
 		if !ok {
 			return -1
 		}
+		l.first = Cons(NewSymbol(""), Null)
 	}
 	goto ohstart
 };
