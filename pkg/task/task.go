@@ -1768,7 +1768,7 @@ func Start(p ParserTemplate, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	pt.MakeParser(b, task0, "boot.oh", eval).Start()
+	pt.MakeParser(b, "boot.oh", eval).Start(task0)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1809,7 +1809,7 @@ func Start(p ParserTemplate, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			pt.MakeParser(b, task0, "-c", eval).Start()
+			pt.MakeParser(b, "-c", eval).Start(task0)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -1821,8 +1821,8 @@ func Start(p ParserTemplate, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		parser = pt.MakeParser(cli, task0, "oh", evaluate)
-		if parser.Start() {
+		parser = pt.MakeParser(cli, "oh", evaluate)
+		if parser.Start(task0) {
 			fmt.Printf("\n")
 		}
 		cli.Close()

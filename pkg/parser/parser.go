@@ -21,7 +21,7 @@ func Template(deref func(string, uintptr) Cell) *template {
 }
 
 func (t *template) MakeParser(
-	input ReadStringer, thrower Thrower, filename string,
+	input ReadStringer, filename string,
 	yield func(Cell, string, int, string) (Cell, bool),
 ) Parser {
 	return &parser{
@@ -29,14 +29,13 @@ func (t *template) MakeParser(
 		NewLexer(
 			t.deref,
 			input.ReadString,
-			thrower.Throw,
 			yield,
 			filename,
 		),
 	}
 }
 
-func (p *parser) NewStart() (nl bool, pe *ParseError) {
+func (p *parser) NewStart() (rval int, pe *ParseError) {
 	pe = nil
 
 	defer func() {
@@ -49,19 +48,22 @@ func (p *parser) NewStart() (nl bool, pe *ParseError) {
 			}
 		}
 	}()
-	return p.Start(), pe
+
+	return p.Parse(p.lexer), pe
 }
 
-func (p *parser) Start() bool {
+func (p *parser) Start(thrower Thrower) bool {
 	for {
-		rval := p.Parse(p.lexer)
-		if rval <= 0 {
+		rval, pe := p.NewStart()
+		if pe != nil {
+			thrower.Throw(pe.Filename, pe.LineNumber, pe.Message)
+		} else if rval <= 0 {
 			return rval == 0
 		}
 
 		l := p.lexer
 
-		p.lexer = NewLexer(l.deref, l.input, l.throw, l.yield, l.label)
+		p.lexer = NewLexer(l.deref, l.input, l.yield, l.label)
 		p.lexer.lines = l.lines
 
 		p.ohParserImpl = &ohParserImpl{}

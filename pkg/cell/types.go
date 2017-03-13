@@ -49,8 +49,8 @@ type ParseError struct {
 }
 
 type Parser interface {
-	NewStart() (bool, *ParseError)
-	Start() bool
+	NewStart() (int, *ParseError)
+	Start(Thrower) bool
 	State(string) (string, string, string)
 }
 
@@ -61,7 +61,7 @@ type PipeValue struct {
 
 type ParserTemplate interface {
 	MakeParser(
-		ReadStringer, Thrower, string,
+		ReadStringer, string,
 		func(Cell, string, int, string) (Cell, bool),
 	) Parser
 }
@@ -716,9 +716,8 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 		p.c = make(chan PipeValue)
 		go func() {
 			_, e := pt.MakeParser(
-				p.reader(), t, p.r.Name(),
+				p.reader(), p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
-					t.SetLine(l)
 					p.c <- PipeValue{v: c, e: nil}
 					<-p.d
 					return nil, true

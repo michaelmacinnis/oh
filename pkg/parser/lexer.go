@@ -35,7 +35,6 @@ type lexer struct {
 
 	deref func(string, uintptr) Cell
 	input func(byte) (string, error)
-	throw func(string, int, string)
 	yield func(Cell, string, int, string) (Cell, bool)
 }
 
@@ -70,7 +69,6 @@ var Finished = &ohSymType{yys: 0}
 func NewLexer(
 	deref func(string, uintptr) Cell,
 	input func(byte) (string, error),
-	throw func(string, int, string),
 	yield func(Cell, string, int, string) (Cell, bool),
 	label string,
 ) *lexer {
@@ -85,7 +83,6 @@ func NewLexer(
 
 		deref: deref,
 		input: input,
-		throw: throw,
 		yield: yield,
 
 		label: label,
