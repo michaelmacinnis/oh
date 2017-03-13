@@ -122,9 +122,9 @@ func (p *partial) Error(msg string) bool {
 }
 
 func (l *lexer) Error(msg string) bool {
-	l.throw(l.label, l.lines, msg)
 	l.first = Cons(NewSymbol(""), Null)
 	close(l.alive)
+	panic(msg)
 	return true
 }
 

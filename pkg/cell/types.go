@@ -42,9 +42,21 @@ type Number interface {
 	Subtract(c Cell) Number
 }
 
+type ParseError struct {
+	Filename string
+	LineNumber int
+	Message string
+}
+
 type Parser interface {
+	NewStart() (bool, *ParseError)
 	Start() bool
 	State(string) (string, string, string)
+}
+
+type PipeValue struct {
+	v Cell
+	e *ParseError
 }
 
 type ParserTemplate interface {
@@ -611,7 +623,7 @@ func (p *Pair) String() (s string) {
 
 type Pipe struct {
 	b *bufio.Reader
-	c chan Cell
+	c chan PipeValue
 	d chan bool
 	r *os.File
 	w *os.File
@@ -701,24 +713,32 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 	}
 
 	if p.c == nil {
-		p.c = make(chan Cell)
+		p.c = make(chan PipeValue)
 		go func() {
-			pt.MakeParser(
+			_, e := pt.MakeParser(
 				p.reader(), t, p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
 					t.SetLine(l)
-					p.c <- c
+					p.c <- PipeValue{v: c, e: nil}
 					<-p.d
 					return nil, true
 				},
-			).Start()
+			).NewStart()
 			p.d = nil
-			p.c <- Null
+			p.c <- PipeValue{
+				v: Null,
+				e: e,
+			}
 			p.c = nil
 		}()
 	}
 
-	return <-p.c
+	pv := <-p.c
+	if pv.e != nil {
+		t.Throw(pv.e.Filename, pv.e.LineNumber, pv.e.Message)
+	}
+
+	return pv.v
 }
 
 func (p *Pipe) ReadLine() Cell {

@@ -4,6 +4,7 @@ package parser
 
 import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"fmt"
 )
 
 type parser struct {
@@ -33,6 +34,22 @@ func (t *template) MakeParser(
 			filename,
 		),
 	}
+}
+
+func (p *parser) NewStart() (nl bool, pe *ParseError) {
+	pe = nil
+
+	defer func() {
+		r := recover()
+		if r != nil {
+			pe = &ParseError{
+				Filename: p.lexer.label,
+				LineNumber: p.lexer.lines,
+				Message: fmt.Sprintf("%v", r),
+			}
+		}
+	}()
+	return p.Start(), pe
 }
 
 func (p *parser) Start() bool {
