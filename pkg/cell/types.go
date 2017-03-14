@@ -718,6 +718,7 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 			_, e := pt.MakeParser(
 				p.reader(), p.r.Name(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
+					t.SetLine(l)
 					p.c <- PipeValue{v: c, e: nil}
 					<-p.d
 					return nil, true

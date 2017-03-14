@@ -114,15 +114,12 @@ func (l *lexer) Partial(line string) *partial {
 	return copy
 }
 
-func (p *partial) Error(msg string) bool {
-	return true
-}
+func (p *partial) Error(msg string) { }
 
-func (l *lexer) Error(msg string) bool {
+func (l *lexer) Error(msg string) {
 	l.first = Cons(NewSymbol(""), Null)
 	close(l.alive)
 	panic(msg)
-	return true
 }
 
 func (l *lexer) Fatal(lval *ohSymType) bool {

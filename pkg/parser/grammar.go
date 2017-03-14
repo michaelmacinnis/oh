@@ -219,7 +219,7 @@ var (
 )
 
 type ohLexer interface {
-	Error(s string) bool
+	Error(s string)
 	Fatal(*ohSymType) bool
 	Lex() *ohSymType
 }
@@ -402,10 +402,10 @@ ohstart:
 	goto ohstack
 
 ret0:
-	return 0
+	return 0 /* Normal exit. */
 
 ret1:
-	return 1
+	return 1 /* Abnormal exit. */
 
 ohstack:
 	/* put a state and value onto the stack */
@@ -489,9 +489,7 @@ ohdefault:
 		/* error ... attempt to resume parsing */
 		switch Errflag {
 		case 0: /* brand new error */
-			if ohlex.Error(ohErrorMessage(ohstate, ohtoken)) {
-				goto ret1
-			}
+			ohlex.Error(ohErrorMessage(ohstate, ohtoken))
 			Nerrs++
 			if ohDebug >= 1 {
 				__yyfmt__.Printf("%s", ohStatname(ohstate))
