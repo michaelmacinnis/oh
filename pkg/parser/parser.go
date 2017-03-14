@@ -34,7 +34,7 @@ func (t *template) MakeParser(
 	}
 }
 
-func (p *parser) NewStart() (rval int, pe interface{}) {
+func (p *parser) StartNoPanic() (rval int, pe interface{}) {
 	defer func() {
 		pe = recover()
 	}()
@@ -46,7 +46,7 @@ func (p *parser) Start(filename string, thrower Thrower) bool {
 	for {
 		p.lexer.label = filename
 
-		rval, pe := p.NewStart()
+		rval, pe := p.StartNoPanic()
 		if pe != nil {
 			thrower.Throw(filename, p.lexer.lines, fmt.Sprintf("%v", pe))
 		} else if rval <= 0 {
