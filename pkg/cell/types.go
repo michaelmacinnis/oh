@@ -68,7 +68,6 @@ type Reference interface {
 
 type Thrower interface {
 	Throw(filename string, lineno int, message string)
-	SetLine(lineno int)
 }
 
 var (
