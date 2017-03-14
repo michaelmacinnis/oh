@@ -1768,7 +1768,7 @@ func Start(p ParserTemplate, cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	pt.MakeParser(b, "boot.oh", eval).Start(task0)
+	pt.MakeParser(b, eval).Start("boot.oh", task0)
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1809,7 +1809,7 @@ func Start(p ParserTemplate, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			pt.MakeParser(b, "-c", eval).Start(task0)
+			pt.MakeParser(b, eval).Start("-c", task0)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0, "")
@@ -1821,8 +1821,8 @@ func Start(p ParserTemplate, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		parser = pt.MakeParser(cli, "oh", evaluate)
-		if parser.Start(task0) {
+		parser = pt.MakeParser(cli, evaluate)
+		if parser.Start("oh", task0) {
 			fmt.Printf("\n")
 		}
 		cli.Close()
@@ -1884,6 +1884,10 @@ func conduitContext() context {
 	envc.PublicMethod("keys", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
 		return t.Return(Null)
+	})
+	envc.PublicMethod("lineno", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		return t.Return(toConduit(t.Self()).LineNumber())
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)

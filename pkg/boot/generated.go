@@ -314,7 +314,7 @@ define source: syntax (name) e = {
 	define r: cons () ()
 	define c = r
 	while (define l: f::read) {
-		c::set-tail: cons (cons (get-line-number) l) ()
+		c::set-tail: cons (cons (f::lineno) l) ()
 		set c: c::tail
 	}
 	set c: r::tail
@@ -356,9 +356,9 @@ _sys_::public _exception: method (t s m l f) e = {
 }
 # The generator method exception can be called in three ways:
 # exception <message>
-# exception <status> <message>
-# exception <type> <status> <message>
-# If not provided status defaults to status false and type to error/runtime.
+# exception <value> <message>
+# exception <type> <value> <message>
+# If not provided value defaults to status false and type to error/runtime.
 _sys_::public exception: method (message :args) e = {
 	define s: status false
 	define t: symbol "error/runtime"

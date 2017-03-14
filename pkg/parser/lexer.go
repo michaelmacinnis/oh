@@ -70,7 +70,6 @@ func NewLexer(
 	deref func(string, uintptr) Cell,
 	input func(byte) (string, error),
 	yield func(Cell, string, int, string) (Cell, bool),
-	label string,
 ) *lexer {
 	closed := make(chan *ohSymType)
 	close(closed)
@@ -84,8 +83,6 @@ func NewLexer(
 		deref: deref,
 		input: input,
 		yield: yield,
-
-		label: label,
 	}
 }
 

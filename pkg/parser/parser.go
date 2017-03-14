@@ -21,7 +21,7 @@ func Template(deref func(string, uintptr) Cell) *template {
 }
 
 func (t *template) MakeParser(
-	input ReadStringer, filename string,
+	input ReadStringer,
 	yield func(Cell, string, int, string) (Cell, bool),
 ) Parser {
 	return &parser{
@@ -30,40 +30,32 @@ func (t *template) MakeParser(
 			t.deref,
 			input.ReadString,
 			yield,
-			filename,
 		),
 	}
 }
 
-func (p *parser) NewStart() (rval int, pe *ParseError) {
-	pe = nil
-
+func (p *parser) NewStart() (rval int, pe interface{}) {
 	defer func() {
-		r := recover()
-		if r != nil {
-			pe = &ParseError{
-				Filename: p.lexer.label,
-				LineNumber: p.lexer.lines,
-				Message: fmt.Sprintf("%v", r),
-			}
-		}
+		pe = recover()
 	}()
 
 	return p.Parse(p.lexer), pe
 }
 
-func (p *parser) Start(thrower Thrower) bool {
+func (p *parser) Start(filename string, thrower Thrower) bool {
 	for {
+		p.lexer.label = filename
+
 		rval, pe := p.NewStart()
 		if pe != nil {
-			thrower.Throw(pe.Filename, pe.LineNumber, pe.Message)
+			thrower.Throw(filename, p.lexer.lines, fmt.Sprintf("%v", pe))
 		} else if rval <= 0 {
 			return rval == 0
 		}
 
 		l := p.lexer
 
-		p.lexer = NewLexer(l.deref, l.input, l.yield, l.label)
+		p.lexer = NewLexer(l.deref, l.input, l.yield)
 		p.lexer.lines = l.lines
 
 		p.ohParserImpl = &ohParserImpl{}

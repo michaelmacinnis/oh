@@ -22,6 +22,7 @@ type Cell interface {
 
 type Conduit interface {
 	Close()
+	LineNumber() Cell
 	ReaderClose()
 	ReadLine() Cell
 	Read(ParserTemplate, Thrower) Cell
@@ -42,26 +43,15 @@ type Number interface {
 	Subtract(c Cell) Number
 }
 
-type ParseError struct {
-	Filename string
-	LineNumber int
-	Message string
-}
-
 type Parser interface {
-	NewStart() (int, *ParseError)
-	Start(Thrower) bool
+	NewStart() (int, interface{})
+	Start(string, Thrower) bool
 	State(string) (string, string, string)
-}
-
-type PipeValue struct {
-	v Cell
-	e *ParseError
 }
 
 type ParserTemplate interface {
 	MakeParser(
-		ReadStringer, string,
+		ReadStringer,
 		func(Cell, string, int, string) (Cell, bool),
 	) Parser
 }
@@ -78,7 +68,6 @@ type Reference interface {
 
 type Thrower interface {
 	Throw(filename string, lineno int, message string)
-	SetFile(filename string)
 	SetLine(lineno int)
 }
 
@@ -238,6 +227,10 @@ func (ch *Channel) String() string {
 
 func (ch *Channel) Close() {
 	ch.WriterClose()
+}
+
+func (ch *Channel) LineNumber() Cell {
+	return NewInteger(0)
 }
 
 func (ch *Channel) ReaderClose() {
@@ -623,8 +616,10 @@ func (p *Pair) String() (s string) {
 
 type Pipe struct {
 	b *bufio.Reader
-	c chan PipeValue
+	c chan Cell
 	d chan bool
+	e interface{}
+	l int
 	r *os.File
 	w *os.File
 }
@@ -647,6 +642,8 @@ func NewPipe(r *os.File, w *os.File) *Pipe {
 		b: nil,
 		c: nil,
 		d: nil,
+		e: nil,
+		l: 0,
 		r: r,
 		w: w,
 	}
@@ -694,6 +691,10 @@ func (p *Pipe) reader() *bufio.Reader {
 	return p.b
 }
 
+func (p *Pipe) LineNumber() Cell {
+	return NewInteger(int64(p.l))
+}
+
 func (p *Pipe) ReaderClose() {
 	if p.r != nil {
 		p.r.Close()
@@ -713,32 +714,29 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 	}
 
 	if p.c == nil {
-		p.c = make(chan PipeValue)
+		p.c = make(chan Cell)
 		go func() {
-			_, e := pt.MakeParser(
-				p.reader(), p.r.Name(),
+			_, p.e = pt.MakeParser(
+				p.reader(),
 				func(c Cell, f string, l int, u string) (Cell, bool) {
-					t.SetLine(l)
-					p.c <- PipeValue{v: c, e: nil}
+					p.l = l
+					p.c <- c
 					<-p.d
 					return nil, true
 				},
 			).NewStart()
 			p.d = nil
-			p.c <- PipeValue{
-				v: Null,
-				e: e,
-			}
+			p.c <- Null
 			p.c = nil
 		}()
 	}
 
-	pv := <-p.c
-	if pv.e != nil {
-		t.Throw(pv.e.Filename, pv.e.LineNumber, pv.e.Message)
+	v := <-p.c
+	if p.e != nil {
+		t.Throw(p.r.Name(), p.l, fmt.Sprintf("%v", p.e))
 	}
 
-	return pv.v
+	return v
 }
 
 func (p *Pipe) ReadLine() Cell {
