@@ -52,7 +52,7 @@ type Parser interface {
 type ParserTemplate interface {
 	MakeParser(
 		ReadStringer,
-		func(Cell, string, int, string) (Cell, bool),
+		func(Cell, string, int) (Cell, bool),
 	) Parser
 }
 
@@ -717,7 +717,7 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 		go func() {
 			_, p.e = pt.MakeParser(
 				p.reader(),
-				func(c Cell, f string, l int, u string) (Cell, bool) {
+				func(c Cell, f string, l int) (Cell, bool) {
 					p.l = l
 					p.c <- c
 					<-p.d

@@ -22,7 +22,7 @@ func Template(deref func(string, uintptr) Cell) *template {
 
 func (t *template) MakeParser(
 	input ReadStringer,
-	yield func(Cell, string, int, string) (Cell, bool),
+	yield func(Cell, string, int) (Cell, bool),
 ) Parser {
 	return &parser{
 		&ohParserImpl{},

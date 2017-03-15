@@ -35,7 +35,7 @@ type lexer struct {
 
 	deref func(string, uintptr) Cell
 	input func(byte) (string, error)
-	yield func(Cell, string, int, string) (Cell, bool)
+	yield func(Cell, string, int) (Cell, bool)
 }
 
 type partial struct {
@@ -69,7 +69,7 @@ var Finished = &ohSymType{yys: 0}
 func NewLexer(
 	deref func(string, uintptr) Cell,
 	input func(byte) (string, error),
-	yield func(Cell, string, int, string) (Cell, bool),
+	yield func(Cell, string, int) (Cell, bool),
 ) *lexer {
 	closed := make(chan *ohSymType)
 	close(closed)
@@ -104,7 +104,7 @@ func (l *lexer) Partial(line string) *partial {
 	copy.items = closed
 
 	copy.scan(line)
-	copy.yield = func(Cell, string, int, string) (Cell, bool) {
+	copy.yield = func(Cell, string, int) (Cell, bool) {
 		return Null, true
 	}
 

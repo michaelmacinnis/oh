@@ -580,7 +580,7 @@ ohdefault:
 			ohVAL.c = ohDollar[1].c
 			if ohDollar[1].c != Null {
 				l := GetLexer(ohlex)
-				_, ok := l.yield(ohDollar[1].c, l.label, l.lines, "")
+				_, ok := l.yield(ohDollar[1].c, l.label, l.lines)
 				if !ok {
 					return -1
 				}

@@ -73,7 +73,6 @@ type message struct {
 	cmd     Cell
 	file    string
 	line    int
-	problem string
 }
 
 type ui interface {
@@ -1083,6 +1082,60 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	return rv, err
 }
 
+func (t *Task) Exception(file string, line int, text string) registers {
+	throw := NewSymbol("throw")
+
+	var resolved Reference
+
+	/* Unwind stack until we can resolve 'throw'. */
+	for t.Lexical != scope0 {
+		state := t.GetState()
+		if state <= 0 {
+			t.Lexical = scope0
+			break
+		}
+
+		switch t.Lexical.(type) {
+		case context:
+			resolved, _ = Resolve(t.Lexical, t.Frame, "throw")
+		}
+
+		if resolved != nil {
+			break
+		}
+
+		t.RemoveState()
+	}
+
+	kind := "error/runtime"
+	code := "1"
+
+	if strings.HasPrefix(text, "oh: ") {
+		args := strings.SplitN(text, ": ", 4)
+		code = args[1]
+		kind = args[2]
+		text = args[3]
+	}
+	c := List(
+		throw, List(
+			NewSymbol("_exception"),
+			NewSymbol(kind),
+			NewStatus(NewSymbol(code).Status()),
+			NewSymbol(text),
+			NewInteger(int64(line)),
+			NewSymbol(path.Base(file)),
+		),
+	)
+
+	saved := t.registers
+
+	t.Code = c
+	t.Dump = List(ExitSuccess)
+	t.Stack = List(NewInteger(psEvalCommand))
+
+	return saved
+}
+
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
@@ -1131,7 +1184,7 @@ func (t *Task) External(args Cell) bool {
 }
 
 func (t *Task) launch() {
-	t.Run(nil, "")
+	t.Run(nil)
 	close(t.Done)
 }
 
@@ -1160,7 +1213,7 @@ func (t *Task) Listen() {
 		t.NewStates(svCode, psEvalCommand)
 
 		t.Code = m.cmd
-		rv := t.Run(end, m.problem)
+		rv := t.Run(end)
 		var result Cell
 		if rv != 0 {
 			t.registers = saved
@@ -1238,16 +1291,16 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) Run(end Cell, problem string) (rv int) {
+func (t *Task) Run(end Cell) (rv int) {
 	for {
-		rv := t._Run(end, problem)
+		rv := t.RunWithRecovery(end)
 		if rv != 1 {
 			return rv
 		}
 	}
 }
 
-func (t *Task) _Run(end Cell, problem string) (rv int) {
+func (t *Task) RunWithRecovery(end Cell) (rv int) {
 	rv = 0
 
 	defer func() {
@@ -1256,11 +1309,7 @@ func (t *Task) _Run(end Cell, problem string) (rv int) {
 			return
 		}
 
-		if problem == "" {
-			t._Throw(t.file, t.line, fmt.Sprintf("%v", r))
-		} else {
-			println("Catastrophic error: " + problem)
-		}
+		t.Exception(t.file, t.line, fmt.Sprintf("%v", r))
 
 		rv = 1
 	}()
@@ -1552,65 +1601,11 @@ func (t *Task) Suspend() {
 }
 
 func (t *Task) Throw(file string, line int, text string) {
-	saved := t._Throw(file, line, text)
+	saved := t.Exception(file, line, text)
 
-	t.Run(nil, "")
+	t.Run(nil)
 
 	t.registers = saved
-}
-
-func (t *Task) _Throw(file string, line int, text string) registers {
-	throw := NewSymbol("throw")
-
-	var resolved Reference
-
-	/* Unwind stack until we can resolve 'throw'. */
-	for t.Lexical != scope0 {
-		state := t.GetState()
-		if state <= 0 {
-			t.Lexical = scope0
-			break
-		}
-
-		switch t.Lexical.(type) {
-		case context:
-			resolved, _ = Resolve(t.Lexical, t.Frame, "throw")
-		}
-
-		if resolved != nil {
-			break
-		}
-
-		t.RemoveState()
-	}
-
-	kind := "error/runtime"
-	code := "1"
-
-	if strings.HasPrefix(text, "oh: ") {
-		args := strings.SplitN(text, ": ", 4)
-		code = args[1]
-		kind = args[2]
-		text = args[3]
-	}
-	c := List(
-		throw, List(
-			NewSymbol("_exception"),
-			NewSymbol(kind),
-			NewStatus(NewSymbol(code).Status()),
-			NewSymbol(text),
-			NewInteger(int64(line)),
-			NewSymbol(path.Base(file)),
-		),
-	)
-
-	saved := t.registers
-
-	t.Code = c
-	t.Dump = List(ExitSuccess)
-	t.Stack = List(NewInteger(psEvalCommand))
-
-	return saved
 }
 
 func (t *Task) Validate(
@@ -1705,7 +1700,7 @@ func (u *unbound) self() Cell {
 
 func Call(t *Task, c Cell) string {
 	if t == nil {
-		r, _ := evaluate(c, "", -1, "")
+		r, _ := evaluate(c, "", -1)
 		return Raw(r)
 	}
 
@@ -1715,7 +1710,7 @@ func Call(t *Task, c Cell) string {
 	t.Dump = List(ExitSuccess)
 	t.Stack = List(NewInteger(psEvalCommand))
 
-	t.Run(nil, "")
+	t.Run(nil)
 
 	rv := Car(t.Dump)
 
@@ -1786,8 +1781,8 @@ func Start(p ParserTemplate, cli ui) {
 	launchForegroundTask(cli)
 
 	pt = p
-	eval := func(c Cell, f string, l int, p string) (Cell, bool) {
-		task0.Eval <- message{cmd: c, file: f, line: l, problem: p}
+	eval := func(c Cell, f string, l int) (Cell, bool) {
+		task0.Eval <- message{cmd: c, file: f, line: l}
 		return <-task0.Done, true
 	}
 
@@ -1836,7 +1831,7 @@ func Start(p ParserTemplate, cli ui) {
 			pt.MakeParser(b, eval).Start("-c", task0)
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
-			eval(cmd, os.Args[1], 0, "")
+			eval(cmd, os.Args[1], 0)
 		}
 	} else if cli.Exists() {
 		interactive = true
@@ -1853,7 +1848,7 @@ func Start(p ParserTemplate, cli ui) {
 	} else {
 		eval(
 			List(NewSymbol("source"), NewSymbol("/dev/stdin")),
-			"/dev/stdin", 0, "")
+			"/dev/stdin", 0)
 	}
 
 	exit(Car(task0.Dump))

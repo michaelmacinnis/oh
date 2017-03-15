@@ -83,8 +83,8 @@ func broker(cli ui) {
 	}
 }
 
-func evaluate(c Cell, f string, l int, p string) (Cell, bool) {
-	eval0 <- message{cmd: c, file: f, line: l, problem: p}
+func evaluate(c Cell, f string, l int) (Cell, bool) {
+	eval0 <- message{cmd: c, file: f, line: l}
 	r := <-done0
 
 	task0.Job.Command = ""

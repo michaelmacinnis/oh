@@ -50,7 +50,7 @@ opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
 		l := GetLexer(ohlex)
-		_, ok := l.yield($1, l.label, l.lines, "")
+		_, ok := l.yield($1, l.label, l.lines)
 		if !ok {
 			return -1
 		}
