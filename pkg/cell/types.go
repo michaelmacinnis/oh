@@ -236,7 +236,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(p ParserTemplate, t Thrower) Cell {
+func (ch *Channel) Read(_ ParserTemplate, _ Thrower) Cell {
 	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null

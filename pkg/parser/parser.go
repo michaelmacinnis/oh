@@ -34,7 +34,8 @@ func (t *template) MakeParser(
 	}
 }
 
-func (p *parser) StartNoPanic() (rval int, pe interface{}) {
+func (p *parser) StartNoPanic() (int, interface{}) {
+	var pe interface{}
 	defer func() {
 		pe = recover()
 	}()
