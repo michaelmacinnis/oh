@@ -1239,6 +1239,15 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 }
 
 func (t *Task) Run(end Cell, problem string) (rv int) {
+	for {
+		rv := t._Run(end, problem)
+		if rv != 1 {
+			return rv
+		}
+	}
+}
+
+func (t *Task) _Run(end Cell, problem string) (rv int) {
 	rv = 0
 
 	defer func() {
@@ -1248,7 +1257,7 @@ func (t *Task) Run(end Cell, problem string) (rv int) {
 		}
 
 		if problem == "" {
-			t.Throw(t.file, t.line, fmt.Sprintf("%v", r))
+			t._Throw(t.file, t.line, fmt.Sprintf("%v", r))
 		} else {
 			println("Catastrophic error: " + problem)
 		}
@@ -1543,6 +1552,14 @@ func (t *Task) Suspend() {
 }
 
 func (t *Task) Throw(file string, line int, text string) {
+	saved := t._Throw(file, line, text)
+
+	t.Run(nil, "")
+
+	t.registers = saved
+}
+
+func (t *Task) _Throw(file string, line int, text string) registers {
 	throw := NewSymbol("throw")
 
 	var resolved Reference
@@ -1586,7 +1603,14 @@ func (t *Task) Throw(file string, line int, text string) {
 			NewSymbol(path.Base(file)),
 		),
 	)
-	Call(t, c, text)
+
+	saved := t.registers
+
+	t.Code = c
+	t.Dump = List(ExitSuccess)
+	t.Stack = List(NewInteger(psEvalCommand))
+
+	return saved
 }
 
 func (t *Task) Validate(
@@ -1679,9 +1703,9 @@ func (u *unbound) self() Cell {
 	return nil
 }
 
-func Call(t *Task, c Cell, problem string) string {
+func Call(t *Task, c Cell) string {
 	if t == nil {
-		r, _ := evaluate(c, "", -1, problem)
+		r, _ := evaluate(c, "", -1, "")
 		return Raw(r)
 	}
 
@@ -1691,7 +1715,7 @@ func Call(t *Task, c Cell, problem string) string {
 	t.Dump = List(ExitSuccess)
 	t.Stack = List(NewInteger(psEvalCommand))
 
-	t.Run(nil, problem)
+	t.Run(nil, "")
 
 	rv := Car(t.Dump)
 
