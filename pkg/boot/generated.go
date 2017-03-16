@@ -103,6 +103,7 @@ define catch: syntax (name: clause) e = {
 	define _return: e::eval (quote return)
 	define _throw = throw
 	e::public throw: method (condition) = {
+		public throw = _throw
 		_return: handler condition _throw
 	}
 }

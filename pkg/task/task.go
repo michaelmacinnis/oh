@@ -117,6 +117,7 @@ const (
 	psExecWhileTest
 
 	psFatal
+	psNoOp
 	psReturn
 
 	psMax
@@ -1082,60 +1083,6 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	return rv, err
 }
 
-func (t *Task) Exception(file string, line int, text string) registers {
-	throw := NewSymbol("throw")
-
-	var resolved Reference
-
-	/* Unwind stack until we can resolve 'throw'. */
-	for t.Lexical != scope0 {
-		state := t.GetState()
-		if state <= 0 {
-			t.Lexical = scope0
-			break
-		}
-
-		switch t.Lexical.(type) {
-		case context:
-			resolved, _ = Resolve(t.Lexical, t.Frame, "throw")
-		}
-
-		if resolved != nil {
-			break
-		}
-
-		t.RemoveState()
-	}
-
-	kind := "error/runtime"
-	code := "1"
-
-	if strings.HasPrefix(text, "oh: ") {
-		args := strings.SplitN(text, ": ", 4)
-		code = args[1]
-		kind = args[2]
-		text = args[3]
-	}
-	c := List(
-		throw, List(
-			NewSymbol("_exception"),
-			NewSymbol(kind),
-			NewStatus(NewSymbol(code).Status()),
-			NewSymbol(text),
-			NewInteger(int64(line)),
-			NewSymbol(path.Base(file)),
-		),
-	)
-
-	saved := t.registers
-
-	t.Code = c
-	t.Dump = List(ExitSuccess)
-	t.Stack = List(NewInteger(psEvalCommand))
-
-	return saved
-}
-
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
@@ -1309,7 +1256,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			return
 		}
 
-		t.Exception(t.file, t.line, fmt.Sprintf("%v", r))
+		t.Throw(t.file, t.line, fmt.Sprintf("%v", r))
 
 		rv = 1
 	}()
@@ -1510,6 +1457,9 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 		case psFatal:
 			return -1
 
+		case psNoOp:
+			break
+
 		case psReturn:
 			args := t.Arguments()
 
@@ -1601,11 +1551,54 @@ func (t *Task) Suspend() {
 }
 
 func (t *Task) Throw(file string, line int, text string) {
-	saved := t.Exception(file, line, text)
+	throw := NewSymbol("throw")
 
-	t.Run(nil)
+	var resolved Reference
 
-	t.registers = saved
+	/* Unwind stack until we can resolve 'throw'. */
+	for t.Lexical != scope0 {
+		state := t.GetState()
+		if state <= 0 {
+			t.Lexical = scope0
+			break
+		}
+
+		switch t.Lexical.(type) {
+		case context:
+			resolved, _ = Resolve(t.Lexical, t.Frame, "throw")
+		}
+
+		if resolved != nil {
+			break
+		}
+
+		t.RemoveState()
+	}
+
+	kind := "error/runtime"
+	code := "1"
+
+	if strings.HasPrefix(text, "oh: ") {
+		args := strings.SplitN(text, ": ", 4)
+		code = args[1]
+		kind = args[2]
+		text = args[3]
+	}
+	c := List(
+		throw, List(
+			NewSymbol("_exception"),
+			NewSymbol(kind),
+			NewStatus(NewSymbol(code).Status()),
+			NewSymbol(text),
+			NewInteger(int64(line)),
+			NewSymbol(path.Base(file)),
+		),
+	)
+
+	t.Code = c
+	t.Dump = List(ExitSuccess)
+
+	t.ReplaceStates(psNoOp, psEvalCommand, psNoOp)
 }
 
 func (t *Task) Validate(
