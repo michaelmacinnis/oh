@@ -44,8 +44,8 @@ type Number interface {
 }
 
 type Parser interface {
-	Start(string, Thrower) bool
-	StartNoPanic() (int, interface{})
+	ReadEvalLoop(string)
+	ReadYieldLoop() (bool, interface{})
 	State(string) (string, string, string)
 }
 
@@ -723,7 +723,7 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 					<-p.d
 					return nil, true
 				},
-			).StartNoPanic()
+			).ReadYieldLoop()
 			p.d = nil
 			p.c <- Null
 			p.c = nil

@@ -133,15 +133,15 @@ define import: method (module-path) = {
 	define import-return = return
 	define module-name = module-path
 	define module: method (name) = {
-		if (_root_::has name) {
-			import-return: _root_::_get_ name
+		if (_root_::_modules_::has name) {
+			import-return: _root_::_modules_::_get_ name
 		}
 		set module-name = name
 	}
 	define module-object: object {
 		source module-path
 	}
-	_root_::_set_ module-name module-object
+	_root_::_modules_::_set_ module-name module-object
 	return module-object
 }
 define is-list: method (l) = {
@@ -338,6 +338,7 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: _stdout_::write @args
+_root_::public _modules_: object
 _sys_::public _exception: method (t s m l f) e = {
 	object {
 		public type = t

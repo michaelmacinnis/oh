@@ -34,24 +34,33 @@ func (t *template) MakeParser(
 	}
 }
 
-func (p *parser) StartNoPanic() (int, interface{}) {
-	var pe interface{}
+func (p *parser) ReadYieldLoop() (normal bool, r interface{}) {
 	defer func() {
-		pe = recover()
+		r = recover()
 	}()
 
-	return p.Parse(p.lexer), pe
+	return p.Parse(p.lexer) == 0, nil
 }
 
-func (p *parser) Start(filename string, thrower Thrower) bool {
+func (p *parser) ReadEvalLoop(filename string) {
 	for {
 		p.lexer.label = filename
 
-		rval, pe := p.StartNoPanic()
-		if pe != nil {
-			thrower.Throw(filename, p.lexer.lines, fmt.Sprintf("%v", pe))
-		} else if rval <= 0 {
-			return rval == 0
+		normal, e := p.ReadYieldLoop()
+		if e != nil {
+        		c := List(
+                		NewSymbol("throw"), List(
+                        		NewSymbol("_exception"),
+                        		NewSymbol("error/syntax"),
+                        		NewStatus(NewSymbol("1").Status()),
+                        		NewSymbol(fmt.Sprintf("%v", e)),
+                        		NewInteger(int64(p.lexer.lines)),
+                        		NewSymbol(filename),
+                		),
+        		)
+			p.lexer.yield(c, filename, p.lexer.lines)
+		} else if normal {
+			return
 		}
 
 		l := p.lexer
