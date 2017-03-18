@@ -25,9 +25,14 @@ type Conduit interface {
 	LineNumber() Cell
 	ReaderClose()
 	ReadLine() Cell
-	Read(ParserTemplate, Thrower) Cell
+	Read(MakeParser, Engine) Cell
 	WriterClose()
 	Write(c Cell)
+}
+
+type Engine interface {
+	Deref(name string, address uintptr) Cell
+	Throw(filename string, lineno int, message string)
 }
 
 type Number interface {
@@ -49,12 +54,10 @@ type Parser interface {
 	State(string) (string, string, string)
 }
 
-type ParserTemplate interface {
-	MakeParser(
-		ReadStringer,
-		func(Cell, string, int) (Cell, bool),
-	) Parser
-}
+type MakeParser func(
+	Engine, ReadStringer,
+	func(Cell, string, int) (Cell, bool),
+) Parser
 
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
@@ -64,10 +67,6 @@ type Reference interface {
 	Copy() Reference
 	Get() Cell
 	Set(c Cell)
-}
-
-type Thrower interface {
-	Throw(filename string, lineno int, message string)
 }
 
 var (
@@ -236,7 +235,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(_ ParserTemplate, _ Thrower) Cell {
+func (ch *Channel) Read(_ MakeParser, _ Engine) Cell {
 	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null
@@ -701,7 +700,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
+func (p *Pipe) Read(m MakeParser, t Engine) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -715,8 +714,8 @@ func (p *Pipe) Read(pt ParserTemplate, t Thrower) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			_, p.e = pt.MakeParser(
-				p.reader(),
+			_, p.e = m(
+				t, p.reader(),
 				func(c Cell, f string, l int) (Cell, bool) {
 					p.l = l
 					p.c <- c

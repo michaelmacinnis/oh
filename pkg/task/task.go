@@ -8,6 +8,7 @@ import (
 	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/parser"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"math/rand"
 	"os"
@@ -135,8 +136,7 @@ var (
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
-	parser      Parser
-	pt          ParserTemplate
+	parser0     Parser
 	runnable    chan bool
 	scope0      *scope
 	sys         context
@@ -1717,7 +1717,7 @@ func ForegroundTask() *Task {
 }
 
 func GlobalParser() Parser {
-	return parser
+	return parser0
 }
 
 func IsContext(c Cell) bool {
@@ -1770,17 +1770,16 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(p ParserTemplate, cli ui) {
+func Start(cli ui) {
 	launchForegroundTask(cli)
 
-	pt = p
 	eval := func(c Cell, f string, l int) (Cell, bool) {
 		task0.Eval <- message{cmd: c, file: f, line: l}
 		return <-task0.Done, true
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	pt.MakeParser(b, eval).ReadEvalLoop("boot.oh")
+	parser.New(task0, b, eval).ReadEvalLoop("boot.oh")
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1821,7 +1820,7 @@ func Start(p ParserTemplate, cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			pt.MakeParser(b, eval).ReadEvalLoop("-c")
+			parser.New(task0, b, eval).ReadEvalLoop("-c")
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0)
@@ -1833,8 +1832,8 @@ func Start(p ParserTemplate, cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		parser = pt.MakeParser(cli, evaluate)
-		parser.ReadEvalLoop("oh")
+		parser0 = parser.New(task0, cli, evaluate)
+		parser0.ReadEvalLoop("oh")
 
 		cli.Close()
 	} else {
@@ -1902,7 +1901,7 @@ func conduitContext() context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(pt, t))
+		return t.Return(toConduit(t.Self()).Read(parser.New, t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)

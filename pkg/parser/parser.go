@@ -12,22 +12,14 @@ type parser struct {
 	*lexer
 }
 
-type template struct {
-	deref func(string, uintptr) Cell
-}
-
-func Template(deref func(string, uintptr) Cell) *template {
-	return &template{deref}
-}
-
-func (t *template) MakeParser(
-	input ReadStringer,
+func New(
+	engine Engine, input ReadStringer,
 	yield func(Cell, string, int) (Cell, bool),
 ) Parser {
 	return &parser{
 		&ohParserImpl{},
 		NewLexer(
-			t.deref,
+			engine.Deref,
 			input.ReadString,
 			yield,
 		),
