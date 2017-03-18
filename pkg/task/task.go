@@ -71,9 +71,9 @@ type context interface {
 type function func(t *Task, args Cell) bool
 
 type message struct {
-	cmd     Cell
-	file    string
-	line    int
+	cmd  Cell
+	file string
+	line int
 }
 
 type ui interface {
@@ -1779,7 +1779,7 @@ func Start(cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parser.New(task0, b, eval).ReadEvalLoop("boot.oh")
+	parser.New(task0, b, eval).Interpret("boot.oh")
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1820,7 +1820,7 @@ func Start(cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parser.New(task0, b, eval).ReadEvalLoop("-c")
+			parser.New(task0, b, eval).Interpret("-c")
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0)
@@ -1833,7 +1833,7 @@ func Start(cli ui) {
 		system.BecomeProcessGroupLeader()
 
 		parser0 = parser.New(task0, cli, evaluate)
-		parser0.ReadEvalLoop("oh")
+		parser0.Interpret("oh")
 
 		cli.Close()
 	} else {

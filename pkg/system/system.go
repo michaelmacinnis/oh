@@ -3,9 +3,9 @@
 package system
 
 var (
-	pgid int
-	pid  int
-	ppid int
+	pgid     int
+	pid      int
+	ppid     int
 	terminal = -1
 )
 

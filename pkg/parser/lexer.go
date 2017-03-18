@@ -111,7 +111,7 @@ func (l *lexer) Partial(line string) *partial {
 	return copy
 }
 
-func (p *partial) Error(msg string) { }
+func (p *partial) Error(msg string) {}
 
 func (l *lexer) Error(msg string) {
 	l.first = Cons(NewSymbol(""), Null)
@@ -222,7 +222,7 @@ func (l *lexer) emit(yys int) {
 			SetCar(l.first, NewSymbol(s))
 		}
 	case '(', '{':
-		l.first = Cons(NewSymbol(""), l.first);
+		l.first = Cons(NewSymbol(""), l.first)
 	case ')', '}':
 		tail := Cdr(l.first)
 		if tail != Null {
@@ -298,7 +298,7 @@ func (l *lexer) run() {
 	l.reset()
 }
 
-func (l* lexer) running() bool {
+func (l *lexer) running() bool {
 	select {
 	case <-l.alive:
 		return false

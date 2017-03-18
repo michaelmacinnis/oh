@@ -49,8 +49,8 @@ type Number interface {
 }
 
 type Parser interface {
-	ReadEvalLoop(string)
-	ReadYieldLoop() (bool, interface{})
+	Interpret(string)
+	ParsePipe() (bool, interface{})
 	State(string) (string, string, string)
 }
 
@@ -722,7 +722,7 @@ func (p *Pipe) Read(m MakeParser, t Engine) Cell {
 					<-p.d
 					return nil, true
 				},
-			).ReadYieldLoop()
+			).ParsePipe()
 			p.d = nil
 			p.c <- Null
 			p.c = nil

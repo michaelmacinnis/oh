@@ -3,8 +3,8 @@
 package parser
 
 import (
-	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"fmt"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
 )
 
 type parser struct {
@@ -26,31 +26,23 @@ func New(
 	}
 }
 
-func (p *parser) ReadYieldLoop() (normal bool, r interface{}) {
-	defer func() {
-		r = recover()
-	}()
-
-	return p.Parse(p.lexer) == 0, nil
-}
-
-func (p *parser) ReadEvalLoop(filename string) {
+func (p *parser) Interpret(label string) {
 	for {
-		p.lexer.label = filename
+		p.lexer.label = label
 
-		normal, e := p.ReadYieldLoop()
+		normal, e := p.ParsePipe()
 		if e != nil {
-        		c := List(
-                		NewSymbol("throw"), List(
-                        		NewSymbol("_exception"),
-                        		NewSymbol("error/syntax"),
-                        		NewStatus(NewSymbol("1").Status()),
-                        		NewSymbol(fmt.Sprintf("%v", e)),
-                        		NewInteger(int64(p.lexer.lines)),
-                        		NewSymbol(filename),
-                		),
-        		)
-			p.lexer.yield(c, filename, p.lexer.lines)
+			c := List(
+				NewSymbol("throw"), List(
+					NewSymbol("_exception"),
+					NewSymbol("error/syntax"),
+					NewStatus(NewSymbol("1").Status()),
+					NewSymbol(fmt.Sprintf("%v", e)),
+					NewInteger(int64(p.lexer.lines)),
+					NewSymbol(label),
+				),
+			)
+			p.lexer.yield(c, label, p.lexer.lines)
 		} else if normal {
 			return
 		}
@@ -62,6 +54,14 @@ func (p *parser) ReadEvalLoop(filename string) {
 
 		p.ohParserImpl = &ohParserImpl{}
 	}
+}
+
+func (p *parser) ParsePipe() (normal bool, r interface{}) {
+	defer func() {
+		r = recover()
+	}()
+
+	return p.Parse(p.lexer) == 0, nil
 }
 
 func (p *parser) State(line string) (string, string, string) {
