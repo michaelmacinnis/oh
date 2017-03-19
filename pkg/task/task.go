@@ -8,7 +8,6 @@ import (
 	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/parser"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"math/rand"
 	"os"
@@ -21,10 +20,6 @@ import (
 	"sync"
 	"time"
 )
-
-type ApplyModer interface {
-	ApplyMode() error
-}
 
 type binding interface {
 	Cell
@@ -45,7 +40,7 @@ type closure interface {
 	SelfLabel() Cell
 }
 
-type closurer func(a function, b, c, o, p Cell, s context) closure
+type closureMaker func(a function, b, c, o, p Cell, s context) closure
 
 type context interface {
 	Cell
@@ -74,13 +69,6 @@ type message struct {
 	cmd  Cell
 	file string
 	line int
-}
-
-type ui interface {
-	Close() error
-	Exists() bool
-	ReadString(delim byte) (string, error)
-	TerminalMode() (ApplyModer, error)
 }
 
 type validator func(c Cell) bool
@@ -121,7 +109,6 @@ const (
 	psNoOp
 	psReturn
 
-	psMax
 	svCode = svCarCode | svCdrCode
 )
 
@@ -135,6 +122,7 @@ var (
 	interactive = false
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
+	makeParser  ParserMaker
 	namespace   context
 	parser0     Parser
 	runnable    chan bool
@@ -294,16 +282,6 @@ func IsContinuation(c Cell) bool {
 	return false
 }
 
-func NewContinuation(dump, frame, stack Cell, f string, l int) *continuation {
-	return &continuation{
-		Dump:  dump,
-		Frame: frame,
-		Stack: stack,
-		file:  f,
-		line:  l,
-	}
-}
-
 func (ct *continuation) Bool() bool {
 	return true
 }
@@ -335,7 +313,7 @@ type Job struct {
 	mode    ApplyModer
 }
 
-func NewJob(cli ui) *Job {
+func NewJob(cli UI) *Job {
 	mode, _ := cli.TerminalMode()
 	return &Job{&sync.Mutex{}, "", 0, mode}
 }
@@ -874,7 +852,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, l context, p *Task, cli ui) *Task {
+func NewTask(c Cell, l context, p *Task, cli UI) *Task {
 	if l == nil {
 		l = scope0
 	}
@@ -987,7 +965,7 @@ func (t *Task) Chdir(dir string) bool {
 	return t.Return(rv)
 }
 
-func (t *Task) Closure(n closurer) bool {
+func (t *Task) Closure(n closureMaker) bool {
 	olabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
@@ -1236,6 +1214,10 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func (t *Task) MakeParser(r ReadStringer, y func(Cell, string, int) (Cell, bool)) Parser {
+	return makeParser(t, r, y)
 }
 
 func (t *Task) Run(end Cell) (rv int) {
@@ -1732,7 +1714,7 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func launchForegroundTask(cli ui) {
+func launchForegroundTask(cli UI) {
 	if task0 != nil {
 		mode, _ := cli.TerminalMode()
 		task0.Job.mode = mode
@@ -1770,7 +1752,11 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(cli ui) {
+func Start(pm ParserMaker, um UIMaker) {
+	makeParser = pm
+
+	cli := um(os.Args)
+
 	launchForegroundTask(cli)
 
 	eval := func(c Cell, f string, l int) (Cell, bool) {
@@ -1779,7 +1765,7 @@ func Start(cli ui) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parser.New(task0, b, eval).Interpret("boot.oh")
+	makeParser(task0, b, eval).Interpret("boot.oh")
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1800,8 +1786,8 @@ func Start(cli ui) {
 	} else {
 		scope0.Define("_0_", NewSymbol(os.Args[0]))
 	}
-	scope0.Define("_args_", args)
 
+	scope0.Define("_args_", args)
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public("$OLDPWD", NewSymbol(wd))
 		sys.Public("$PWD", NewSymbol(wd))
@@ -1820,7 +1806,7 @@ func Start(cli ui) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			parser.New(task0, b, eval).Interpret("-c")
+			makeParser(task0, b, eval).Interpret("-c")
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0)
@@ -1832,7 +1818,7 @@ func Start(cli ui) {
 
 		system.BecomeProcessGroupLeader()
 
-		parser0 = parser.New(task0, cli, evaluate)
+		parser0 = makeParser(task0, cli, evaluate)
 		parser0.Interpret("oh")
 
 		cli.Close()
@@ -1901,7 +1887,7 @@ func conduitContext() context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(parser.New, t))
+		return t.Return(toConduit(t.Self()).Read(t))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)

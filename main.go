@@ -22,13 +22,13 @@ Oh is released under an MIT license.
 package main
 
 import (
+	"github.com/michaelmacinnis/oh/pkg/parser"
 	"github.com/michaelmacinnis/oh/pkg/task"
 	"github.com/michaelmacinnis/oh/pkg/ui"
-	"os"
 )
 
 func main() {
-	task.Start(ui.New(os.Args))
+	task.Start(parser.New, ui.New)
 }
 
 //go:generate bin/test.oh

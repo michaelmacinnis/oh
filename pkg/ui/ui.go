@@ -20,11 +20,12 @@ type cli struct {
 var (
 	cooked   liner.ModeApplier
 	uncooked liner.ModeApplier
+	zero     cli
 )
 
-func New(args []string) *cli {
+func New(args []string) cell.UI {
 	if len(args) > 1 {
-		return nil
+		return &zero
 	}
 
 	// We assume the terminal starts in cooked mode.
@@ -67,7 +68,7 @@ func (i *cli) Close() error {
 }
 
 func (i *cli) Exists() bool {
-	return i != nil
+	return i != &zero
 }
 
 func (i *cli) ReadString(delim byte) (line string, err error) {
@@ -100,7 +101,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	return
 }
 
-func (i *cli) TerminalMode() (task.ApplyModer, error) {
+func (_ *cli) TerminalMode() (cell.ApplyModer, error) {
 	return liner.TerminalMode()
 }
 
