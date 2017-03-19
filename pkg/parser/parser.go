@@ -26,7 +26,7 @@ func New(
 	}
 }
 
-func (p *parser) Interpret(label string) bool {
+func (p *parser) ParseBuffer(label string) bool {
 	for {
 		p.lexer.label = label
 
@@ -56,7 +56,13 @@ func (p *parser) Interpret(label string) bool {
 	}
 }
 
-func (p *parser) ParsePipe() (eof bool, r interface{}) {
+func (p* parser) ParseCommands(label string) {
+	if p.ParseBuffer(label) {
+		fmt.Printf("\n")
+	}
+}
+
+func (p *parser) ParsePipe() (eoi bool, r interface{}) {
 	defer func() {
 		r = recover()
 	}()

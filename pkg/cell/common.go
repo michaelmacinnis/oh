@@ -30,7 +30,8 @@ type Interface interface {
 type InterfaceMaker func([]string) Interface
 
 type Parser interface {
-	Interpret(string) bool
+	ParseBuffer(string) bool
+	ParseCommands(string)
 	ParsePipe() (bool, interface{})
 	State(string) (string, string, string)
 }
