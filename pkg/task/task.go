@@ -1819,7 +1819,9 @@ func Start(pm ParserMaker, um UIMaker) {
 		system.BecomeProcessGroupLeader()
 
 		parser0 = makeParser(task0, cli, evaluate)
-		parser0.Interpret("oh")
+		if parser0.Interpret("oh") {
+			fmt.Printf("\n")
+		}
 
 		cli.Close()
 	} else {

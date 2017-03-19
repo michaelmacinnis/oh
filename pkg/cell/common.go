@@ -15,7 +15,7 @@ type Engine interface {
 }
 
 type Parser interface {
-	Interpret(string)
+	Interpret(string) bool
 	ParsePipe() (bool, interface{})
 	State(string) (string, string, string)
 }

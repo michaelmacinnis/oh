@@ -26,26 +26,26 @@ func New(
 	}
 }
 
-func (p *parser) Interpret(label string) {
+func (p *parser) Interpret(label string) bool {
 	for {
 		p.lexer.label = label
 
-		normal, e := p.ParsePipe()
-		if e != nil {
-			c := List(
-				NewSymbol("throw"), List(
-					NewSymbol("_exception"),
-					NewSymbol("error/syntax"),
-					NewStatus(NewSymbol("1").Status()),
-					NewSymbol(fmt.Sprintf("%v", e)),
-					NewInteger(int64(p.lexer.lines)),
-					NewSymbol(label),
-				),
-			)
-			p.lexer.yield(c, label, p.lexer.lines)
-		} else if normal {
-			return
+		eof, e := p.ParsePipe()
+		if e == nil {
+			return eof
 		}
+
+		c := List(
+			NewSymbol("throw"), List(
+				NewSymbol("_exception"),
+				NewSymbol("error/syntax"),
+				NewStatus(NewSymbol("1").Status()),
+				NewSymbol(fmt.Sprintf("%v", e)),
+				NewInteger(int64(p.lexer.lines)),
+				NewSymbol(label),
+			),
+		)
+		p.lexer.yield(c, label, p.lexer.lines)
 
 		l := p.lexer
 
@@ -56,7 +56,7 @@ func (p *parser) Interpret(label string) {
 	}
 }
 
-func (p *parser) ParsePipe() (normal bool, r interface{}) {
+func (p *parser) ParsePipe() (eof bool, r interface{}) {
 	defer func() {
 		r = recover()
 	}()
