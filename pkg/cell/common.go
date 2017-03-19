@@ -8,11 +8,26 @@ type ApplyModer interface {
 	ApplyMode() error
 }
 
+type Cell interface {
+	Bool() bool
+	Equal(c Cell) bool
+	String() string
+}
+
 type Engine interface {
 	Deref(name string, address uintptr) Cell
 	MakeParser(ReadStringer, func(Cell, string, int) (Cell, bool)) Parser
 	Throw(filename string, lineno int, message string)
 }
+
+type Interface interface {
+	Close() error
+	Exists() bool
+	ReadString(delim byte) (string, error)
+	TerminalMode() (ApplyModer, error)
+}
+
+type InterfaceMaker func([]string) Interface
 
 type Parser interface {
 	Interpret(string) bool
@@ -28,15 +43,6 @@ type ParserMaker func(
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)
 }
-
-type UI interface {
-	Close() error
-	Exists() bool
-	ReadString(delim byte) (string, error)
-	TerminalMode() (ApplyModer, error)
-}
-
-type UIMaker func([]string) UI
 
 const (
 	ErrNotExecutable = "oh: 126: error/runtime: "

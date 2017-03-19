@@ -23,7 +23,7 @@ var (
 	zero     cli
 )
 
-func New(args []string) cell.UI {
+func New(args []string) cell.Interface {
 	if len(args) > 1 {
 		return &zero
 	}

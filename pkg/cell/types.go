@@ -14,12 +14,6 @@ import (
 	"sync"
 )
 
-type Cell interface {
-	Bool() bool
-	Equal(c Cell) bool
-	String() string
-}
-
 type Conduit interface {
 	Close()
 	LineNumber() Cell

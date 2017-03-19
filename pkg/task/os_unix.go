@@ -29,7 +29,7 @@ var (
 	register chan registration
 )
 
-func broker(cli UI) {
+func broker(cli Interface) {
 	for task0.Stack != Null {
 		for reading := true; reading; {
 			select {
@@ -135,7 +135,7 @@ func initPlatformSpecific() {
 	})
 }
 
-func initSignalHandling(cli UI) {
+func initSignalHandling(cli Interface) {
 	signal.Ignore(unix.SIGTTOU, unix.SIGTTIN)
 
 	signals := []os.Signal{unix.SIGINT, unix.SIGTSTP}

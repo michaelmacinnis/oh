@@ -313,7 +313,7 @@ type Job struct {
 	mode    ApplyModer
 }
 
-func NewJob(cli UI) *Job {
+func NewJob(cli Interface) *Job {
 	mode, _ := cli.TerminalMode()
 	return &Job{&sync.Mutex{}, "", 0, mode}
 }
@@ -852,7 +852,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, l context, p *Task, cli UI) *Task {
+func NewTask(c Cell, l context, p *Task, cli Interface) *Task {
 	if l == nil {
 		l = scope0
 	}
@@ -1714,7 +1714,7 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func launchForegroundTask(cli UI) {
+func launchForegroundTask(cli Interface) {
 	if task0 != nil {
 		mode, _ := cli.TerminalMode()
 		task0.Job.mode = mode
@@ -1752,12 +1752,12 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(pm ParserMaker, um UIMaker) {
-	makeParser = pm
-
-	cli := um(os.Args)
+func Start(pm ParserMaker, uim InterfaceMaker) {
+	cli := uim(os.Args)
 
 	launchForegroundTask(cli)
+
+	makeParser = pm
 
 	eval := func(c Cell, f string, l int) (Cell, bool) {
 		task0.Eval <- message{cmd: c, file: f, line: l}
