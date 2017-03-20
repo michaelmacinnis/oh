@@ -32,7 +32,7 @@ type InterfaceMaker func([]string) Interface
 type Parser interface {
 	ParseBuffer(string) bool
 	ParseCommands(string)
-	ParsePipe() (bool, interface{})
+	ParsePipe(string) (int, interface{})
 	State(string) (string, string, string)
 }
 

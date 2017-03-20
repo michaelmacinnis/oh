@@ -685,6 +685,8 @@ func (p *Pipe) Read(t Engine) Cell {
 		p.d <- true
 	}
 
+	label := p.r.Name()
+
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
@@ -696,7 +698,7 @@ func (p *Pipe) Read(t Engine) Cell {
 					<-p.d
 					return nil, true
 				},
-			).ParsePipe()
+			).ParsePipe(label)
 			p.d = nil
 			p.c <- Null
 			p.c = nil
@@ -705,7 +707,7 @@ func (p *Pipe) Read(t Engine) Cell {
 
 	v := <-p.c
 	if p.e != nil {
-		t.Throw(p.r.Name(), p.l, fmt.Sprintf("%v", p.e))
+		t.Throw(label, p.l, fmt.Sprintf("%v", p.e))
 	}
 
 	return v

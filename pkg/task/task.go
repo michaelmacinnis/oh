@@ -1255,7 +1255,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			args := t.Arguments()
 
 			if state == psExecBuiltin {
-				args = expand(t, args)
+				args = expand(args)
 			}
 
 			t.Code = args
@@ -1724,11 +1724,6 @@ func launchForegroundTask(cli Interface) {
 	go task0.Listen()
 }
 
-func PrintError(file string, line int, msg string) {
-	file = path.Base(file)
-	fmt.Fprintf(os.Stderr, "%s: %d: %v\n", file, line, msg)
-}
-
 func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	if s != nil {
 		c := toContext(s)
@@ -1936,7 +1931,7 @@ func control(t *Task, args Cell) *Task {
 	return found
 }
 
-func expand(t *Task, args Cell) Cell {
+func expand(args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
@@ -2245,12 +2240,12 @@ func init() {
 
 	scope0.DefineMethod("channel", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 1, IsNumber)
-		cap := 0
+		capacity := 0
 		if args != Null {
-			cap = int(Car(args).(Atom).Int())
+			capacity = int(Car(args).(Atom).Int())
 		}
 
-		return t.Return(NewChannel(cap))
+		return t.Return(NewChannel(capacity))
 	})
 
 	/* Predicates. */

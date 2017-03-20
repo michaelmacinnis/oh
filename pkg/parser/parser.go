@@ -21,6 +21,7 @@ func New(
 		NewLexer(
 			engine.Deref,
 			input.ReadString,
+			0,
 			yield,
 		),
 	}
@@ -28,30 +29,26 @@ func New(
 
 func (p *parser) ParseBuffer(label string) bool {
 	for {
-		p.lexer.label = label
-
-		eof, e := p.ParsePipe()
-		if e == nil {
-			return eof
+		rval, e := p.ParsePipe(label)
+		if e != nil {
+			c := List(
+				NewSymbol("throw"), List(
+					NewSymbol("_exception"),
+					NewSymbol("error/syntax"),
+					NewStatus(NewSymbol("1").Status()),
+					NewSymbol(fmt.Sprintf("%v", e)),
+					NewInteger(int64(p.lexer.lines)),
+					NewSymbol(label),
+				),
+			)
+			p.lexer.yield(c, label, p.lexer.lines)
+		} else if rval <= 0 {
+			return rval == 0
 		}
-
-		c := List(
-			NewSymbol("throw"), List(
-				NewSymbol("_exception"),
-				NewSymbol("error/syntax"),
-				NewStatus(NewSymbol("1").Status()),
-				NewSymbol(fmt.Sprintf("%v", e)),
-				NewInteger(int64(p.lexer.lines)),
-				NewSymbol(label),
-			),
-		)
-		p.lexer.yield(c, label, p.lexer.lines)
 
 		l := p.lexer
 
-		p.lexer = NewLexer(l.deref, l.input, l.yield)
-		p.lexer.lines = l.lines
-
+		p.lexer = NewLexer(l.deref, l.input, l.lines, l.yield)
 		p.ohParserImpl = &ohParserImpl{}
 	}
 }
@@ -62,12 +59,14 @@ func (p* parser) ParseCommands(label string) {
 	}
 }
 
-func (p *parser) ParsePipe() (eoi bool, r interface{}) {
+func (p *parser) ParsePipe(label string) (rval int, e interface{}) {
 	defer func() {
-		r = recover()
+		e = recover()
 	}()
 
-	return p.Parse(p.lexer) == 0, nil
+	p.lexer.label = label
+
+	return p.Parse(p.lexer), nil
 }
 
 func (p *parser) State(line string) (string, string, string) {

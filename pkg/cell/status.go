@@ -64,13 +64,17 @@ func IsStatus(c Cell) bool {
 
 func NewStatus(v int64) *Status {
 	if 0 <= v && v <= 255 {
+		resl.RLock()
 		p := res[v]
+		resl.RUnlock()
 
 		if p == nil {
 			s := Status(v)
 			p = &s
 
+			resl.Lock()
 			res[v] = p
+			resl.Unlock()
 		}
 
 		return p

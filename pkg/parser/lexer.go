@@ -69,6 +69,7 @@ var Finished = &ohSymType{yys: 0}
 func NewLexer(
 	deref func(string, uintptr) Cell,
 	input func(byte) (string, error),
+	lines int,
 	yield func(Cell, string, int) (Cell, bool),
 ) *lexer {
 	closed := make(chan *ohSymType)
@@ -79,6 +80,8 @@ func NewLexer(
 		items: closed,
 		first: Cons(NewSymbol(""), Null),
 		state: SkipWhitespace,
+
+		lines: lines,
 
 		deref: deref,
 		input: input,
