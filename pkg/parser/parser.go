@@ -29,7 +29,7 @@ func New(
 
 func (p *parser) ParseBuffer(label string) bool {
 	for {
-		rval, e := p.ParsePipe(label)
+		rval, e := p.parsePipe(label)
 		if e != nil {
 			c := List(
 				NewSymbol("throw"), List(
@@ -59,14 +59,10 @@ func (p* parser) ParseCommands(label string) {
 	}
 }
 
-func (p *parser) ParsePipe(label string) (rval int, e interface{}) {
-	defer func() {
-		e = recover()
-	}()
+func (p *parser) ParsePipe(label string) interface{} {
+	_, e := p.parsePipe(label)
 
-	p.lexer.label = label
-
-	return p.Parse(p.lexer), nil
+	return e
 }
 
 func (p *parser) State(line string) (string, string, string) {
@@ -81,6 +77,16 @@ func (p *parser) State(line string) (string, string, string) {
 	}
 
 	return Raw(Car(lcopy.first)), lcopy.state.n, completing
+}
+
+func (p *parser) parsePipe(label string) (rval int, e interface{}) {
+	defer func() {
+		e = recover()
+	}()
+
+	p.lexer.label = label
+
+	return p.Parse(p.lexer), nil
 }
 
 //go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y

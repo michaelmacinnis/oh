@@ -31,7 +31,7 @@ func New(args []string) cell.Interface {
 	// We assume the terminal starts in cooked mode.
 	cooked, _ = liner.TerminalMode()
 	if cooked == nil {
-		return nil
+		return &zero
 	}
 
 	i := &cli{liner.NewLiner()}

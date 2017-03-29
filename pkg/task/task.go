@@ -8,6 +8,7 @@ import (
 	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/pkg/boot"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/parser"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"math/rand"
 	"os"
@@ -122,7 +123,6 @@ var (
 	interactive = false
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
-	makeParser  ParserMaker
 	namespace   context
 	parser0     Parser
 	runnable    chan bool
@@ -1217,7 +1217,7 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 }
 
 func (t *Task) MakeParser(r ReadStringer, y func(Cell, string, int) (Cell, bool)) Parser {
-	return makeParser(t, r, y)
+	return parser.New(t, r, y)
 }
 
 func (t *Task) Run(end Cell) (rv int) {
@@ -1747,12 +1747,10 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(pm ParserMaker, uim InterfaceMaker) {
+func Start(uim InterfaceMaker) {
 	cli := uim(os.Args)
 
 	launchForegroundTask(cli)
-
-	makeParser = pm
 
 	eval := func(c Cell, f string, l int) (Cell, bool) {
 		task0.Eval <- message{cmd: c, file: f, line: l}
@@ -1760,7 +1758,7 @@ func Start(pm ParserMaker, uim InterfaceMaker) {
 	}
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	makeParser(task0, b, eval).ParseBuffer("boot.oh")
+	parser.New(task0, b, eval).ParseBuffer("boot.oh")
 
 	/* Command-line arguments */
 	argc := len(os.Args)
@@ -1801,7 +1799,7 @@ func Start(pm ParserMaker, uim InterfaceMaker) {
 			}
 			s := os.Args[2] + "\n"
 			b := bufio.NewReader(strings.NewReader(s))
-			makeParser(task0, b, eval).ParseBuffer("-c")
+			parser.New(task0, b, eval).ParseBuffer("-c")
 		} else {
 			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
 			eval(cmd, os.Args[1], 0)
@@ -1813,7 +1811,7 @@ func Start(pm ParserMaker, uim InterfaceMaker) {
 
 		system.BecomeProcessGroupLeader()
 
-		parser0 = makeParser(task0, cli, evaluate)
+		parser0 = parser.New(task0, cli, evaluate)
 		parser0.ParseCommands("oh")
 
 		cli.Close()

@@ -690,7 +690,7 @@ func (p *Pipe) Read(t Engine) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			_, p.e = t.MakeParser(
+			p.e = t.MakeParser(
 				p.reader(),
 				func(c Cell, f string, l int) (Cell, bool) {
 					p.l = l
