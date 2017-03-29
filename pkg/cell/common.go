@@ -24,10 +24,7 @@ type Interface interface {
 	Close() error
 	Exists() bool
 	ReadString(delim byte) (string, error)
-	TerminalMode() (ApplyModer, error)
 }
-
-type InterfaceMaker func([]string) Interface
 
 type Parser interface {
 	ParseBuffer(string) bool
@@ -35,11 +32,6 @@ type Parser interface {
 	ParsePipe(string) interface{}
 	State(string) (string, string, string)
 }
-
-type ParserMaker func(
-	Engine, ReadStringer,
-	func(Cell, string, int) (Cell, bool),
-) Parser
 
 type ReadStringer interface {
 	ReadString(delim byte) (line string, err error)

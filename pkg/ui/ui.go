@@ -101,10 +101,6 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 	return
 }
 
-func (_ *cli) TerminalMode() (cell.ApplyModer, error) {
-	return liner.TerminalMode()
-}
-
 func complete(line string, pos int) (head string, completions []string, tail string) {
 	first, state, completing := task.GlobalParser().State(line[:pos])
 

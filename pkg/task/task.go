@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/peterh/liner"
 )
 
 type binding interface {
@@ -313,8 +314,8 @@ type Job struct {
 	mode    ApplyModer
 }
 
-func NewJob(cli Interface) *Job {
-	mode, _ := cli.TerminalMode()
+func NewJob() *Job {
+	mode, _ := liner.TerminalMode()
 	return &Job{&sync.Mutex{}, "", 0, mode}
 }
 
@@ -852,7 +853,7 @@ type Task struct {
 	suspended chan bool
 }
 
-func NewTask(c Cell, l context, p *Task, cli Interface) *Task {
+func NewTask(c Cell, l context, p *Task) *Task {
 	if l == nil {
 		l = scope0
 	}
@@ -861,7 +862,7 @@ func NewTask(c Cell, l context, p *Task, cli Interface) *Task {
 	var j *Job
 	if p == nil {
 		frame = frame0
-		j = NewJob(cli)
+		j = NewJob()
 	} else {
 		frame = p.Frame
 		j = p.Job
@@ -1714,12 +1715,12 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func launchForegroundTask(cli Interface) {
+func launchForegroundTask() {
 	if task0 != nil {
-		mode, _ := cli.TerminalMode()
+		mode, _ := liner.TerminalMode()
 		task0.Job.mode = mode
 	}
-	task0 = NewTask(nil, nil, nil, cli)
+	task0 = NewTask(nil, nil, nil)
 
 	go task0.Listen()
 }
@@ -1747,10 +1748,8 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(uim InterfaceMaker) {
-	cli := uim(os.Args)
-
-	launchForegroundTask(cli)
+func Start(cli Interface) {
+	launchForegroundTask()
 
 	eval := func(c Cell, f string, l int) (Cell, bool) {
 		task0.Eval <- message{cmd: c, file: f, line: l}
@@ -1807,7 +1806,7 @@ func Start(uim InterfaceMaker) {
 	} else if cli.Exists() {
 		interactive = true
 
-		initSignalHandling(cli)
+		initSignalHandling()
 
 		system.BecomeProcessGroupLeader()
 
@@ -2449,7 +2448,7 @@ func init() {
 	})
 	scope0.DefineSyntax("spawn", func(t *Task, args Cell) bool {
 		c := toContext(t.Lexical)
-		child := NewTask(t.Code, NewScope(c, nil), t, nil)
+		child := NewTask(t.Code, NewScope(c, nil), t)
 
 		go child.launch()
 
