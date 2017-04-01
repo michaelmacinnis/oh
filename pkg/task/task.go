@@ -1749,73 +1749,63 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 }
 
 func Start(cli Interface) {
-	eval := initTask()
-
 	if len(os.Args) > 1 {
-		StartFile(eval)
+		StartNonInteractive()
 	} else if cli.Exists() {
 		StartInteractive(cli)
 		cli.Close()
 	} else {
-		StartFileNoArguments(eval, "/dev/stdin")
+		StartFile("/dev/stdin", []string{})
 	}
 
 	exit(Car(task0.Dump))
 }
 
-func StartFileNoArguments(eval func(c Cell, f string, l int) (Cell, bool), filename string) {
+func StartFile(filename string, args []string) {
+	bindSpecialVariables(filename, args)
 	eval(
 		List(NewSymbol("source"), NewSymbol(filename)),
 		filename, 0,
 	)
 }
 
-func StartFile(eval func(c Cell, f string, l int) (Cell, bool)) {
+func StartNonInteractive() {
 	if os.Args[1] == "-c" {
 		if len(os.Args) == 2 {
 			msg := "-c requires an argument"
 			println(ErrSyntax + msg)
 			os.Exit(1)
 		}
-		s := os.Args[2] + "\n"
-		b := bufio.NewReader(strings.NewReader(s))
+		bindSpecialVariables("", os.Args[3:])
+		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
 		parser.New(task0, b, eval).ParseBuffer("-c")
 	} else {
-		StartFileNoArguments(eval, os.Args[1])
+		StartFile(os.Args[1], os.Args[2:])
 	}
 }
 
-func initTask() func(c Cell, f string, l int) (Cell, bool) {
-	launchForegroundTask()
-
-	eval := func(c Cell, f string, l int) (Cell, bool) {
-		task0.Eval <- message{cmd: c, file: f, line: l}
-		return <-task0.Done, true
-	}
-
-	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parser.New(task0, b, eval).ParseBuffer("boot.oh")
-
-	/* Command-line arguments */
-	argc := len(os.Args)
-	args := Null
+func bindSpecialVariables(arg0 string, args []string) {
+	argc := len(args)
+	arglist := Null
 	origin := ""
-	if argc > 1 && os.Args[1] != "-c" {
-		origin = filepath.Dir(os.Args[1])
-		scope0.Define("_0_", NewSymbol(os.Args[1]))
 
-		for i, v := range os.Args[2:] {
-			k := "_" + strconv.Itoa(i+1) + "_"
-			scope0.Define(k, NewSymbol(v))
-		}
-
-		for i := argc - 1; i > 1; i-- {
-			args = Cons(NewSymbol(os.Args[i]), args)
-		}
-	} else {
-		scope0.Define("_0_", NewSymbol(os.Args[0]))
+	origin = filepath.Dir(arg0)
+	if arg0 == "" {
+		arg0 = os.Args[0]
 	}
-	scope0.Define("_args_", args)
+
+	scope0.Define("_0_", NewSymbol(arg0))
+
+	for i, v := range args {
+		k := "_" + strconv.Itoa(i+1) + "_"
+		scope0.Define(k, NewSymbol(v))
+	}
+
+	for i := argc - 1; i > 1; i-- {
+		arglist = Cons(NewSymbol(args[i]), arglist)
+	}
+
+	scope0.Define("_args_", arglist)
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public("$OLDPWD", NewSymbol(wd))
 		sys.Public("$PWD", NewSymbol(wd))
@@ -1824,12 +1814,11 @@ func initTask() func(c Cell, f string, l int) (Cell, bool) {
 		}
 	}
 	scope0.Define("_origin_", NewSymbol(origin))
-
-	return eval
 }
 
 func StartInteractive(cli Interface) {
 	interactive = true
+	bindSpecialVariables("", os.Args)
 	initSignalHandling()
 	system.BecomeProcessGroupLeader()
 	parser0 = parser.New(task0, cli, evaluate)
@@ -1939,6 +1928,11 @@ func control(t *Task, args Cell) *Task {
 	jobsl.Unlock()
 
 	return found
+}
+
+func eval(c Cell, f string, l int) (Cell, bool) {
+	task0.Eval <- message{cmd: c, file: f, line: l}
+	return <-task0.Done, true
 }
 
 func expand(args Cell) Cell {
@@ -2512,6 +2506,11 @@ func init() {
 	frame0 = List(env, sys)
 
 	initPlatformSpecific()
+
+	launchForegroundTask()
+
+	b := bufio.NewReader(strings.NewReader(boot.Script))
+	parser.New(task0, b, eval).ParseBuffer("boot.oh")
 }
 
 func interpolate(l context, d Cell, s string) string {
