@@ -22,7 +22,6 @@ type Engine interface {
 
 type Interface interface {
 	Close() error
-	Exists() bool
 	ReadString(delim byte) (string, error)
 }
 

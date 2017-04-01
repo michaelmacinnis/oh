@@ -20,18 +20,21 @@ type cli struct {
 var (
 	cooked   liner.ModeApplier
 	uncooked liner.ModeApplier
-	zero     cli
 )
 
-func New(args []string) cell.Interface {
-	if len(args) > 1 {
-		return &zero
+func New() {
+	defer task.Exit()
+
+	if len(os.Args) > 1 {
+		task.StartNonInteractive()
+		return
 	}
 
 	// We assume the terminal starts in cooked mode.
 	cooked, _ = liner.TerminalMode()
 	if cooked == nil {
-		return &zero
+		task.StartFile("", []string{"/dev/stdin"})
+		return
 	}
 
 	i := &cli{liner.NewLiner()}
@@ -50,25 +53,20 @@ func New(args []string) cell.Interface {
 	i.SetShouldRestart(system.ResetForegroundGroup)
 	i.SetWordCompleter(complete)
 
-	return i
+	task.StartInteractive(i)
+	i.Close()
 }
 
 func (i *cli) Close() error {
-	if i.Exists() {
-		if hpath, err := system.GetHistoryFilePath(); err == nil {
-			if f, err := os.Create(hpath); err == nil {
-				i.WriteHistory(f)
-				f.Close()
-			} else {
-				println("Error writing history: " + err.Error())
-			}
+	if hpath, err := system.GetHistoryFilePath(); err == nil {
+		if f, err := os.Create(hpath); err == nil {
+			i.WriteHistory(f)
+			f.Close()
+		} else {
+			println("Error writing history: " + err.Error())
 		}
 	}
 	return i.State.Close()
-}
-
-func (i *cli) Exists() bool {
-	return i != &zero
 }
 
 func (i *cli) ReadString(delim byte) (line string, err error) {

@@ -1695,6 +1695,10 @@ func Call(t *Task, c Cell) string {
 	return Raw(rv)
 }
 
+func Exit() {
+	exit(Car(task0.Dump))
+}
+
 func ForegroundTask() *Task {
 	return task0
 }
@@ -1748,21 +1752,10 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 	return nil, nil
 }
 
-func Start(cli Interface) {
-	if len(os.Args) > 1 {
-		StartNonInteractive()
-	} else if cli.Exists() {
-		StartInteractive(cli)
-		cli.Close()
-	} else {
-		StartFile("/dev/stdin", []string{})
-	}
+func StartFile(origin string, args []string) {
+	bindSpecialVariables(origin, args)
 
-	exit(Car(task0.Dump))
-}
-
-func StartFile(filename string, args []string) {
-	bindSpecialVariables(filename, args)
+	filename := args[0]
 	eval(
 		List(NewSymbol("source"), NewSymbol(filename)),
 		filename, 0,
@@ -1776,36 +1769,29 @@ func StartNonInteractive() {
 			println(ErrSyntax + msg)
 			os.Exit(1)
 		}
-		bindSpecialVariables("", os.Args[3:])
+
+		args := append([]string{os.Args[0]}, os.Args[3:]...)
+		bindSpecialVariables("", args)
+
 		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
 		parser.New(task0, b, eval).ParseBuffer("-c")
 	} else {
-		StartFile(os.Args[1], os.Args[2:])
+		StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
 	}
 }
 
-func bindSpecialVariables(arg0 string, args []string) {
-	argc := len(args)
+func bindSpecialVariables(origin string, args []string) {
 	arglist := Null
-	origin := ""
 
-	origin = filepath.Dir(arg0)
-	if arg0 == "" {
-		arg0 = os.Args[0]
+	for i, s := range args {
+		k := "_" + strconv.Itoa(i) + "_"
+		v := NewSymbol(s)
+		scope0.Define(k, v)
+
+		arglist = Cons(v, arglist)
 	}
 
-	scope0.Define("_0_", NewSymbol(arg0))
-
-	for i, v := range args {
-		k := "_" + strconv.Itoa(i+1) + "_"
-		scope0.Define(k, NewSymbol(v))
-	}
-
-	for i := argc - 1; i > 1; i-- {
-		arglist = Cons(NewSymbol(args[i]), arglist)
-	}
-
-	scope0.Define("_args_", arglist)
+	scope0.Define("_args_", Cdr(Reverse(arglist)))
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public("$OLDPWD", NewSymbol(wd))
 		sys.Public("$PWD", NewSymbol(wd))
