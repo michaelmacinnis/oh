@@ -1749,6 +1749,43 @@ func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
 }
 
 func Start(cli Interface) {
+	eval := initTask()
+
+	if len(os.Args) > 1 {
+		StartFile(eval)
+	} else if cli.Exists() {
+		StartInteractive(cli)
+		cli.Close()
+	} else {
+		StartFileNoArguments(eval, "/dev/stdin")
+	}
+
+	exit(Car(task0.Dump))
+}
+
+func StartFileNoArguments(eval func(c Cell, f string, l int) (Cell, bool), filename string) {
+	eval(
+		List(NewSymbol("source"), NewSymbol(filename)),
+		filename, 0,
+	)
+}
+
+func StartFile(eval func(c Cell, f string, l int) (Cell, bool)) {
+	if os.Args[1] == "-c" {
+		if len(os.Args) == 2 {
+			msg := "-c requires an argument"
+			println(ErrSyntax + msg)
+			os.Exit(1)
+		}
+		s := os.Args[2] + "\n"
+		b := bufio.NewReader(strings.NewReader(s))
+		parser.New(task0, b, eval).ParseBuffer("-c")
+	} else {
+		StartFileNoArguments(eval, os.Args[1])
+	}
+}
+
+func initTask() func(c Cell, f string, l int) (Cell, bool) {
 	launchForegroundTask()
 
 	eval := func(c Cell, f string, l int) (Cell, bool) {
@@ -1778,7 +1815,6 @@ func Start(cli Interface) {
 	} else {
 		scope0.Define("_0_", NewSymbol(os.Args[0]))
 	}
-
 	scope0.Define("_args_", args)
 	if wd, err := os.Getwd(); err == nil {
 		sys.Public("$OLDPWD", NewSymbol(wd))
@@ -1789,38 +1825,15 @@ func Start(cli Interface) {
 	}
 	scope0.Define("_origin_", NewSymbol(origin))
 
-	if argc > 1 {
-		if os.Args[1] == "-c" {
-			if argc == 2 {
-				msg := "-c requires an argument"
-				println(ErrSyntax + msg)
-				os.Exit(1)
-			}
-			s := os.Args[2] + "\n"
-			b := bufio.NewReader(strings.NewReader(s))
-			parser.New(task0, b, eval).ParseBuffer("-c")
-		} else {
-			cmd := List(NewSymbol("source"), NewSymbol(os.Args[1]))
-			eval(cmd, os.Args[1], 0)
-		}
-	} else if cli.Exists() {
-		interactive = true
+	return eval
+}
 
-		initSignalHandling()
-
-		system.BecomeProcessGroupLeader()
-
-		parser0 = parser.New(task0, cli, evaluate)
-		parser0.ParseCommands("oh")
-
-		cli.Close()
-	} else {
-		eval(
-			List(NewSymbol("source"), NewSymbol("/dev/stdin")),
-			"/dev/stdin", 0)
-	}
-
-	exit(Car(task0.Dump))
+func StartInteractive(cli Interface) {
+	interactive = true
+	initSignalHandling()
+	system.BecomeProcessGroupLeader()
+	parser0 = parser.New(task0, cli, evaluate)
+	parser0.ParseCommands("oh")
 }
 
 func braceExpand(arg string) []string {
