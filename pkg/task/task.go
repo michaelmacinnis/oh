@@ -310,7 +310,7 @@ type Job struct {
 	*sync.Mutex
 	Command string
 	Group   int
-	mode    ApplyModer
+	mode    liner.ModeApplier
 }
 
 func NewJob() *Job {
