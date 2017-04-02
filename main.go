@@ -38,10 +38,11 @@ type cli struct {
 
 var (
 	cooked   liner.ModeApplier
+	parser0  cell.Parser
 	uncooked liner.ModeApplier
 )
 
-func (i *cli) Close() error {
+func (i cli) Close() error {
 	if hpath, err := system.GetHistoryFilePath(); err == nil {
 		if f, err := os.Create(hpath); err == nil {
 			i.WriteHistory(f)
@@ -53,7 +54,7 @@ func (i *cli) Close() error {
 	return i.State.Close()
 }
 
-func (i *cli) ReadString(delim byte) (line string, err error) {
+func (i cli) ReadString(delim byte) (line string, err error) {
 	system.SetForegroundGroup(system.Pgid())
 
 	uncooked.ApplyMode()
@@ -84,7 +85,7 @@ func (i *cli) ReadString(delim byte) (line string, err error) {
 }
 
 func complete(line string, pos int) (head string, completions []string, tail string) {
-	first, state, completing := task.GlobalParser().State(line[:pos])
+	first, state, completing := parser0.State(line[:pos])
 
 	head = line[:pos]
 	tail = line[pos:]
@@ -266,7 +267,7 @@ func main() {
 		return
 	}
 
-	i := &cli{liner.NewLiner()}
+	i := cli{liner.NewLiner()}
 
 	if hpath, err := system.GetHistoryFilePath(); err == nil {
 		if f, err := os.Open(hpath); err == nil {
@@ -282,7 +283,9 @@ func main() {
 	i.SetShouldRestart(system.ResetForegroundGroup)
 	i.SetWordCompleter(complete)
 
-	task.StartInteractive(i)
+	parser0 = task.MakeParser(i.ReadString)
+	task.StartInteractive(parser0)
+
 	i.Close()
 }
 

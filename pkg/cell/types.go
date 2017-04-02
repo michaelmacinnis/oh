@@ -19,7 +19,7 @@ type Conduit interface {
 	LineNumber() Cell
 	ReaderClose()
 	ReadLine() Cell
-	Read(Engine) Cell
+	Read(MakeParserFunc, ThrowFunc) Cell
 	WriterClose()
 	Write(c Cell)
 }
@@ -209,7 +209,7 @@ func (ch *Channel) ReaderClose() {
 	return
 }
 
-func (ch *Channel) Read(_ Engine) Cell {
+func (ch *Channel) Read(_ MakeParserFunc, _ ThrowFunc) Cell {
 	v := <-(chan Cell)(*ch)
 	if v == nil {
 		return Null
@@ -674,7 +674,7 @@ func (p *Pipe) ReaderClose() {
 	}
 }
 
-func (p *Pipe) Read(t Engine) Cell {
+func (p *Pipe) Read(mp MakeParserFunc, throw ThrowFunc) Cell {
 	if p.r == nil {
 		return Null
 	}
@@ -690,7 +690,7 @@ func (p *Pipe) Read(t Engine) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			p.e = t.MakeParser(p.reader().ReadString).ParsePipe(
+			p.e = mp(p.reader().ReadString).ParsePipe(
 				label,
 				func(c Cell, f string, l int) (Cell, bool) {
 					p.l = l
@@ -707,7 +707,7 @@ func (p *Pipe) Read(t Engine) Cell {
 
 	v := <-p.c
 	if p.e != nil {
-		t.Throw(label, p.l, fmt.Sprintf("%v", p.e))
+		throw(label, p.l, fmt.Sprintf("%v", p.e))
 	}
 
 	return v

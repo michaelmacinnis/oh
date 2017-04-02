@@ -16,11 +16,6 @@ type Cell interface {
 
 type DerefFunc func(string, uintptr) Cell
 
-type Engine interface {
-	MakeParser(InputFunc) Parser
-	Throw(filename string, lineno int, message string)
-}
-
 type InputFunc func(byte) (string, error)
 
 type Interface interface {
@@ -34,6 +29,10 @@ type Parser interface {
 	ParsePipe(string, YieldFunc) interface{}
 	State(string) (string, string, string)
 }
+
+type MakeParserFunc func(InputFunc) Parser
+
+type ThrowFunc func(filename string, lineno int, message string)
 
 type YieldFunc func(Cell, string, int) (Cell, bool)
 

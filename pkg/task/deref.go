@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func Deref(name string, address uintptr) Cell {
+func deref(name string, address uintptr) Cell {
 	switch {
 	case name == "channel":
 		return (*Channel)(unsafe.Pointer(address))

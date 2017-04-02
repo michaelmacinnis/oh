@@ -125,7 +125,6 @@ var (
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
-	parser0     Parser
 	runnable    chan bool
 	scope0      *scope
 	sys         context
@@ -1217,8 +1216,8 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) MakeParser(input InputFunc) Parser {
-	return parser.New(Deref, input)
+func MakeParser(input InputFunc) Parser {
+	return parser.New(deref, input)
 }
 
 func (t *Task) Run(end Cell) (rv int) {
@@ -1703,10 +1702,6 @@ func ForegroundTask() *Task {
 	return task0
 }
 
-func GlobalParser() Parser {
-	return parser0
-}
-
 func IsContext(c Cell) bool {
 	switch c.(type) {
 	case context:
@@ -1774,7 +1769,7 @@ func StartNonInteractive() {
 		bindSpecialVariables("", args)
 
 		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
-		parser.New(Deref, b.ReadString).ParseBuffer("-c", eval)
+		MakeParser(b.ReadString).ParseBuffer("-c", eval)
 	} else {
 		StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
 	}
@@ -1802,13 +1797,12 @@ func bindSpecialVariables(origin string, args []string) {
 	scope0.Define("_origin_", NewSymbol(origin))
 }
 
-func StartInteractive(cli Interface) {
+func StartInteractive(p Parser) {
 	interactive = true
 	bindSpecialVariables("", os.Args)
 	initSignalHandling()
 	system.BecomeProcessGroupLeader()
-	parser0 = parser.New(Deref, cli.ReadString)
-	parser0.ParseCommands("oh", evaluate)
+	p.ParseCommands("oh", evaluate)
 }
 
 func braceExpand(arg string) []string {
@@ -1867,7 +1861,7 @@ func conduitContext() context {
 	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).Read(t))
+		return t.Return(toConduit(t.Self()).Read(MakeParser, t.Throw))
 	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -2496,7 +2490,7 @@ func init() {
 	launchForegroundTask()
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parser.New(Deref, b.ReadString).ParseBuffer("boot.oh", eval)
+	MakeParser(b.ReadString).ParseBuffer("boot.oh", eval)
 }
 
 func interpolate(l context, d Cell, s string) string {
