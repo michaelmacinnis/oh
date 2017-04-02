@@ -8,28 +8,26 @@ import (
 )
 
 type parser struct {
+	deref DerefFunc
+	input InputFunc
 	*ohParserImpl
 	*lexer
 }
 
 func New(
-	engine Engine, input ReadStringer,
-	yield func(Cell, string, int) (Cell, bool),
+	deref DerefFunc,
+	input InputFunc,
 ) Parser {
 	return &parser{
-		&ohParserImpl{},
-		NewLexer(
-			engine.Deref,
-			input.ReadString,
-			0,
-			yield,
-		),
+		deref: deref,
+		input: input,
 	}
 }
 
-func (p *parser) ParseBuffer(label string) bool {
+func (p *parser) ParseBuffer(label string, yield YieldFunc) bool {
+	lines := 0
 	for {
-		rval, e := p.parsePipe(label)
+		rval, lines, e := p.parsePipe(label, lines, yield)
 		if e != nil {
 			c := List(
 				NewSymbol("throw"), List(
@@ -37,30 +35,25 @@ func (p *parser) ParseBuffer(label string) bool {
 					NewSymbol("error/syntax"),
 					NewStatus(NewSymbol("1").Status()),
 					NewSymbol(fmt.Sprintf("%v", e)),
-					NewInteger(int64(p.lexer.lines)),
+					NewInteger(int64(lines)),
 					NewSymbol(label),
 				),
 			)
-			p.lexer.yield(c, label, p.lexer.lines)
+			yield(c, label, lines)
 		} else if rval <= 0 {
 			return rval == 0
 		}
-
-		l := p.lexer
-
-		p.lexer = NewLexer(l.deref, l.input, l.lines, l.yield)
-		p.ohParserImpl = &ohParserImpl{}
 	}
 }
 
-func (p* parser) ParseCommands(label string) {
-	if p.ParseBuffer(label) {
+func (p* parser) ParseCommands(label string, yield YieldFunc) {
+	if p.ParseBuffer(label, yield) {
 		fmt.Printf("\n")
 	}
 }
 
-func (p *parser) ParsePipe(label string) interface{} {
-	_, e := p.parsePipe(label)
+func (p *parser) ParsePipe(label string, yield YieldFunc) interface{} {
+	_, _, e := p.parsePipe(label, 0, yield)
 
 	return e
 }
@@ -79,14 +72,16 @@ func (p *parser) State(line string) (string, string, string) {
 	return Raw(Car(lcopy.first)), lcopy.state.n, completing
 }
 
-func (p *parser) parsePipe(label string) (rval int, e interface{}) {
+func (p *parser) parsePipe(label string, start int, yield YieldFunc) (rval int, lines int, e interface{}) {
+	p.lexer = NewLexer(p.deref, p.input, label, start, yield)
 	defer func() {
 		e = recover()
+		lines = p.lexer.lines
 	}()
 
-	p.lexer.label = label
+	p.ohParserImpl = &ohParserImpl{}
 
-	return p.Parse(p.lexer), nil
+	return p.Parse(p.lexer), p.lexer.lines, nil
 }
 
 //go:generate ohyacc -o grammar.go -p oh -v /dev/null grammar.y

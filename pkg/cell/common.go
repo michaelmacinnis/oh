@@ -14,11 +14,14 @@ type Cell interface {
 	String() string
 }
 
+type DerefFunc func(string, uintptr) Cell
+
 type Engine interface {
-	Deref(name string, address uintptr) Cell
-	MakeParser(ReadStringer, func(Cell, string, int) (Cell, bool)) Parser
+	MakeParser(InputFunc) Parser
 	Throw(filename string, lineno int, message string)
 }
+
+type InputFunc func(byte) (string, error)
 
 type Interface interface {
 	Close() error
@@ -26,15 +29,13 @@ type Interface interface {
 }
 
 type Parser interface {
-	ParseBuffer(string) bool
-	ParseCommands(string)
-	ParsePipe(string) interface{}
+	ParseBuffer(string, YieldFunc) bool
+	ParseCommands(string, YieldFunc)
+	ParsePipe(string, YieldFunc) interface{}
 	State(string) (string, string, string)
 }
 
-type ReadStringer interface {
-	ReadString(delim byte) (line string, err error)
-}
+type YieldFunc func(Cell, string, int) (Cell, bool)
 
 const (
 	ErrNotExecutable = "oh: 126: error/runtime: "

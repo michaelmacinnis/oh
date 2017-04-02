@@ -1217,8 +1217,8 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 	return true, ""
 }
 
-func (t *Task) MakeParser(r ReadStringer, y func(Cell, string, int) (Cell, bool)) Parser {
-	return parser.New(t, r, y)
+func (t *Task) MakeParser(input InputFunc) Parser {
+	return parser.New(Deref, input)
 }
 
 func (t *Task) Run(end Cell) (rv int) {
@@ -1774,7 +1774,7 @@ func StartNonInteractive() {
 		bindSpecialVariables("", args)
 
 		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
-		parser.New(task0, b, eval).ParseBuffer("-c")
+		parser.New(Deref, b.ReadString).ParseBuffer("-c", eval)
 	} else {
 		StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
 	}
@@ -1807,8 +1807,8 @@ func StartInteractive(cli Interface) {
 	bindSpecialVariables("", os.Args)
 	initSignalHandling()
 	system.BecomeProcessGroupLeader()
-	parser0 = parser.New(task0, cli, evaluate)
-	parser0.ParseCommands("oh")
+	parser0 = parser.New(Deref, cli.ReadString)
+	parser0.ParseCommands("oh", evaluate)
 }
 
 func braceExpand(arg string) []string {
@@ -2496,7 +2496,7 @@ func init() {
 	launchForegroundTask()
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	parser.New(task0, b, eval).ParseBuffer("boot.oh")
+	parser.New(Deref, b.ReadString).ParseBuffer("boot.oh", eval)
 }
 
 func interpolate(l context, d Cell, s string) string {

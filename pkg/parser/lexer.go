@@ -33,9 +33,9 @@ type lexer struct {
 	label string // The name of the thing being parsed.
 	lines int    // The number of lines read.
 
-	deref func(string, uintptr) Cell
-	input func(byte) (string, error)
-	yield func(Cell, string, int) (Cell, bool)
+	deref DerefFunc
+	input InputFunc
+	yield YieldFunc
 }
 
 type partial struct {
@@ -67,10 +67,11 @@ var CtrlCPressed = &ohSymType{yys: CTRLC}
 var Finished = &ohSymType{yys: 0}
 
 func NewLexer(
-	deref func(string, uintptr) Cell,
-	input func(byte) (string, error),
+	deref DerefFunc,
+	input InputFunc,
+	label string,
 	lines int,
-	yield func(Cell, string, int) (Cell, bool),
+	yield YieldFunc,
 ) *lexer {
 	closed := make(chan *ohSymType)
 	close(closed)
@@ -81,6 +82,7 @@ func NewLexer(
 		first: Cons(NewSymbol(""), Null),
 		state: SkipWhitespace,
 
+		label: label,
 		lines: lines,
 
 		deref: deref,

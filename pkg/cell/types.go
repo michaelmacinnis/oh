@@ -690,15 +690,15 @@ func (p *Pipe) Read(t Engine) Cell {
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			p.e = t.MakeParser(
-				p.reader(),
+			p.e = t.MakeParser(p.reader().ReadString).ParsePipe(
+				label,
 				func(c Cell, f string, l int) (Cell, bool) {
 					p.l = l
 					p.c <- c
 					<-p.d
 					return nil, true
 				},
-			).ParsePipe(label)
+			)
 			p.d = nil
 			p.c <- Null
 			p.c = nil
