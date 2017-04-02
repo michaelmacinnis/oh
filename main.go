@@ -32,7 +32,7 @@ import (
 	"strings"
 )
 
-type cli struct {
+type ui struct {
 	*liner.State
 }
 
@@ -42,19 +42,19 @@ var (
 	uncooked liner.ModeApplier
 )
 
-func (i cli) Close() error {
+func (cli ui) Close() error {
 	if hpath, err := system.GetHistoryFilePath(); err == nil {
 		if f, err := os.Create(hpath); err == nil {
-			i.WriteHistory(f)
+			cli.WriteHistory(f)
 			f.Close()
 		} else {
 			println("Error writing history: " + err.Error())
 		}
 	}
-	return i.State.Close()
+	return cli.State.Close()
 }
 
-func (i cli) ReadString(delim byte) (line string, err error) {
+func (cli ui) ReadString(delim byte) (line string, err error) {
 	system.SetForegroundGroup(system.Pgid())
 
 	uncooked.ApplyMode()
@@ -69,8 +69,8 @@ func (i cli) ReadString(delim byte) (line string, err error) {
 	)
 	prompt := task.Call(nil, command)
 
-	if line, err = i.State.Prompt(prompt); err == nil {
-		i.AppendHistory(line)
+	if line, err = cli.State.Prompt(prompt); err == nil {
+		cli.AppendHistory(line)
 		if task.ForegroundTask().Job.Command == "" {
 			task.ForegroundTask().Job.Command = line
 		}
@@ -267,26 +267,26 @@ func main() {
 		return
 	}
 
-	i := cli{liner.NewLiner()}
+	cli := ui{liner.NewLiner()}
 
 	if hpath, err := system.GetHistoryFilePath(); err == nil {
 		if f, err := os.Open(hpath); err == nil {
-			i.ReadHistory(f)
+			cli.ReadHistory(f)
 			f.Close()
 		}
 	}
 
 	uncooked, _ = liner.TerminalMode()
 
-	i.SetCtrlCAborts(true)
-	i.SetTabCompletionStyle(liner.TabPrints)
-	i.SetShouldRestart(system.ResetForegroundGroup)
-	i.SetWordCompleter(complete)
+	cli.SetCtrlCAborts(true)
+	cli.SetTabCompletionStyle(liner.TabPrints)
+	cli.SetShouldRestart(system.ResetForegroundGroup)
+	cli.SetWordCompleter(complete)
 
-	parser0 = task.MakeParser(i.ReadString)
+	parser0 = task.MakeParser(cli.ReadString)
 	task.StartInteractive(parser0)
 
-	i.Close()
+	cli.Close()
 }
 
 //go:generate bin/test.oh

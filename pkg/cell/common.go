@@ -4,10 +4,6 @@ package cell
 
 import "errors"
 
-type ApplyModer interface {
-	ApplyMode() error
-}
-
 type Cell interface {
 	Bool() bool
 	Equal(c Cell) bool
@@ -17,11 +13,6 @@ type Cell interface {
 type DerefFunc func(string, uintptr) Cell
 
 type InputFunc func(byte) (string, error)
-
-type Interface interface {
-	Close() error
-	ReadString(delim byte) (string, error)
-}
 
 type Parser interface {
 	ParseBuffer(string, YieldFunc) bool

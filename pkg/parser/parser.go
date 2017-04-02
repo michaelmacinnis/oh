@@ -46,7 +46,7 @@ func (p *parser) ParseBuffer(label string, yield YieldFunc) bool {
 	}
 }
 
-func (p* parser) ParseCommands(label string, yield YieldFunc) {
+func (p *parser) ParseCommands(label string, yield YieldFunc) {
 	if p.ParseBuffer(label, yield) {
 		fmt.Printf("\n")
 	}

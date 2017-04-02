@@ -10,6 +10,7 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/parser"
 	"github.com/michaelmacinnis/oh/pkg/system"
+	"github.com/peterh/liner"
 	"math/rand"
 	"os"
 	"path"
@@ -20,7 +21,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"github.com/peterh/liner"
 )
 
 type binding interface {
