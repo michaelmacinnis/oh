@@ -32,7 +32,35 @@
 ##
 ##     go get github.com/michaelmacinnis/oh
 ##
-## (Oh compiles and runs, but should be considered experimental, on Windows.)
+## According to [gox](https://github.com/mitchellh/gox), oh compiles on the
+## following platforms:
+##
+##     darwin/386
+##     darwin/amd64
+##     dragonfly/amd64
+##     freebsd/386
+##     freebsd/amd64
+##     freebsd/arm
+##     linux/386
+##     linux/amd64
+##     linux/arm
+##     linux/arm64
+##     linux/ppc64
+##     linux/ppc64le
+##     netbsd/386
+##     netbsd/amd64
+##     netbsd/arm
+##     openbsd/386
+##     openbsd/amd64
+##     plan9/386
+##     plan9/amd64
+##     solaris/amd64
+##     windows/386
+##     windows/amd64
+##
+## (Oh compiles and runs on Plan 9 and Windows but should be considered
+## experimental on those plarforms. On Solaris, interactive features are
+## limited).
 ##
 ## ## Using
 ##
