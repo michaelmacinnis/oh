@@ -1758,6 +1758,14 @@ func StartFile(origin string, args []string) {
 	)
 }
 
+func StartInteractive(p Parser) {
+	interactive = true
+	bindSpecialVariables("", os.Args)
+	initSignalHandling()
+	system.BecomeProcessGroupLeader()
+	p.ParseCommands("oh", evaluate)
+}
+
 func StartNonInteractive() {
 	if os.Args[1] == "-c" {
 		if len(os.Args) == 2 {
@@ -1796,14 +1804,6 @@ func bindSpecialVariables(origin string, args []string) {
 		}
 	}
 	scope0.Define("_origin_", NewSymbol(origin))
-}
-
-func StartInteractive(p Parser) {
-	interactive = true
-	bindSpecialVariables("", os.Args)
-	initSignalHandling()
-	system.BecomeProcessGroupLeader()
-	p.ParseCommands("oh", evaluate)
 }
 
 func braceExpand(arg string) []string {
