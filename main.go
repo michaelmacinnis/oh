@@ -67,7 +67,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 		),
 		cell.NewSymbol("> "),
 	)
-	prompt := task.Call(nil, command)
+	prompt := task.Call(command)
 
 	if line, err = cli.State.Prompt(prompt); err == nil {
 		cli.AppendHistory(line)

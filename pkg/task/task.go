@@ -1117,6 +1117,14 @@ func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
 	for m := range t.Eval {
+		if t.Dump == Null {
+			println("Dump is already Null");
+		}
+		t.Dump = Cdr(t.Dump)
+		if t.Dump != Null {
+			println("Dump is not Null: ", t.Dump.String());
+		}
+
 		saved := t.registers
 
 		end := Cons(nil, Null)
@@ -1138,16 +1146,15 @@ func (t *Task) Listen() {
 		t.NewStates(svCode, psEvalCommand)
 
 		t.Code = m.cmd
-		rv := t.Run(end)
+
 		var result Cell
-		if rv != 0 {
+		if t.Run(end) != 0 {
 			t.registers = saved
 
 			SetCar(t.Code, nil)
 			SetCdr(t.Code, Null)
 		} else {
 			result = Car(t.Dump)
-			t.Dump = Cdr(t.Dump)
 		}
 
 		t.Done <- result
@@ -1295,7 +1302,6 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			fallthrough
 		case psEvalBlock:
 			if t.Code == end {
-				//t.Dump = Cdr(t.Dump)
 				return
 			}
 
@@ -1673,23 +1679,18 @@ func (u *unbound) self() Cell {
 	return nil
 }
 
-func Call(t *Task, c Cell) string {
-	if t == nil {
-		r, _ := evaluate(c, "", -1)
-		return Raw(r)
-	}
+func Call(c Cell) string {
+	saved := task0.registers
 
-	saved := t.registers
+	task0.Code = c
+	task0.Dump = List(ExitSuccess)
+	task0.Stack = List(NewInteger(psEvalCommand))
 
-	t.Code = c
-	t.Dump = List(ExitSuccess)
-	t.Stack = List(NewInteger(psEvalCommand))
+	task0.Run(nil)
 
-	t.Run(nil)
+	rv := Car(task0.Dump)
 
-	rv := Car(t.Dump)
-
-	t.registers = saved
+	task0.registers = saved
 
 	return Raw(rv)
 }
