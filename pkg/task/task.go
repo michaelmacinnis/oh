@@ -1117,13 +1117,7 @@ func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
 	for m := range t.Eval {
-		if t.Dump == Null {
-			println("Dump is already Null");
-		}
 		t.Dump = Cdr(t.Dump)
-		if t.Dump != Null {
-			println("Dump is not Null: ", t.Dump.String());
-		}
 
 		saved := t.registers
 
