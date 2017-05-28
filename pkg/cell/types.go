@@ -271,14 +271,18 @@ func NewEnv(prev *Env) *Env {
 	return &Env{&sync.RWMutex{}, make(map[string]Reference), prev}
 }
 
+func (e *Env) hashtry(key string) (value Reference, ok bool) {
+	e.RLock()
+	defer e.RUnlock()
+	value, ok = e.hash[key]
+	return
+}
+
 func (e *Env) Access(key string) Reference {
 	for env := e; env != nil; env = env.prev {
-		env.RLock()
-		if value, ok := env.hash[key]; ok {
-			env.RUnlock()
+		if value, ok := env.hashtry(key); ok {
 			return value
 		}
-		env.RUnlock()
 	}
 
 	return nil
@@ -445,21 +449,30 @@ func IsInteger(c Cell) bool {
 	return false
 }
 
+func numtry(n int64) *Integer {
+	numl.RLock()
+	defer numl.RUnlock()
+	return num[n]
+}
+
 func NewInteger(v int64) *Integer {
 	if -256 <= v && v <= 255 {
 		n := v + 256
 
-		numl.RLock()
-		p := num[n]
-		numl.RUnlock()
-
+		p := numtry(n)
 		if p == nil {
+			numl.Lock()
+			defer numl.Unlock()
+
+			p = num[n]
+			if p != nil {
+				return p
+			}
+
 			i := Integer(v)
 			p = &i
 
-			numl.Lock()
 			num[n] = p
-			numl.Unlock()
 		}
 
 		return p
@@ -760,6 +773,12 @@ func IsRational(c Cell) bool {
 	return false
 }
 
+func rattry(i int64) *Rational {
+	ratl.RLock()
+	defer ratl.RUnlock()
+	return rat[i]
+}
+
 func NewRational(r *big.Rat) *Rational {
 	if !r.IsInt() || r.Cmp(min) < 0 || r.Cmp(max) > 0 {
 		return (*Rational)(r)
@@ -768,16 +787,17 @@ func NewRational(r *big.Rat) *Rational {
 	n := r.Num().Int64()
 	i := n + 256
 
-	ratl.RLock()
-	p := rat[i]
-	ratl.RUnlock()
-
+	p := rattry(i)
 	if p == nil {
-		p = (*Rational)(r)
-
 		ratl.Lock()
+		defer ratl.Unlock()
+		p = rat[i]
+		if p != nil {
+			return p
+		}
+		
+		p = (*Rational)(r)
 		rat[i] = p
-		ratl.Unlock()
 	}
 
 	return p
@@ -915,22 +935,30 @@ func IsSymbol(c Cell) bool {
 	return false
 }
 
-func NewSymbol(v string) *Symbol {
+func symtry(v string) (p *Symbol, ok bool) {
 	syml.RLock()
-	p, ok := sym[v]
-	syml.RUnlock()
+	defer syml.RUnlock()
+	p, ok = sym[v]
+	return
+}
 
-	if ok {
-		return p
-	}
+func NewSymbol(v string) *Symbol {
+	p, ok := symtry(v)
+	if !ok {
+		if len(v) <= 3 {
+			syml.Lock()
+			defer syml.Unlock()
+			if p, ok = sym[v]; ok {
+				return p
+			}
+		}
 
-	s := Symbol(v)
-	p = &s
+		s := Symbol(v)
+		p = &s
 
-	if len(v) <= 3 {
-		syml.Lock()
-		sym[v] = p
-		syml.Unlock()
+		if len(v) <= 3 {
+			sym[v] = p
+		}
 	}
 
 	return p

@@ -29,6 +29,23 @@ var (
 	register chan registration
 )
 
+func background(t *Task) {
+	jobsl.Lock()
+	defer jobsl.Unlock()
+
+	t.Suspend()
+
+	last := 0
+	for k := range jobs {
+		if k > last {
+			last = k
+		}
+	}
+	last++
+
+	jobs[last] = t
+}
+
 func broker() {
 	for task0.Stack != Null {
 		for reading := true; reading; {
@@ -48,21 +65,7 @@ func broker() {
 			case sig := <-incoming: // Handle signals.
 				switch sig {
 				case unix.SIGTSTP:
-					task0.Suspend()
-
-					last := 0
-					jobsl.RLock()
-					for k := range jobs {
-						if k > last {
-							last = k
-						}
-					}
-					jobsl.RUnlock()
-					last++
-
-					jobsl.Lock()
-					jobs[last] = task0
-					jobsl.Unlock()
+					background(task0)
 
 				case unix.SIGINT:
 					task0.Stop()

@@ -62,19 +62,28 @@ func IsStatus(c Cell) bool {
 	return false
 }
 
+func restry(v int64) *Status {
+	resl.RLock()
+	defer resl.RUnlock()
+	return res[v]
+}
+
 func NewStatus(v int64) *Status {
 	if 0 <= v && v <= 255 {
-		resl.RLock()
-		p := res[v]
-		resl.RUnlock()
-
+		p := restry(v)
 		if p == nil {
+			resl.Lock()
+			defer resl.Unlock()
+
+			p = res[v]
+			if p != nil {
+				return p
+			}
+
 			s := Status(v)
 			p = &s
 
-			resl.Lock()
 			res[v] = p
-			resl.Unlock()
 		}
 
 		return p

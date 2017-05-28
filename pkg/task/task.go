@@ -891,8 +891,8 @@ func NewTask(c Cell, l context, p *Task) *Task {
 
 	if p != nil {
 		p.childrenl.Lock()
+		defer p.childrenl.Unlock()
 		p.children[t] = true
-		p.childrenl.Unlock()
 	}
 
 	return t
@@ -1011,12 +1011,12 @@ func (t *Task) Continue() {
 	}
 
 	t.childrenl.RLock()
+	defer t.childrenl.RUnlock()
 	for k, v := range t.children {
 		if v {
 			k.Continue()
 		}
 	}
-	t.childrenl.RUnlock()
 
 	close(t.suspended)
 }
@@ -1025,9 +1025,9 @@ func (t *Task) Debug(s string) {
 	fmt.Printf("%s: t.Code = %v, t.Dump = %v\n", s, t.Code, t.Dump)
 }
 
-func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
-
+func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*os.Process, error) {
 	t.Lock()
+	defer t.Unlock()
 
 	if jobControlEnabled() {
 		attr.Sys = system.SysProcAttr(t.Group)
@@ -1035,7 +1035,6 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
-		t.Unlock()
 		return nil, err
 	}
 
@@ -1047,9 +1046,16 @@ func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	t.pid = proc.Pid
 
-	t.Unlock()
+	return proc, err
+}
+
+func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
+	proc, err := t.execute(arg0, argv, attr)
 
 	rv := status(proc)
+
+	t.Lock()
+	defer t.Unlock()
 
 	if jobControlEnabled() {
 		if t.Group == t.pid {
@@ -1490,12 +1496,12 @@ func (t *Task) Stop() {
 	}
 
 	t.childrenl.RLock()
+	defer t.childrenl.RUnlock()
 	for k, v := range t.children {
 		if v {
 			k.Stop()
 		}
 	}
-	t.childrenl.RUnlock()
 }
 
 func (t *Task) Strict() (ok bool) {
@@ -1522,12 +1528,12 @@ func (t *Task) Suspend() {
 	}
 
 	t.childrenl.RLock()
+	defer t.childrenl.RUnlock()
 	for k, v := range t.children {
 		if v {
 			k.Suspend()
 		}
 	}
-	t.childrenl.RUnlock()
 
 	t.suspended = make(chan bool)
 }
@@ -1625,13 +1631,13 @@ func (t *Task) Validate(
 
 func (t *Task) Wait() {
 	t.childrenl.Lock()
+	defer t.childrenl.Unlock()
 	for k, v := range t.children {
 		if v {
 			<-k.Done
 		}
 		delete(t.children, k)
 	}
-	t.childrenl.Unlock()
 }
 
 /* Unbound cell definition. */
@@ -1870,6 +1876,21 @@ func conduitContext() context {
 	return envc
 }
 
+func last() int {
+	index := 0
+
+	jobsl.RLock()
+	defer jobsl.RUnlock()
+
+	for k := range jobs {
+		if k > index {
+			index = k
+		}
+	}
+
+	return index
+}
+
 func control(t *Task, args Cell) *Task {
 	if !jobControlEnabled() || t != task0 {
 		return nil
@@ -1881,26 +1902,18 @@ func control(t *Task, args Cell) *Task {
 			index = int(a.Int())
 		}
 	} else {
-		jobsl.RLock()
-		for k := range jobs {
-			if k > index {
-				index = k
-			}
-		}
-		jobsl.RUnlock()
+		index = last()
 	}
 
-	jobsl.RLock()
-	found, ok := jobs[index]
-	jobsl.RUnlock()
+	jobsl.Lock()
+	defer jobsl.Unlock()
 
+	found, ok := jobs[index];
 	if !ok {
 		return nil
 	}
 
-	jobsl.Lock()
 	delete(jobs, index)
-	jobsl.Unlock()
 
 	return found
 }
