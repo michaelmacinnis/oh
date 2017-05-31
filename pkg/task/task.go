@@ -129,6 +129,8 @@ var (
 	scope0      *scope
 	sys         context
 	task0       *Task
+	task0l      = &sync.RWMutex{}
+	taskc       *Task
 )
 
 var next = map[int64][]int64{
@@ -1358,7 +1360,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 				t.ReplaceStates(psReturn, psEvalArguments)
 
 			default:
-				msg := fmt.Sprintf("can't evaluate: %v", t)
+				msg := fmt.Sprintf("can't evaluate: %v", Car(t.Dump))
 				panic(msg)
 			}
 
@@ -1680,17 +1682,23 @@ func (u *unbound) self() Cell {
 }
 
 func Call(c Cell) string {
-	saved := task0.registers
+	task0l.Lock()
+	defer task0l.Unlock()
 
-	task0.Code = c
-	task0.Dump = List(ExitSuccess)
-	task0.Stack = List(NewInteger(psEvalCommand))
+	if taskc == nil {
+		taskc = NewTask(nil, nil, nil)
+	}
 
-	task0.Run(nil)
+	taskc.registers = task0.registers
 
-	rv := Car(task0.Dump)
+	taskc.Code = c
+	taskc.Dump = List(ExitSuccess)
+	taskc.Stack = List(NewInteger(psEvalCommand))
+	taskc.Frame = task0.Frame
 
-	task0.registers = saved
+	taskc.Run(nil)
+
+	rv := Car(taskc.Dump)
 
 	return Raw(rv)
 }

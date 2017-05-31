@@ -63,6 +63,8 @@ func broker() {
 
 			select {
 			case sig := <-incoming: // Handle signals.
+				task0l.Lock()
+
 				switch sig {
 				case unix.SIGTSTP:
 					background(task0)
@@ -72,6 +74,8 @@ func broker() {
 				}
 
 				launchForegroundTask()
+
+				task0l.Unlock()
 
 			case v = <-task0.Done:
 				if task0 != prev {
