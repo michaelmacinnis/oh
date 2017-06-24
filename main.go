@@ -20,8 +20,6 @@ For more detail, see: https://github.com/michaelmacinnis/oh
 Oh is released under an MIT license.
 */
 
-// +build go1.5
-
 package main
 
 import (
