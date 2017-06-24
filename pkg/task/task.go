@@ -1916,7 +1916,7 @@ func control(t *Task, args Cell) *Task {
 	jobsl.Lock()
 	defer jobsl.Unlock()
 
-	found, ok := jobs[index];
+	found, ok := jobs[index]
 	if !ok {
 		return nil
 	}

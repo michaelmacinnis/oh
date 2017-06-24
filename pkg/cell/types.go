@@ -795,7 +795,7 @@ func NewRational(r *big.Rat) *Rational {
 		if p != nil {
 			return p
 		}
-		
+
 		p = (*Rational)(r)
 		rat[i] = p
 	}
