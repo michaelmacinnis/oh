@@ -11,7 +11,7 @@ public introduction: method (generator package) = {
 
 public predicates: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
                           (is-builtin IsBuiltin) (is-channel IsChannel) \
-                          (is-cons IsCons) (is-continuation IsContinuation) \
+                          (is-cons IsPair) (is-continuation IsContinuation) \
                           (is-float IsFloat) (is-integer IsInteger) \
                           (is-method IsMethod) (is-null IsNull) \
                           (is-number IsNumber) (is-object IsContext) \

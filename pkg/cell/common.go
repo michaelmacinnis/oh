@@ -17,7 +17,7 @@ type InputFunc func(byte) (string, error)
 type Parser interface {
 	ParseBuffer(string, YieldFunc) bool
 	ParseCommands(string, YieldFunc)
-	ParsePipe(string, YieldFunc) interface{}
+	ParsePipe(string, YieldFunc) (int, interface{})
 	State(string) (string, string, string)
 }
 
@@ -25,7 +25,7 @@ type MakeParserFunc func(InputFunc) Parser
 
 type ThrowFunc func(filename string, lineno int, message string)
 
-type YieldFunc func(Cell, string, int) (Cell, bool)
+type YieldFunc func(Cell) (Cell, bool)
 
 const (
 	ErrNotExecutable = "oh: 126: error/runtime: "

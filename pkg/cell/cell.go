@@ -35,31 +35,31 @@ func AppendTo(list Cell, elements ...Cell) Cell {
 }
 
 func Car(c Cell) Cell {
-	return c.(*Pair).car
+	return ToPair(c).car
 }
 
 func Cdr(c Cell) Cell {
-	return c.(*Pair).cdr
+	return ToPair(c).cdr
 }
 
 func Caar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).car
+	return ToPair(ToPair(c).car).car
 }
 
 func Cadr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).car
+	return ToPair(ToPair(c).cdr).car
 }
 
 func Cdar(c Cell) Cell {
-	return c.(*Pair).car.(*Pair).cdr
+	return ToPair(ToPair(c).car).cdr
 }
 
 func Cddr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).cdr
+	return ToPair(ToPair(c).cdr).cdr
 }
 
 func Caddr(c Cell) Cell {
-	return c.(*Pair).cdr.(*Pair).cdr.(*Pair).car
+	return ToPair(ToPair(ToPair(c).cdr).cdr).car
 }
 
 func IsAtom(c Cell) bool {
@@ -75,7 +75,7 @@ func IsNull(c Cell) bool {
 }
 
 func IsSimple(c Cell) bool {
-	return IsAtom(c) || IsCons(c)
+	return IsAtom(c) || IsPair(c)
 }
 
 func IsNumber(c Cell) bool {
@@ -83,14 +83,6 @@ func IsNumber(c Cell) bool {
 	case *Symbol:
 		return t.isNumeric()
 	case Number:
-		return true
-	}
-	return false
-}
-
-func IsPair(c Cell) bool {
-	switch c.(type) {
-	case *Pair:
 		return true
 	}
 	return false
@@ -168,11 +160,11 @@ func Reverse(list Cell) Cell {
 }
 
 func SetCar(c, value Cell) {
-	c.(*Pair).car = value
+	ToPair(c).car = value
 }
 
 func SetCdr(c, value Cell) {
-	c.(*Pair).cdr = value
+	ToPair(c).cdr = value
 }
 
 func Slice(list Cell, start, end int64) Cell {

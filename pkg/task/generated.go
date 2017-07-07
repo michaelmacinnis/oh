@@ -122,7 +122,7 @@ func bindPredicates(s *scope) {
 	})
 
 	s.DefineMethod("is-cons", func(t *Task, args Cell) bool {
-		return t.Return(NewBoolean(IsCons(Car(args))))
+		return t.Return(NewBoolean(IsPair(Car(args))))
 	})
 
 	s.DefineMethod("is-continuation", func(t *Task, args Cell) bool {

@@ -109,7 +109,7 @@ func (l *lexer) Partial(line string) *partial {
 	copy.items = closed
 
 	copy.scan(line)
-	copy.yield = func(Cell, string, int) (Cell, bool) {
+	copy.yield = func(Cell) (Cell, bool) {
 		return Null, true
 	}
 

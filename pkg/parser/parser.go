@@ -39,7 +39,7 @@ func (p *parser) ParseBuffer(label string, yield YieldFunc) bool {
 					NewSymbol(label),
 				),
 			)
-			yield(c, label, lines)
+			yield(c)
 		} else if rval <= 0 {
 			return rval == 0
 		}
@@ -52,10 +52,10 @@ func (p *parser) ParseCommands(label string, yield YieldFunc) {
 	}
 }
 
-func (p *parser) ParsePipe(label string, yield YieldFunc) interface{} {
-	_, _, e := p.parsePipe(label, 0, yield)
+func (p *parser) ParsePipe(label string, yield YieldFunc) (int, interface{}) {
+	_, l, e := p.parsePipe(label, 0, yield)
 
-	return e
+	return l, e
 }
 
 func (p *parser) State(line string) (string, string, string) {

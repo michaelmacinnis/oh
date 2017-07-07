@@ -67,12 +67,6 @@ type context interface {
 
 type function func(t *Task, args Cell) bool
 
-type message struct {
-	cmd  Cell
-	file string
-	line int
-}
-
 type validator func(c Cell) bool
 
 const (
@@ -846,7 +840,7 @@ type Task struct {
 	*Job
 	registers
 	Done      chan Cell
-	Eval      chan message
+	Eval      chan Cell
 	children  map[*Task]bool
 	childrenl *sync.RWMutex
 	parent    *Task
@@ -883,7 +877,7 @@ func NewTask(c Cell, l context, p *Task) *Task {
 			Lexical: l,
 		},
 		Done:      make(chan Cell, 1),
-		Eval:      make(chan message, 1),
+		Eval:      make(chan Cell, 1),
 		children:  make(map[*Task]bool),
 		childrenl: &sync.RWMutex{},
 		parent:    p,
@@ -940,7 +934,7 @@ func (t *Task) Apply(args Cell) bool {
 		c.Define(Raw(Car(params)), Car(args))
 		args, params = Cdr(args), Cdr(params)
 	}
-	if IsCons(Car(params)) {
+	if IsPair(Car(params)) {
 		c.Define(Raw(Caar(params)), args)
 	}
 
@@ -1124,7 +1118,7 @@ func (t *Task) launch() {
 func (t *Task) Listen() {
 	t.Code = Cons(nil, Null)
 
-	for m := range t.Eval {
+	for c := range t.Eval {
 		t.Dump = Cdr(t.Dump)
 
 		saved := t.registers
@@ -1135,19 +1129,13 @@ func (t *Task) Listen() {
 			break
 		}
 
-		if m.file != "" {
-			t.SetFile(m.file)
-		}
-		if m.line != -1 {
-			t.SetLine(m.line)
-		}
-		SetCar(t.Code, m.cmd)
+		SetCar(t.Code, c)
 		SetCdr(t.Code, end)
 
 		t.Code = end
 		t.NewStates(svCode, psEvalCommand)
 
-		t.Code = m.cmd
+		t.Code = c
 
 		var result Cell
 		if t.Run(end) != 0 {
@@ -1308,11 +1296,11 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			}
 
 			if t.Code == Null ||
-				!IsCons(t.Code) || !IsCons(Car(t.Code)) {
+				!IsPair(t.Code) || !IsPair(Car(t.Code)) {
 				break
 			}
 
-			if Cdr(t.Code) == Null || !IsCons(Cadr(t.Code)) {
+			if Cdr(t.Code) == Null || !IsPair(Cadr(t.Code)) {
 				t.ReplaceStates(psEvalCommand)
 			} else {
 				t.NewStates(svCdrCode, psEvalCommand)
@@ -1326,6 +1314,11 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			if t.Code == Null {
 				t.Dump = Cons(t.Code, t.Dump)
 				break
+			}
+
+			if h, ok := t.Code.(*PairPlus); ok {
+				t.SetFile(h.File)
+				t.SetLine(h.Line)
 			}
 
 			t.ReplaceStates(psExecCommand,
@@ -1381,7 +1374,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			if t.Code == Null {
 				t.Dump = Cons(t.Code, t.Dump)
 				break
-			} else if IsCons(t.Code) {
+			} else if IsPair(t.Code) {
 				if IsAtom(Cdr(t.Code)) {
 					t.ReplaceStates(svLexical,
 						psEvalMember,
@@ -1425,7 +1418,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			l := Car(t.Dump)
 			t.Dump = Cdr(t.Dump)
 
-			if !IsCons(l) {
+			if !IsPair(l) {
 				t.Dump = Cons(l, t.Dump)
 				break
 			}
@@ -1760,10 +1753,7 @@ func StartFile(origin string, args []string) {
 	bindSpecialVariables(origin, args)
 
 	filename := args[0]
-	eval(
-		List(NewSymbol("source"), NewSymbol(filename)),
-		filename, 0,
-	)
+	eval(List(NewSymbol("source"), NewSymbol(filename)))
 }
 
 func StartInteractive(p Parser) {
@@ -1864,10 +1854,6 @@ func conduitContext() context {
 		t.Validate(args, 0, 0)
 		return t.Return(Null)
 	})
-	envc.PublicMethod("lineno", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		return t.Return(toConduit(t.Self()).LineNumber())
-	})
 	envc.PublicMethod("read", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
 		return t.Return(toConduit(t.Self()).Read(MakeParser, t.Throw))
@@ -1926,8 +1912,8 @@ func control(t *Task, args Cell) *Task {
 	return found
 }
 
-func eval(c Cell, f string, l int) (Cell, bool) {
-	task0.Eval <- message{cmd: c, file: f, line: l}
+func eval(c Cell) (Cell, bool) {
+	task0.Eval <- c
 	return <-task0.Done, true
 }
 
@@ -2376,7 +2362,7 @@ func init() {
 	})
 	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		t.file = Raw(Car(args))
+		t.SetFile(Raw(Car(args)))
 
 		return false
 	})
@@ -2435,7 +2421,7 @@ func init() {
 		}
 
 		t.Code = Car(t.Code)
-		if !IsCons(t.Code) {
+		if !IsPair(t.Code) {
 			t.ReplaceStates(psExecSet, svCode)
 		} else {
 			t.ReplaceStates(svLexical,
@@ -2561,7 +2547,7 @@ func pairContext() context {
 	envp = NewScope(namespace, nil)
 	envp.PublicMethod("append", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1)
-		var s Cell = toPair(t.Self())
+		var s Cell = ToPair(t.Self())
 
 		n := Cons(Car(s), Null)
 		l := n
@@ -2575,7 +2561,7 @@ func pairContext() context {
 	})
 	envp.PublicMethod("get", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 1, IsNumber)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 
 		i := int64(0)
 		if args != Null {
@@ -2592,13 +2578,13 @@ func pairContext() context {
 	})
 	envp.PublicMethod("head", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 
 		return t.Return(Car(s))
 	})
 	envp.PublicMethod("keys", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		var s Cell = toPair(t.Self())
+		var s Cell = ToPair(t.Self())
 		l := Null
 
 		i := int64(0)
@@ -2620,7 +2606,7 @@ func pairContext() context {
 	})
 	envp.PublicMethod("set", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2, IsNumber)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 
 		i := Car(args).(Atom).Int()
 		v := Cadr(args)
@@ -2630,7 +2616,7 @@ func pairContext() context {
 	})
 	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 2)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 
 		i := int64(0)
 
@@ -2647,7 +2633,7 @@ func pairContext() context {
 	})
 	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 2, IsNumber, IsNumber)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 		i := Car(args).(Atom).Int()
 
 		j := int64(0)
@@ -2661,7 +2647,7 @@ func pairContext() context {
 	})
 	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		s := toPair(t.Self())
+		s := ToPair(t.Self())
 
 		return t.Return(Cdr(s))
 	})
@@ -2670,7 +2656,7 @@ func pairContext() context {
 		var s Cell
 
 		v := ""
-		for s = toPair(t.Self()); s != Null; s = Cdr(s) {
+		for s = ToPair(t.Self()); s != Null; s = Cdr(s) {
 			v = fmt.Sprintf("%s%c", v, int(Car(s).(Atom).Int()))
 		}
 
@@ -2808,7 +2794,7 @@ func toContext(c Cell) context {
 		return t
 	case *Channel:
 		return conduitContext()
-	case *Pair:
+	case *Pair, *PairPlus:
 		return pairContext()
 	case *Pipe:
 		return conduitContext()
@@ -2816,15 +2802,6 @@ func toContext(c Cell) context {
 		return stringContext()
 	}
 	panic("not an object")
-}
-
-/* Convert Cell into a Pair. */
-func toPair(c Cell) *Pair {
-	if p, ok := c.(*Pair); ok {
-		return p
-	}
-
-	panic("not a string")
 }
 
 /* Convert Cell into a String. */

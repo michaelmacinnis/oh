@@ -24,7 +24,7 @@ type registration struct {
 
 var (
 	done0    chan Cell
-	eval0    chan message
+	eval0    chan Cell
 	incoming chan os.Signal
 	register chan registration
 )
@@ -90,8 +90,8 @@ func broker() {
 	}
 }
 
-func evaluate(c Cell, f string, l int) (Cell, bool) {
-	eval0 <- message{cmd: c, file: f, line: l}
+func evaluate(c Cell) (Cell, bool) {
+	eval0 <- c
 	r := <-done0
 
 	task0.Job.Command = ""
@@ -115,7 +115,7 @@ func exit(c Cell) {
 
 func init() {
 	done0 = make(chan Cell)
-	eval0 = make(chan message)
+	eval0 = make(chan Cell)
 
 	active := make(chan bool)
 	notify := make(chan notification)

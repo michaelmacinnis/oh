@@ -315,7 +315,8 @@ define source: syntax (name) e = {
 	define r: cons () ()
 	define c = r
 	while (define l: f::read) {
-		c::set-tail: cons (cons (f::lineno) l) ()
+#		c::set-tail: cons (cons (f::lineno) l) ()
+		c::set-tail: cons l ()
 		set c: c::tail
 	}
 	set c: r::tail
@@ -324,8 +325,9 @@ define source: syntax (name) e = {
 	define rval: status 0
 	define eval-list: method (first rest) o = {
 		if (is-null first): return rval
-		set-line-number: first::head
-		set rval: e::eval: first::tail
+#		set-line-number: first::head
+#		set rval: e::eval: first::tail
+		set rval: e::eval first
 		eval-list (rest::head) (rest::tail)
 	}
 	eval-list (c::head) (c::tail)

@@ -16,7 +16,6 @@ import (
 
 type Conduit interface {
 	Close()
-	LineNumber() Cell
 	ReaderClose()
 	ReadLine() Cell
 	Read(MakeParserFunc, ThrowFunc) Cell
@@ -199,10 +198,6 @@ func (ch *Channel) String() string {
 
 func (ch *Channel) Close() {
 	ch.WriterClose()
-}
-
-func (ch *Channel) LineNumber() Cell {
-	return NewInteger(0)
 }
 
 func (ch *Channel) ReaderClose() {
@@ -544,9 +539,9 @@ type Pair struct {
 	cdr Cell
 }
 
-func IsCons(c Cell) bool {
+func IsPair(c Cell) bool {
 	switch c.(type) {
-	case *Pair:
+	case *Pair, *PairPlus:
 		return true
 	}
 	return false
@@ -570,7 +565,7 @@ func (p *Pair) Equal(c Cell) bool {
 func (p *Pair) String() (s string) {
 	s = ""
 
-	if IsCons(p.car) && IsCons(Cdr(p.car)) {
+	if IsPair(p.car) && IsPair(Cdr(p.car)) {
 		s += "("
 	}
 
@@ -578,11 +573,11 @@ func (p *Pair) String() (s string) {
 		s += p.car.String()
 	}
 
-	if IsCons(p.car) && IsCons(Cdr(p.car)) {
+	if IsPair(p.car) && IsPair(Cdr(p.car)) {
 		s += ")"
 	}
 
-	if IsCons(p.cdr) {
+	if IsPair(p.cdr) {
 		if p.cdr == Null {
 			return s
 		}
@@ -597,6 +592,27 @@ func (p *Pair) String() (s string) {
 	return s
 }
 
+type PairPlus struct {
+	Pair
+	File string
+	Line int
+}
+
+func NewPairPlus(h Cell, f string, l int) Cell {
+	return &PairPlus{Pair{h, Null}, f, l}
+}
+
+func ToPair(c Cell) *Pair {
+	switch t := c.(type) {
+	case *Pair:
+		return t
+	case *PairPlus:
+		return &t.Pair
+	}
+
+	panic("not a cons cell")
+}
+
 /* Pipe cell definition. */
 
 type Pipe struct {
@@ -604,7 +620,6 @@ type Pipe struct {
 	c chan Cell
 	d chan bool
 	e interface{}
-	l int
 	r *os.File
 	w *os.File
 }
@@ -628,7 +643,6 @@ func NewPipe(r *os.File, w *os.File) *Pipe {
 		c: nil,
 		d: nil,
 		e: nil,
-		l: 0,
 		r: r,
 		w: w,
 	}
@@ -676,10 +690,6 @@ func (p *Pipe) reader() *bufio.Reader {
 	return p.b
 }
 
-func (p *Pipe) LineNumber() Cell {
-	return NewInteger(int64(p.l))
-}
-
 func (p *Pipe) ReaderClose() {
 	if p.r != nil {
 		p.r.Close()
@@ -700,13 +710,13 @@ func (p *Pipe) Read(mp MakeParserFunc, throw ThrowFunc) Cell {
 
 	label := p.r.Name()
 
+	var l int = 0
 	if p.c == nil {
 		p.c = make(chan Cell)
 		go func() {
-			p.e = mp(p.reader().ReadString).ParsePipe(
+			l, p.e = mp(p.reader().ReadString).ParsePipe(
 				label,
-				func(c Cell, f string, l int) (Cell, bool) {
-					p.l = l
+				func(c Cell) (Cell, bool) {
 					p.c <- c
 					<-p.d
 					return nil, true
@@ -720,7 +730,7 @@ func (p *Pipe) Read(mp MakeParserFunc, throw ThrowFunc) Cell {
 
 	v := <-p.c
 	if p.e != nil {
-		throw(label, p.l, fmt.Sprintf("%v", p.e))
+		throw(label, l, fmt.Sprintf("%v", p.e))
 	}
 
 	return v

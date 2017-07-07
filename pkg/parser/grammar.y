@@ -50,7 +50,7 @@ opt_evaluate_command: command {
 	$$ = $1
 	if ($1 != Null) {
 		l := GetLexer(ohlex)
-		_, ok := l.yield($1, l.label, l.lines)
+		_, ok := l.yield($1)
 		if !ok {
 			return -1
 		}
@@ -187,7 +187,10 @@ opt_command: { $$ = Null };
 
 opt_command: command { $$ = $1 };
 
-list: expression { $$ = Cons($1, Null) };
+list: expression {
+	l := GetLexer(ohlex)
+	$$ = NewPairPlus($1, l.label, l.lines)
+};
 
 list: list tail { $$ = AppendTo($1, $2) };
 
