@@ -260,46 +260,6 @@ func (c *command) SelfLabel() Cell {
 	return c.olabel
 }
 
-/* Continuation cell definition. */
-
-type continuation struct {
-	Dump  Cell
-	Frame Cell
-	Stack Cell
-	file  string
-	line  int
-}
-
-func IsContinuation(c Cell) bool {
-	switch c.(type) {
-	case *continuation:
-		return true
-	}
-	return false
-}
-
-func (ct *continuation) Bool() bool {
-	return true
-}
-
-func (ct *continuation) Equal(c Cell) bool {
-	return ct == c
-}
-
-func (ct *continuation) String() string {
-	return fmt.Sprintf("%%continuation %p%%", ct)
-}
-
-/* Continuation-specific functions */
-
-func (ct *continuation) SetFile(f string) {
-	ct.file = f
-}
-
-func (ct *continuation) SetLine(l int) {
-	ct.line = l
-}
-
 /* Job definition. */
 
 type Job struct {
@@ -426,7 +386,7 @@ func (o *object) Define(key string, value Cell) {
 /* Registers cell definition. */
 
 type registers struct {
-	continuation // Stack and Dump
+	Continuation // Stack and Dump
 
 	Code    Cell // Control
 	Lexical Cell
@@ -503,8 +463,8 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 	return cl
 }
 
-func (r *registers) CurrentContinuation() *continuation {
-	cc := r.continuation
+func (r *registers) CurrentContinuation() *Continuation {
+	cc := r.Continuation
 	cc.Dump = Cdr(cc.Dump)
 	return &cc
 }
@@ -866,12 +826,12 @@ func NewTask(c Cell, l context, p *Task) *Task {
 	t := &Task{
 		Job: j,
 		registers: registers{
-			continuation: continuation{
-				Dump:  List(ExitSuccess),
+			Continuation: Continuation{
+				Dump: List(ExitSuccess),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
-				file:  "oh",
-				line:  0,
+				File: "oh",
+				Line: 0,
 			},
 			Code:    c,
 			Lexical: l,
@@ -1235,7 +1195,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			return
 		}
 
-		t.Throw(t.file, t.line, fmt.Sprintf("%v", r))
+		t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
 
 		rv = 1
 	}()
@@ -1317,8 +1277,8 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			}
 
 			if h, ok := t.Code.(*PairPlus); ok {
-				t.SetFile(h.File)
-				t.SetLine(h.Line)
+				t.File = h.File
+				t.Line = h.Line
 			}
 
 			t.ReplaceStates(psExecCommand,
@@ -1349,7 +1309,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 					continue
 				}
 
-			case *continuation:
+			case *Continuation:
 				t.ReplaceStates(psReturn, psEvalArguments)
 
 			default:
@@ -1446,7 +1406,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 		case psReturn:
 			args := t.Arguments()
 
-			t.continuation = *Car(t.Dump).(*continuation)
+			t.Continuation = *Car(t.Dump).(*Continuation)
 			t.Dump = Cons(Car(args), t.Dump)
 
 			break
@@ -2291,11 +2251,11 @@ func init() {
 	})
 	scope0.DefineMethod("get-line-number", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(NewInteger(int64(t.line)))
+		return t.Return(NewInteger(int64(t.Line)))
 	})
 	scope0.DefineMethod("get-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
-		return t.Return(NewSymbol(t.file))
+		return t.Return(NewSymbol(t.File))
 	})
 	scope0.DefineMethod("open", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2, IsText, IsText)
@@ -2356,13 +2316,13 @@ func init() {
 	})
 	scope0.DefineMethod("set-line-number", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsNumber)
-		t.SetLine(int(Car(args).(Atom).Int()))
+		t.Line = int(Car(args).(Atom).Int())
 
 		return false
 	})
 	scope0.DefineMethod("set-source-file", func(t *Task, args Cell) bool {
 		t.Validate(args, 1, 1, IsText)
-		t.SetFile(Raw(Car(args)))
+		t.File = Raw(Car(args))
 
 		return false
 	})

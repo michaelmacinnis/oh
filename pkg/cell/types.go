@@ -254,6 +254,36 @@ func (ct *Constant) Set(c Cell) {
 	panic("constant cannot be set")
 }
 
+/* Continuation cell definition. */
+
+type Continuation struct {
+	Dump  Cell
+	Frame Cell
+	Stack Cell
+	File  string
+	Line  int
+}
+
+func IsContinuation(c Cell) bool {
+	switch c.(type) {
+	case *Continuation:
+		return true
+	}
+	return false
+}
+
+func (ct *Continuation) Bool() bool {
+	return true
+}
+
+func (ct *Continuation) Equal(c Cell) bool {
+	return ct == c
+}
+
+func (ct *Continuation) String() string {
+	return fmt.Sprintf("%%continuation %p%%", ct)
+}
+
 /* Env definition. */
 
 type Env struct {

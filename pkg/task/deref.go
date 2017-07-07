@@ -21,7 +21,7 @@ func deref(name string, address uintptr) Cell {
 	case name == "builtin":
 		return (*builtin)(unsafe.Pointer(address))
 	case name == "continuation":
-		return (*continuation)(unsafe.Pointer(address))
+		return (*Continuation)(unsafe.Pointer(address))
 	case name == "method":
 		return (*method)(unsafe.Pointer(address))
 	case name == "object":
