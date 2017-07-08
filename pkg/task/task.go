@@ -263,15 +263,14 @@ func (c *command) SelfLabel() Cell {
 /* Job definition. */
 
 type Job struct {
-	*sync.Mutex
 	Command string
 	Group   int
 	mode    liner.ModeApplier
 }
 
-func NewJob() *Job {
+func NewJob() Job {
 	mode, _ := liner.TerminalMode()
-	return &Job{&sync.Mutex{}, "", 0, mode}
+	return Job{"", 0, mode}
 }
 
 /* Method cell definition. */
@@ -797,7 +796,8 @@ func (m *syntax) String() string {
 /* Task cell definition. */
 
 type Task struct {
-	*Job
+	sync.Mutex
+	Job
 	registers
 	Done      chan Cell
 	Eval      chan Cell
@@ -814,7 +814,7 @@ func NewTask(c Cell, l context, p *Task) *Task {
 	}
 
 	var frame Cell
-	var j *Job
+	var j Job
 	if p == nil {
 		frame = frame0
 		j = NewJob()
@@ -824,6 +824,7 @@ func NewTask(c Cell, l context, p *Task) *Task {
 	}
 
 	t := &Task{
+		Mutex: sync.Mutex{},
 		Job: j,
 		registers: registers{
 			Continuation: Continuation{
@@ -977,11 +978,11 @@ func (t *Task) Continue() {
 	close(t.suspended)
 }
 
-func (t *Task) Debug(s string) {
+func (t *Task) debug(s string) {
 	fmt.Printf("%s: t.Code = %v, t.Dump = %v\n", s, t.Code, t.Dump)
 }
 
-func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*os.Process, error) {
+func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -1002,16 +1003,7 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*os.Proce
 
 	t.pid = proc.Pid
 
-	return proc, err
-}
-
-func (t *Task) Execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
-	proc, err := t.execute(arg0, argv, attr)
-
 	rv := status(proc)
-
-	t.Lock()
-	defer t.Unlock()
 
 	if jobControlEnabled() {
 		if t.Group == t.pid {
@@ -1062,7 +1054,7 @@ func (t *Task) External(args Cell) bool {
 
 	attr := &os.ProcAttr{Dir: dir, Env: t.MakeEnv(), Files: files}
 
-	rv, problem := t.Execute(arg0, argv, attr)
+	rv, problem := t.execute(arg0, argv, attr)
 	if problem != nil {
 		panic(ErrNotExecutable + problem.Error())
 	}
@@ -2102,7 +2094,7 @@ func init() {
 		return t.Chdir(dir)
 	})
 	scope0.DefineBuiltin("debug", func(t *Task, args Cell) bool {
-		t.Debug("debug")
+		t.debug("debug")
 
 		return false
 	})

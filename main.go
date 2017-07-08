@@ -285,6 +285,7 @@ func main() {
 	cli.SetWordCompleter(complete)
 
 	parser0 = task.MakeParser(cli.ReadString)
+
 	task.StartInteractive(parser0)
 
 	cli.Close()
