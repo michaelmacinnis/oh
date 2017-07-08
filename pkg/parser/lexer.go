@@ -300,7 +300,6 @@ func (l *lexer) run() {
 		state = state.f(l)
 	}
 	close(l.items)
-	l.reset()
 }
 
 func (l *lexer) running() bool {
