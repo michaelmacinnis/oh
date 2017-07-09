@@ -9,12 +9,14 @@ define _connect_: syntax (conduit name) = {
 	set conduit: eval conduit
 	syntax (left right) e = {
 		define p: conduit
+		define left-status: channel
 		spawn {
-			e::eval: quasiquote: block {
+			define s: e::eval: quasiquote: block {
 				public (unquote name) = (unquote p)
 				eval (unquote left)
 			}
 			p::_writer_close_
+			left-status::write s
 		}
 		block {
 			define s: e::eval: quasiquote: block {
@@ -22,7 +24,7 @@ define _connect_: syntax (conduit name) = {
 				eval (unquote right)
 			}
 			p::_reader_close_
-			return s
+			return: and ((left-status::read)::head) s
 		}
 	}
 }
