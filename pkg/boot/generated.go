@@ -291,7 +291,6 @@ define quasiquote: syntax (cell) e = {
 		e::eval: list (quote quasiquote) (cell::tail)
 	}
 }
-define quote: syntax (cell) =: return cell
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
 define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_
@@ -345,6 +344,7 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: _stdout_::write @args
+public quote: syntax (cell) =: return cell
 _root_::public _modules_: object
 _sys_::public _exception: method (t s m l f) e = {
 	object {
