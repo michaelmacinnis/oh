@@ -924,7 +924,7 @@ func (s *String) Bool() bool {
 
 func (s *String) Equal(c Cell) bool {
 	if a, ok := c.(Atom); ok {
-		return string(*s) == a.String()
+		return s.String() == a.String()
 	}
 	return false
 }
