@@ -796,6 +796,7 @@ func (m *syntax) String() string {
 /* Task cell definition. */
 
 type Task struct {
+	*action
 	sync.Mutex
 	Job
 	registers
@@ -805,7 +806,6 @@ type Task struct {
 	childrenl *sync.RWMutex
 	parent    *Task
 	pid       int
-	suspended chan bool
 }
 
 func NewTask(c Cell, l context, p *Task) *Task {
@@ -824,6 +824,7 @@ func NewTask(c Cell, l context, p *Task) *Task {
 	}
 
 	t := &Task{
+		action: NewAction(),
 		Mutex: sync.Mutex{},
 		Job: j,
 		registers: registers{
@@ -842,8 +843,6 @@ func NewTask(c Cell, l context, p *Task) *Task {
 		children:  make(map[*Task]bool),
 		childrenl: &sync.RWMutex{},
 		parent:    p,
-		pid:       0,
-		suspended: runnable,
 	}
 
 	if p != nil {
@@ -975,7 +974,7 @@ func (t *Task) Continue() {
 		}
 	}
 
-	close(t.suspended)
+	t.action.Continue()
 }
 
 func (t *Task) debug(s string) {
@@ -1192,7 +1191,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 		rv = 1
 	}()
 
-	for t.Runnable() && t.Stack != Null {
+	for t.Runnable() {
 		state := t.GetState()
 
 		switch state {
@@ -1421,7 +1420,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 }
 
 func (t *Task) Runnable() bool {
-	return !<-t.suspended
+	return t.action.Runnable() && t.Stack != Null
 }
 
 func (t *Task) Self() Cell {
@@ -1429,14 +1428,9 @@ func (t *Task) Self() Cell {
 }
 
 func (t *Task) Stop() {
-	t.Stack = Null
-	close(t.Eval)
+	t.action.Terminate()
 
-	select {
-	case <-t.suspended:
-	default:
-		close(t.suspended)
-	}
+	close(t.Eval)
 
 	if t.pid > 0 {
 		system.TerminateProcess(t.pid)
@@ -1482,7 +1476,7 @@ func (t *Task) Suspend() {
 		}
 	}
 
-	t.suspended = make(chan bool)
+	t.action.Suspend()
 }
 
 func (t *Task) Throw(file string, line int, text string) {
