@@ -119,7 +119,6 @@ var (
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
 	namespace   context
-	runnable    chan bool
 	scope0      *scope
 	sys         context
 	task0       *Task
@@ -1915,9 +1914,6 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 
 	CacheSymbols(symbols...)
-
-	runnable = make(chan bool)
-	close(runnable)
 
 	external = NewUnboundBuiltin((*Task).External, nil)
 
