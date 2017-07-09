@@ -385,7 +385,7 @@ _sys_::public get-prompt: method self (suffix) = {
 }
 _sys_::public prompt: method (suffix) = {
 	define dirs: "/"::split $PWD
-	return: ""::join (dirs::get -1) suffix
+	return: ""::join (dirs::get: integer "-1") suffix
 }
 _sys_::public throw: method (c) = {
 	error: ": "::join c::file c::line c::type c::message

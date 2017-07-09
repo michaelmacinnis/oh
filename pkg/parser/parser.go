@@ -32,11 +32,11 @@ func (p *parser) ParseBuffer(label string, yield YieldFunc) bool {
 			c := List(
 				NewSymbol("throw"), List(
 					NewSymbol("_exception"),
-					NewSymbol("error/syntax"),
+					List(NewSymbol("quote"), NewSymbol("error/syntax")),
 					NewStatus(NewSymbol("1").Status()),
-					NewSymbol(fmt.Sprintf("%v", e)),
+					List(NewSymbol("quote"), NewSymbol(fmt.Sprintf("%v", e))),
 					NewInteger(int64(lines)),
-					NewSymbol(label),
+					List(NewSymbol("quote"), NewSymbol(label)),
 				),
 			)
 			yield(c)

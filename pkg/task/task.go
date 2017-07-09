@@ -1515,11 +1515,11 @@ func (t *Task) Throw(file string, line int, text string) {
 	c := List(
 		throw, List(
 			NewSymbol("_exception"),
-			NewSymbol(kind),
+			List(NewSymbol("quote"), NewSymbol(kind)),
 			NewStatus(NewSymbol(code).Status()),
-			NewSymbol(text),
+			List(NewSymbol("quote"), NewSymbol(text)),
 			NewInteger(int64(line)),
-			NewSymbol(path.Base(file)),
+			List(NewSymbol("quote"), NewSymbol(path.Base(file))),
 		),
 	)
 
