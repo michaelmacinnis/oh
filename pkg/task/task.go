@@ -824,15 +824,15 @@ func NewTask(c Cell, l context, p *Task) *Task {
 
 	t := &Task{
 		action: NewAction(),
-		Mutex: sync.Mutex{},
-		Job: j,
+		Mutex:  sync.Mutex{},
+		Job:    j,
 		registers: registers{
 			Continuation: Continuation{
-				Dump: List(ExitSuccess),
+				Dump:  List(ExitSuccess),
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
-				File: "oh",
-				Line: 0,
+				File:  "oh",
+				Line:  0,
 			},
 			Code:    c,
 			Lexical: l,

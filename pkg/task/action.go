@@ -72,4 +72,3 @@ func (a *action) Terminate() {
 		a.Signal()
 	}
 }
-
