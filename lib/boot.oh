@@ -2,22 +2,28 @@ define _connect_: syntax (conduit name) = {
 	set conduit: eval conduit
 	syntax (left right) e = {
 		define p: conduit
-		define left-status: channel
+		define left-status-ex: channel
+		define rew = return-exception-wrapper
 		spawn {
-			define s: e::eval: quasiquote: block {
+			define ec-ex: e::eval: rew: quasiquote: block {
 				public (unquote name) = (unquote p)
-				eval (unquote left)
+				unquote left
 			}
 			p::_writer_close_
-			left-status::write s
+			left-status-ex::write ec-ex
 		}
 		block {
-			define s: e::eval: quasiquote: block {
+			define ec-ex: e::eval: rew: quasiquote: block {
 				public _stdin_ = (unquote p)
-				eval (unquote right)
+				unquote right
 			}
 			p::_reader_close_
-			return: and ((left-status::read)::head) s
+			define left-ec-ex: (left-status-ex::read)::head
+			define ex: or (left-ec-ex::tail) (ec-ex::tail)
+			if ex {
+				throw ex
+			}
+			return: and (left-ec-ex::head) (ec-ex::head)
 		}
 	}
 }
@@ -291,6 +297,16 @@ define readline: builtin () =: _stdin_::readline
 define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_
 define _redirect_stdin_: _redirect_ _stdin_ "r" _reader_close_
 define _redirect_stdout_: _redirect_ _stdout_ "w" _writer_close_
+define return-exception-wrapper: method (command) = {
+	quasiquote: (method () = {
+		define ec: status false
+		catch ex {
+			return: cons ec ex
+		}
+		set ec: unquote command
+		throw ()
+	})
+}
 define source: syntax (name) e = {
 	define basename: e::eval name
 	define paths = ()
