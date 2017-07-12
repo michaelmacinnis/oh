@@ -2,27 +2,27 @@ define _connect_: syntax (conduit name) = {
 	set conduit: eval conduit
 	syntax (left right) e = {
 		define p: conduit
-		define left-status-ex: channel
+		define ec-ex-chan: channel
 		spawn {
 			define ec-ex: e::eval: _rew_: quasiquote: block {
 				public (unquote name) = (unquote p)
 				unquote left
 			}
 			p::_writer_close_
-			left-status-ex::write ec-ex
+			ec-ex-chan::write ec-ex
 		}
 		block {
-			define ec-ex: e::eval: _rew_: quasiquote: block {
+			define right-ec-ex: e::eval: _rew_: quasiquote: block {
 				public _stdin_ = (unquote p)
 				unquote right
 			}
 			p::_reader_close_
-			define left-ec-ex: (left-status-ex::read)::head
-			define ex: or (left-ec-ex::tail) (ec-ex::tail)
+			define left-ec-ex: (ec-ex-chan::read)::head
+			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
 			if ex {
 				throw ex
 			}
-			return: and (left-ec-ex::head) (ec-ex::head)
+			return: and (left-ec-ex::head) (right-ec-ex::head)
 		}
 	}
 }
