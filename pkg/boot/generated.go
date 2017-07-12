@@ -10,9 +10,8 @@ define _connect_: syntax (conduit name) = {
 	syntax (left right) e = {
 		define p: conduit
 		define left-status-ex: channel
-		define rew = return-exception-wrapper
 		spawn {
-			define ec-ex: e::eval: rew: quasiquote: block {
+			define ec-ex: e::eval: _rew_: quasiquote: block {
 				public (unquote name) = (unquote p)
 				unquote left
 			}
@@ -20,7 +19,7 @@ define _connect_: syntax (conduit name) = {
 			left-status-ex::write ec-ex
 		}
 		block {
-			define ec-ex: e::eval: rew: quasiquote: block {
+			define ec-ex: e::eval: _rew_: quasiquote: block {
 				public _stdin_ = (unquote p)
 				unquote right
 			}
@@ -304,7 +303,7 @@ define readline: builtin () =: _stdin_::readline
 define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_
 define _redirect_stdin_: _redirect_ _stdin_ "r" _reader_close_
 define _redirect_stdout_: _redirect_ _stdout_ "w" _writer_close_
-define return-exception-wrapper: method (command) = {
+define _rew_: method (command) = {    # return exception wrapper => rew
 	quasiquote: (method () = {
 		define ec: status false
 		catch ex {
