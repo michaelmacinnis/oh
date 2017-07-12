@@ -1,7 +1,7 @@
-define _connect_: syntax (conduit name) = {
-	set conduit: eval conduit
+define _connect_: syntax (conduit-name name) e = {
+	define conduit-maker: e::eval conduit-name
 	syntax (left right) e = {
-		define p: conduit
+		define p: conduit-maker
 		define ec-ex-chan: channel
 		spawn {
 			define ec-ex: e::eval: _rew_: quasiquote: block {
@@ -38,12 +38,16 @@ define _redirect_: syntax (name mode closer) = {
 			set f: open mode c
 			set c = f
 		}
-		define s: e::eval: quasiquote: block {
+		define ec-ex: e::eval: _rew_: quasiquote: block {
 			public (unquote name) (unquote c)
-			eval (unquote cmd)
+			unquote cmd
 		}
-		if (not: is-null f): eval: quasiquote: f::(unquote closer)
-		return s
+		if (not: is-null f): (f::_get_ closer)
+		define ex: ec-ex::tail
+		if ex {
+			throw ex
+		}
+		return: ec-ex::head
 	}
 }
 define ...: method (: args) = {

@@ -5,31 +5,31 @@
 package boot
 
 var Script string = `
-define _connect_: syntax (conduit name) = {
-	set conduit: eval conduit
+define _connect_: syntax (conduit-name name) e = {
+	define conduit-maker: e::eval conduit-name
 	syntax (left right) e = {
-		define p: conduit
-		define left-status-ex: channel
+		define p: conduit-maker
+		define ec-ex-chan: channel
 		spawn {
 			define ec-ex: e::eval: _rew_: quasiquote: block {
 				public (unquote name) = (unquote p)
 				unquote left
 			}
 			p::_writer_close_
-			left-status-ex::write ec-ex
+			ec-ex-chan::write ec-ex
 		}
 		block {
-			define ec-ex: e::eval: _rew_: quasiquote: block {
+			define right-ec-ex: e::eval: _rew_: quasiquote: block {
 				public _stdin_ = (unquote p)
 				unquote right
 			}
 			p::_reader_close_
-			define left-ec-ex: (left-status-ex::read)::head
-			define ex: or (left-ec-ex::tail) (ec-ex::tail)
+			define left-ec-ex: (ec-ex-chan::read)::head
+			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
 			if ex {
 				throw ex
 			}
-			return: and (left-ec-ex::head) (ec-ex::head)
+			return: and (left-ec-ex::head) (right-ec-ex::head)
 		}
 	}
 }
@@ -45,12 +45,16 @@ define _redirect_: syntax (name mode closer) = {
 			set f: open mode c
 			set c = f
 		}
-		define s: e::eval: quasiquote: block {
+		define ec-ex: e::eval: _rew_: quasiquote: block {
 			public (unquote name) (unquote c)
-			eval (unquote cmd)
+			unquote cmd
 		}
-		if (not: is-null f): eval: quasiquote: f::(unquote closer)
-		return s
+		if (not: is-null f): (f::_get_ closer)
+		define ex: ec-ex::tail
+		if ex {
+			throw ex
+		}
+		return: ec-ex::head
 	}
 }
 define ...: method (: args) = {

@@ -1931,6 +1931,19 @@ func init() {
 		}
 		return t.Return(l)
 	})
+	namespace.PublicMethod("_get_", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 1)
+		k := Raw(Car(args))
+
+		c, _ := Resolve(toContext(t.Self()), nil, k)
+		if c == nil {
+			panic("'" + k + "' undefined")
+		} else if a, ok := c.Get().(binding); ok {
+			return t.Return(a.bind(t.Self()))
+		} else {
+			return t.Return(c.Get())
+		}
+	})
 	namespace.PublicMethod("child", func(t *Task, args Cell) bool {
 		panic("this type cannot be a parent")
 	})
@@ -1967,19 +1980,6 @@ func init() {
 		}
 
 		return t.Return(NewBoolean(ok))
-	})
-	object.PublicMethod("_get_", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 1)
-		k := Raw(Car(args))
-
-		c, o := Resolve(t.Self(), nil, k)
-		if c == nil {
-			panic("'" + k + "' undefined")
-		} else if a, ok := c.Get().(binding); ok {
-			return t.Return(a.bind(o))
-		} else {
-			return t.Return(c.Get())
-		}
 	})
 	object.PublicMethod("_set_", func(t *Task, args Cell) bool {
 		t.Validate(args, 2, 2)
