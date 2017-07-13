@@ -19,9 +19,7 @@ define _connect_: syntax (conduit-name name) e = {
 			p::_reader_close_
 			define left-ec-ex: (ec-ex-chan::read)::head
 			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
-			if ex {
-				throw ex
-			}
+			if ex: throw ex
 			return: and (left-ec-ex::head) (right-ec-ex::head)
 		}
 	}
@@ -44,9 +42,7 @@ define _redirect_: syntax (name mode closer) = {
 		}
 		if (not: is-null f): (f::_get_ closer)
 		define ex: ec-ex::tail
-		if ex {
-			throw ex
-		}
+		if ex: throw ex
 		return: ec-ex::head
 	}
 }
@@ -94,9 +90,7 @@ define _backtick_: syntax (cmd) e = {
 	}
 	p::_reader_close_
 	define ex: ((ec-ex-chan::read)::head)::tail
-	if ex {
-		throw ex
-	}
+	if ex: throw ex
 	return: r::tail
 }
 define catch: syntax (name: clause) e = {
@@ -256,13 +250,12 @@ define printf: method (f: args) =: echo: (string f)::sprintf @args
 define _process_substitution_: syntax (:args) e = {
 	define chans = ()
 	define fifos = ()
-	define procs = ()
 	define cmd: for args: method (arg) = {
 		if (not: is-cons arg): return arg
 		if (eq (quote _substitute_stdin_) (arg::head)) {
 			define chan: channel 1
 			define fifo: temp-fifo
-			define proc: spawn {
+			spawn {
 				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdin_ {
 						unquote fifo
@@ -272,13 +265,12 @@ define _process_substitution_: syntax (:args) e = {
 			}
 			set chans: cons chan chans
 			set fifos: cons fifo fifos
-			set procs: cons proc procs
 			return fifo
 		}
 		if (eq (quote _substitute_stdout_) (arg::head)) {
 			define chan: channel 1
 			define fifo: temp-fifo
-			define proc: spawn {
+			spawn {
 				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdout_ {
 						unquote fifo
@@ -288,21 +280,22 @@ define _process_substitution_: syntax (:args) e = {
 			}
 			set chans: cons chan chans
 			set fifos: cons fifo fifos
-			set procs: cons proc procs
 			return fifo
 		}
 		return arg
 	}
-	define ec-ex: e::eval: _rew_ cmd
-	wait @procs
-	rm @fifos
-	define ex: ec-ex::tail
-	if ex: throw ex
+	define main-ec-ex: e::eval: _rew_ cmd
+	define ec-exs ()
 	for chans: method (chan) = {
-		define ex: ((chan::read)::head)::tail
+		set ec-exs: cons ((chan::read)::head) ec-exs
+	}
+	set ec-exs: cons main-ec-ex ec-exs
+	for ec-exs: method (ec-ex) = {
+		define ex: ec-ex::tail
 		if ex: throw ex
 	}
-	return ec-ex::head
+	rm @fifos
+	return: main-ec-ex::head
 }
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons cell): return cell
