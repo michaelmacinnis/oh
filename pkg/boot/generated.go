@@ -9,7 +9,7 @@ define _connect_: syntax (conduit-name name) e = {
 	define conduit-maker: e::eval conduit-name
 	syntax (left right) e = {
 		define p: conduit-maker
-		define ec-ex-chan: channel
+		define ec-ex-chan: channel 1
 		spawn {
 			define ec-ex: e::eval: _rew_: quasiquote: block {
 				public (unquote name) = (unquote p)
@@ -84,12 +84,14 @@ define _append_stderr_: _redirect_ _stderr_ "a" _writer_close_
 define _append_stdout_: _redirect_ _stdout_ "a" _writer_close_
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
+	define ec-ex-chan: channel 1
 	spawn {
-		e::eval: quasiquote: block {
+		define ec-ex: e::eval: _rew_: quasiquote: block {
 			public _stdout_ = (unquote p)
-			eval (unquote cmd)
+			unquote cmd
 		}
 		p::_writer_close_
+		ec-ex-chan::write ec-ex
 	}
 	define r: cons () ()
 	define c = r
@@ -98,6 +100,10 @@ define _backtick_: syntax (cmd) e = {
 		set c: c::tail
 	}
 	p::_reader_close_
+	define ex: ((ec-ex-chan::read)::head)::tail
+	if ex {
+		throw ex
+	}
 	return: r::tail
 }
 define catch: syntax (name: clause) e = {
@@ -240,7 +246,7 @@ define math: method (S) e = {
 	} | bc))
 }
 define object: syntax (: body) e = {
-	e::eval: cons (quote block): body::append (quote: context)
+	e::eval: cons (quote block): body::append: quote: context
 }
 define or: syntax (: lst) e = {
 	define r = false
@@ -255,43 +261,55 @@ define _pipe_stderr_: _connect_ pipe _stderr_
 define _pipe_stdout_: _connect_ pipe _stdout_
 define printf: method (f: args) =: echo: (string f)::sprintf @args
 define _process_substitution_: syntax (:args) e = {
+	define chans = ()
 	define fifos = ()
 	define procs = ()
 	define cmd: for args: method (arg) = {
 		if (not: is-cons arg): return arg
 		if (eq (quote _substitute_stdin_) (arg::head)) {
+			define chan: channel 1
 			define fifo: temp-fifo
 			define proc: spawn {
-				e::eval: quasiquote {
+				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdin_ {
 						unquote fifo
 						unquote: arg::tail
 					}
 				}
 			}
+			set chans: cons chan chans
 			set fifos: cons fifo fifos
 			set procs: cons proc procs
 			return fifo
 		}
 		if (eq (quote _substitute_stdout_) (arg::head)) {
+			define chan: channel 1
 			define fifo: temp-fifo
 			define proc: spawn {
-				e::eval: quasiquote {
+				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdout_ {
 						unquote fifo
 						unquote: arg::tail
 					}
 				}
 			}
+			set chans: cons chan chans
 			set fifos: cons fifo fifos
 			set procs: cons proc procs
 			return fifo
 		}
 		return arg
 	}
-	e::eval cmd
+	define ec-ex: e::eval: _rew_ cmd
 	wait @procs
 	rm @fifos
+	define ex: ec-ex::tail
+	if ex: throw ex
+	for chans: method (chan) = {
+		define ex: ((chan::read)::head)::tail
+		if ex: throw ex
+	}
+	return ec-ex::head
 }
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons cell): return cell
