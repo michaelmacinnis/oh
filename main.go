@@ -68,7 +68,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 		),
 		cell.List(cell.NewSymbol("quote"), cell.NewSymbol("> ")),
 	)
-	prompt := task.Call(command)
+	prompt := cell.Raw(task.Call(command))
 
 	if line, err = cli.State.Prompt(prompt); err == nil {
 		cli.AppendHistory(line)
@@ -121,6 +121,27 @@ func complete(line string, pos int) (head string, completions []string, tail str
 		completions,
 		task.ForegroundTask().Complete(first, completing)...,
 	)
+
+	clist := task.Call(cell.List(
+		cell.Cons(
+			cell.NewSymbol("_sys_"),
+			cell.NewSymbol("get-completions"),
+		),
+		cell.NewSymbol(first), cell.NewSymbol(completing),
+	))
+
+	length := 0
+	if cell.IsPair(clist) {
+		length = int(cell.Length(clist))
+	}
+	if length > 0 {
+		carray := make([]string, length)
+		for i := 0; i < length; i++ {
+			carray[i] = cell.Raw(cell.Car(clist))
+			clist = cell.Cdr(clist)
+		}
+		completions = append(completions, carray...);
+	}
 
 	if len(completions) == 0 {
 		return prefix, []string{completing}, tail

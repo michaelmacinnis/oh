@@ -371,6 +371,9 @@ define umask: method (: args) = {
 define write: method (: args) =: _stdout_::write @args
 public quote: syntax (cell) =: return cell
 _root_::public _modules_: object
+_sys_::public complete: method self (first completing) = {
+	return ()
+}
 _sys_::public _exception: method (t s m l f) e = {
 	object {
 		public type = t
@@ -401,6 +404,12 @@ _sys_::public exception: method (message :args) e = {
 		public line: e::eval: get-line-number
 		public file: e::eval: get-source-file
 	}
+}
+_sys_::public get-completions: method self (first completing) = {
+	catch unused {
+		return ()
+	}
+	self::complete first completing
 }
 _sys_::public get-prompt: method self (suffix) = {
 	catch unused {

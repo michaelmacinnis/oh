@@ -1619,7 +1619,7 @@ func (u *unbound) self() Cell {
 	return nil
 }
 
-func Call(c Cell) string {
+func Call(c Cell) Cell {
 	task0l.Lock()
 	defer task0l.Unlock()
 
@@ -1636,9 +1636,7 @@ func Call(c Cell) string {
 
 	taskc.Run(nil)
 
-	rv := Car(taskc.Dump)
-
-	return Raw(rv)
+	return Car(taskc.Dump)
 }
 
 func Exit() {
@@ -1882,7 +1880,7 @@ func expand(args Cell) Cell {
 		}
 
 		for _, e := range braceExpand(s) {
-			if e[:1] == "~" {
+			if len(e) > 0 && e[:1] == "~" {
 				if home == "-" {
 					home = "+" + os.Getenv("HOME")
 				}
