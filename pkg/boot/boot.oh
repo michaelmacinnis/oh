@@ -372,6 +372,7 @@ define write: method (: args) =: _stdout_::write @args
 public quote: syntax (cell) =: return cell
 _root_::public _modules_: object
 _sys_::public complete: method self (first completing) = {
+	echo Completing first completing
 	return ()
 }
 _sys_::public _exception: method (t s m l f) e = {

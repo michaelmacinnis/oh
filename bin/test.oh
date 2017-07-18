@@ -1,6 +1,6 @@
 #!/usr/bin/env oh
 
-define Dir: ... lib/doctest
+define Dir: ... doctest
 
 define prefix-lines: method (Prefix) = {
         define Count = 1

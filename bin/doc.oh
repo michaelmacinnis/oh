@@ -5,7 +5,7 @@ if (ne 2: _args_::length) {
     exit 1
 }
 
-define Dir: ... lib/doctest
+define Dir: ... doctest
 define Pattern = _1_
 define Output = _2_
 

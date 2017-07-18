@@ -47,7 +47,7 @@ write _: is-symbol _
 #-     ] true
 #-     _ true
 
-define common: import: ... lib/common.oh
+define common: import: ... common.oh
 
 define x this-is-a-symbol
 for common::predicates: method (names) = {

@@ -32,7 +32,7 @@ write: add 3.14 2.72 1.41 2.50 4.67
 #+     361/25
 ##
 
-define common: import: ... lib/common.oh
+define common: import: ... common.oh
 
 define x: rational -1
 for common::predicates: method (names) = {
