@@ -9,6 +9,9 @@ define Dir: ... doctest
 define Pattern = _1_
 define Output = _2_
 
+define Base @`(basename Output)
+error "generating ${Base}"
+
 public _stdout_: open "w": "/"::join _origin_ Output
 
 # Generate documentation.

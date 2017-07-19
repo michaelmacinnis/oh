@@ -14,6 +14,7 @@ define prefix-lines: method (Prefix) = {
 find Dir -name "[0-9]*.oh" | grep -Fv unused | sort |
 while (define Path: readline) {
 	define File = @`(basename Path)
+	error running File
 	diff <(grep "^#[+-]     " Path | sed -e "s/^#[+-]     //g" |
 		prefix-lines File) \
 	     <(public _stderr_ = _stdout_; Path | prefix-lines File)
