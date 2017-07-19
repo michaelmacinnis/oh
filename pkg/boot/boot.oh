@@ -141,12 +141,19 @@ define for: method (l m) = {
 	return: r::tail
 }
 define glob: builtin (: args) =: return args
+define import-sem: channel 1
 define import: method (module-path) = {
+	catch unused {
+		import-sem::read
+	}
+	import-sem::write ()
 	define import-return = return
 	define module-name = module-path
 	define module: method (name) = {
 		if (_root_::_modules_::has name) {
-			import-return: _root_::_modules_::_get_ name
+			define module-object: _root_::_modules_::_get_ name
+			import-sem::read
+			import-return module-object
 		}
 		set module-name = name
 	}
@@ -154,7 +161,8 @@ define import: method (module-path) = {
 		source module-path
 	}
 	_root_::_modules_::_set_ module-name module-object
-	return module-object
+	import-sem::read
+	import-return module-object
 }
 define is-list: method (l) = {
 	if (is-null l): return false
@@ -372,7 +380,6 @@ define write: method (: args) =: _stdout_::write @args
 public quote: syntax (cell) =: return cell
 _root_::public _modules_: object
 _sys_::public complete: method self (first completing) = {
-	echo Completing first completing
 	return ()
 }
 _sys_::public _exception: method (t s m l f) e = {
