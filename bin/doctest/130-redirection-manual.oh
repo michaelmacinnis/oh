@@ -32,9 +32,8 @@ ls >> file
 ##
 ## Standard input may also be redirected.
 ##
-#{
-wc -l <file
-#}
+##     wc -l <file
+wc -l <file | tr -s ' ' | sed -e 's/^[ 	] *//' # Remove duplicate spaces and leading whitespace.
 ##
 
 ls -l >/dev/null !>errors

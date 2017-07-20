@@ -1,13 +1,15 @@
 #!/usr/bin/env oh
 
 define line-count-file: "/"::join (... doctest) 020-generated-readme.oh
-define go-gloc: integer @`(find . -name 'generated.go' | xargs cat | wc -l)
+define go-gloc: integer @`(find . -name 'generated.go' |
+xargs cat | wc -l | sed -e 's/^[ 	]*//')
 define oh-gloc: integer @`(find . -name 'generate.oh' |
-    grep -v '/bin/' | xargs cat | wc -l)
-define oh-loc: integer @`(find . -name 'boot.oh' | xargs cat | wc -l)
+    grep -v '/bin/' | xargs cat | wc -l | sed -e 's/^[ 	]*//')
+define oh-loc: integer @`(find . -name 'boot.oh' |
+xargs cat | wc -l | sed -e 's/^[ 	]*//')
 define total-loc: add oh-loc: integer @`(find . -name '*.go' |
     sed -e 's/grammar.go/grammar.y/g' |
-    grep -Ev 'generated' | xargs cat | wc -l)
+    grep -Ev 'generated' | xargs cat | wc -l | sed -e 's/^[ 	]*//')
 
 rm line-count-file
 block {
