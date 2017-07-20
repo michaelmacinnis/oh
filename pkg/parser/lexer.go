@@ -175,6 +175,13 @@ func (l *lexer) emit(yys int) {
 		return
 	}
 
+	if yys == '\n' {
+		switch l.after {
+		case ORF, ANDF, PIPE, REDIRECT:
+			return
+		}
+	}
+
 	operator := map[string]string{
 		"!>":  "_redirect_stderr_",
 		"!>>": "_append_stderr_",
@@ -547,13 +554,8 @@ func skipWhitespace(l *lexer) *action {
 		switch r {
 		case EOF:
 			return nil
-		case '\n':
-			switch l.after {
-			case ORF, ANDF, PIPE, REDIRECT:
-				continue
-			}
-			fallthrough // {
-		case '%', '(', ')', ';', '@', '`', '}':
+			// { <-- For the unmatched brace below.
+		case '\n', '%', '(', ')', ';', '@', '`', '}':
 			l.emit(int(r))
 		case '\t', '\r', ' ':
 			continue
