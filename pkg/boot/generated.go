@@ -24,7 +24,7 @@ define _connect_: syntax (conduit-name name) e = {
 				unquote right
 			}
 			p::_reader_close_
-			define left-ec-ex: (ec-ex-chan::readlist)::head
+			define left-ec-ex: ec-ex-chan::read
 			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
 			if ex: throw ex
 			return: and (left-ec-ex::head) (right-ec-ex::head)
@@ -96,7 +96,7 @@ define _backtick_: syntax (cmd) e = {
 		set c: c::tail
 	}
 	p::_reader_close_
-	define ex: ((ec-ex-chan::readlist)::head)::tail
+	define ex: (ec-ex-chan::read)::tail
 	if ex: throw ex
 	return: r::tail
 }
@@ -151,7 +151,7 @@ define glob: builtin (: args) =: return args
 define import-sem: channel 1
 define import: method (module-path) = {
 	catch unused {
-		import-sem::readlist
+		import-sem::read
 	}
 	import-sem::write ()
 	define import-return = return
@@ -159,7 +159,7 @@ define import: method (module-path) = {
 	define module: method (name) = {
 		if (_root_::_modules_::has name) {
 			define module-object: _root_::_modules_::_get_ name
-			import-sem::readlist
+			import-sem::read
 			import-return module-object
 		}
 		set module-name = name
@@ -168,7 +168,7 @@ define import: method (module-path) = {
 		source module-path
 	}
 	_root_::_modules_::_set_ module-name module-object
-	import-sem::readlist
+	import-sem::read
 	import-return module-object
 }
 define is-list: method (l) = {
@@ -302,7 +302,7 @@ define _process_substitution_: syntax (:args) e = {
 	define main-ec-ex: e::eval: _rew_ cmd
 	define ec-exs ()
 	for chans: method (chan) = {
-		set ec-exs: cons ((chan::readlist)::head) ec-exs
+		set ec-exs: cons (chan::read) ec-exs
 	}
 	set ec-exs: cons main-ec-ex ec-exs
 	for ec-exs: method (ec-ex) = {
@@ -321,6 +321,7 @@ define quasiquote: syntax (cell) e = {
 		e::eval: list (quote quasiquote) (cell::tail)
 	}
 }
+define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
 define readlist: builtin () =: _stdin_::readlist
 define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_

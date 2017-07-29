@@ -16,7 +16,7 @@ define counter: method (n) = {
     while true {
         write welcome: set n: add n 1
 
-        welcome::readlist
+        welcome::read
     }
 }
 
@@ -31,7 +31,7 @@ define filter: method (base) = {
         if (mod n base) {
                 write welcome n
 
-                welcome::readlist
+                welcome::read
         }
 
         thanks::write
@@ -67,7 +67,7 @@ printf "The first %d prime numbers" count
 
 define line = ""
 while count {
-    define p: (readlist)::head
+    define p: read
     set line: ""::join line ("%7.7s"::sprintf p)
     set count: sub count 1
     if (not: mod count 10) {

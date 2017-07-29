@@ -1797,6 +1797,10 @@ func conduitContext() context {
 		t.Validate(args, 0, 0)
 		return t.Return(Null)
 	})
+	envc.PublicMethod("read", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		return t.Return(Car(toConduit(t.Self()).Read(MakeParser, t.Throw)))
+	})
 	envc.PublicMethod("readline", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
 		return t.Return(toConduit(t.Self()).ReadLine())

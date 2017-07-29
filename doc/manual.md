@@ -666,7 +666,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     
     define filter: method (base) = {
         while true {
-            define n: (readlist)::head
+            define n: read
             if (mod n base): write n
         }
     }
@@ -677,7 +677,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
         define in = _stdin_
     
         while true {
-            define prime: (in::readlist)::head
+            define prime: in::read
             write prime
     
             define out: channel
@@ -692,7 +692,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     
     define line = ""
     while count {
-        define p: (readlist)::head
+        define p: read
         set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {
@@ -716,7 +716,7 @@ to the same example (shown previously) using channels.
         while true {
             write welcome: set n: add n 1
     
-            welcome::readlist
+            welcome::read
         }
     }
     
@@ -731,7 +731,7 @@ to the same example (shown previously) using channels.
             if (mod n base) {
                     write welcome n
     
-                    welcome::readlist
+                    welcome::read
             }
     
             thanks::write
@@ -767,7 +767,7 @@ to the same example (shown previously) using channels.
     
     define line = ""
     while count {
-        define p: (readlist)::head
+        define p: read
         set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {
