@@ -666,7 +666,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     
     define filter: method (base) = {
         while true {
-            define n: (read)::head
+            define n: (readlist)::head
             if (mod n base): write n
         }
     }
@@ -677,7 +677,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
         define in = _stdin_
     
         while true {
-            define prime: (in::read)::head
+            define prime: (in::readlist)::head
             write prime
     
             define out: channel
@@ -692,7 +692,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     
     define line = ""
     while count {
-        define p: (read)::head
+        define p: (readlist)::head
         set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {
@@ -716,14 +716,14 @@ to the same example (shown previously) using channels.
         while true {
             write welcome: set n: add n 1
     
-            welcome::read
+            welcome::readlist
         }
     }
     
     define filter: method (base) = {
         define welcome: pipe
         while true {
-            define msg: read
+            define msg: readlist
     
             define thanks: msg::get 0
             define n: msg::get 1
@@ -731,7 +731,7 @@ to the same example (shown previously) using channels.
             if (mod n base) {
                     write welcome n
     
-                    welcome::read
+                    welcome::readlist
             }
     
             thanks::write
@@ -744,7 +744,7 @@ to the same example (shown previously) using channels.
         define in = _stdin_
     
         while true {
-            define msg: in::read
+            define msg: in::readlist
     
             define thanks: msg::get 0
             define prime: msg::get 1
@@ -767,7 +767,7 @@ to the same example (shown previously) using channels.
     
     define line = ""
     while count {
-        define p: (read)::head
+        define p: (readlist)::head
         set line: ""::join line ("%7.7s"::sprintf p)
         set count: sub count 1
         if (not: mod count 10) {

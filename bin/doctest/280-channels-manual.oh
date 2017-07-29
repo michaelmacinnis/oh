@@ -15,7 +15,7 @@ define counter: method (n) = {
 
 define filter: method (base) = {
     while true {
-        define n: (read)::head
+        define n: (readlist)::head
         if (mod n base): write n
     }
 }
@@ -26,7 +26,7 @@ counter 2 |+ block {
     define in = _stdin_
 
     while true {
-        define prime: (in::read)::head
+        define prime: (in::readlist)::head
         write prime
 
         define out: channel
@@ -41,7 +41,7 @@ printf "The first %d prime numbers" count
 
 define line = ""
 while count {
-    define p: (read)::head
+    define p: (readlist)::head
     set line: ""::join line ("%7.7s"::sprintf p)
     set count: sub count 1
     if (not: mod count 10) {

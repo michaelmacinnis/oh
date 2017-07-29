@@ -4,6 +4,6 @@ define prime: import: "/"::join _origin_ another-prime.oh
 
 define count: integer 1000
 while count {
-	  write @(prime::next-prime::read)
+	  write @(prime::next-prime::readlist)
 	  set count: sub count 1
 }

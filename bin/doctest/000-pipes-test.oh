@@ -24,7 +24,7 @@ spawn {
 }
 
 # Create the new command by evaluating what was sent through the pipe.
-define while2: eval: p::read
+define while2: eval: p::readlist
 
 # Now use the new 'while2' command.
 define count: integer 0
