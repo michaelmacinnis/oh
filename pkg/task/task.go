@@ -2224,6 +2224,8 @@ func init() {
 
 		t.Stop()
 
+		t.Stack = Null
+
 		return true
 	})
 	scope0.DefineMethod("fatal", func(t *Task, args Cell) bool {
