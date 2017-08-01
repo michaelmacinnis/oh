@@ -262,14 +262,15 @@ func (c *command) SelfLabel() Cell {
 /* Job definition. */
 
 type Job struct {
+	sync.Mutex
 	Command string
 	Group   int
 	mode    liner.ModeApplier
 }
 
-func NewJob() Job {
+func NewJob() *Job {
 	mode, _ := liner.TerminalMode()
-	return Job{"", 0, mode}
+	return &Job{sync.Mutex{}, "", 0, mode}
 }
 
 /* Method cell definition. */
@@ -797,7 +798,7 @@ func (m *syntax) String() string {
 type Task struct {
 	*action
 	sync.Mutex
-	Job
+	*Job
 	registers
 	Done      chan Cell
 	Eval      chan Cell
@@ -813,7 +814,7 @@ func NewTask(c Cell, l context, p *Task) *Task {
 	}
 
 	var frame Cell
-	var j Job
+	var j *Job
 	if p == nil {
 		frame = frame0
 		j = NewJob()
@@ -985,7 +986,9 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	defer t.Unlock()
 
 	if jobControlEnabled() {
+		t.Job.Lock()
 		attr.Sys = system.SysProcAttr(t.Group)
+		t.Job.Unlock()
 	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -994,9 +997,11 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	}
 
 	if jobControlEnabled() {
+		t.Job.Lock()
 		if t.Group == 0 {
 			t.Group = proc.Pid
 		}
+		t.Job.Unlock()
 	}
 
 	t.pid = proc.Pid
@@ -1004,9 +1009,11 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	rv := status(proc)
 
 	if jobControlEnabled() {
+		t.Job.Lock()
 		if t.Group == t.pid {
 			t.Group = 0
 		}
+		t.Job.Unlock()
 	}
 	t.pid = 0
 
@@ -1662,7 +1669,9 @@ func IsText(c Cell) bool {
 func launchForegroundTask() {
 	if task0 != nil {
 		mode, _ := liner.TerminalMode()
+		task0.Job.Lock()
 		task0.Job.mode = mode
+		task0.Job.Unlock()
 	}
 	task0 = NewTask(nil, nil, nil)
 
