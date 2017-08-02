@@ -1711,6 +1711,7 @@ func StartFile(origin string, args []string) {
 func StartInteractive(p Parser) {
 	interactive = true
 	bindSpecialVariables("", os.Args)
+	system.BecomeForegroundProcessGroup()
 	initSignalHandling()
 	system.BecomeProcessGroupLeader()
 	p.ParseCommands("oh", evaluate)

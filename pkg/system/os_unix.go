@@ -17,10 +17,18 @@ var (
 	history  = ""
 )
 
+func BecomeForegroundProcessGroup() {
+	for pgid != getForegroundGroup(terminal) {
+		unix.Kill(-pgid, unix.SIGTTIN)
+		pgid, _ = unix.Getpgid(pid)
+	}
+}
+
 func BecomeProcessGroupLeader() {
 	if pid != pgid {
-		unix.Setpgid(0, 0)
+		unix.Setpgid(pid, pid)
 	}
+	pgid = pid
 }
 
 func ContinueProcess(pid int) {

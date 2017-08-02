@@ -11,6 +11,10 @@ import (
 
 var ErrNoHistoryFile = errors.New("Not implemented")
 
+func BecomeForegroundProcessGroup() {
+	// TODO: Not sure what to do on non-Unix platforms.
+}
+
 func BecomeProcessGroupLeader() {
 	// TODO: Not sure what to do on non-Unix platforms.
 }

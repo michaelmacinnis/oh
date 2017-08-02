@@ -140,7 +140,7 @@ func complete(line string, pos int) (head string, completions []string, tail str
 			carray[i] = cell.Raw(cell.Car(clist))
 			clist = cell.Cdr(clist)
 		}
-		completions = append(completions, carray...);
+		completions = append(completions, carray...)
 	}
 
 	if len(completions) == 0 {
