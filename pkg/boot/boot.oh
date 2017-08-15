@@ -54,7 +54,7 @@ define ...: method (: args) = {
 		set path: args::get 1
 	}
 	while true {
-		define abs: symbol: "/"::join $PWD path
+		define abs: symbol: '/'::join $PWD path
 		if (exists abs): return abs
 		if (eq $PWD /): return path
 		cd ..
@@ -69,8 +69,8 @@ define and: syntax (: lst) e = {
 	}
 	return r
 }
-define _append_stderr_: _redirect_ _stderr_ "a" _writer_close_
-define _append_stdout_: _redirect_ _stdout_ "a" _writer_close_
+define _append_stderr_: _redirect_ _stderr_ 'a' _writer_close_
+define _append_stdout_: _redirect_ _stdout_ 'a' _writer_close_
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	define ec-ex-chan: channel 1
@@ -124,7 +124,7 @@ define coalesce: syntax (: lst) e = {
 }
 define echo: builtin (: args) = {
 	if (is-null args) {
-		_stdout_::write: symbol ""
+		_stdout_::write: symbol ''
 	} else {
 		_stdout_::write @(for args symbol)
 	}
@@ -184,7 +184,7 @@ define lcd: method () e = {
 	if (not: exists $LFMPATHFILE) {
 		return
 	}
-	define f: open "r" $LFMPATHFILE
+	define f: open 'r' $LFMPATHFILE
 	define dn: f::readline
 	f::close
 	rm $LFMPATHFILE
@@ -231,12 +231,12 @@ define map: syntax (: literal) e = {
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {
 	catch ex {
-		set ex::type = "error/syntax"
+		set ex::type = 'error/syntax'
 		set ex::message = "Malformed expression: ${S}"
 	}
 
 	float @(_backtick_ (block {
-		echo "scale=6"
+		echo 'scale=6'
 		write: symbol S
 	} | bc))
 }
@@ -317,9 +317,9 @@ define quasiquote: syntax (cell) e = {
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
 define readlist: builtin () =: _stdin_::readlist
-define _redirect_stderr_: _redirect_ _stderr_ "w" _writer_close_
-define _redirect_stdin_: _redirect_ _stdin_ "r" _reader_close_
-define _redirect_stdout_: _redirect_ _stdout_ "w" _writer_close_
+define _redirect_stderr_: _redirect_ _stderr_ 'w' _writer_close_
+define _redirect_stdin_: _redirect_ _stdin_ 'r' _reader_close_
+define _redirect_stdout_: _redirect_ _stdout_ 'w' _writer_close_
 define _rew_: method (command) = {    # return exception wrapper => rew
 	quasiquote: (method () = {
 		define ec: status false
@@ -335,9 +335,9 @@ define source: syntax (name) e = {
 	define paths = ()
 	define name = basename
 
-	if (has $OHPATH): set paths: ":"::split $OHPATH
+	if (has $OHPATH): set paths: ':'::split $OHPATH
 	while (and (not: is-null paths) (not: exists name)) {
-		set name: "/"::join (paths::head) basename
+		set name: '/'::join (paths::head) basename
 		set paths: paths::tail
 	}
 
@@ -365,14 +365,14 @@ define source: syntax (name) e = {
 }
 define umask: method (: args) = {
 	catch ex {
-		if (eq "_umask_: command not found" ex::message) {
+		if (eq '_umask_: command not found' ex::message) {
 			set ex::message = "not implemented on ${_platform_}"
 		}
 	}
 
 	if (is-null args) {
 		define omask: _umask_
-		printf "%03o" omask
+		printf '%03o' omask
 		return omask
 	}
 	_umask_ @args
@@ -399,7 +399,7 @@ _sys_::public _exception: method (t s m l f) e = {
 # If not provided value defaults to status false and type to error/runtime.
 _sys_::public exception: method (message :args) e = {
 	define s: status false
-	define t: symbol "error/runtime"
+	define t: symbol 'error/runtime'
 	if (not: is-null args) {
 		set s: args::head
 		set args: args::tail
@@ -427,13 +427,13 @@ _sys_::public get-prompt: method self (suffix) = {
 	self::prompt suffix
 }
 _sys_::public prompt: method (suffix) = {
-	define dirs: "/"::split $PWD
-	return: ""::join (dirs::get: integer "-1") suffix
+	define dirs: '/'::split $PWD
+	return: ''::join (dirs::get: integer '-1') suffix
 }
 _sys_::public throw: method (c) = {
-	error: ": "::join c::file c::line c::type c::message
+	error: ': '::join c::file c::line c::type c::message
 	fatal c::status
 }
 
-exists ("/"::join $HOME .ohrc) && source ("/"::join $HOME .ohrc)
+exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)
 
