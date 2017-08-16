@@ -1647,7 +1647,7 @@ func Call(c Cell) Cell {
 }
 
 func Exit() {
-	exit(Car(task0.Dump))
+	exit(ExitSuccess)
 }
 
 func ForegroundTask() *Task {
