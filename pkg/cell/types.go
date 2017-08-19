@@ -200,9 +200,7 @@ func (ch *Channel) Close() {
 	ch.WriterClose()
 }
 
-func (ch *Channel) ReaderClose() {
-	return
-}
+func (ch *Channel) ReaderClose() { }
 
 func (ch *Channel) Read(_ MakeParserFunc, _ ThrowFunc) Cell {
 	v := <-(chan Cell)(*ch)
@@ -1005,11 +1003,7 @@ func NewSymbol(v string) *Symbol {
 }
 
 func (s *Symbol) Bool() bool {
-	if string(*s) == "false" {
-		return false
-	}
-
-	return true
+	return string(*s) != "false"
 }
 
 func (s *Symbol) Equal(c Cell) bool {

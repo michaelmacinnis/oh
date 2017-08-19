@@ -1406,8 +1406,6 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			t.Continuation = *Car(t.Dump).(*Continuation)
 			t.Dump = Cons(Car(args), t.Dump)
 
-			break
-
 		default:
 			if state >= svMax {
 				msg := fmt.Sprintf("invalid state: %s",
@@ -2473,7 +2471,7 @@ func interpolate(l context, d Cell, s string) string {
 		return Raw(c.Get())
 	}
 
-	r := regexp.MustCompile("(?:\\$\\$)|(?:\\${.+?})|(?:\\$\\S+)")
+	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$\S+)`)
 	return r.ReplaceAllStringFunc(s, f)
 }
 
