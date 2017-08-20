@@ -200,7 +200,7 @@ func (ch *Channel) Close() {
 	ch.WriterClose()
 }
 
-func (ch *Channel) ReaderClose() { }
+func (ch *Channel) ReaderClose() {}
 
 func (ch *Channel) Read(_ MakeParserFunc, _ ThrowFunc) Cell {
 	v := <-(chan Cell)(*ch)

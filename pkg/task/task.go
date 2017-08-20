@@ -925,12 +925,11 @@ func (t *Task) Closure(n closureMaker) bool {
 	olabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
-	params := Null
+	params := olabel
 	if IsSymbol(olabel) {
 		params = Car(t.Code)
 		t.Code = Cdr(t.Code)
 	} else {
-		params = olabel
 		olabel = Null
 	}
 
@@ -1899,7 +1898,7 @@ func expand(args Cell) Cell {
 				e = filepath.Join(home[1:], e[1:])
 			}
 
-			if strings.IndexAny(e, "*?[") == -1 {
+			if !strings.ContainsAny(e, "*?[") {
 				list = AppendTo(list, NewSymbol(e))
 				continue
 			}
@@ -2257,24 +2256,24 @@ func init() {
 		path := Raw(Cadr(args))
 		flags := 0
 
-		if strings.IndexAny(mode, "-") == -1 {
+		if !strings.ContainsAny(mode, "-") {
 			flags = os.O_CREATE
 		}
 
 		read := false
-		if strings.IndexAny(mode, "r") != -1 {
+		if strings.ContainsAny(mode, "r") {
 			read = true
 		}
 
 		write := false
-		if strings.IndexAny(mode, "w") != -1 {
+		if strings.ContainsAny(mode, "w") {
 			write = true
-			if strings.IndexAny(mode, "a") == -1 {
+			if !strings.ContainsAny(mode, "a") {
 				flags |= os.O_TRUNC
 			}
 		}
 
-		if strings.IndexAny(mode, "a") != -1 {
+		if strings.ContainsAny(mode, "a") {
 			write = true
 			flags |= os.O_APPEND
 		}
@@ -2364,14 +2363,12 @@ func init() {
 	scope0.DefineSyntax("set", func(t *Task, args Cell) bool {
 		t.Dump = Cdr(t.Dump)
 
-		s := Null
+		s := Cadr(t.Code)
 		if Length(t.Code) == 3 {
-			if Raw(Cadr(t.Code)) != "=" {
+			if Raw(s) != "=" {
 				panic(ErrSyntax + "expected '='")
 			}
 			s = Caddr(t.Code)
-		} else {
-			s = Cadr(t.Code)
 		}
 
 		t.Code = Car(t.Code)
