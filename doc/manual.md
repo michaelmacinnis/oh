@@ -290,7 +290,7 @@ produce the output,
 Oh also provides a set of relational operators:
 
     echo "3 is equal to 2 =>": eq 3 2
-    echo "3 is greater than or equal to 2 =>": ge 3 2
+    echo "3 is greater than or equal to 2 =>": gt 3 2
     echo "3 is greater than 2 =>": ge 3 2
     echo "3 is less than or equal to 2 =>": le 3 2
     echo "3 is less than 2 =>": lt 3 2
