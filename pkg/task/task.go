@@ -490,7 +490,7 @@ func (r *registers) MakeEnv() []string {
 	l := make([]string, 0, len(e))
 
 	for k, v := range e {
-		l = append(l, k[1:]+"="+Raw(v))
+		l = append(l, k+"="+Raw(v))
 	}
 
 	return l
@@ -694,7 +694,7 @@ func (s *scope) Copy() context {
 }
 
 func (s *scope) Exported() map[string]Cell {
-	return s.env.Prev().Prefixed(true, "$")
+	return s.env.Prev().Prefixed(true, "")
 }
 
 func (s *scope) Expose() context {
@@ -906,7 +906,7 @@ func (t *Task) Apply(args Cell) bool {
 func (t *Task) Chdir(dir string) bool {
 	rv := ExitSuccess
 
-	c, _ := Resolve(t.Lexical, t.Frame, "$PWD")
+	c, _ := Resolve(t.Lexical, t.Frame, "PWD")
 	oldwd := c.Get().String()
 
 	err := os.Chdir(dir)
@@ -914,8 +914,8 @@ func (t *Task) Chdir(dir string) bool {
 		rv = ExitFailure
 	} else if wd, err := os.Getwd(); err == nil {
 		c := toContext(t.Lexical)
-		c.Public("$PWD", NewSymbol(wd))
-		c.Public("$OLDPWD", NewSymbol(oldwd))
+		c.Public("PWD", NewSymbol(wd))
+		c.Public("OLDPWD", NewSymbol(oldwd))
 	}
 
 	return t.Return(rv)
@@ -1042,7 +1042,7 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, Raw(Car(args)))
 	}
 
-	c, _ := Resolve(t.Lexical, t.Frame, "$PWD")
+	c, _ := Resolve(t.Lexical, t.Frame, "PWD")
 	dir := c.Get().String()
 
 	c, _ = Resolve(t.Lexical, t.Frame, "_stdin_")
@@ -1151,9 +1151,12 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
-	c, s := Resolve(t.Lexical, t.Frame, Raw(sym))
+	r := Raw(sym)
+	if strings.HasPrefix(r, "$") {
+		r = r[1:]
+	}
+	c, s := Resolve(t.Lexical, t.Frame, r)
 	if c == nil {
-		r := Raw(sym)
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, "'" + r + "' undefined"
 		}
@@ -1745,8 +1748,8 @@ func bindSpecialVariables(origin string, args []string) {
 
 	scope0.Define("_args_", Cdr(Reverse(arglist)))
 	if wd, err := os.Getwd(); err == nil {
-		sys.Public("$OLDPWD", NewSymbol(wd))
-		sys.Public("$PWD", NewSymbol(wd))
+		sys.Public("OLDPWD", NewSymbol(wd))
+		sys.Public("PWD", NewSymbol(wd))
 		if !filepath.IsAbs(origin) {
 			origin = filepath.Join(wd, origin)
 		}
@@ -2078,14 +2081,14 @@ func init() {
 		t.Validate(args, 0, 1, IsText)
 		dir := ""
 		if args == Null {
-			c, _ := Resolve(t.Lexical, t.Frame, "$HOME")
+			c, _ := Resolve(t.Lexical, t.Frame, "HOME")
 			dir = Raw(c.Get())
 		} else {
 			dir = Raw(Car(args))
 		}
 
 		if dir == "-" {
-			c, _ := Resolve(t.Lexical, t.Frame, "$OLDPWD")
+			c, _ := Resolve(t.Lexical, t.Frame, "OLDPWD")
 			dir = c.Get().String()
 
 		}
@@ -2433,7 +2436,7 @@ func init() {
 	/* Environment variables. */
 	for _, s := range os.Environ() {
 		kv := strings.SplitN(s, "=", 2)
-		env.Public("$"+kv[0], NewSymbol(kv[1]))
+		env.Public(kv[0], NewSymbol(kv[1]))
 	}
 
 	frame0 = List(env, sys)
@@ -2458,9 +2461,11 @@ func interpolate(l context, d Cell, s string) string {
 		}
 
 		c, _ := Resolve(l, d, name)
+/*
 		if c == nil {
 			c, _ = Resolve(l, d, "$"+name)
 		}
+*/
 		if c == nil {
 			return ref
 		}

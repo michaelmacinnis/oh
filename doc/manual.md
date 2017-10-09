@@ -165,9 +165,9 @@ Oh's default data type is the symbol. Like other programming languages,
 a symbol in oh, can be one or more alphanumeric characters. Unlike other
 programming languages, there is no restriction that a symbol start with,
 or even contain, an alphabetic character. Oh also permits the following
-characters in symbols: `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`,
-`]`, and `_`. Unless a symbol has been used as a variable name, it
-evaluates to itself.
+characters in symbols: `!`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`, `]`,
+and `_`. Unless a symbol has been used as a variable name, it evaluates
+to itself.
 
 The command,
 

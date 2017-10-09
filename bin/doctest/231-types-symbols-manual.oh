@@ -6,9 +6,9 @@
 ## a symbol in oh, can be one or more alphanumeric characters. Unlike other
 ## programming languages, there is no restriction that a symbol start with,
 ## or even contain, an alphabetic character. Oh also permits the following
-## characters in symbols: `!`, `$`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`,
-## `]`, and `_`. Unless a symbol has been used as a variable name, it
-## evaluates to itself.
+## characters in symbols: `!`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`, `]`,
+## and `_`. Unless a symbol has been used as a variable name, it evaluates
+## to itself.
 ##
 ## The command,
 ##
@@ -22,7 +22,6 @@ write this-is-a-symbol
 ##
 
 write !: is-symbol !
-write $: is-symbol $
 write *: is-symbol *
 write +: is-symbol +
 write ,: is-symbol ,
@@ -32,10 +31,9 @@ write =: is-symbol =
 write ?: is-symbol ?
 write [: is-symbol [
 write ]: is-symbol ]
-write _: is-symbol _
+# write _: is-symbol _ #TODO: Bring back when we've made $ prefix mandatory.
 
 #-     ! true
-#-     $ true
 #-     * true
 #-     + true
 #-     , true
@@ -45,7 +43,7 @@ write _: is-symbol _
 #-     ? true
 #-     [ true
 #-     ] true
-#-     _ true
+# #-     _ true
 
 define common: import: ... common.oh
 

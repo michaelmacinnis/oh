@@ -186,9 +186,9 @@ define lcd: method () e = {
 	if (not: which lfm >/dev/null) {
 		return
 	}
-	public $LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
+	public LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
 	lfm -1
-	if (not: exists $LFMPATHFILE) {
+	if (not: exists LFMPATHFILE) {
 		return
 	}
 	define f: open 'r' $LFMPATHFILE
@@ -342,7 +342,7 @@ define source: syntax (name) e = {
 	define paths = ()
 	define name = basename
 
-	if (has $OHPATH): set paths: ':'::split $OHPATH
+	if (has OHPATH): set paths: ':'::split $OHPATH
 	while (and (not: is-null paths) (not: exists name)) {
 		set name: '/'::join (paths::head) basename
 		set paths: paths::tail
