@@ -1,49 +1,49 @@
 define _connect_: syntax (conduit-name name) e = {
-	define conduit-maker: e::eval conduit-name
+	define conduit-maker: $e::eval $conduit-name
 	syntax (left right) e = {
 		define p: conduit-maker
 		define ec-ex-chan: channel 1
 		spawn {
-			define ec-ex: e::eval: _rew_: quasiquote: block {
-				public (unquote name) = (unquote p)
-				unquote left
+			define ec-ex: $e::eval: _rew_: quasiquote: block {
+				public (unquote $name) = (unquote $p)
+				unquote $left
 			}
-			p::_writer_close_
-			ec-ex-chan::write ec-ex
+			$p::_writer_close_
+			$ec-ex-chan::write $ec-ex
 		}
 		block {
-			define right-ec-ex: e::eval: _rew_: quasiquote: block {
-				public _stdin_ = (unquote p)
-				unquote right
+			define right-ec-ex: $e::eval: _rew_: quasiquote: block {
+				public _stdin_ = (unquote $p)
+				unquote $right
 			}
-			p::_reader_close_
-			define left-ec-ex: ec-ex-chan::read
-			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
-			if ex: throw ex
-			return: and (left-ec-ex::head) (right-ec-ex::head)
+			$p::_reader_close_
+			define left-ec-ex: $ec-ex-chan::read
+			define ex: or ($left-ec-ex::tail) ($right-ec-ex::tail)
+			if $ex: throw $ex
+			return: and ($left-ec-ex::head) ($right-ec-ex::head)
 		}
 	}
 }
 define _redirect_: syntax (name mode closer) = {
 	syntax (c cmd) e = {
-		define c: e::eval c
+		define c: $e::eval $c
 		define f = ()
-		if (not: or (is-channel c) (is-pipe c)) {
-			set mode: e::eval mode
-			if (and (eq mode: quote w) (exists -i c)) {
+		if (not: or (is-channel $c) (is-pipe $c)) {
+			set mode: $e::eval $mode
+			if (and (eq mode: quote w) (exists -i $c)) {
 				throw: exception "${c} exists"
 			}
-			set f: open mode c
-			set c = f
+			set f: open $mode $c
+			set c = $f
 		}
-		define ec-ex: e::eval: _rew_: quasiquote: block {
-			public (unquote name) (unquote c)
-			unquote cmd
+		define ec-ex: $e::eval: _rew_: quasiquote: block {
+			public (unquote $name) (unquote $c)
+			unquote $cmd
 		}
-		if (not: is-null f): (f::_get_ closer)
-		define ex: ec-ex::tail
-		if ex: throw ex
-		return: ec-ex::head
+		if (not: is-null $f): ($f::_get_ closer)
+		define ex: $ec-ex::tail
+		if $ex: throw $ex
+		return: $ec-ex::head
 	}
 }
 define ...: method (: args) = {
@@ -53,7 +53,7 @@ define ...: method (: args) = {
 		cd path
 		set path: args::get 1
 	}
-	while true {
+	while $true {
 		define abs: symbol: '/'::join $PWD path
 		if (exists abs): return abs
 		if (eq $PWD /): return path
@@ -61,21 +61,21 @@ define ...: method (: args) = {
 	}
 }
 define and: syntax (: lst) e = {
-	define r = false
-	while (not: is-null lst) {
-		set r: e::eval: lst::head
-		if (not r): return r
-		set lst: lst::tail
+	define r = $false
+	while (not: is-null $lst) {
+		set r: $e::eval: $lst::head
+		if (not $r): return $r
+		set lst: $lst::tail
 	}
-	return r
+	return $r
 }
-define _append_stderr_: _redirect_ _stderr_ 'a' _writer_close_
-define _append_stdout_: _redirect_ _stdout_ 'a' _writer_close_
+define _append_stderr_: _redirect_ $_stderr_ 'a' _writer_close_
+define _append_stdout_: _redirect_ $_stdout_ 'a' _writer_close_
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	define ec-ex-chan: channel 1
 	spawn {
-		define ec-ex: e::eval: _rew_: quasiquote: block {
+		define ec-ex: $e::eval: _rew_: quasiquote: block {
 			public _stdout_ = (unquote p)
 			unquote cmd
 		}
@@ -94,25 +94,25 @@ define _backtick_: syntax (cmd) e = {
 	return: r::tail
 }
 define catch: syntax (name: clause) e = {
-	define args: list name (quote throw)
-	define body: list (quote throw) name
-	if (is-null clause) {
-		set body: list body
+	define args: list $name (quote throw)
+	define body: list (quote throw) $name
+	if (is-null $clause) {
+		set body: list $body
 	} else {
-		set body: clause::append body
+		set body: $clause::append $body
 	}
-	define handler: e::eval {
-		list (quote method) args (quote =) @body
+	define handler: $e::eval {
+		list (quote method) $args (quote =) @$body
 	}
-	define _return: e::eval (quote return)
-	define _throw = throw
-	e::public throw: method (condition) = {
-		public throw = _throw
-		_return: handler condition _throw
+	define _return: $e::eval (quote $return)
+	define _throw = $throw
+	$e::public throw: method (condition) = {
+		public throw = $_throw
+		_return: handler $condition $_throw
 	}
 }
-define _channel_stderr_: _connect_ channel _stderr_
-define _channel_stdout_: _connect_ channel _stdout_
+define _channel_stderr_: _connect_ $channel $_stderr_
+define _channel_stdout_: _connect_ $channel $_stdout_
 define clobber: builtin (: args) = {
 	tee @args >/dev/null
 }
@@ -120,7 +120,7 @@ define coalesce: syntax (: lst) e = {
 	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
 		set lst: lst::tail
 	}
-	return: e::eval: lst::head
+	return: $e::eval: lst::head
 }
 define echo: builtin (: args) = {
 	if (is-null args) {
@@ -150,24 +150,24 @@ define import: method (module-path) = {
 	define import-return = return
 	define module-name = module-path
 	define module: method (name) = {
-		if (_root_::_modules_::has name) {
-			define module-object: _root_::_modules_::_get_ name
-			import-sem::read
-			import-return module-object
+		if ($_root_::_modules_::has $name) {
+			define module-object: $_root_::_modules_::_get_ $name
+			$import-sem::read
+			import-return $module-object
 		}
 		set module-name = name
 	}
 	define module-object: object {
 		source module-path
 	}
-	_root_::_modules_::_set_ module-name module-object
-	import-sem::read
-	import-return module-object
+	$_root_::_modules_::_set_ module-name $module-object
+	$import-sem::read
+	import-return $module-object
 }
 define is-list: method (l) = {
-	if (is-null l): return false
-	if (not: is-cons l): return false
-	if (is-null: l::tail): return true
+	if (is-null l): return $false
+	if (not: is-cons l): return $false
+	if (is-null: l::tail): return $true
 	is-list: l::tail
 }
 define is-text: method (t) =: or (is-string t) (is-symbol t)
@@ -188,7 +188,7 @@ define lcd: method () e = {
 	define dn: f::readline
 	f::close
 	rm $LFMPATHFILE
-	e::eval: quasiquote: cd (unquote dn)
+	$e::eval: quasiquote: cd (unquote dn)
 }
 # Change working dir to last dir on exit from lf.
 define lf: builtin (:args) e = {
@@ -206,7 +206,7 @@ define lf: builtin (:args) e = {
 	define dn @(_backtick_: cat temp-file)
 	rm temp-file
 	if dn {
-		e::eval: quasiquote: cd (unquote dn)
+		$e::eval: quasiquote: cd (unquote dn)
 	}
 }
 define module: method (name) = # no-op
@@ -215,13 +215,13 @@ define map: syntax (: literal) e = {
     for literal: method (entry) = {
         define k: entry::head
         if (is-list k) {
-            set k: e::eval k
+            set k: $e::eval k
 	}
         define v: entry::get 1
         if (eq 1: v::length) {
             set v: v::head
         }
-        o::_set_ k: e::eval v
+        o::_set_ k: $e::eval v
     }
     public del = _del_
     public get = _get_
@@ -241,19 +241,19 @@ define math: method (S) e = {
 	} | bc))
 }
 define object: syntax (: body) e = {
-	e::eval: cons (quote block): body::append: quote: context
+	$e::eval: cons (quote block): $body::append: quote: context
 }
 define or: syntax (: lst) e = {
-	define r = false
-	while (not: is-null lst) {
-		set r: e::eval: lst::head
-		if r: return r
-		set lst: lst::tail
+	define r = $false
+	while (not: is-null $lst) {
+		set r: $e::eval: $lst::head
+		if $r: return $r
+		set lst: $lst::tail
 	}
-	return r
+	return $r
 }
-define _pipe_stderr_: _connect_ pipe _stderr_
-define _pipe_stdout_: _connect_ pipe _stdout_
+define _pipe_stderr_: _connect_ $pipe $_stderr_
+define _pipe_stdout_: _connect_ $pipe $_stdout_
 define printf: method (f: args) =: echo: (string f)::sprintf @args
 define _process_substitution_: syntax (:args) e = {
 	define chans = ()
@@ -264,10 +264,10 @@ define _process_substitution_: syntax (:args) e = {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
-				chan::write: e::eval: _rew_: quasiquote {
+				chan::write: $e::eval: _rew_: quasiquote {
 					_redirect_stdin_ {
-						unquote fifo
-						unquote: arg::tail
+						unquote $fifo
+						unquote: $arg::tail
 					}
 				}
 			}
@@ -279,10 +279,10 @@ define _process_substitution_: syntax (:args) e = {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
-				chan::write: e::eval: _rew_: quasiquote {
+				chan::write: $e::eval: _rew_: quasiquote {
 					_redirect_stdout_ {
-						unquote fifo
-						unquote: arg::tail
+						unquote $fifo
+						unquote: $arg::tail
 					}
 				}
 			}
@@ -292,7 +292,7 @@ define _process_substitution_: syntax (:args) e = {
 		}
 		return arg
 	}
-	define main-ec-ex: e::eval: _rew_ cmd
+	define main-ec-ex: $e::eval: _rew_ cmd
 	define ec-exs ()
 	for chans: method (chan) = {
 		set ec-exs: cons (chan::read) ec-exs
@@ -306,62 +306,62 @@ define _process_substitution_: syntax (:args) e = {
 	return: main-ec-ex::head
 }
 define quasiquote: syntax (cell) e = {
-	if (not: is-cons cell): return cell
-	if (is-null cell): return cell
-	if (eq (quote unquote): cell::head): return: e::eval: cell::get 1
+	if (not: is-cons $cell): return $cell
+	if (is-null $cell): return $cell
+	if (eq (quote unquote): $cell::head): return: $e::eval: $cell::get 1
 	cons {
-		e::eval: list (quote quasiquote) (cell::head)
-		e::eval: list (quote quasiquote) (cell::tail)
+		$e::eval: list (quote quasiquote) ($cell::head)
+		$e::eval: list (quote quasiquote) ($cell::tail)
 	}
 }
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
 define readlist: builtin () =: _stdin_::readlist
-define _redirect_stderr_: _redirect_ _stderr_ 'w' _writer_close_
-define _redirect_stdin_: _redirect_ _stdin_ 'r' _reader_close_
-define _redirect_stdout_: _redirect_ _stdout_ 'w' _writer_close_
+define _redirect_stderr_: _redirect_ $_stderr_ 'w' _writer_close_
+define _redirect_stdin_: _redirect_ $_stdin_ 'r' _reader_close_
+define _redirect_stdout_: _redirect_ $_stdout_ 'w' _writer_close_
 define _rew_: method (command) = {    # return exception wrapper => rew
 	quasiquote: (method () = {
-		define ec: status false
+		define ec: status $false
 		catch ex {
-			return: cons ec ex
+			return: cons $ec $ex
 		}
-		set ec: unquote command
+		set ec: unquote $command
 		throw ()
 	})
 }
 define source: syntax (name) e = {
-	define basename: e::eval name
+	define basename: $e::eval $name
 	define paths = ()
-	define name = basename
+	define name = $basename
 
 	if (has OHPATH): set paths: ':'::split $OHPATH
-	while (and (not: is-null paths) (not: exists name)) {
-		set name: '/'::join (paths::head) basename
-		set paths: paths::tail
+	while (and (not: is-null $paths) (not: exists $name)) {
+		set name: '/'::join ($paths::head) $basename
+		set paths: $paths::tail
 	}
 
-	if (not: exists name): set name = basename
+	if (not: exists $name): set name = $basename
 
-	define f: open r- name
+	define f: open r- $name
 
 	define r: cons () ()
-	define c = r
-	while (define l: f::readlist) {
-		c::set-tail: cons l ()
-		set c: c::tail
+	define c = $r
+	while (define l: $f::readlist) {
+		$c::set-tail: cons $l ()
+		set c: $c::tail
 	}
-	set c: r::tail
-	f::close
+	set c: $r::tail
+	$f::close
 
 	define rval: status 0
 	define eval-list: method (first rest) o = {
-		if (is-null first): return rval
-		set rval: e::eval first
-		eval-list (rest::head) (rest::tail)
+		if (is-null $first): return $rval
+		set rval: $e::eval $first
+		eval-list ($rest::head) ($rest::tail)
 	}
-	eval-list (c::head) (c::tail)
-	return rval
+	eval-list ($c::head) ($c::tail)
+	return $rval
 }
 define umask: method (: args) = {
 	catch ex {
@@ -378,18 +378,18 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: _stdout_::write @args
-public quote: syntax (cell) =: return cell
-_root_::public _modules_: object
-_sys_::public complete: method self (first completing) = {
+public quote: syntax (cell) =: return $cell
+$_root_::public _modules_: object
+$_sys_::public complete: method self (first completing) = {
 	return ()
 }
-_sys_::public _exception: method (t s m l f) e = {
+$_sys_::public _exception: method (type status message line file) e = {
 	object {
-		public type = t
-		public status = s
-		public message = m
-		public line = l
-		public file = f
+		public type = $type
+		public status = $status
+		public message = $message
+		public line = $line
+		public file = $file
 	}
 }
 # The generator method exception can be called in three ways:
@@ -397,8 +397,8 @@ _sys_::public _exception: method (t s m l f) e = {
 # exception <value> <message>
 # exception <type> <value> <message>
 # If not provided value defaults to status false and type to error/runtime.
-_sys_::public exception: method (message :args) e = {
-	define s: status false
+$_sys_::public exception: method (message :args) e = {
+	define s: status $false
 	define t: symbol 'error/runtime'
 	if (not: is-null args) {
 		set s: args::head
@@ -410,27 +410,27 @@ _sys_::public exception: method (message :args) e = {
 		set args: args::tail
 	}
 	_exception t s message {
-		public line: e::eval: get-line-number
-		public file: e::eval: get-source-file
+		public line: $e::eval: get-line-number
+		public file: $e::eval: get-source-file
 	}
 }
-_sys_::public get-completions: method self (first completing) = {
+$_sys_::public get-completions: method self (first completing) = {
 	catch unused {
 		return ()
 	}
-	self::complete first completing
+	$self::complete $first $completing
 }
-_sys_::public get-prompt: method self (suffix) = {
+$_sys_::public get-prompt: method self (suffix) = {
 	catch unused {
-		return suffix
+		return $suffix
 	}
-	self::prompt suffix
+	$self::prompt $suffix
 }
-_sys_::public prompt: method (suffix) = {
+$_sys_::public prompt: method (suffix) = {
 	define dirs: '/'::split $PWD
-	return: ''::join (dirs::get: integer '-1') suffix
+	return: ''::join ($dirs::get: integer '-1') $suffix
 }
-_sys_::public throw: method (c) = {
+$_sys_::public throw: method (c) = {
 	error: ': '::join c::file c::line c::type c::message
 	fatal c::status
 }

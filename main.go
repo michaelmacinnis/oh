@@ -63,7 +63,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 
 	command := cell.List(
 		cell.Cons(
-			cell.NewSymbol("_sys_"),
+			cell.NewSymbol("$_sys_"),
 			cell.NewSymbol("get-prompt"),
 		),
 		cell.List(cell.NewSymbol("quote"), cell.NewSymbol("> ")),
@@ -124,7 +124,7 @@ func complete(line string, pos int) (head string, completions []string, tail str
 
 	clist := task.Call(cell.List(
 		cell.Cons(
-			cell.NewSymbol("_sys_"),
+			cell.NewSymbol("$_sys_"),
 			cell.NewSymbol("get-completions"),
 		),
 		cell.NewSymbol(first), cell.NewSymbol(completing),

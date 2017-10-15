@@ -87,6 +87,7 @@ const (
 	psEvalCommand
 	psEvalElement
 	psEvalElementBuiltin
+	psEvalElementHead
 	psEvalMember
 
 	psExecBuiltin
@@ -1150,9 +1151,11 @@ func (t *Task) LexicalVar(state int64) bool {
 	return true
 }
 
-func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
+func (t *Task) Lookup(sym *Symbol, head, simple bool) (bool, string) {
 	r := Raw(sym)
+	prefixed := false
 	if strings.HasPrefix(r, "$") {
+		prefixed = true
 		r = r[1:]
 	}
 	c, s := Resolve(t.Lexical, t.Frame, r)
@@ -1160,12 +1163,24 @@ func (t *Task) Lookup(sym *Symbol, simple bool) (bool, string) {
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, "'" + r + "' undefined"
 		}
+		if prefixed && head {
+			println("Pointlessly prefixed symbol:", r)
+		}
 		t.Dump = Cons(sym, t.Dump)
 	} else if simple && !IsSimple(c.Get()) {
+		if !prefixed && !head {
+			println("Non-prefixed lookup:", r)
+		}
 		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(binding); ok {
+		if !prefixed && ! head {
+			println("Non-prefixed lookup:", r)
+		}
 		t.Dump = Cons(a.bind(s), t.Dump)
 	} else {
+		if !prefixed && ! head {
+			println("Non-prefixed lookup:", r)
+		}
 		t.Dump = Cons(c.Get(), t.Dump)
 	}
 
@@ -1282,7 +1297,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 
 			t.ReplaceStates(psExecCommand,
 				svCdrCode,
-				psEvalElement)
+				psEvalElementHead)
 			t.Code = Car(t.Code)
 
 			continue
@@ -1329,7 +1344,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			t.Code = Car(t.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementBuiltin, psEvalMember:
+		case psEvalElement, psEvalElementBuiltin, psEvalElementHead, psEvalMember:
 			if t.Code == Null {
 				t.Dump = Cons(t.Code, t.Dump)
 				break
@@ -1347,7 +1362,8 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 				continue
 			} else if sym, ok := t.Code.(*Symbol); ok {
 				simple := t.GetState() == psEvalElementBuiltin
-				ok, msg := t.Lookup(sym, simple)
+				head := t.GetState() == psEvalElementHead || t.GetState() == psEvalMember
+				ok, msg := t.Lookup(sym, head, simple)
 				if !ok {
 					panic(msg)
 				}
