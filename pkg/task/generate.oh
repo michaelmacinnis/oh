@@ -2,9 +2,9 @@
 
 define common: import: ... bin/common.oh
 
-public _stdout_: open w: "/"::join _origin_ generated.go
+public _stdout_: open w: "/"::join $_origin_ generated.go
 
-common::introduction @`(basename _0_) $GOPACKAGE
+$common::introduction @`(basename $_0_) $GOPACKAGE
 
 echo "import (
 	. \"github.com/michaelmacinnis/oh/pkg/cell\"
@@ -16,9 +16,9 @@ define t: quote: (add Add) (sub Subtract) (div Divide) \
                  (mod Modulo) (mul Multiply)
 
 echo "\nfunc bindArithmetic(s *scope) {"
-for t: method (l) = {
-	define n: l::get 0
-	define m: l::get 1
+for $t: method (l) = {
+	define n: $l::get 0
+	define m: $l::get 1
 	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		acc := Car(args).(Number)
@@ -43,9 +43,9 @@ define t: quote: (boolean 'NewBoolean(Car(args).Bool())') \
                  (symbol 'NewSymbol(Raw(Car(args)))')
 
 echo "\nfunc bindGenerators(s *scope) {"
-for t: method (l) = {
-	define n: l::get 0
-	define o: l::get 1
+for $t: method (l) = {
+	define n: $l::get 0
+	define o: $l::get 1
 	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(${o})
@@ -54,9 +54,9 @@ for t: method (l) = {
 echo "}"
 
 echo "\nfunc bindPredicates(s *scope) {"
-for common::predicates: method (l) = {
-	define n: l::get 0
-	define m: l::get 1
+for $common::predicates: method (l) = {
+	define n: $l::get 0
+	define m: $l::get 1
 	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		return t.Return(NewBoolean(${m}(Car(args))))
@@ -73,10 +73,10 @@ define t: quote: \
         (lt '!prev.Less(curr)' '.(Number)')
 
 echo "\nfunc bindRelational(s *scope) {"
-for t: method (l) = {
-	define n: l::get 0
-	define o: l::get 1
-	define t: l::get 2
+for $t: method (l) = {
+	define n: $l::get 0
+	define o: $l::get 1
+	define t: $l::get 2
 	echo "
 	s.DefineMethod(\"${n}\", func(t *Task, args Cell) bool {
 		prev := Car(args)${t}
@@ -107,10 +107,10 @@ define t: quote: (DefineSyntax builtin 't.Closure(NewBuiltin)') \
                  (DefineMethod reverse 't.Return(Reverse(Car(args)))')
 
 echo "\nfunc bindTheRest(s *scope) {"
-for t: method (l) = {
-	define d: l::get 0
-	define n: l::get 1
-	define o: l::get 2
+for $t: method (l) = {
+	define d: $l::get 0
+	define n: $l::get 1
+	define o: $l::get 2
 	echo "
 	s.${d}(\"${n}\", func(t *Task, args Cell) bool {
 		return ${o}
@@ -126,9 +126,9 @@ define t: quote: (is-control IsControl) (is-digit IsDigit) \
                  (is-punct IsPunct) (is-space IsSpace) (is-symbol IsSymbol) \
                  (is-title IsTitle) (is-upper IsUpper)
 
-for t: method (l) = {
-	define n: l::get 0
-	define m: l::get 1
+for $t: method (l) = {
+	define n: $l::get 0
+	define m: $l::get 1
 	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := Raw(toString(t.Self()))
@@ -145,9 +145,9 @@ for t: method (l) = {
 
 define t: quote: (lower ToLower) (title ToTitle) (upper ToUpper)
 
-for t: method (l) = {
-	define n: l::get 0
-	define m: l::get 1
+for $t: method (l) = {
+	define n: $l::get 0
+	define m: $l::get 1
 	echo "
 	e.PublicMethod(\"${n}\", func(t *Task, args Cell) bool {
 		s := Raw(toString(t.Self()))

@@ -13,68 +13,68 @@
 define counter: method (n) = {
     define welcome: pipe
 
-    while true {
-        write welcome: set n: add n 1
+    while $true {
+        write $welcome: set n: add $n 1
 
-        welcome::read
+        $welcome::read
     }
 }
 
 define filter: method (base) = {
     define welcome: pipe
-    while true {
+    while $true {
         define msg: readlist
 
-        define thanks: msg::get 0
-        define n: msg::get 1
+        define thanks: $msg::get 0
+        define n: $msg::get 1
 
-        if (mod n base) {
-                write welcome n
+        if (mod $n $base) {
+                write $welcome $n
 
-                welcome::read
+                $welcome::read
         }
 
-        thanks::write
+        $thanks::write
     }
 }
 
 define prime-numbers: pipe
 
 counter 2 | block {
-    define in = _stdin_
+    define in = $_stdin_
 
-    while true {
-        define msg: in::readlist
+    while $true {
+        define msg: $in::readlist
 
-        define thanks: msg::get 0
-        define prime: msg::get 1
+        define thanks: $msg::get 0
+        define prime: $msg::get 1
 
-        write prime
+        write $prime
 
         define out: pipe
         block {
-            filter prime &
-        } <in >out
+            filter $prime &
+        } <$in >$out
 
-        thanks::write
+        $thanks::write
 
-        set in = out
+        set in = $out
     }
-} >prime-numbers &
+} >$prime-numbers &
 
 define count: integer 100
-printf "The first %d prime numbers" count
+printf "The first %d prime numbers" $count
 
 define line = ""
-while count {
+while $count {
     define p: read
-    set line: ""::join line ("%7.7s"::sprintf p)
-    set count: sub count 1
-    if (not: mod count 10) {
-        echo line
+    set line: ""::join $line ("%7.7s"::sprintf $p)
+    set count: sub $count 1
+    if (not: mod $count 10) {
+        echo $line
         set line = ""
     }
-} <prime-numbers
+} <$prime-numbers
 #}
 ##
 

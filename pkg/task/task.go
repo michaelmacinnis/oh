@@ -1169,17 +1169,17 @@ func (t *Task) Lookup(sym *Symbol, head, simple bool) (bool, string) {
 		t.Dump = Cons(sym, t.Dump)
 	} else if simple && !IsSimple(c.Get()) {
 		if !prefixed && !head {
-			println("Non-prefixed lookup:", r)
+			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
 		}
 		t.Dump = Cons(sym, t.Dump)
 	} else if a, ok := c.Get().(binding); ok {
 		if !prefixed && ! head {
-			println("Non-prefixed lookup:", r)
+			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
 		}
 		t.Dump = Cons(a.bind(s), t.Dump)
 	} else {
 		if !prefixed && ! head {
-			println("Non-prefixed lookup:", r)
+			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
 		}
 		t.Dump = Cons(c.Get(), t.Dump)
 	}

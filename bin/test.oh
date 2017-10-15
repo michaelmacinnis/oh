@@ -5,18 +5,18 @@ define Dir: ... doctest
 define prefix-lines: method (Prefix) = {
         define Count = 1
 	while (define Line: readline) {
-		echo: ": "::join Prefix Count Line
-                set Count: add Count 1
+		echo: ": "::join $Prefix $Count $Line
+                set Count: add $Count 1
 	}
 }
 
 # Run tests.
-find Dir -name "[0-9]*.oh" | grep -Fv unused | sort |
+find $Dir -name "[0-9]*.oh" | grep -Fv unused | sort |
 while (define Path: readline) {
-	define File = @`(basename Path)
-	error running File
-	diff <(grep "^#[+-]     " Path | sed -e "s/^#[+-]     //g" |
-		prefix-lines File) \
-	     <(public _stderr_ = _stdout_; Path | prefix-lines File)
+	define File = @`(basename $Path)
+	error running $File
+	diff <(grep "^#[+-]     " $Path | sed -e "s/^#[+-]     //g" |
+		prefix-lines $File) \
+	     <(public _stderr_ = $_stdout_; Path | prefix-lines $File)
 }
 

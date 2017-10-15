@@ -1,22 +1,22 @@
 #!/usr/bin/env oh
 
-if (ne 2: _args_::length) {
+if (ne 2: $_args_::length) {
     error "usage:" _0_ "<pattern> <output>"
     exit 1
 }
 
 define Dir: ... doctest
-define Pattern = _1_
-define Output = _2_
+define Pattern = $_1_
+define Output = $_2_
 
-define Base @`(basename Output)
+define Base @`(basename $Output)
 error "generating ${Base}"
 
-public _stdout_: open "w": "/"::join _origin_ Output
+public _stdout_: open "w": "/"::join $_origin_ $Output
 
 # Generate documentation.
-find Dir -name "[0-9]*.oh" |
-grep -i Pattern | sort |
+find $Dir -name "[0-9]*.oh" |
+grep -i $Pattern | sort |
 while (define Path: readline) {
 	awk "
 BEGIN { code = 0 }
@@ -24,6 +24,6 @@ $0 ~ /^#[#+]/ { print substr($0, 4) }
 $1 ~ /^#[}]/ { code = 0 }
 code > 0 { print \"    \" $0 }
 $1 ~ /^#[{]/ { code = 1 }
-" Path
+" $Path
 }
 

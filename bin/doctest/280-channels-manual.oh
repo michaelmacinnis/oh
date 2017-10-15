@@ -8,47 +8,47 @@
 ##
 #{
 define counter: method (n) = {
-    while true {
-        write: set n: add n 1
+    while $true {
+        write: set n: add $n 1
     }
 }
 
 define filter: method (base) = {
-    while true {
+    while $true {
         define n: read
-        if (mod n base): write n
+        if (mod $n $base): write $n
     }
 }
 
 define prime-numbers: channel
 
 counter 2 |+ block {
-    define in = _stdin_
+    define in = $_stdin_
 
-    while true {
-        define prime: in::read
-        write prime
+    while $true {
+        define prime: $in::read
+        write $prime
 
         define out: channel
-        spawn: filter prime <in >out
+        spawn: filter $prime <$in >$out
 
-        set in = out
+        set in = $out
     }
-} >prime-numbers &
+} >$prime-numbers &
 
 define count: integer 100
-printf "The first %d prime numbers" count
+printf "The first %d prime numbers" $count
 
 define line = ""
-while count {
+while $count {
     define p: read
-    set line: ""::join line ("%7.7s"::sprintf p)
-    set count: sub count 1
-    if (not: mod count 10) {
-        echo line
+    set line: ""::join $line ("%7.7s"::sprintf $p)
+    set count: sub $count 1
+    if (not: mod $count 10) {
+        echo $line
         set line = ""
     }
-} <prime-numbers
+} <$prime-numbers
 #}
 ##
 
