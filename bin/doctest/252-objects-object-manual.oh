@@ -14,8 +14,8 @@ define o: object {
     define y = 2
 }
 
-echo "public member" o::x
-echo "private member" o::y
+echo "public member" $o::x
+echo "private member" $o::y
 #}
 ##
 

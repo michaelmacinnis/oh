@@ -9,10 +9,10 @@
 ##
 #{
 define r: rational 100/3
-write: is-rational r
-write: float r
-write: integer r
-write: status r
+write: is-rational $r
+write: float $r
+write: integer $r
+write: status $r
 #}
 #-     true
 #-     33.333333333333336
@@ -34,12 +34,7 @@ write: add 3.14 2.72 1.41 2.50 4.67
 
 define common: import: ... common.oh
 
-define x: rational -1
-for common::predicates: method (names) = {
-    define name: names::head
-    define predicate: eval name
-    write name: "x => %v"::sprintf: predicate x
-}
+$common::apply-predicates: rational -1
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

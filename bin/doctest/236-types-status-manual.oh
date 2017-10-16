@@ -24,15 +24,9 @@ if (status 11) {
 #+     A non-zero status is false
 ##
 
-define x: status 0
-define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
-                          is-float is-integer is-method is-null is-number \
-                          is-object is-pipe is-rational is-status is-string \
-                          is-symbol is-syntax
-for predicates: method (name) = {
-    define predicate: eval name
-    write name: "x => %v"::sprintf: predicate x
-}
+define common: import: ... common.oh
+
+$common::apply-predicates: status 0
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

@@ -237,10 +237,10 @@ be explicitly converted with the `float`, `integer` or `status` commands.
 A rational number can be explicitly declared with the `rational` command,
 
     define r: rational 100/3
-    write: is-rational r
-    write: float r
-    write: integer r
-    write: status r
+    write: is-rational $r
+    write: float $r
+    write: integer $r
+    write: status $r
 
 Oh will also try to help by converting symbols that will parse correctly
 as a number when used in a context where that would be appropriate. For
@@ -358,15 +358,15 @@ of indices can be obtained with the `keys` method.
 The commands,
 
     define a: list do re me
-    write: a::get 0
-    write: a::get -1
-    write: a::slice 1 2
-    a::set 0 foo
-    a::set 1 bar
-    a::set 2 baz
-    write a
-    write: a::length
-    write: a::keys
+    write: $a::get 0
+    write: $a::get -1
+    write: $a::slice 1 2
+    $a::set 0 foo
+    $a::set 1 bar
+    $a::set 2 baz
+    write $a
+    write: $a::length
+    write: $a::keys
 
 produce the output,
 
@@ -445,9 +445,9 @@ If statements can be chained:
 Oh has a fairly standard pre-test loop. The commands,
 
     define x = 0
-    while (lt x 10) {
-        write x
-        set x: add x 1
+    while (lt $x 10) {
+        write $x
+        set x: add $x 1
     }
 
 produce the output,
@@ -482,8 +482,8 @@ The commands,
         context
     }
     
-    echo "public variable" o::x
-    echo "private variable" o::y
+    echo "public variable" $o::x
+    echo "private variable" $o::y
 
 produce the output,
 
@@ -503,8 +503,8 @@ The previous example can be rewritten as,
         define y = 2
     }
     
-    echo "public member" o::x
-    echo "private member" o::y
+    echo "public member" $o::x
+    echo "private member" $o::y
 
 #### _root_
 
@@ -526,7 +526,7 @@ Once defined, a method can be called in the same way as other commands.
 Methods can have named parameters.
 
     define sum3: method (a b c) = {
-        add a b c
+        add $a $b $c
     }
     write: sum3 1 2 3
 
@@ -534,41 +534,41 @@ Methods may have a self parameter. The name for the self parameter must
 appear before the list of arguments.
 
     define point: method (r s) =: object {
-        define x: integer r
-        define y: integer s
+        define x: integer $r
+        define y: integer $s
     
         public get-x: method self () = {
-            return self::x
+            return $self::x
         }
     
         public get-y: method self () = {
-            return self::y
+            return $self::y
         }
     
         public move: method self (a b) = {
-            set self::x: add self::x a
-            set self::y: add self::y b
+            set self::x: add $self::x $a
+            set self::y: add $self::y $b
         }
     
         public show: method self () = {
-            echo self::x self::y
+            echo $self::x $self::y
         }
     }
     
     define p: point 0 0
-    p::show
+    $p::show
 
 Shared behavior can be implemented by defining a method in an outer scope.
 
 The following code,
 
-    public me: method self () =: echo "my name is:" self::name
+    public me: method self () =: echo "my name is:" $self::name
     
     define x: object {
         define name = "x"
     }
     
-    x::me
+    $x::me
 
 produces the output,
 
@@ -578,11 +578,11 @@ An object may explicitly delegate behavior, as shown in the following code,
 
     define y: object {
         define name = "y"
-        public me-too = x::me    # Explicit delegation.
+        public me-too = $x::me    # Explicit delegation.
     }
     
-    y::me
-    y::me-too
+    $y::me
+    $y::me-too
 
 which produces the output,
 
@@ -593,11 +593,11 @@ An object may redirect a call to another object. The code below,
 
     define z: object {
         define name = "z"
-        public you: method () =: x::me    # Redirection.
+        public you: method () =: $x::me    # Redirection.
     }
     
-    z::me
-    z::you
+    $z::me
+    $z::you
 
 produces the output,
 
@@ -616,14 +616,14 @@ evaluate arguments in the calling environment.
 The example below uses the `syntax` command to define a new `until` command.
 
     define until: syntax (condition: body) e = {
-        set condition: list (symbol "not") condition
-        e::eval: list (symbol "while") condition @body
+        set condition: list (symbol "not") $condition
+        $e::eval: list (symbol "while") $condition @$body
     }
     
     define x = 10
-    until (eq x 0) {
-        write x
-        set x: sub x 1
+    until (eq $x 0) {
+        write $x
+        set x: sub $x 1
     }
 
 ### Maps
@@ -634,16 +634,16 @@ for each stage in a pipeline. The code below,
     define exit-status: map
     
     define pipe-fitting: method (label cmd: args) = {
-        exit-status::set label: cmd @args
+        $exit-status::set $label: command $cmd @$args
     }
     
-    pipe-fitting "1st" echo 1 2 3 |
+    pipe-fitting "1st" /bin/echo 1 2 3 |
     pipe-fitting "2nd" tr " " "\n" |
     pipe-fitting "3rd" grep 2
     
-    echo "1st stage exit status =>": exit-status::get "1st"
-    echo "2nd stage exit status =>": exit-status::get "2nd"
-    echo "3rd stage exit status =>": exit-status::get "3rd"
+    echo "1st stage exit status =>": $exit-status::get "1st"
+    echo "2nd stage exit status =>": $exit-status::get "2nd"
+    echo "3rd stage exit status =>": $exit-status::get "3rd"
 
 produces the output,
 
@@ -659,47 +659,47 @@ elegant solutions to some problems, as shown in the prime sieve example
 below (adapted from "Newsqueak: A Language for Communicating with Mice").
 
     define counter: method (n) = {
-        while true {
-            write: set n: add n 1
+        while $true {
+            write: set n: add $n 1
         }
     }
     
     define filter: method (base) = {
-        while true {
+        while $true {
             define n: read
-            if (mod n base): write n
+            if (mod $n $base): write $n
         }
     }
     
     define prime-numbers: channel
     
     counter 2 |+ block {
-        define in = _stdin_
+        define in = $_stdin_
     
-        while true {
-            define prime: in::read
-            write prime
+        while $true {
+            define prime: $in::read
+            write $prime
     
             define out: channel
-            spawn: filter prime <in >out
+            spawn: filter $prime <$in >$out
     
-            set in = out
+            set in = $out
         }
-    } >prime-numbers &
+    } >$prime-numbers &
     
     define count: integer 100
-    printf "The first %d prime numbers" count
+    printf "The first %d prime numbers" $count
     
     define line = ""
-    while count {
+    while $count {
         define p: read
-        set line: ""::join line ("%7.7s"::sprintf p)
-        set count: sub count 1
-        if (not: mod count 10) {
-            echo line
+        set line: ""::join $line ("%7.7s"::sprintf $p)
+        set count: sub $count 1
+        if (not: mod $count 10) {
+            echo $line
             set line = ""
         }
-    } <prime-numbers
+    } <$prime-numbers
 
 ### Pipes
 
@@ -713,66 +713,66 @@ to the same example (shown previously) using channels.
     define counter: method (n) = {
         define welcome: pipe
     
-        while true {
-            write welcome: set n: add n 1
+        while $true {
+            write $welcome: set n: add $n 1
     
-            welcome::read
+            $welcome::read
         }
     }
     
     define filter: method (base) = {
         define welcome: pipe
-        while true {
+        while $true {
             define msg: readlist
     
-            define thanks: msg::get 0
-            define n: msg::get 1
+            define thanks: $msg::get 0
+            define n: $msg::get 1
     
-            if (mod n base) {
-                    write welcome n
+            if (mod $n $base) {
+                    write $welcome $n
     
-                    welcome::read
+                    $welcome::read
             }
     
-            thanks::write
+            $thanks::write
         }
     }
     
     define prime-numbers: pipe
     
     counter 2 | block {
-        define in = _stdin_
+        define in = $_stdin_
     
-        while true {
-            define msg: in::readlist
+        while $true {
+            define msg: $in::readlist
     
-            define thanks: msg::get 0
-            define prime: msg::get 1
+            define thanks: $msg::get 0
+            define prime: $msg::get 1
     
-            write prime
+            write $prime
     
             define out: pipe
             block {
-                filter prime &
-            } <in >out
+                filter $prime &
+            } <$in >$out
     
-            thanks::write
+            $thanks::write
     
-            set in = out
+            set in = $out
         }
-    } >prime-numbers &
+    } >$prime-numbers &
     
     define count: integer 100
-    printf "The first %d prime numbers" count
+    printf "The first %d prime numbers" $count
     
     define line = ""
-    while count {
+    while $count {
         define p: read
-        set line: ""::join line ("%7.7s"::sprintf p)
-        set count: sub count 1
-        if (not: mod count 10) {
-            echo line
+        set line: ""::join $line ("%7.7s"::sprintf $p)
+        set count: sub $count 1
+        if (not: mod $count 10) {
+            echo $line
             set line = ""
         }
-    } <prime-numbers
+    } <$prime-numbers
 

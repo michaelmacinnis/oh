@@ -5,13 +5,13 @@
 ## The following code,
 ##
 #{
-public me: method self () =: echo "my name is:" self::name
+public me: method self () =: echo "my name is:" $self::name
 
 define x: object {
     define name = "x"
 }
 
-x::me
+$x::me
 #}
 ##
 ## produces the output,
@@ -24,11 +24,11 @@ x::me
 #{
 define y: object {
     define name = "y"
-    public me-too = x::me    # Explicit delegation.
+    public me-too = $x::me    # Explicit delegation.
 }
 
-y::me
-y::me-too
+$y::me
+$y::me-too
 #}
 ##
 ## which produces the output,
@@ -42,11 +42,11 @@ y::me-too
 #{
 define z: object {
     define name = "z"
-    public you: method () =: x::me    # Redirection.
+    public you: method () =: $x::me    # Redirection.
 }
 
-z::me
-z::you
+$z::me
+$z::you
 #}
 ##
 ## produces the output,

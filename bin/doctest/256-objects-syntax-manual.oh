@@ -13,14 +13,14 @@
 ##
 #{
 define until: syntax (condition: body) e = {
-    set condition: list (symbol "not") condition
-    e::eval: list (symbol "while") condition @body
+    set condition: list (symbol "not") $condition
+    $e::eval: list (symbol "while") $condition @$body
 }
 
 define x = 10
-until (eq x 0) {
-    write x
-    set x: sub x 1
+until (eq $x 0) {
+    write $x
+    set x: sub $x 1
 }
 #}
 ##

@@ -57,16 +57,11 @@ write: mod 511 256
 #-     256
 #-     255
 
+define common: import: ... common.oh
+
 define operators: quote: add div eq ge gt is le lt mod mul ne sub
 define operands: list 1 2 3 4
-for operators: method (name) = {
-    define operator: eval name
-    for operands: method (op1) = {
-        for operands: method (op2) = {
-            echo: "%s %v %v => %v"::sprintf name op1 op2: operator op1 op2
-        }
-    }
-}
+$common::apply-operators $operators $operands
 
 #-     add 1 1 => 2
 #-     add 1 2 => 3
@@ -261,14 +256,7 @@ for operators: method (name) = {
 #-     sub 4 3 => 1
 #-     sub 4 4 => 0
 
-define common: import: ... common.oh
-
-define x: integer -1
-for common::predicates: method (names) = {
-    define name: names::head
-    define predicate: eval name
-    write name: "x => %v"::sprintf: predicate x
-}
+$common::apply-predicates: integer -1
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

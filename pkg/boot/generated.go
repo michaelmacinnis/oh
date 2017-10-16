@@ -121,7 +121,7 @@ define catch: syntax (name: clause) e = {
 define _channel_stderr_: _connect_ $channel _stderr_
 define _channel_stdout_: _connect_ $channel _stdout_
 define clobber: builtin (: args) = {
-	tee @args >/dev/null
+	tee @$args >/dev/null
 }
 define coalesce: syntax (: lst) e = {
 	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
@@ -219,21 +219,21 @@ define lf: builtin (:args) e = {
 define module: method (name) = # no-op
 define map: syntax (: literal) e = {
     define o: object
-    for literal: method (entry) = {
-        define k: entry::head
-        if (is-list k) {
-            set k: $e::eval k
+    for $literal: method (entry) = {
+        define k: $entry::head
+        if (is-list $k) {
+            set k: $e::eval $k
 	}
-        define v: entry::get 1
-        if (eq 1: v::length) {
-            set v: v::head
+        define v: $entry::get 1
+        if (eq 1: $v::length) {
+            set v: $v::head
         }
-        o::_set_ k: $e::eval v
+        o::_set_ k: $e::eval $v
     }
-    public del = _del_
-    public get = _get_
-    public set = _set_
-    return o
+    public del = $_del_
+    public get = $_get_
+    public set = $_set_
+    return $o
 }
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {

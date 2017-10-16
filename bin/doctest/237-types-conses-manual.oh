@@ -52,15 +52,15 @@ write: (cons 11 12)::tail
 ##
 #{
 define a: list do re me
-write: a::get 0
-write: a::get -1
-write: a::slice 1 2
-a::set 0 foo
-a::set 1 bar
-a::set 2 baz
-write a
-write: a::length
-write: a::keys
+write: $a::get 0
+write: $a::get -1
+write: $a::slice 1 2
+$a::set 0 foo
+$a::set 1 bar
+$a::set 2 baz
+write $a
+write: $a::length
+write: $a::keys
 #}
 ##
 ## produce the output,
@@ -73,15 +73,9 @@ write: a::keys
 #+     (0 1 2)
 ##
 
-define x: cons 0 ()
-define predicates: quote: is-atom is-boolean is-builtin is-channel is-cons \
-                          is-float is-integer is-method is-null is-number \
-                          is-object is-pipe is-rational is-status is-string \
-                          is-symbol is-syntax
-for predicates: method (name) = {
-    define predicate: eval name
-    write name: "x => %v"::sprintf: predicate x
-}
+define common: import: ... common.oh
+
+$common::apply-predicates: cons 0 ()
 
 #-     is-atom "x => false"
 #-     is-boolean "x => false"

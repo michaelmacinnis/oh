@@ -19,3 +19,22 @@ public predicates: quote: (is-atom IsAtom) (is-boolean IsBoolean) \
                           (is-status IsStatus) (is-string IsString) \
                           (is-symbol IsSymbol) (is-syntax IsSyntax)
 
+public apply-operators: method (operators operands) = {
+    for $operators: method (name) = {
+        define operator: eval: symbol: "$%s"::sprintf $name
+        for $operands: method (op1) = {
+            for $operands: method (op2) = {
+                define result: $operator $op1 $op2
+                echo: "%s %v %v => %v"::sprintf $name $op1 $op2 $result
+            }
+        }
+    }
+}
+
+public apply-predicates: method (x) = {
+    for $predicates: method (names) = {
+        define name: $names::head
+        define predicate: eval: symbol: "$%s"::sprintf $name
+        write $name: "x => %v"::sprintf: $predicate $x
+    }
+}

@@ -40,6 +40,6 @@ ls | clobber file
 #-     0
 
 rm file 1 2 3
-cd _origin_
+cd $_origin_
 rmdir /tmp/pipelines
 

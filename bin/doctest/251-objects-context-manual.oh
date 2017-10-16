@@ -17,8 +17,8 @@ define o: block {
     context
 }
 
-echo "public variable" o::x
-echo "private variable" o::y
+echo "public variable" $o::x
+echo "private variable" $o::y
 #}
 ##
 ## produce the output,
