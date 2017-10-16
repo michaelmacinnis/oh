@@ -82,6 +82,7 @@ $common::apply-predicates: cons 0 ()
 #-     is-builtin "x => false"
 #-     is-channel "x => false"
 #-     is-cons "x => true"
+#-     is-continuation "x => false"
 #-     is-float "x => false"
 #-     is-integer "x => false"
 #-     is-method "x => false"

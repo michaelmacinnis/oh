@@ -9,28 +9,28 @@ define p: pipe
 spawn {
     # Save code to create a continuation-based while command.
     define code: quote: syntax e (condition: body) = {
-        define label: method () =: return return
-        define continue: method (label) =: label label
+        define label: method () =: return $return
+        define continue: method (label) =: label $label
 
-        set body: cons (quote block) body
+        set body: cons (quote block) $body
         define loop: label
-        if (not (e::eval condition)): return ()
-        e::eval body
-        continue loop
+        if (not ($e::eval $condition)): return ()
+        $e::eval $body
+        continue $loop
     }
 
     # Now send this code through the pipe.
-    p::write @code
+    $p::write @$code
 }
 
 # Create the new command by evaluating what was sent through the pipe.
-define while2: eval: p::readlist
+define while2: eval: $p::readlist
 
 # Now use the new 'while2' command.
 define count: integer 0
-while2 (lt count (integer 100)) {
-    set count: add count 1
-    write count
+while2 (lt $count (integer 100)) {
+    set count: add $count 1
+    write $count
 }
 #}
 ##

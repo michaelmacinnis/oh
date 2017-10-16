@@ -274,12 +274,12 @@ command.
 The commands below,
 
     echo "short-circuit and (with false and something) =>" {
-        and false (echo never be evaluated)
+        and $false (echo never be evaluated)
     }
     echo "short-circuit or (with true and something) =>" {
-        or true (echo never be evaluated)
+        or $true (echo never be evaluated)
     }
-    echo "not false =>": not false
+    echo "not false =>": not $false
 
 produce the output,
 
@@ -648,7 +648,7 @@ for each stage in a pipeline. The code below,
 produces the output,
 
     2
-    1st stage exit status => true
+    1st stage exit status => 0
     2nd stage exit status => 0
     3rd stage exit status => 0
 

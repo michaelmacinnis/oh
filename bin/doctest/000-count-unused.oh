@@ -3,13 +3,13 @@
 define count: integer 0
 
 # Show occurences of 'count' and number of lines in this file.
-cat _0_ | block {
+cat $_0_ | block {
 	define line: readline
-	while line {
-		  echo line
-		  set count: add count 1
+	while $line {
+		  echo $line
+		  set count: add $count 1
 		  set line: readline
 	}
 } | grep "count"
 
-echo count
+echo $count

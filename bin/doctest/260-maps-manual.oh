@@ -24,7 +24,7 @@ echo "3rd stage exit status =>": $exit-status::get "3rd"
 ## produces the output,
 ##
 #+     2
-#+     1st stage exit status => true
+#+     1st stage exit status => 0
 #+     2nd stage exit status => 0
 #+     3rd stage exit status => 0
 ##

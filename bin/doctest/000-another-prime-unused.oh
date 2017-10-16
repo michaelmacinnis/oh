@@ -8,21 +8,21 @@ public next-prime: channel
 define number: integer 2
 define list-of-primes: quote: 1
 
-spawn: while true {
-    define previous = list-of-primes
-    define prime: boolean true
+spawn: while $true {
+    define previous = $list-of-primes
+    define prime $true
 
-    while (and (previous::tail) prime) {
-        set prime: mod number (previous::get 1)
+    while (and ($previous::tail) $prime) {
+        set prime: mod $number ($previous::get 1)
 
-        set previous: previous::tail
+        set previous: $previous::tail
     }
 
-    if prime {
-        previous::set-tail: cons number ()
+    if $prime {
+        $previous::set-tail: cons $number ()
 
-        echo number
+        echo $number
     }
 
-    set number: add number 1
-} > next-prime
+    set number: add $number 1
+} > $next-prime

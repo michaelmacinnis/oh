@@ -25,12 +25,12 @@ write: boolean 0
 ##
 #{
 echo "short-circuit and (with false and something) =>" {
-    and false (echo never be evaluated)
+    and $false (echo never be evaluated)
 }
 echo "short-circuit or (with true and something) =>" {
-    or true (echo never be evaluated)
+    or $true (echo never be evaluated)
 }
-echo "not false =>": not false
+echo "not false =>": not $false
 #}
 ##
 ## produce the output,

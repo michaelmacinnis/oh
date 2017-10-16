@@ -1163,7 +1163,7 @@ func (t *Task) Lookup(sym *Symbol, head, simple bool) (bool, string) {
 		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
 			return false, "'" + r + "' undefined"
 		}
-		if prefixed && head {
+		if prefixed && !head {
 			println("Pointlessly prefixed symbol:", r)
 		}
 		t.Dump = Cons(sym, t.Dump)

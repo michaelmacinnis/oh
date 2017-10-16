@@ -7,4 +7,4 @@ define blah: method () = {
 blah
 
 # Echos 'foo' as foo is no longer defined.
-echo foo
+echo $foo

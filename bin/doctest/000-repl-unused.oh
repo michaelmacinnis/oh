@@ -1,11 +1,11 @@
 #!/usr/bin/env oh
 
 define input: method (Prompt) = {
-	/bin/echo -n Prompt
-	read
+	/bin/echo -n $Prompt
+	readlist
 }
 
 while (define Cmd: input "> ") {
-	eval Cmd
+	eval $Cmd
 }
 

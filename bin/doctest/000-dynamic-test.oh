@@ -3,10 +3,8 @@
 define a = "lexical"
 
 define foo: method () = {
-    echo a caller
+    echo $a $caller
 }
-
-foo
 
 define bar: method () = {
     define a = "local"
@@ -26,7 +24,6 @@ define baz: method () = {
 
 baz
 
-#-     lexical caller
 #-     lexical bar
 #-     lexical baz
 

@@ -4,16 +4,16 @@
 ## values:
 ##
 #{
-define label: method () =: return return
-define continue: method (label) =: label label
+define label: method () =: return $return
+define continue: method (label) =: label $label
 
 define count: integer 0
 define loop: label
-if (lt count (integer 100)) {
-        set count: add count 1
+if (lt $count (integer 100)) {
+        set count: add $count 1
 #        echo: "Hello, World! (%s)"::sprintf count
         echo "Hello, World! (${count})"
-        continue loop
+        continue $loop
 }
 #}
 ##

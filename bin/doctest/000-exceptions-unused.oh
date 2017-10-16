@@ -12,10 +12,10 @@ define m2: method () = {
 	echo Here
 	return
     }
-    echo x
+    echo $x
     set x = "Bonjour"
-    echo y
-    echo z
+    echo $y
+    echo $z
 }
 m1
 m2
