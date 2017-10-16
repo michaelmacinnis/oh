@@ -102,7 +102,7 @@ define _backtick_: syntax (cmd) e = {
 }
 define catch: syntax (name: clause) e = {
 	define args: list $name (quote throw)
-	define body: list (quote throw) $name
+	define body: list (quote throw) (symbol: "$%s"::sprintf $name)
 	if (is-null $clause) {
 		set body: list $body
 	} else {
@@ -238,8 +238,8 @@ define map: syntax (: literal) e = {
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {
 	catch ex {
-		set ex::type = 'error/syntax'
-		set ex::message = "Malformed expression: ${S}"
+		set $ex::type = 'error/syntax'
+		set $ex::message = "Malformed expression: ${S}"
 	}
 
 	float @(_backtick_ (block {
@@ -372,8 +372,8 @@ define source: syntax (name) e = {
 }
 define umask: method (: args) = {
 	catch ex {
-		if (eq '_umask_: command not found' ex::message) {
-			set ex::message = "not implemented on ${_platform_}"
+		if (eq '_umask_: command not found' $ex::message) {
+			set $ex::message = "not implemented on ${_platform_}"
 		}
 	}
 
