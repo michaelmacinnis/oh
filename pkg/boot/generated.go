@@ -124,10 +124,10 @@ define clobber: builtin (: args) = {
 	tee @$args >/dev/null
 }
 define coalesce: syntax (: lst) e = {
-	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
-		set lst: lst::tail
+	while (and (not: is-null: $lst::tail) (not: resolves: $lst::head)) {
+		set lst: $lst::tail
 	}
-	return: $e::eval: lst::head
+	return: $e::eval: $lst::head
 }
 define echo: builtin (: args) = {
 	if (is-null $args) {
@@ -147,7 +147,7 @@ define for: method (l m) = {
 	}
 	return: $r::tail
 }
-define glob: builtin (: args) =: return args
+define glob: builtin (: args) =: return $args
 define import-sem: channel 1
 define import: method (module-path) = {
 	catch unused {
@@ -172,48 +172,48 @@ define import: method (module-path) = {
 	import-return $module-object
 }
 define is-list: method (l) = {
-	if (is-null l): return $false
-	if (not: is-cons l): return $false
-	if (is-null: l::tail): return $true
-	is-list: l::tail
+	if (is-null $l): return $false
+	if (not: is-cons $l): return $false
+	if (is-null: $l::tail): return $true
+	is-list: $l::tail
 }
-define is-text: method (t) =: or (is-string t) (is-symbol t)
+define is-text: method (t) =: or (is-string $t) (is-symbol $t)
 # Last File Manager cd.
 define lcd: method () e = {
 	catch unused {
 		return
 	}
-	if (not: which lfm >/dev/null) {
+	if (not: which 'lfm' >/dev/null) {
 		return
 	}
 	public LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
-	lfm -1
-	if (not: exists LFMPATHFILE) {
+	command 'lfm' -1
+	if (not: exists $LFMPATHFILE) {
 		return
 	}
 	define f: open 'r' $LFMPATHFILE
-	define dn: f::readline
-	f::close
+	define dn: $f::readline
+	$f::close
 	rm $LFMPATHFILE
-	$e::eval: quasiquote: cd (unquote dn)
+	$e::eval: quasiquote: cd (unquote $dn)
 }
 # Change working dir to last dir on exit from lf.
 define lf: builtin (:args) e = {
 	catch unused {
 		return
 	}
-	if (not: which lf >/dev/null) {
+	if (not: which 'lf' >/dev/null) {
 		return
 	}
 	define temp-file @(_backtick_: mktemp)
-	command lf "--last-dir-path=${temp-file}" @args
-	if (not: test -f temp-file) {
+	command 'lf' "--last-dir-path=${temp-file}" @$args
+	if (not: test -f $temp-file) {
 		return
 	}
-	define dn @(_backtick_: cat temp-file)
-	rm temp-file
-	if dn {
-		$e::eval: quasiquote: cd (unquote dn)
+	define dn @(_backtick_: cat $temp-file)
+	rm $temp-file
+	if $dn {
+		$e::eval: quasiquote: cd (unquote $dn)
 	}
 }
 define module: method (name) = # no-op
@@ -244,7 +244,7 @@ define math: method (S) e = {
 
 	float @(_backtick_ (block {
 		echo 'scale=6'
-		write: symbol S
+		write: symbol $S
 	} | bc))
 }
 define object: syntax (: body) e = {
