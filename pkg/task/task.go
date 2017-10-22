@@ -1151,37 +1151,37 @@ func (t *Task) LexicalVar(state int64) bool {
 	return true
 }
 
-func (t *Task) Lookup(sym *Symbol, head, simple bool) (bool, string) {
+func (t *Task) Lookup(sym *Symbol, head, member bool) (bool, string) {
 	r := Raw(sym)
+
 	prefixed := false
 	if strings.HasPrefix(r, "$") {
 		prefixed = true
 		r = r[1:]
+		if strings.HasPrefix(r, "{") && strings.HasSuffix(r, "}") {
+			r = r[1:len(r)-1]		
+		}
 	}
+
+	if !prefixed && !head && !member {
+		t.Dump = Cons(sym, t.Dump)
+		return true, ""
+	}
+
 	c, s := Resolve(t.Lexical, t.Frame, r)
 	if c == nil {
-		if t.GetState() == psEvalMember || (t.Strict() && !number(r)) {
-			return false, "'" + r + "' undefined"
+		if head && !t.Strict() {
+			t.Dump = Cons(sym, t.Dump)
+			return true, ""
 		}
-		if prefixed && !head {
-			println("Pointlessly prefixed symbol:", r)
-		}
-		t.Dump = Cons(sym, t.Dump)
-	} else if simple && !IsSimple(c.Get()) {
-		if !prefixed && !head {
-			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
-		}
-		t.Dump = Cons(sym, t.Dump)
-	} else if a, ok := c.Get().(binding); ok {
-		if !prefixed && ! head {
-			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
-		}
+		return false, "'" + r + "' undefined"
+	}
+
+	v := c.Get()
+	if a, ok := v.(binding); ok {
 		t.Dump = Cons(a.bind(s), t.Dump)
 	} else {
-		if !prefixed && ! head {
-			println("Non-prefixed lookup:", t.File, ":", t.Line, ": ", r)
-		}
-		t.Dump = Cons(c.Get(), t.Dump)
+		t.Dump = Cons(v, t.Dump)
 	}
 
 	return true, ""
@@ -1361,9 +1361,9 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 				}
 				continue
 			} else if sym, ok := t.Code.(*Symbol); ok {
-				simple := t.GetState() == psEvalElementBuiltin
-				head := t.GetState() == psEvalElementHead || t.GetState() == psEvalMember
-				ok, msg := t.Lookup(sym, head, simple)
+				head := t.GetState() == psEvalElementHead
+				member := t.GetState() == psEvalMember
+				ok, msg := t.Lookup(sym, head, member)
 				if !ok {
 					panic(msg)
 				}
