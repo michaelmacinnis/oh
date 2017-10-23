@@ -82,11 +82,9 @@ const (
 	psChangeContext = svMax + iota
 
 	psEvalArguments
-	psEvalArgumentsBuiltin
 	psEvalBlock
 	psEvalCommand
 	psEvalElement
-	psEvalElementBuiltin
 	psEvalElementHead
 	psEvalMember
 
@@ -129,7 +127,6 @@ var (
 
 var next = map[int64][]int64{
 	psEvalArguments:        {svCdrCode, psEvalElement},
-	psEvalArgumentsBuiltin: {svCdrCode, psEvalElementBuiltin},
 	psExecIf:               {psEvalBlock},
 	psExecWhileBody:        {psExecWhileTest, svCode, psEvalBlock},
 }
@@ -1308,12 +1305,12 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 				t.Dump = Cons(external, t.Dump)
 
 				t.ReplaceStates(psExecBuiltin,
-					psEvalArgumentsBuiltin)
+					psEvalArguments)
 			case binding:
 				switch k.ref().(type) {
 				case *builtin:
 					t.ReplaceStates(psExecBuiltin,
-						psEvalArgumentsBuiltin)
+						psEvalArguments)
 
 				case *method:
 					t.ReplaceStates(psExecMethod,
@@ -1334,7 +1331,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			t.Dump = Cons(nil, t.Dump)
 
 			fallthrough
-		case psEvalArguments, psEvalArgumentsBuiltin:
+		case psEvalArguments:
 			if t.Code == Null {
 				break
 			}
@@ -1344,7 +1341,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			t.Code = Car(t.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementBuiltin, psEvalElementHead, psEvalMember:
+		case psEvalElement, psEvalElementHead, psEvalMember:
 			if t.Code == Null {
 				t.Dump = Cons(t.Code, t.Dump)
 				break
