@@ -216,7 +216,7 @@ func files(word string) []string {
 	candidate = path.Clean(candidate)
 	if !path.IsAbs(candidate) {
 		ft := task.ForegroundTask()
-		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "$PWD")
+		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "PWD")
 		cwd := ref.Get().String()
 
 		candidate = path.Join(cwd, candidate)
