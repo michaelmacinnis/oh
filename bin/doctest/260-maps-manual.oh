@@ -9,10 +9,10 @@
 define exit-status: map
 
 define pipe-fitting: method (label cmd: args) = {
-    $exit-status::set $label: command $cmd @$args
+    $exit-status::set $label: $cmd @$args
 }
 
-pipe-fitting "1st" /bin/echo 1 2 3 |
+pipe-fitting "1st" echo 1 2 3 |
 pipe-fitting "2nd" tr " " "\n" |
 pipe-fitting "3rd" grep 2
 
