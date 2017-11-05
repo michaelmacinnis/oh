@@ -489,7 +489,7 @@ font-family: helvetica, arial, san-serif;
 <td>
 env EDITOR=vi git commit<br>
 <span style="color: gray"><em>or</em></span><br>
-public $EDITOR = vi; git commit
+public EDITOR = vi; git commit
 </td>
 <td>env EDITOR=vi git commit</td>
 <td>EDITOR=vi git commit</td>
@@ -552,7 +552,7 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="interpolating-quotes-esc" id="interpolating-quotes-esc"></a><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-esc-note">interpolating quotes escape sequences</a></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
 <td>\" \$ \\</td>
-<td>\$ \\ <span style="white-space: pre-wrap;">\"</span></td>
+<td>$$ \\ <span style="white-space: pre-wrap;">\"</span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
 </tr><tr><td><a name="c-esc-quotes" id="c-esc-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#c-esc-quotes-note">quotes with backslash escapes</a></td>
@@ -630,13 +630,13 @@ echo "foo is $foo"</td>
 </tr><tr><td><a name="bareword-char" id="bareword-char"></a><a href="http://hyperpolyglot.org/unix-shells#bareword-char-note">bareword</a></td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % ! ^ =</td>
-<td>A-Z a-z 0-9 _ - . , + / ^ = $ * ? [ ] { } ~</td>
+<td>A-Z a-z 0-9 _ - . , + / ^ = * ? [ ] { } ~</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ % =</td>
 <td>A-Z a-z 0-9 _ - . , : + / @ %</td>
 </tr><tr><td><a name="var-char" id="var-char"></a><a href="http://hyperpolyglot.org/unix-shells#var-char-note">variable name</a></td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
-<td>A-Z a-z 0-9 _ - . , + / ^ = $ * ? [ ] { } ~</td>
+<td>A-Z a-z 0-9 _ - . , + / ^ = * ? [ ] { } ~</td>
 <td>A-Z a-z 0-9 _</td>
 <td>A-Z a-z 0-9 _</td>
 </tr></tbody></table>
@@ -660,7 +660,7 @@ set -g<br>
 set -e <span style="color: gray"><em>var</em></span><br>
 vared <span style="color: gray"><em>var</em></span></td>
 <td>define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
-<span style="color: gray"><em>var</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
 <br>
 <br>
 <span style="color: gray"><em>(Variables not global by default).</span><br>
@@ -696,7 +696,7 @@ set -gx <span style="color: gray"><em>var</em></span> <span style="color: gray">
 set -x<br>
 set -gu <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span></td>
 <td><span style="color: gray"><em>none</em></span><br>
-public $<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
+public <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
 <br><span style="color: gray"><em>none</em></span>
 <br><span style="color: gray"><em>none</em></span></td>
 <td>setenv <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span><br>
