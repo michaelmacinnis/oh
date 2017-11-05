@@ -750,7 +750,7 @@ unsetopt</td>
 </tr><tr><td>get variable value</td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
-<td><span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td>$<span style="color: gray"><em>var</em></span></td>
 <td></td>
@@ -759,14 +759,14 @@ unsetopt</td>
 <td>{$<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td>"${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span>"<br>
 <span style="color: gray"><em>or</em></span><br>
-""::join <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
+""::join $<span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
 <td></td>
 </tr><tr><td>coalesce</td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
-<td>coalesce <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
+<td>coalesce $<span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
 <td></td>
 <td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
 <td></td>
@@ -789,8 +789,8 @@ unsetopt</td>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>:<span style="color: gray"><em>len</em></span>}</td>
 <td></td>
-<td><span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span><br>
-<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span> <span style="color: gray"><em>stop</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span><br>
+$<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span> <span style="color: gray"><em>stop</em></span></td>
 <td></td>
 <td><span style="color: gray"><em>offset is zero based:</em></span><br>
 ${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
@@ -801,7 +801,7 @@ awk '{print substr($0, <span style="color: gray"><em>offset</em></span>, <span s
 </tr><tr><td>length</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td></td>
-<td><span style="color: gray"><em>var</em></span>::length</td>
+<td>$<span style="color: gray"><em>var</em></span>::length</td>
 <td>${%<span style="color: gray"><em>var</em></span>}</td>
 <td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
 <td>wc -m</td>
@@ -914,7 +914,7 @@ ${foo,}</td>
 </tr><tr><td>absolute path</td>
 <td></td>
 <td></td>
-<td>define $foo = ~<br>
+<td>define foo = ~<br>
 readlink -f $foo</td>
 <td></td>
 <td>foo=~<br>
@@ -923,7 +923,7 @@ ${foo:a}</td>
 </tr><tr><td>dirname</td>
 <td></td>
 <td></td>
-<td>define $foo = /etc/hosts<br>
+<td>define foo = /etc/hosts<br>
 dirname $foo</td>
 <td></td>
 <td>foo=/etc/hosts<br>
@@ -933,7 +933,7 @@ dirname $foo</td>
 </tr><tr><td>basename</td>
 <td></td>
 <td></td>
-<td>define $foo = /etc/hosts<br>
+<td>define foo = /etc/hosts<br>
 basename $foo</td>
 <td></td>
 <td>foo=/etc/hosts<br>
