@@ -1752,9 +1752,9 @@ func bindSpecialVariables(origin string, args []string) {
 	arglist := Null
 
 	for i, s := range args {
-		k := "_" + strconv.Itoa(i) + "_"
 		v := NewString(s)
-		scope0.Define(k, v)
+
+		scope0.Define(strconv.Itoa(i), v)
 
 		arglist = Cons(v, arglist)
 	}

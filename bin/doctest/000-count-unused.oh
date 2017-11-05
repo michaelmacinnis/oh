@@ -3,7 +3,7 @@
 define count: integer 0
 
 # Show occurences of 'count' and number of lines in this file.
-cat $_0_ | block {
+cat $0 | block {
 	define line: readline
 	while $line {
 		  echo $line
