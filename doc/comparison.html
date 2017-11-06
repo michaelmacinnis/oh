@@ -1461,7 +1461,7 @@ done</td>
 </tr><tr><td>lookup</td>
 <td>${a[0]}</td>
 <td>$a[1]</td>
-<td>a::get 0</td>
+<td>$a::get 0</td>
 <td>${a[1]}</td>
 <td>${a[1]}<br>
 $a[1]</td>
@@ -1471,7 +1471,7 @@ ${a[-1]}</td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
 $a[-1]</td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
-a::get -1</td>
+$a::get -1</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>returns last element:</em></span><br>
 ${a[-1]}</td>
@@ -1479,7 +1479,7 @@ ${a[-1]}</td>
 <td>${a[@]:2:3}<br>
 ${a[*]:2:3}</td>
 <td>$a[(seq 2&nbsp;3)]</td>
-<td>a::slice 1 2</td>
+<td>$a::slice 1 2</td>
 <td>${a[2-3]}</td>
 <td>$a[2,3]</td>
 </tr><tr><td>update</td>
@@ -1489,9 +1489,9 @@ a[2]=mi</td>
 <td>set a[1] do<br>
 set a[2] re<br>
 set a[3] mi</td>
-<td>a::set 0 do<br>
-a::set 1 re<br>
-a::set 2 mi</td>
+<td>$a::set 0 do<br>
+$a::set 1 re<br>
+$a::set 2 mi</td>
 <td>set a[1] = do<br>
 set a[2] = re<br>
 set a[3] = mi</td>
@@ -1513,7 +1513,7 @@ slots get empty strings</em></span></td>
 ${#a[@]}<br>
 ${#a[*]}</td>
 <td>count $a</td>
-<td>a::length</td>
+<td>$a::length</td>
 <td>${#a}</td>
 <td>${#a}<br>
 ${#a[@]}<br>
@@ -1554,13 +1554,13 @@ unset a[*]</td>
 </tr><tr><td>pass each element as argument</td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
 <td><span style="color: gray"><em>cmd</em></span> $a</td>
-<td><span style="color: gray"><em>cmd</em></span> @a</td>
+<td><span style="color: gray"><em>cmd</em></span> @$a</td>
 <td></td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
 </tr><tr><td>pass as single argument</td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
 <td><span style="color: gray"><em>cmd</em></span> "$a"</td>
-<td><span style="color: gray"><em>cmd</em></span> " "::join @a</td>
+<td><span style="color: gray"><em>cmd</em></span> " "::join @$a</td>
 <td></td>
 <td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
 </tr></tbody></table>
@@ -1587,26 +1587,26 @@ unset a[*]</td>
 </tr><tr><td>assign value</td>
 <td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>var</em></span>::set "bar" baz</td>
+<td>$<span style="color: gray"><em>var</em></span>::set "bar" baz</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
 </tr><tr><td>lookup</td>
 <td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>var</em></span>::get "bar"</td>
+<td>$<span style="color: gray"><em>var</em></span>::get "bar"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
 </tr><tr><td>list indices</td>
 <td>${!<span style="color: gray"><em>var</em></span>[@]}<br>
 ${!<span style="color: gray"><em>var</em></span>[*]}</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>var</em></span>::keys</td>
+<td>$<span style="color: gray"><em>var</em></span>::keys</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td><span style="color: gray"><em>none</em></span></td>
 </tr><tr><td>delete value</td>
 <td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td><span style="color: gray"><em>none</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span>::del "bar"</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
 </tr><tr><td>delete array</td>
@@ -1665,7 +1665,7 @@ zed -f foo</td>
 <td><span style="color: gray"><em>Given:</em></span><br>
 define foo: method (: argv) = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span># ...<br>
 }<br><br>
-argv::get 0, argv::get 1, <span style="color: gray"><em>…</em></span>
+$argv::get 0, $argv::get 1, <span style="color: gray"><em>…</em></span>
 </td>
 </td>
 <td><span style="color: gray"><em>none</em></span></td>
@@ -1673,7 +1673,7 @@ argv::get 0, argv::get 1, <span style="color: gray"><em>…</em></span>
 </tr><tr><td><a name="num-func-param" id="num-func-param"></a><a href="http://hyperpolyglot.org/unix-shells#num-func-param-note">number of parameters</a></td>
 <td>$#</td>
 <td>(count $argv)</td>
-<td>argv::length</td>
+<td>$argv::length</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>$#</td>
 </tr><tr><td><a name="func-return" id="func-return"></a><a href="http://hyperpolyglot.org/unix-shells#func-return-note">return</a></td>
@@ -1681,7 +1681,7 @@ argv::get 0, argv::get 1, <span style="color: gray"><em>…</em></span>
 }</td>
 <td>function false<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
 end</td>
-<td>define return-false: method () = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return false<br>
+<td>define return-false: method () = {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return $false<br>
 }</td>
 <td><span style="color: gray"><em>none</em></span></td>
 <td>false() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
@@ -1738,7 +1738,7 @@ unalias ll<br><span style="color: gray"><em>none</em></span></td>
 <td>alias ltr 'ls -ltr'<br>
 functions<br>
 functions -e ltr<br><span style="color: gray"><em>none</em></span></td>
-<td>define ll: syntax (: args) =: ls -l @args
+<td>define ll: syntax (: args) =: ls -l @$args
 <br><span style="color: gray"><em>none</em></span>
 <br><span style="color: gray"><em>none</em></span>
 <br><span style="color: gray"><em>none</em></span>
@@ -1866,7 +1866,7 @@ $ zsh <span style="white-space: pre-wrap;">--</span>restricted</td>
 <td>shift<br>
 shift <span style="color: gray"><em>n</em></span></td>
 <td></td>
-<td>set _args_ =: _args_::tail<br>
+<td>set _args_ =: $_args_::tail<br>
 <span style="color: gray"><em>none</em></span></td>
 <td>shift<br><span style="color: gray"><em>none</em></span></td>
 <td>shift<br>
@@ -2048,7 +2048,7 @@ done</td>
 </tr><tr><td>stdout and stderr to file</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
-<td>public _stderr_ = _stdout_; ls &gt; <span style="color: gray"><em>file</em></td>
+<td>public _stderr_ = $_stdout_; ls &gt; <span style="color: gray"><em>file</em></td>
 <td>ls &gt;&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 </tr><tr><td>append stdout to file</td>
@@ -2066,7 +2066,7 @@ done</td>
 </tr><tr><td>append stdout and stderr to file</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
-<td>public _stderr_ = _stdout_; ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>public _stderr_ = $_stdout_; ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span>&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/zsh.out 2&gt;&amp;1</td>
 </tr><tr><td>stdout to pipe</td>
@@ -2084,7 +2084,7 @@ done</td>
 </tr><tr><td>sdout and stderr to pipe</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
-<td>public _stderr_ = _stdout_; ls | wc</td>
+<td>public _stderr_ = $_stdout_; ls | wc</td>
 <td>ls |&amp; wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 </tr><tr><td>stdin from here-document</td>
