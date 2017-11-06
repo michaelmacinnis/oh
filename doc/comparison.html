@@ -1062,7 +1062,7 @@ $argv[1], $argv[2], …</td>
 </tr><tr><td>number of command line args</td>
 <td>$#</td>
 <td>(count $argv)</td>
-<td>_args_::length</td>
+<td>$_args_::length</td>
 <td>$#</td>
 <td>$#<br>
 $#argv</td>
@@ -1070,26 +1070,26 @@ $#argv</td>
 <td>$*<br>
 $@</td>
 <td><span style="color: gray"><em>none</em></span></td>
-<td>_args_</td>
+<td>$_args_</td>
 <td>$*</td>
 <td>$*<br>
 $@</td>
 </tr><tr><td>"$1" "$2" "$3" …</td>
 <td>"$@"</td>
 <td>$argv</td>
-<td>@_args_</td>
+<td>@$_args_</td>
 <td></td>
 <td>"$@"</td>
 </tr><tr><td>"$1<span style="color: gray"><em>c</em></span>$2<span style="color: gray"><em>c</em></span>$3 …" where <span style="color: gray"><em>c</em></span> is first character of $IFS</td>
 <td>"$*"</td>
 <td>"$argv"</td>
-<td>"<span style="color: gray"><em>c</em></span>"::join @_args_</td>
+<td>"<span style="color: gray"><em>c</em></span>"::join @$_args_</td>
 <td></td>
 <td>"$*"</td>
 </tr><tr><td>process id</td>
 <td>$$</td>
 <td>%self</td>
-<td>_pid_</td>
+<td>$_pid_</td>
 <td>$$</td>
 <td>$$</td>
 </tr><tr><td>process id of last asynchronous command</td>
@@ -1183,8 +1183,8 @@ MACHTYPE</td>
 <td>PWD<br>
 OLDPWD</td>
 <td>PWD<br><span style="color: gray"><em>none</em></span></td>
-<td>$PWD<br>
-$OLDPWD</td>
+<td>PWD<br>
+OLDPWD</td>
 <td></td>
 <td>PWD<br>
 OLDPWD</td>
@@ -1364,15 +1364,13 @@ test -e /etc</td>
 </tr><tr><td><a name="true-cmd" id="true-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#true-cmd-note">true command</a></td>
 <td>true</td>
 <td>true</td>
-<td>/bin/true<br>
-<span style="color: gray"><em>(true is a boolean value in oh)</em></span></td>
+<td>true</td>
 <td></td>
 <td>true</td>
 </tr><tr><td><a name="false-cmd" id="false-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#false-cmd-note">false command</a></td>
 <td>false</td>
 <td>false</td>
-<td>/bin/false<br>
-<span style="color: gray"><em>(false is a boolean value in oh)</em></span></td>
+<td>false</td>
 <td></td>
 <td>false</td>
 </tr><tr><td><a name="conditional-cmd" id="conditional-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#conditional-cmd-note">conditional command</a></td>
