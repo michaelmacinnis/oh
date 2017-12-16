@@ -26,7 +26,11 @@ define _connect_: syntax (conduit-name name) e = {
 }
 define _redirect_: syntax (name mode closer) = {
 	syntax (c cmd) e = {
-		define c: $e::eval $c
+		define l: glob: $e::eval $c
+		if (lt 1: $l::length) {
+			throw: exception "can't redirect to/from multiple files"
+		}
+		define c: $l::head
 		define f = ()
 		if (not: or (is-channel $c) (is-pipe $c)) {
 			set mode: $e::eval $mode
@@ -400,16 +404,16 @@ $_sys_::public _exception: method (type status message line file) e = {
 $_sys_::public exception: method (message :args) e = {
 	define s: status $false
 	define t: symbol 'error/runtime'
-	if (not: is-null args) {
-		set s: args::head
-		set args: args::tail
+	if (not: is-null $args) {
+		set s: $args::head
+		set args: $args::tail
 	}
-	if (not: is-null args) {
-		set t = s
-		set s: args::head
-		set args: args::tail
+	if (not: is-null $args) {
+		set t = $s
+		set s: $args::head
+		set args: $args::tail
 	}
-	_exception t s message {
+	_exception $t $s $message {
 		public line: $e::eval: get-line-number
 		public file: $e::eval: get-source-file
 	}
