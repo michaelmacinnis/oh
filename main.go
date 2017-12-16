@@ -210,16 +210,16 @@ func files(word string) []string {
 
 	candidate := word
 	if candidate[:1] == "~" {
-		candidate = filepath.Join(os.Getenv("HOME"), candidate[1:])
+		ft := task.ForegroundTask()
+		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "HOME")
+		candidate = filepath.Join(ref.Get().String(), candidate[1:])
 	}
 
 	candidate = path.Clean(candidate)
 	if !path.IsAbs(candidate) {
 		ft := task.ForegroundTask()
 		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "PWD")
-		cwd := ref.Get().String()
-
-		candidate = path.Join(cwd, candidate)
+		candidate = path.Join(ref.Get().String(), candidate)
 	}
 
 	dirname, basename := filepath.Split(candidate)

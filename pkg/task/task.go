@@ -113,7 +113,6 @@ var (
 	envs        context
 	frame0      Cell
 	external    Cell
-	home        = "-"
 	interactive = false
 	jobs        = map[int]*Task{}
 	jobsl       = &sync.RWMutex{}
@@ -1022,7 +1021,12 @@ func (t *Task) External(args Cell) bool {
 
 	name := Raw(Car(t.Dump))
 
-	arg0, exe, problem := adapted.LookPath(name)
+	pathenv := ""
+	c, _ := Resolve(t.Lexical, t.Frame, "PATH")
+	if c != nil {
+		pathenv = Raw(c.Get())
+	}
+	arg0, exe, problem := adapted.LookPath(pathenv, name)
 
 	SetCar(t.Dump, False)
 
@@ -1040,7 +1044,7 @@ func (t *Task) External(args Cell) bool {
 		argv = append(argv, Raw(Car(args)))
 	}
 
-	c, _ := Resolve(t.Lexical, t.Frame, "PWD")
+	c, _ = Resolve(t.Lexical, t.Frame, "PWD")
 	dir := c.Get().String()
 
 	c, _ = Resolve(t.Lexical, t.Frame, "_stdin_")
@@ -1225,7 +1229,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			args := t.Arguments()
 
 			if state == psExecBuiltin {
-				args = expand(args)
+				args = t.expand(args)
 			}
 
 			t.Code = args
@@ -1889,7 +1893,7 @@ func eval(c Cell) (Cell, bool) {
 	return <-task0.Done, true
 }
 
-func expand(args Cell) Cell {
+func (t *Task) expand(args Cell) Cell {
 	list := Null
 
 	for ; args != Null; args = Cdr(args) {
@@ -1910,10 +1914,8 @@ func expand(args Cell) Cell {
 
 		for _, e := range braceExpand(s) {
 			if len(e) > 0 && e[:1] == "~" {
-				if home == "-" {
-					home = "+" + os.Getenv("HOME")
-				}
-				e = filepath.Join(home[1:], e[1:])
+				ref, _ := Resolve(t.Lexical, t.Frame, "HOME")
+				e = filepath.Join(ref.Get().String(), e[1:])
 			}
 
 			if !strings.ContainsAny(e, "*?[") {
