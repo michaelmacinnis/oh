@@ -10,7 +10,7 @@
 ##
 #{
 define o: object {
-    public x = 1
+    export x = 1
     define y = 2
 }
 

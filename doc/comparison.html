@@ -489,7 +489,7 @@ font-family: helvetica, arial, san-serif;
 <td>
 env EDITOR=vi git commit<br>
 <span style="color: gray"><em>or</em></span><br>
-public EDITOR = vi; git commit
+export EDITOR = vi; git commit
 </td>
 <td>env EDITOR=vi git commit</td>
 <td>EDITOR=vi git commit</td>
@@ -696,7 +696,7 @@ set -gx <span style="color: gray"><em>var</em></span> <span style="color: gray">
 set -x<br>
 set -gu <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span></td>
 <td><span style="color: gray"><em>none</em></span><br>
-public <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
+export <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
 <br><span style="color: gray"><em>none</em></span>
 <br><span style="color: gray"><em>none</em></span></td>
 <td>setenv <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span><br>
@@ -2048,7 +2048,7 @@ done</td>
 </tr><tr><td>stdout and stderr to file</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
-<td>public _stderr_ = $_stdout_; ls &gt; <span style="color: gray"><em>file</em></td>
+<td>export _stderr_ = $_stdout_; ls &gt; <span style="color: gray"><em>file</em></td>
 <td>ls &gt;&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
 </tr><tr><td>append stdout to file</td>
@@ -2066,7 +2066,7 @@ done</td>
 </tr><tr><td>append stdout and stderr to file</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
-<td>public _stderr_ = $_stdout_; ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>export _stderr_ = $_stdout_; ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span>&amp; <span style="color: gray"><em>file</em></span></td>
 <td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/zsh.out 2&gt;&amp;1</td>
 </tr><tr><td>stdout to pipe</td>
@@ -2084,7 +2084,7 @@ done</td>
 </tr><tr><td>sdout and stderr to pipe</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
-<td>public _stderr_ = $_stdout_; ls | wc</td>
+<td>export _stderr_ = $_stdout_; ls | wc</td>
 <td>ls |&amp; wc</td>
 <td>ls 2&gt;&amp;1 | wc</td>
 </tr><tr><td>stdin from here-document</td>

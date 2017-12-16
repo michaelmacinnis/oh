@@ -350,7 +350,7 @@ Methods can be saved in a file and then imported. If the function hello
 was defined in the file hello.oh as shown below
 
 \begin{lstlisting}
-	public hello: method () = {
+	export hello: method () = {
 		write "Hello, World!"
 	}
 \end{lstlisting}
@@ -375,15 +375,15 @@ An object can be created explicitly with the object command.
 		define x: integer r
 		define y: integer s
 
-		public get-x: method self () = {
+		export get-x: method self () = {
 			return self::x
 		}
 
-		public get-y: method self () = {
+		export get-y: method self () = {
 			return self::y
 		}
 
-		public move: method self (a b) = {
+		export move: method self (a b) = {
 			set self::x: add self::x a
 			set self::y: add self::y b
 		}
@@ -408,7 +408,7 @@ Dynamic communication patterns are enabled by the fact that public slots
 can be updated or added to any object, at runtime.
 
 \begin{lstlisting}
-	p::public show: method self () = {
+	p::export show: method self () = {
 		echo: add "(" self::x "," self::y ")\n"
 	}
 \end{lstlisting}
@@ -480,7 +480,7 @@ prime number. These processes are strung together like beads on a string.
 #!/usr/bin/env oh
 define strict true
 
-Root::public read-car: method self () =: car: self::read
+Root::export read-car: method self () =: car: self::read
 
 define counter: method (n) = {
     while true {

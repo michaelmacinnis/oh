@@ -166,8 +166,7 @@ a symbol in oh, can be one or more alphanumeric characters. Unlike other
 programming languages, there is no restriction that a symbol start with,
 or even contain, an alphabetic character. Oh also permits the following
 characters in symbols: `!`, `*`, `+`, `,`, `-`, `/`, `=`,`?`, `[`, `]`,
-and `_`. Unless a symbol has been used as a variable name, it evaluates
-to itself.
+and `_`.
 
 The command,
 
@@ -471,13 +470,13 @@ produce the output,
 In oh, environments are first-class values. The command `context` returns
 the current environment or context. The `context` command along with the
 `::` operator can be used to evaluate a public variable in an explicit
-context. For a variable to be public it must be created with the `public`
+context. For a variable to be public it must be created with the `export`
 command instead of the `define` command.
 
 The commands,
 
     define o: block {
-        public x = 1
+        export x = 1
         define y = 2
         context
     }
@@ -499,7 +498,7 @@ command with a `context` command as the final action.
 The previous example can be rewritten as,
 
     define o: object {
-        public x = 1
+        export x = 1
         define y = 2
     }
     
@@ -537,20 +536,20 @@ appear before the list of arguments.
         define x: integer $r
         define y: integer $s
     
-        public get-x: method self () = {
+        export get-x: method self () = {
             return $self::x
         }
     
-        public get-y: method self () = {
+        export get-y: method self () = {
             return $self::y
         }
     
-        public move: method self (a b) = {
+        export move: method self (a b) = {
             set self::x: add $self::x $a
             set self::y: add $self::y $b
         }
     
-        public show: method self () = {
+        export show: method self () = {
             echo $self::x $self::y
         }
     }
@@ -562,7 +561,7 @@ Shared behavior can be implemented by defining a method in an outer scope.
 
 The following code,
 
-    public me: method self () =: echo "my name is:" $self::name
+    export me: method self () =: echo "my name is:" $self::name
     
     define x: object {
         define name = "x"
@@ -578,7 +577,7 @@ An object may explicitly delegate behavior, as shown in the following code,
 
     define y: object {
         define name = "y"
-        public me-too = $x::me    # Explicit delegation.
+        export me-too = $x::me    # Explicit delegation.
     }
     
     $y::me
@@ -593,7 +592,7 @@ An object may redirect a call to another object. The code below,
 
     define z: object {
         define name = "z"
-        public you: method () =: $x::me    # Redirection.
+        export you: method () =: $x::me    # Redirection.
     }
     
     $z::me

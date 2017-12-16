@@ -17,6 +17,6 @@ while (define Path: readline) {
 	error running $File
 	diff <(grep "^#[+-]     " $Path | sed -e "s/^#[+-]     //g" |
 		prefix-lines $File) \
-	     <(public _stderr_ = $_stdout_; $Path | prefix-lines $File)
+	     <(export _stderr_ = $_stdout_; $Path | prefix-lines $File)
 }
 

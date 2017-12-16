@@ -12,7 +12,7 @@ define _connect_: syntax (conduit-name name) e = {
 		define ec-ex-chan: channel 1
 		spawn {
 			define ec-ex: $e::eval: _rew_: quasiquote: block {
-				public (unquote $name) = (unquote $p)
+				export (unquote $name) = (unquote $p)
 				unquote $left
 			}
 			$p::_writer_close_
@@ -20,7 +20,7 @@ define _connect_: syntax (conduit-name name) e = {
 		}
 		block {
 			define right-ec-ex: $e::eval: _rew_: quasiquote: block {
-				public _stdin_ = (unquote $p)
+				export _stdin_ = (unquote $p)
 				unquote $right
 			}
 			$p::_reader_close_
@@ -33,11 +33,14 @@ define _connect_: syntax (conduit-name name) e = {
 }
 define _redirect_: syntax (name mode closer) = {
 	syntax (c cmd) e = {
-		define l: glob: $e::eval $c
-		if (lt 1: $l::length) {
-			throw: exception "can't redirect to/from multiple files"
+		define c: $e::eval $c
+		if (is-symbol $c) {
+			define l: glob $c
+			if (lt 1: $l::length) {
+				throw: exception "can't redirect to/from multiple files"
+			}
+			set c =: $l::head
 		}
-		define c: $l::head
 		define f = ()
 		if (not: or (is-channel $c) (is-pipe $c)) {
 			set mode: $e::eval $mode
@@ -48,7 +51,7 @@ define _redirect_: syntax (name mode closer) = {
 			set c = $f
 		}
 		define ec-ex: $e::eval: _rew_: quasiquote: block {
-			public (unquote $name) (unquote $c)
+			export (unquote $name) (unquote $c)
 			unquote $cmd
 		}
 		if (not: is-null $f): ($f::_get_ $closer)
@@ -87,7 +90,7 @@ define _backtick_: syntax (cmd) e = {
 	define ec-ex-chan: channel 1
 	spawn {
 		define ec-ex: $e::eval: _rew_: quasiquote: block {
-			public _stdout_ = (unquote $p)
+			export _stdout_ = (unquote $p)
 			unquote $cmd
 		}
 		$p::_writer_close_
@@ -117,8 +120,8 @@ define catch: syntax (name: clause) e = {
 	}
 	define _return: $e::eval (quote $return)
 	define _throw = $throw
-	$e::public throw: method (condition) = {
-		public throw = $_throw
+	$e::export throw: method (condition) = {
+		export throw = $_throw
 		_return: handler $condition $_throw
 	}
 }
@@ -190,7 +193,7 @@ define lcd: method () e = {
 	if (not: which 'lfm' >/dev/null) {
 		return
 	}
-	public LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
+	export LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
 	command 'lfm' -1
 	if (not: exists $LFMPATHFILE) {
 		return
@@ -234,9 +237,9 @@ define map: syntax (: literal) e = {
         }
         o::_set_ k: $e::eval $v
     }
-    public del = $_del_
-    public get = $_get_
-    public set = $_set_
+    export del = $_del_
+    export get = $_get_
+    export set = $_set_
     return $o
 }
 # TODO: Replace with builtin rather than invoking bc.
@@ -389,18 +392,18 @@ define umask: method (: args) = {
 	_umask_ @args
 }
 define write: method (: args) =: $_stdout_::write @$args
-public quote: syntax (cell) =: return $cell
-$_root_::public _modules_: object
-$_sys_::public complete: method self (first completing) = {
+export quote: syntax (cell) =: return $cell
+$_root_::export _modules_: object
+$_sys_::export complete: method self (first completing) = {
 	return ()
 }
-$_sys_::public _exception: method (type status message line file) e = {
+$_sys_::export _exception: method (type status message line file) e = {
 	object {
-		public type = $type
-		public status = $status
-		public message = $message
-		public line = $line
-		public file = $file
+		export type = $type
+		export status = $status
+		export message = $message
+		export line = $line
+		export file = $file
 	}
 }
 # The generator method exception can be called in three ways:
@@ -408,7 +411,7 @@ $_sys_::public _exception: method (type status message line file) e = {
 # exception <value> <message>
 # exception <type> <value> <message>
 # If not provided value defaults to status false and type to error/runtime.
-$_sys_::public exception: method (message :args) e = {
+$_sys_::export exception: method (message :args) e = {
 	define s: status $false
 	define t: symbol 'error/runtime'
 	if (not: is-null $args) {
@@ -421,27 +424,27 @@ $_sys_::public exception: method (message :args) e = {
 		set args: $args::tail
 	}
 	_exception $t $s $message {
-		public line: $e::eval: get-line-number
-		public file: $e::eval: get-source-file
+		export line: $e::eval: get-line-number
+		export file: $e::eval: get-source-file
 	}
 }
-$_sys_::public get-completions: method self (first completing) = {
+$_sys_::export get-completions: method self (first completing) = {
 	catch unused {
 		return ()
 	}
 	$self::complete $first $completing
 }
-$_sys_::public get-prompt: method self (suffix) = {
+$_sys_::export get-prompt: method self (suffix) = {
 	catch unused {
 		return $suffix
 	}
 	$self::prompt $suffix
 }
-$_sys_::public prompt: method (suffix) = {
+$_sys_::export prompt: method (suffix) = {
 	define dirs: '/'::split $PWD
 	return: ''::join ($dirs::get: integer '-1') $suffix
 }
-$_sys_::public throw: method (c) = {
+$_sys_::export throw: method (c) = {
 	error: ': '::join $c::file $c::line $c::type $c::message
 	fatal $c::status
 }

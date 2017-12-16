@@ -1949,7 +1949,7 @@ func init() {
 	namespace = NewScope(nil, nil)
 
 	namespace.PublicMethod("_del_", func(t *Task, args Cell) bool {
-		panic("public members cannot be remove from this type")
+		panic("public members cannot be removed from this type")
 	})
 	namespace.PublicMethod("_dir_", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
@@ -1991,7 +1991,7 @@ func init() {
 		}
 		return t.Return(l)
 	})
-	namespace.PublicMethod("public", func(t *Task, args Cell) bool {
+	namespace.PublicMethod("export", func(t *Task, args Cell) bool {
 		panic("public members cannot be added to this type")
 	})
 
@@ -2068,7 +2068,7 @@ func init() {
 
 		return t.Return(NewString(modified))
 	})
-	object.PublicSyntax("public", func(t *Task, args Cell) bool {
+	object.PublicSyntax("export", func(t *Task, args Cell) bool {
 		return t.LexicalVar(psExecPublic)
 	})
 

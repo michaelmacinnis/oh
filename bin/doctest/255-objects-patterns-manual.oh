@@ -5,7 +5,7 @@
 ## The following code,
 ##
 #{
-public me: method self () =: echo "my name is:" $self::name
+export me: method self () =: echo "my name is:" $self::name
 
 define x: object {
     define name = "x"
@@ -24,7 +24,7 @@ $x::me
 #{
 define y: object {
     define name = "y"
-    public me-too = $x::me    # Explicit delegation.
+    export me-too = $x::me    # Explicit delegation.
 }
 
 $y::me
@@ -42,7 +42,7 @@ $y::me-too
 #{
 define z: object {
     define name = "z"
-    public you: method () =: $x::me    # Redirection.
+    export you: method () =: $x::me    # Redirection.
 }
 
 $z::me

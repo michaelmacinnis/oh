@@ -5,14 +5,14 @@
 ## In oh, environments are first-class values. The command `context` returns
 ## the current environment or context. The `context` command along with the
 ## `::` operator can be used to evaluate a public variable in an explicit
-## context. For a variable to be public it must be created with the `public`
+## context. For a variable to be public it must be created with the `export`
 ## command instead of the `define` command.
 ##
 ## The commands,
 ##
 #{
 define o: block {
-    public x = 1
+    export x = 1
     define y = 2
     context
 }

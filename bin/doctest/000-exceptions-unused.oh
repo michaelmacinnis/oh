@@ -1,8 +1,8 @@
 #!/usr/bin/env oh
 
-public y "and"
+export y "and"
 define m1: method () = {
-    public x = "Hello"
+    export x = "Hello"
     define z = "Goodbye"
     m2
     m2

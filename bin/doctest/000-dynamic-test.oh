@@ -8,7 +8,7 @@ define foo: method () = {
 
 define bar: method () = {
     define a = "local"
-    public caller = "bar"
+    export caller = "bar"
 
     foo
 }
@@ -16,8 +16,8 @@ define bar: method () = {
 bar
 
 define baz: method () = {
-    public a = "nice try"
-    public caller = "baz"
+    export a = "nice try"
+    export caller = "baz"
 
     foo
 }
