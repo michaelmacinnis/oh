@@ -149,17 +149,18 @@ define for: method (l m) = {
 }
 define glob: builtin (: args) =: return $args
 define _import_request_: channel 1
-define _import_: method (modules path) = {
+define _import_: method (modules callback path) = {
 	define import-return = $return
 	define import: method (path) = {
-		$_import_request_::write $path $return
-		import-return ()
+		$_import_request_::write $return $path
+		import-return
 	}
 	define module-name = $false
 	define module: method (name) = {
 		if ($modules::has $name) {
 			define module-object: $modules::get $name
-			import-return $module-object
+			callback $module-object
+			import-return
 		}
 		set module-name = $name
 	}
@@ -169,13 +170,21 @@ define _import_: method (modules path) = {
 	if $module-name {
 		$modules::set $module-name $module-object
 	}
-	import-return $module-object
+	callback $module-object
+}
+# Importer.
+spawn {
+	define modules: map
+	while $true {
+		define request: $_import_request_::readlist
+		_import_ $modules @$request
+	}
 }
 define import: method (path) = {
 	define response: channel
-	$_import_request_::write $path (method (returned) = {
+	$_import_request_::write (method (returned) = {
 		$response::write $returned
-	})
+	}) $path
 	$response::read
 }
 define is-list: method (l) = {
@@ -446,28 +455,6 @@ $_sys_::export prompt: method (suffix) = {
 $_sys_::export throw: method (c) = {
 	error: ': '::join $c::file $c::line $c::type $c::message
 	fatal $c::status
-}
-spawn {
-	define modules: map
-	define stack = ()
-
-	while $true {
-		define request: $_import_request_::readlist
-
-		define path: $request::get 0
-		define callback: $request::get 1
-
-		set stack: cons $callback $stack
-
-		while (and $request $stack) {
-			set request: _import_ $modules $path
-			if $request {
-				define send: $stack::head
-				set stack: $stack::tail
-				send $request
-			}
-		}
-	}
 }
 exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)
 
