@@ -156,11 +156,11 @@ define for: method (l m) = {
 }
 define glob: builtin (: args) =: return $args
 define _import_request_: channel 1
-define _importer_: method (modules path response) = {
-	$response::write: _do_import_ $modules $path
-}
 define _do_import_: method (modules path) = {
 	define import-return = $return
+	define import: method (path) = {
+		import-return: list $path $return
+	}
 	define module-name = $false
 	define module: method (name) = {
 		if ($modules::has $name) {
@@ -179,7 +179,9 @@ define _do_import_: method (modules path) = {
 }
 define import: method (path) = {
 	define response: channel
-	$_import_request_::write $path $response
+	$_import_request_::write $path (method (returned) = {
+		$response::write $returned
+	})
 	$response::read
 }
 define is-list: method (l) = {
@@ -454,23 +456,27 @@ $_sys_::export throw: method (c) = {
 spawn {
 	define modules: map
 	define stack = ()
+
 	while $true {
 		define request: $_import_request_::readlist
 
 		define path: $request::get 0
-		define response: $request::get 1
+		define callback: $request::get 1
 
-		set stack: cons (method (returned) = {
-			$response::write $returned
-		}) $stack
+		set stack: cons $callback $stack
 
-		define returned: _do_import_ $modules $path
-		if (is-continuation returned) {
-			set stack: cons $returned $stack
-		} else {
-			define send: $stack::head
-			set stack = $stack::tail
-			send $returned
+		while (not: is-null $stack) {
+			set request: _do_import_ $modules $path
+			if (is-list $request) {
+				set path: $request::get 0
+				set callback: $request::get 1
+
+				set stack: cons $callback $stack
+			} else {
+				define send: $stack::head
+				set stack: $stack::tail
+				send $request
+			}
 		}
 	}
 }
