@@ -149,10 +149,11 @@ define for: method (l m) = {
 }
 define glob: builtin (: args) =: return $args
 define _import_request_: channel 1
-define _do_import_: method (modules path) = {
+define _import_: method (modules path) = {
 	define import-return = $return
 	define import: method (path) = {
-		import-return: list $path $return
+		$_import_request_::write $path $return
+		import-return ()
 	}
 	define module-name = $false
 	define module: method (name) = {
@@ -458,14 +459,9 @@ spawn {
 
 		set stack: cons $callback $stack
 
-		while (not: is-null $stack) {
-			set request: _do_import_ $modules $path
-			if (is-list $request) {
-				set path: $request::get 0
-				set callback: $request::get 1
-
-				set stack: cons $callback $stack
-			} else {
+		while (and $request $stack) {
+			set request: _import_ $modules $path
+			if $request {
 				define send: $stack::head
 				set stack: $stack::tail
 				send $request
