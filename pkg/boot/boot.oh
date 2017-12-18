@@ -151,15 +151,26 @@ define glob: builtin (: args) =: return $args
 define _import_request_: channel 1
 define _import_: method (modules callback path) = {
 	define import-return = $return
+	catch ex {
+		callback: cons () $ex
+		import-return
+	}
 	define import: method (path) = {
-		$_import_request_::write $return $path
+		define ec-ex: (method () = {
+			$_import_request_::write $return $path
+			return ()
+		})
+		define ex: $ec-ex::tail
+		if $ex: throw $ex
+		define ec: $ec-ex::head
+		if $ec: return $ec
 		import-return
 	}
 	define module-name = $false
 	define module: method (name) = {
 		if ($modules::has $name) {
 			define module-object: $modules::get $name
-			callback $module-object
+			callback: list $module-object
 			import-return
 		}
 		set module-name = $name
@@ -170,22 +181,17 @@ define _import_: method (modules callback path) = {
 	if $module-name {
 		$modules::set $module-name $module-object
 	}
-	callback $module-object
-}
-# Importer.
-spawn {
-	define modules: map
-	while $true {
-		define request: $_import_request_::readlist
-		_import_ $modules @$request
-	}
+	callback: list $module-object
 }
 define import: method (path) = {
 	define response: channel
 	$_import_request_::write (method (returned) = {
 		$response::write $returned
 	}) $path
-	$response::read
+	define ec-ex: $response::read
+	define ex: $ec-ex::tail
+	if $ex: throw $ex
+	return: $ec-ex::head
 }
 define is-list: method (l) = {
 	if (is-null $l): return $false
@@ -455,6 +461,13 @@ $_sys_::export prompt: method (suffix) = {
 $_sys_::export throw: method (c) = {
 	error: ': '::join $c::file $c::line $c::type $c::message
 	fatal $c::status
+}
+# Importer. (Double spawn so that wait won't wait for this).
+spawn: spawn {
+	define modules: map
+	while $true {
+		_import_ $modules @($_import_request_::readlist)
+	}
 }
 exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)
 
