@@ -155,28 +155,32 @@ define for: method (l m) = {
 	return: $r::tail
 }
 define glob: builtin (: args) =: return $args
-define import-sem: channel 1
-define import: method (module-path) = {
-	catch unused {
-		$import-sem::read
-	}
-	$import-sem::write ()
+define _import_request_: channel 1
+define _importer_: method (modules path response) = {
+	$response::write: _do_import_ $modules $path
+}
+define _do_import_: method (modules path) = {
 	define import-return = $return
-	define module-name = $module-path
+	define module-name = $false
 	define module: method (name) = {
-		if ($_root_::_modules_::has $name) {
-			define module-object: $_root_::_modules_::_get_ $name
-			$import-sem::read
+		if ($modules::has $name) {
+			define module-object: $modules::get $name
 			import-return $module-object
 		}
 		set module-name = $name
 	}
 	define module-object: object {
-		source $module-path
+		source $path
 	}
-	$_root_::_modules_::_set_ $module-name $module-object
-	$import-sem::read
+	if $module-name {
+		$modules::set $module-name $module-object
+	}
 	import-return $module-object
+}
+define import: method (path) = {
+	define response: channel
+	$_import_request_::write $path $response
+	$response::read
 }
 define is-list: method (l) = {
 	if (is-null $l): return $false
@@ -393,7 +397,6 @@ define umask: method (: args) = {
 }
 define write: method (: args) =: $_stdout_::write @$args
 export quote: syntax (cell) =: return $cell
-$_root_::export _modules_: object
 $_sys_::export complete: method self (first completing) = {
 	return ()
 }
@@ -448,7 +451,29 @@ $_sys_::export throw: method (c) = {
 	error: ': '::join $c::file $c::line $c::type $c::message
 	fatal $c::status
 }
+spawn {
+	define modules: map
+	define stack = ()
+	while $true {
+		define request: $_import_request_::readlist
 
+		define path: $request::get 0
+		define response: $request::get 1
+
+		set stack: cons (method (returned) = {
+			$response::write $returned
+		}) $stack
+
+		define returned: _do_import_ $modules $path
+		if (is-continuation returned) {
+			set stack: cons $returned $stack
+		} else {
+			define send: $stack::head
+			set stack = $stack::tail
+			send $returned
+		}
+	}
+}
 exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)
 
 `
