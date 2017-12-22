@@ -437,8 +437,18 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 		return methods
 	}
 
+	name := word
+	prefix := ""
 	simple := false
+
 	if first != "" {
+		prefix = "$"
+		if !strings.HasPrefix(name, prefix) {
+			return []string{word}
+		}
+
+		name = name[1:]
+
 		ref, _ := Resolve(r.Lexical, r.Frame, first)
 		if ref != nil {
 			v := ref.Get()
@@ -448,12 +458,17 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 		} else {
 			simple = true
 		}
+		
 	}
-	cl := toContext(r.Lexical).Complete(simple, word)
+	cl := toContext(r.Lexical).Complete(simple, name)
 
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(context)
-		cl = append(cl, o.Complete(simple, word)...)
+		cl = append(cl, o.Complete(simple, name)...)
+	}
+
+	for k, v := range cl {
+		cl[k] = prefix + v
 	}
 
 	return cl
