@@ -127,7 +127,7 @@ func complete(line string, pos int) (head string, completions []string, tail str
 			cell.NewSymbol("$_sys_"),
 			cell.NewSymbol("get-completions"),
 		),
-		cell.NewSymbol(first), cell.NewSymbol(completing),
+		cell.NewString(first), cell.NewString(completing),
 	))
 
 	length := 0
