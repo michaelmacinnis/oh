@@ -460,8 +460,8 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 		}
 		
 	}
-	cl := toContext(r.Lexical).Complete(simple, name)
 
+	cl := toContext(r.Lexical).Complete(simple, name)
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(context)
 		cl = append(cl, o.Complete(simple, name)...)

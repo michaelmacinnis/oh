@@ -112,9 +112,9 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	prefix := head[0 : len(head)-len(completing)]
 
 	if first == "" {
-		completions = executables(completing)
+		completions = files("PATH", completing)
 	} else {
-		completions = files(completing)
+		completions = files("PWD", completing)
 	}
 
 	completions = append(
@@ -160,15 +160,18 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	return prefix, completions, tail
 }
 
-func executables(word string) []string {
-	completions := []string{}
+func directories(ev string) []string {
+	dirs := []string{}
 
-	if strings.Contains(word, string(os.PathSeparator)) {
-		return completions
+	ft := task.ForegroundTask()
+	ref, _ := task.Resolve(ft.Lexical, ft.Frame, ev)
+
+	s := ""
+	if ref != nil {
+		s = ref.Get().String()
 	}
 
-	pathenv := os.Getenv("PATH")
-	for _, dir := range strings.Split(pathenv, string(os.PathListSeparator)) {
+	for _, dir := range strings.Split(s, string(os.PathListSeparator)) {
 		if dir == "" {
 			dir = "."
 		} else {
@@ -180,8 +183,48 @@ func executables(word string) []string {
 			continue
 		}
 
-		max := strings.Count(dir, "/") + 1
-		filepath.Walk(dir, func(p string, i os.FileInfo, err error) error {
+		dirs = append(dirs, dir)
+	}
+
+	return dirs
+}
+
+func files(ev, word string) []string {
+	completions := []string{}
+
+	candidate := word
+	if strings.HasPrefix(candidate, "~") {
+		ft := task.ForegroundTask()
+		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "HOME")
+		candidate = filepath.Join(ref.Get().String(), candidate[1:])
+	}
+
+	candidate = path.Clean(candidate)
+
+	candidates := []string{candidate}
+	if !path.IsAbs(candidate) {
+		candidates = directories(ev)
+		for k, v := range candidates {
+			candidates[k] = path.Join(v, candidate)
+		}
+	}
+
+	for _, candidate := range candidates {
+		dirname, basename := filepath.Split(candidate)
+		if candidate != "/" && strings.HasSuffix(word, "/") {
+			dirname, basename = path.Join(dirname, basename)+"/", ""
+		}
+
+		stat, err := os.Stat(dirname)
+		if err != nil {
+			return completions
+		} else if len(basename) == 0 && !stat.IsDir() {
+			return completions
+		}
+
+		max := strings.Count(dirname, "/")
+
+		filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 			depth := strings.Count(p, "/")
 			if depth > max {
 				if i.IsDir() {
@@ -192,84 +235,30 @@ func executables(word string) []string {
 				return nil
 			}
 
-			_, basename := filepath.Split(p)
-
-			if strings.HasPrefix(basename, word) {
-				completions = append(completions, basename)
+			full := path.Join(dirname, basename)
+			if candidate != "/" && len(basename) == 0 {
+				if p == dirname {
+					return nil
+				}
+				full += "/"
+			} else if !strings.HasPrefix(p, full) {
+				return nil
 			}
+
+			if p != "/" && i.IsDir() {
+				p += "/"
+			}
+
+			if len(full) >= len(p) {
+				return nil
+			}
+
+			completion := word + p[len(full):]
+			completions = append(completions, completion)
 
 			return nil
 		})
 	}
-
-	return completions
-}
-
-func files(word string) []string {
-	completions := []string{}
-
-	candidate := word
-	if candidate[:1] == "~" {
-		ft := task.ForegroundTask()
-		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "HOME")
-		candidate = filepath.Join(ref.Get().String(), candidate[1:])
-	}
-
-	candidate = path.Clean(candidate)
-	if !path.IsAbs(candidate) {
-		ft := task.ForegroundTask()
-		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "PWD")
-		candidate = path.Join(ref.Get().String(), candidate)
-	}
-
-	dirname, basename := filepath.Split(candidate)
-	if candidate != "/" && strings.HasSuffix(word, "/") {
-		dirname, basename = path.Join(dirname, basename)+"/", ""
-	}
-
-	stat, err := os.Stat(dirname)
-	if err != nil {
-		return completions
-	} else if len(basename) == 0 && !stat.IsDir() {
-		return completions
-	}
-
-	max := strings.Count(dirname, "/")
-
-	filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
-		depth := strings.Count(p, "/")
-		if depth > max {
-			if i.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		} else if depth < max {
-			return nil
-		}
-
-		full := path.Join(dirname, basename)
-		if candidate != "/" && len(basename) == 0 {
-			if p == dirname {
-				return nil
-			}
-			full += "/"
-		} else if !strings.HasPrefix(p, full) {
-			return nil
-		}
-
-		if p != "/" && i.IsDir() {
-			p += "/"
-		}
-
-		if len(full) >= len(p) {
-			return nil
-		}
-
-		completion := word + p[len(full):]
-		completions = append(completions, completion)
-
-		return nil
-	})
 
 	return completions
 }
