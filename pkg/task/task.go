@@ -444,7 +444,7 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 	if first != "" {
 		prefix = "$"
 		if !strings.HasPrefix(name, prefix) {
-			return []string{word}
+			return []string{}
 		}
 
 		name = name[1:]
