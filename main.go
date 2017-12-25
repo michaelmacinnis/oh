@@ -217,9 +217,9 @@ func files(ev, word string) []string {
 
 		stat, err := os.Stat(dirname)
 		if err != nil {
-			return completions
+			continue
 		} else if len(basename) == 0 && !stat.IsDir() {
-			return completions
+			continue
 		}
 
 		max := strings.Count(dirname, "/")
