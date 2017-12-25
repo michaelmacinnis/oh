@@ -1196,8 +1196,6 @@ func (t *Task) Lookup(sym *Symbol, head, member bool) (bool, string) {
 	v := c.Get()
 	if a, ok := v.(binding); ok {
 		t.Dump = Cons(a.bind(s), t.Dump)
-	} else if _, ok := v.(*Continuation); head && !ok && !prefixed {
-		t.Dump = Cons(sym, t.Dump)
 	} else {
 		t.Dump = Cons(v, t.Dump)
 	}
@@ -1372,7 +1370,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 						psEvalMember,
 						psChangeContext,
 						svCdrCode,
-						psEvalElement)
+						t.GetState())
 					t.Code = Car(t.Code)
 				} else {
 					t.ReplaceStates(psEvalCommand)
