@@ -144,6 +144,17 @@ define echo: builtin (: args) = {
 	}
 }
 define error: builtin (: args) =: _stderr_::write @$args
+# Shortcut for defining simple functions with a single parameter:
+#
+#     fn foo(bar) {
+#         ...
+#     }
+#
+define fn: syntax (name args: body) e = {
+	e::eval: quasiquote: define (unquote $name) {
+		builtin (unquote: list $args) = (unquote @$body)
+	}
+}
 define for: method (l m) = {
 	define r: cons () ()
 	define c = $r
