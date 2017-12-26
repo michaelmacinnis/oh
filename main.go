@@ -225,7 +225,6 @@ func files(ev, word string) []string {
 			continue
 		}
 
-		full := path.Join(dirname, basename)
 		max := strings.Count(dirname, "/")
 
 		filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
@@ -239,6 +238,7 @@ func files(ev, word string) []string {
 				return nil
 			}
 
+			full := path.Join(dirname, basename)
 			if candidate != "/" && len(basename) == 0 {
 				if p == dirname {
 					return nil
@@ -256,7 +256,8 @@ func files(ev, word string) []string {
 				return nil
 			}
 
-			completion := word + p[len(full):]
+			s := strings.Index(p, full) + len(full)
+			completion := word + p[s:]
 			completions = append(completions, completion)
 
 			return nil
