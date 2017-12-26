@@ -30,6 +30,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -156,6 +157,8 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	for completion := range unique {
 		completions = append(completions, completion)
 	}
+
+	sort.Strings(completions)
 
 	return prefix, completions, tail
 }
