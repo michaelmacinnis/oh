@@ -85,7 +85,7 @@ const (
 	psEvalBlock
 	psEvalCommand
 	psEvalElement
-	psEvalElementHead
+	psEvalHead
 	psEvalMember
 
 	psExecBuiltin
@@ -1167,7 +1167,7 @@ func (t *Task) LexicalVar(state int64) bool {
 	return true
 }
 
-func (t *Task) Lookup(sym *Symbol, head, member bool) (bool, string) {
+func (t *Task) Lookup(sym *Symbol) string {
 	r := Raw(sym)
 
 	prefixed := false
@@ -1179,28 +1179,33 @@ func (t *Task) Lookup(sym *Symbol, head, member bool) (bool, string) {
 		}
 	}
 
-	if !prefixed && !head && !member {
+	s := t.GetState()
+
+	if !prefixed && s == psEvalElement {
+		// Variable arguments must be prefixed with a $.
 		t.Dump = Cons(sym, t.Dump)
-		return true, ""
+		return ""
 	}
 
-	c, s := Resolve(t.Lexical, t.Frame, r)
+	c, o := Resolve(t.Lexical, t.Frame, r)
 	if c == nil {
-		if head && !t.Strict() {
+		if s == psEvalHead && !prefixed && !t.Strict() {
+			// External command names are symbols that are not the
+			// name of a variable, unless we are in strict mode.
 			t.Dump = Cons(sym, t.Dump)
-			return true, ""
+			return ""
 		}
-		return false, "'" + r + "' undefined"
+		return "'" + r + "' undefined"
 	}
 
 	v := c.Get()
 	if a, ok := v.(binding); ok {
-		t.Dump = Cons(a.bind(s), t.Dump)
+		t.Dump = Cons(a.bind(o), t.Dump)
 	} else {
 		t.Dump = Cons(v, t.Dump)
 	}
 
-	return true, ""
+	return ""
 }
 
 func MakeParser(input InputFunc) Parser {
@@ -1313,7 +1318,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 
 			t.ReplaceStates(psExecCommand,
 				svCdrCode,
-				psEvalElementHead)
+				psEvalHead)
 			t.Code = Car(t.Code)
 
 			continue
@@ -1360,7 +1365,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			t.Code = Car(t.Code)
 
 			fallthrough
-		case psEvalElement, psEvalElementHead, psEvalMember:
+		case psEvalElement, psEvalHead, psEvalMember:
 			if t.Code == Null {
 				t.Dump = Cons(t.Code, t.Dump)
 				break
@@ -1377,10 +1382,8 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 				}
 				continue
 			} else if sym, ok := t.Code.(*Symbol); ok {
-				head := t.GetState() == psEvalElementHead
-				member := t.GetState() == psEvalMember
-				ok, msg := t.Lookup(sym, head, member)
-				if !ok {
+				msg := t.Lookup(sym)
+				if msg != "" {
 					panic(msg)
 				}
 				break
