@@ -30,7 +30,7 @@ write =: is-symbol =
 write ?: is-symbol ?
 write [: is-symbol [
 write ]: is-symbol ]
-# write _: is-symbol _ #TODO: Bring back when we've made $ prefix mandatory.
+write _: is-symbol _
 
 #-     ! true
 #-     * true
@@ -42,11 +42,11 @@ write ]: is-symbol ]
 #-     ? true
 #-     [ true
 #-     ] true
-# #-     _ true
+#-     _ true
 
 define common: import: ... common.oh
 
-$common::apply-predicates this-is-a-symbol
+common::apply-predicates this-is-a-symbol
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

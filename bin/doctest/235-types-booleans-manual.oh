@@ -60,7 +60,7 @@ echo "3 is not equal to 2 =>": ne 3 2
 
 define common: import: ... common.oh
 
-$common::apply-predicates: boolean ""
+common::apply-predicates: boolean ""
 
 #-     is-atom "x => true"
 #-     is-boolean "x => true"

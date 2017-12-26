@@ -19,7 +19,7 @@ write: float "3.14"
 
 define common: import: ... common.oh
 
-$common::apply-predicates: float -1
+common::apply-predicates: float -1
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

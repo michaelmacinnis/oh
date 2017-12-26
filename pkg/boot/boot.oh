@@ -1,64 +1,64 @@
 define _connect_: syntax (conduit-name name) e = {
-	define conduit-maker: $e::eval $conduit-name
+	define conduit-maker: e::eval $conduit-name
 	syntax (left right) e = {
 		define p: conduit-maker
 		define ec-ex-chan: channel 1
 		spawn {
-			define ec-ex: $e::eval: _rew_: quasiquote: block {
+			define ec-ex: e::eval: _rew_: quasiquote: block {
 				export (unquote $name) = (unquote $p)
 				unquote $left
 			}
-			$p::_writer_close_
-			$ec-ex-chan::write $ec-ex
+			p::_writer_close_
+			ec-ex-chan::write $ec-ex
 		}
 		block {
-			define right-ec-ex: $e::eval: _rew_: quasiquote: block {
+			define right-ec-ex: e::eval: _rew_: quasiquote: block {
 				export _stdin_ = (unquote $p)
 				unquote $right
 			}
-			$p::_reader_close_
-			define left-ec-ex: $ec-ex-chan::read
-			define ex: or ($left-ec-ex::tail) ($right-ec-ex::tail)
+			p::_reader_close_
+			define left-ec-ex: ec-ex-chan::read
+			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
 			if $ex: throw $ex
-			return: and ($left-ec-ex::head) ($right-ec-ex::head)
+			return: and (left-ec-ex::head) (right-ec-ex::head)
 		}
 	}
 }
 define _redirect_: syntax (name mode closer) = {
 	syntax (c cmd) e = {
-		define c: $e::eval $c
+		define c: e::eval $c
 		if (is-symbol $c) {
 			define l: glob $c
-			if (lt 1: $l::length) {
+			if (lt 1: l::length) {
 				throw: exception "can't redirect to/from multiple files"
 			}
-			set c =: $l::head
+			set c =: l::head
 		}
 		define f = ()
 		if (not: or (is-channel $c) (is-pipe $c)) {
-			set mode: $e::eval $mode
+			set mode: e::eval $mode
 			if (and (eq $mode: quote w) (exists -i $c)) {
 				throw: exception "${c} exists"
 			}
 			set f: open $mode $c
 			set c = $f
 		}
-		define ec-ex: $e::eval: _rew_: quasiquote: block {
+		define ec-ex: e::eval: _rew_: quasiquote: block {
 			export (unquote $name) (unquote $c)
 			unquote $cmd
 		}
-		if (not: is-null $f): ($f::_get_ $closer)
-		define ex: $ec-ex::tail
+		if (not: is-null $f): (f::_get_ $closer)
+		define ex: ec-ex::tail
 		if $ex: throw $ex
-		return: $ec-ex::head
+		return: ec-ex::head
 	}
 }
 define ...: method (: args) = {
 	cd $_origin_
-	define path: $args::head
-	if (eq 2: $args::length) {
+	define path: args::head
+	if (eq 2: args::length) {
 		cd $path
-		set path: $args::get 1
+		set path: args::get 1
 	}
 	while $true {
 		define abs: symbol: '/'::join $PWD $path
@@ -70,9 +70,9 @@ define ...: method (: args) = {
 define and: syntax (: lst) e = {
 	define r = $false
 	while (not: is-null $lst) {
-		set r: $e::eval: $lst::head
+		set r: e::eval: lst::head
 		if (not $r): return $r
-		set lst: $lst::tail
+		set lst: lst::tail
 	}
 	return $r
 }
@@ -82,23 +82,23 @@ define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	define ec-ex-chan: channel 1
 	spawn {
-		define ec-ex: $e::eval: _rew_: quasiquote: block {
+		define ec-ex: e::eval: _rew_: quasiquote: block {
 			export _stdout_ = (unquote $p)
 			unquote $cmd
 		}
-		$p::_writer_close_
-		$ec-ex-chan::write $ec-ex
+		p::_writer_close_
+		ec-ex-chan::write $ec-ex
 	}
 	define r: cons () ()
 	define c = $r
-	while (define l: $p::readline) {
-		$c::set-tail: cons $l ()
-		set c: $c::tail
+	while (define l: p::readline) {
+		c::set-tail: cons $l ()
+		set c: c::tail
 	}
-	$p::_reader_close_
-	define ex: ($ec-ex-chan::read)::tail
+	p::_reader_close_
+	define ex: (ec-ex-chan::read)::tail
 	if $ex: throw $ex
-	return: $r::tail
+	return: r::tail
 }
 define catch: syntax (name: clause) e = {
 	define args: list $name (quote throw)
@@ -106,14 +106,14 @@ define catch: syntax (name: clause) e = {
 	if (is-null $clause) {
 		set body: list $body
 	} else {
-		set body: $clause::append $body
+		set body: clause::append $body
 	}
-	define handler: $e::eval {
+	define handler: e::eval {
 		list (quote method) $args (quote =) @$body
 	}
-	define _return: $e::eval (quote $return)
+	define _return: e::eval (quote $return)
 	define _throw = $throw
-	$e::export throw: method (condition) = {
+	e::export throw: method (condition) = {
 		export throw = $_throw
 		_return: handler $condition $_throw
 	}
@@ -124,28 +124,28 @@ define clobber: builtin (: args) = {
 	tee @$args >/dev/null
 }
 define coalesce: syntax (: lst) e = {
-	while (and (not: is-null: $lst::tail) (not: resolves: $lst::head)) {
-		set lst: $lst::tail
+	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
+		set lst: lst::tail
 	}
-	return: $e::eval: $lst::head
+	return: e::eval: lst::head
 }
 define echo: builtin (: args) = {
 	if (is-null $args) {
-		$_stdout_::write: symbol ''
+		_stdout_::write: symbol ''
 	} else {
-		$_stdout_::write @(for $args $symbol)
+		_stdout_::write @(for $args $symbol)
 	}
 }
-define error: builtin (: args) =: $_stderr_::write @$args
+define error: builtin (: args) =: _stderr_::write @$args
 define for: method (l m) = {
 	define r: cons () ()
 	define c = $r
 	while (not: is-null $l) {
-		$c::set-tail: cons (m: $l::head) ()
-		set c: $c::tail
-		set l: $l::tail
+		c::set-tail: cons (m: l::head) ()
+		set c: c::tail
+		set l: l::tail
 	}
-	return: $r::tail
+	return: r::tail
 }
 define glob: builtin (: args) =: return $args
 define _import_request_: channel 1
@@ -157,19 +157,19 @@ define _import_: method (modules callback path) = {
 	}
 	define import: method (path) = {
 		define ec-ex: (method () = {
-			$_import_request_::write $return $path
+			_import_request_::write $return $path
 			return ()
 		})
-		define ex: $ec-ex::tail
+		define ex: ec-ex::tail
 		if $ex: throw $ex
-		define ec: $ec-ex::head
+		define ec: ec-ex::head
 		if $ec: return $ec
 		import-return
 	}
 	define module-name = $false
 	define module: method (name) = {
-		if ($modules::has $name) {
-			define module-object: $modules::get $name
+		if (modules::has $name) {
+			define module-object: modules::get $name
 			callback: list $module-object
 			import-return
 		}
@@ -179,25 +179,25 @@ define _import_: method (modules callback path) = {
 		source $path
 	}
 	if $module-name {
-		$modules::set $module-name $module-object
+		modules::set $module-name $module-object
 	}
 	callback: list $module-object
 }
 define import: method (path) = {
 	define response: channel
-	$_import_request_::write (method (returned) = {
-		$response::write $returned
+	_import_request_::write (method (returned) = {
+		response::write $returned
 	}) $path
-	define ec-ex: $response::read
-	define ex: $ec-ex::tail
+	define ec-ex: response::read
+	define ex: ec-ex::tail
 	if $ex: throw $ex
-	return: $ec-ex::head
+	return: ec-ex::head
 }
 define is-list: method (l) = {
 	if (is-null $l): return $false
 	if (not: is-cons $l): return $false
-	if (is-null: $l::tail): return $true
-	is-list: $l::tail
+	if (is-null: l::tail): return $true
+	is-list: l::tail
 }
 define is-text: method (t) =: or (is-string $t) (is-symbol $t)
 # Last File Manager cd.
@@ -214,10 +214,10 @@ define lcd: method () e = {
 		return
 	}
 	define f: open 'r' $LFMPATHFILE
-	define dn: $f::readline
-	$f::close
+	define dn: f::readline
+	f::close
 	rm $LFMPATHFILE
-	$e::eval: quasiquote: cd (unquote $dn)
+	e::eval: quasiquote: cd (unquote $dn)
 }
 # Change working dir to last dir on exit from lf.
 define lf: builtin (:args) e = {
@@ -235,22 +235,22 @@ define lf: builtin (:args) e = {
 	define dn @(_backtick_: cat $temp-file)
 	rm $temp-file
 	if $dn {
-		$e::eval: quasiquote: cd (unquote $dn)
+		e::eval: quasiquote: cd (unquote $dn)
 	}
 }
 define module: method (name) = # no-op
 define map: syntax (: literal) e = {
     define o: object
     for $literal: method (entry) = {
-        define k: $entry::head
+        define k: entry::head
         if (is-list $k) {
-            set k: $e::eval $k
+            set k: e::eval $k
 	}
-        define v: $entry::get 1
-        if (eq 1: $v::length) {
-            set v: $v::head
+        define v: entry::get 1
+        if (eq 1: v::length) {
+            set v: v::head
         }
-        o::_set_ k: $e::eval $v
+        o::_set_ k: e::eval $v
     }
     export del = $_del_
     export get = $_get_
@@ -270,14 +270,14 @@ define math: method (S) e = {
 	} | bc))
 }
 define object: syntax (: body) e = {
-	$e::eval: cons (quote block): $body::append: quote: context
+	e::eval: cons (quote block): body::append: quote: context
 }
 define or: syntax (: lst) e = {
 	define r = $false
 	while (not: is-null $lst) {
-		set r: $e::eval: $lst::head
+		set r: e::eval: lst::head
 		if $r: return $r
-		set lst: $lst::tail
+		set lst: lst::tail
 	}
 	return $r
 }
@@ -289,14 +289,14 @@ define _process_substitution_: syntax (:args) e = {
 	define fifos = ()
 	define cmd: for $args: method (arg) = {
 		if (not: is-cons $arg): return $arg
-		if (eq (quote _substitute_stdin_) ($arg::head)) {
+		if (eq (quote _substitute_stdin_) (arg::head)) {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
-				$chan::write: $e::eval: _rew_: quasiquote {
+				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdin_ {
 						unquote $fifo
-						unquote: $arg::tail
+						unquote: arg::tail
 					}
 				}
 			}
@@ -304,14 +304,14 @@ define _process_substitution_: syntax (:args) e = {
 			set fifos: cons $fifo $fifos
 			return $fifo
 		}
-		if (eq (quote _substitute_stdout_) ($arg::head)) {
+		if (eq (quote _substitute_stdout_) (arg::head)) {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
-				$chan::write: $e::eval: _rew_: quasiquote {
+				chan::write: e::eval: _rew_: quasiquote {
 					_redirect_stdout_ {
 						unquote $fifo
-						unquote: $arg::tail
+						unquote: arg::tail
 					}
 				}
 			}
@@ -321,31 +321,31 @@ define _process_substitution_: syntax (:args) e = {
 		}
 		return $arg
 	}
-	define main-ec-ex: $e::eval: _rew_ $cmd
+	define main-ec-ex: e::eval: _rew_ $cmd
 	define ec-exs ()
 	for $chans: method (chan) = {
-		set ec-exs: cons ($chan::read) $ec-exs
+		set ec-exs: cons (chan::read) $ec-exs
 	}
 	set ec-exs: cons $main-ec-ex $ec-exs
 	for $ec-exs: method (ec-ex) = {
-		define ex: $ec-ex::tail
+		define ex: ec-ex::tail
 		if $ex: throw $ex
 	}
 	rm @$fifos
-	return: $main-ec-ex::head
+	return: main-ec-ex::head
 }
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons $cell): return $cell
 	if (is-null $cell): return $cell
-	if (eq (quote unquote): $cell::head): return: $e::eval: $cell::get 1
+	if (eq (quote unquote): cell::head): return: e::eval: cell::get 1
 	cons {
-		$e::eval: list (quote quasiquote) ($cell::head)
-		$e::eval: list (quote quasiquote) ($cell::tail)
+		e::eval: list (quote quasiquote) (cell::head)
+		e::eval: list (quote quasiquote) (cell::tail)
 	}
 }
-define read: builtin () =: $_stdin_::read
-define readline: builtin () =: $_stdin_::readline
-define readlist: builtin () =: $_stdin_::readlist
+define read: builtin () =: _stdin_::read
+define readline: builtin () =: _stdin_::readline
+define readlist: builtin () =: _stdin_::readlist
 define _redirect_stderr_: _redirect_ _stderr_ 'w' _writer_close_
 define _redirect_stdin_: _redirect_ _stdin_ 'r' _reader_close_
 define _redirect_stdout_: _redirect_ _stdout_ 'w' _writer_close_
@@ -360,14 +360,14 @@ define _rew_: method (command) = {    # return exception wrapper => rew
 	})
 }
 define source: syntax (name) e = {
-	define basename: $e::eval $name
+	define basename: e::eval $name
 	define paths = ()
 	define name = $basename
 
 	if (has OHPATH): set paths: ':'::split $OHPATH
 	while (and (not: is-null $paths) (not: exists $name)) {
-		set name: '/'::join ($paths::head) $basename
-		set paths: $paths::tail
+		set name: '/'::join (paths::head) $basename
+		set paths: paths::tail
 	}
 
 	if (not: exists $name): set name = $basename
@@ -376,20 +376,20 @@ define source: syntax (name) e = {
 
 	define r: cons () ()
 	define c = $r
-	while (define l: $f::readlist) {
-		$c::set-tail: cons $l ()
-		set c: $c::tail
+	while (define l: f::readlist) {
+		c::set-tail: cons $l ()
+		set c: c::tail
 	}
-	set c: $r::tail
-	$f::close
+	set c: r::tail
+	f::close
 
 	define rval: status 0
 	define eval-list: method (first rest) o = {
 		if (is-null $first): return $rval
-		set rval: $e::eval $first
-		eval-list ($rest::head) ($rest::tail)
+		set rval: e::eval $first
+		eval-list (rest::head) (rest::tail)
 	}
-	eval-list ($c::head) ($c::tail)
+	eval-list (c::head) (c::tail)
 	return $rval
 }
 define umask: method (: args) = {
@@ -406,12 +406,12 @@ define umask: method (: args) = {
 	}
 	_umask_ @args
 }
-define write: method (: args) =: $_stdout_::write @$args
+define write: method (: args) =: _stdout_::write @$args
 export quote: syntax (cell) =: return $cell
-$_sys_::export complete: method self (first completing) = {
+_sys_::export complete: method self (first completing) = {
 	return ()
 }
-$_sys_::export _exception: method (type status message line file) e = {
+_sys_::export _exception: method (type status message line file) e = {
 	object {
 		export type = $type
 		export status = $status
@@ -425,40 +425,40 @@ $_sys_::export _exception: method (type status message line file) e = {
 # exception <value> <message>
 # exception <type> <value> <message>
 # If not provided value defaults to status false and type to error/runtime.
-$_sys_::export exception: method (message :args) e = {
+_sys_::export exception: method (message :args) e = {
 	define s: status $false
 	define t: symbol 'error/runtime'
 	if (not: is-null $args) {
-		set s: $args::head
-		set args: $args::tail
+		set s: args::head
+		set args: args::tail
 	}
 	if (not: is-null $args) {
 		set t = $s
-		set s: $args::head
-		set args: $args::tail
+		set s: args::head
+		set args: args::tail
 	}
 	_exception $t $s $message {
-		export line: $e::eval: get-line-number
-		export file: $e::eval: get-source-file
+		export line: e::eval: get-line-number
+		export file: e::eval: get-source-file
 	}
 }
-$_sys_::export get-completions: method self (first completing) = {
+_sys_::export get-completions: method self (first completing) = {
 	catch unused {
 		return ()
 	}
-	$self::complete $first $completing
+	self::complete $first $completing
 }
-$_sys_::export get-prompt: method self (suffix) = {
+_sys_::export get-prompt: method self (suffix) = {
 	catch unused {
 		return $suffix
 	}
-	$self::prompt $suffix
+	self::prompt $suffix
 }
-$_sys_::export prompt: method (suffix) = {
+_sys_::export prompt: method (suffix) = {
 	define dirs: '/'::split $PWD
-	return: ''::join ($dirs::get: integer '-1') $suffix
+	return: ''::join (dirs::get: integer '-1') $suffix
 }
-$_sys_::export throw: method (c) = {
+_sys_::export throw: method (c) = {
 	error: ': '::join $c::file $c::line $c::type $c::message
 	fatal $c::status
 }
@@ -466,7 +466,7 @@ $_sys_::export throw: method (c) = {
 spawn: spawn {
 	define modules: map
 	while $true {
-		_import_ $modules @($_import_request_::readlist)
+		_import_ $modules @(_import_request_::readlist)
 	}
 }
 exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)

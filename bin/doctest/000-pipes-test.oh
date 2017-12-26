@@ -14,17 +14,17 @@ spawn {
 
         set body: cons (quote block) $body
         define loop: label
-        if ($e::eval $condition): return ()
-        $e::eval $body
+        if (e::eval $condition): return ()
+        e::eval $body
         continue $loop
     }
 
     # Now send this code through the pipe.
-    $p::write @$code
+    p::write @$code
 }
 
 # Create the new command by evaluating what was sent through the pipe.
-define until: eval: $p::readlist
+define until: eval: p::readlist
 
 # Now use the new 'until' command.
 define count: integer 0

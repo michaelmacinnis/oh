@@ -26,7 +26,7 @@ if (status 11) {
 
 define common: import: ... common.oh
 
-$common::apply-predicates: status 0
+common::apply-predicates: status 0
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

@@ -11,7 +11,6 @@ define count: integer 0
 define loop: label
 if (lt $count (integer 100)) {
         set count: add $count 1
-#        echo: "Hello, World! (%s)"::sprintf count
         echo "Hello, World! (${count})"
         continue $loop
 }

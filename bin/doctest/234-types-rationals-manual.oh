@@ -34,7 +34,7 @@ write: add 3.14 2.72 1.41 2.50 4.67
 
 define common: import: ... common.oh
 
-$common::apply-predicates: rational -1
+common::apply-predicates: rational -1
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

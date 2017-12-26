@@ -9,22 +9,22 @@
 define exit-status: map
 
 define pipe-fitting: method (label cmd: args) = {
-    $exit-status::set $label: $cmd @$args
+    exit-status::set $label: cmd @$args
 }
 
-pipe-fitting "1st" echo 1 2 3 |
+pipe-fitting "1st" $echo 1 2 3 |
 pipe-fitting "2nd" tr " " "\n" |
 pipe-fitting "3rd" grep 2
 
-echo "1st stage exit status =>": $exit-status::get "1st"
-echo "2nd stage exit status =>": $exit-status::get "2nd"
-echo "3rd stage exit status =>": $exit-status::get "3rd"
+echo "1st stage exit status =>": exit-status::get "1st"
+echo "2nd stage exit status =>": exit-status::get "2nd"
+echo "3rd stage exit status =>": exit-status::get "3rd"
 #}
 ##
 ## produces the output,
 ##
 #+     2
-#+     1st stage exit status => 0
+#+     1st stage exit status => true
 #+     2nd stage exit status => 0
 #+     3rd stage exit status => 0
 ##

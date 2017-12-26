@@ -12,14 +12,14 @@ spawn: while $true {
     define previous = $list-of-primes
     define prime $true
 
-    while (and ($previous::tail) $prime) {
-        set prime: mod $number ($previous::get 1)
+    while (and (previous::tail) $prime) {
+        set prime: mod $number (previous::get 1)
 
-        set previous: $previous::tail
+        set previous: previous::tail
     }
 
     if $prime {
-        $previous::set-tail: cons $number ()
+        previous::set-tail: cons $number ()
 
         echo $number
     }

@@ -24,7 +24,7 @@ export apply-operators: method (operators operands) = {
         define operator: eval: symbol: "$%s"::sprintf $name
         for $operands: method (op1) = {
             for $operands: method (op2) = {
-                define result: $operator $op1 $op2
+                define result: operator $op1 $op2
                 echo: "%s %v %v => %v"::sprintf $name $op1 $op2 $result
             }
         }
@@ -33,8 +33,8 @@ export apply-operators: method (operators operands) = {
 
 export apply-predicates: method (x) = {
     for $predicates: method (names) = {
-        define name: $names::head
+        define name: names::head
         define predicate: eval: symbol: "$%s"::sprintf $name
-        write $name: "x => %v"::sprintf: $predicate $x
+        write $name: "x => %v"::sprintf: predicate $x
     }
 }

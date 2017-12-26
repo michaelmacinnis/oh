@@ -357,15 +357,15 @@ of indices can be obtained with the `keys` method.
 The commands,
 
     define a: list do re me
-    write: $a::get 0
-    write: $a::get -1
-    write: $a::slice 1 2
-    $a::set 0 foo
-    $a::set 1 bar
-    $a::set 2 baz
+    write: a::get 0
+    write: a::get -1
+    write: a::slice 1 2
+    a::set 0 foo
+    a::set 1 bar
+    a::set 2 baz
     write $a
-    write: $a::length
-    write: $a::keys
+    write: a::length
+    write: a::keys
 
 produce the output,
 
@@ -555,7 +555,7 @@ appear before the list of arguments.
     }
     
     define p: point 0 0
-    $p::show
+    p::show
 
 Shared behavior can be implemented by defining a method in an outer scope.
 
@@ -567,7 +567,7 @@ The following code,
         define name = "x"
     }
     
-    $x::me
+    x::me
 
 produces the output,
 
@@ -580,8 +580,8 @@ An object may explicitly delegate behavior, as shown in the following code,
         export me-too = $x::me    # Explicit delegation.
     }
     
-    $y::me
-    $y::me-too
+    y::me
+    y::me-too
 
 which produces the output,
 
@@ -592,11 +592,11 @@ An object may redirect a call to another object. The code below,
 
     define z: object {
         define name = "z"
-        export you: method () =: $x::me    # Redirection.
+        export you: method () =: x::me    # Redirection.
     }
     
-    $z::me
-    $z::you
+    z::me
+    z::you
 
 produces the output,
 
@@ -616,7 +616,7 @@ The example below uses the `syntax` command to define a new `until` command.
 
     define until: syntax (condition: body) e = {
         set condition: list (symbol "not") $condition
-        $e::eval: list (symbol "while") $condition @$body
+        e::eval: list (symbol "while") $condition @$body
     }
     
     define x = 10
@@ -633,21 +633,21 @@ for each stage in a pipeline. The code below,
     define exit-status: map
     
     define pipe-fitting: method (label cmd: args) = {
-        $exit-status::set $label: $cmd @$args
+        exit-status::set $label: cmd @$args
     }
     
-    pipe-fitting "1st" echo 1 2 3 |
+    pipe-fitting "1st" $echo 1 2 3 |
     pipe-fitting "2nd" tr " " "\n" |
     pipe-fitting "3rd" grep 2
     
-    echo "1st stage exit status =>": $exit-status::get "1st"
-    echo "2nd stage exit status =>": $exit-status::get "2nd"
-    echo "3rd stage exit status =>": $exit-status::get "3rd"
+    echo "1st stage exit status =>": exit-status::get "1st"
+    echo "2nd stage exit status =>": exit-status::get "2nd"
+    echo "3rd stage exit status =>": exit-status::get "3rd"
 
 produces the output,
 
     2
-    1st stage exit status => 0
+    1st stage exit status => true
     2nd stage exit status => 0
     3rd stage exit status => 0
 
@@ -676,7 +676,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
         define in = $_stdin_
     
         while $true {
-            define prime: $in::read
+            define prime: in::read
             write $prime
     
             define out: channel
@@ -715,7 +715,7 @@ to the same example (shown previously) using channels.
         while $true {
             write $welcome: set n: add $n 1
     
-            $welcome::read
+            welcome::read
         }
     }
     
@@ -724,16 +724,16 @@ to the same example (shown previously) using channels.
         while $true {
             define msg: readlist
     
-            define thanks: $msg::get 0
-            define n: $msg::get 1
+            define thanks: msg::get 0
+            define n: msg::get 1
     
             if (mod $n $base) {
                     write $welcome $n
     
-                    $welcome::read
+                    welcome::read
             }
     
-            $thanks::write
+            thanks::write
         }
     }
     
@@ -743,10 +743,10 @@ to the same example (shown previously) using channels.
         define in = $_stdin_
     
         while $true {
-            define msg: $in::readlist
+            define msg: in::readlist
     
-            define thanks: $msg::get 0
-            define prime: $msg::get 1
+            define thanks: msg::get 0
+            define prime: msg::get 1
     
             write $prime
     
@@ -755,7 +755,7 @@ to the same example (shown previously) using channels.
                 filter $prime &
             } <$in >$out
     
-            $thanks::write
+            thanks::write
     
             set in = $out
         }

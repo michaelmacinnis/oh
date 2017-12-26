@@ -11,7 +11,7 @@ define x: object {
     define name = "x"
 }
 
-$x::me
+x::me
 #}
 ##
 ## produces the output,
@@ -27,8 +27,8 @@ define y: object {
     export me-too = $x::me    # Explicit delegation.
 }
 
-$y::me
-$y::me-too
+y::me
+y::me-too
 #}
 ##
 ## which produces the output,
@@ -42,11 +42,11 @@ $y::me-too
 #{
 define z: object {
     define name = "z"
-    export you: method () =: $x::me    # Redirection.
+    export you: method () =: x::me    # Redirection.
 }
 
-$z::me
-$z::you
+z::me
+z::you
 #}
 ##
 ## produces the output,

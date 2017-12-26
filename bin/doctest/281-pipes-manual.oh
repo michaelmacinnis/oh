@@ -16,7 +16,7 @@ define counter: method (n) = {
     while $true {
         write $welcome: set n: add $n 1
 
-        $welcome::read
+        welcome::read
     }
 }
 
@@ -25,16 +25,16 @@ define filter: method (base) = {
     while $true {
         define msg: readlist
 
-        define thanks: $msg::get 0
-        define n: $msg::get 1
+        define thanks: msg::get 0
+        define n: msg::get 1
 
         if (mod $n $base) {
                 write $welcome $n
 
-                $welcome::read
+                welcome::read
         }
 
-        $thanks::write
+        thanks::write
     }
 }
 
@@ -44,10 +44,10 @@ counter 2 | block {
     define in = $_stdin_
 
     while $true {
-        define msg: $in::readlist
+        define msg: in::readlist
 
-        define thanks: $msg::get 0
-        define prime: $msg::get 1
+        define thanks: msg::get 0
+        define prime: msg::get 1
 
         write $prime
 
@@ -56,7 +56,7 @@ counter 2 | block {
             filter $prime &
         } <$in >$out
 
-        $thanks::write
+        thanks::write
 
         set in = $out
     }

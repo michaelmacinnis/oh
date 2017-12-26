@@ -61,7 +61,7 @@ define common: import: ... common.oh
 
 define operators: quote: add div eq ge gt is le lt mod mul ne sub
 define operands: list 1 2 3 4
-$common::apply-operators $operators $operands
+common::apply-operators $operators $operands
 
 #-     add 1 1 => 2
 #-     add 1 2 => 3
@@ -256,7 +256,7 @@ $common::apply-operators $operators $operands
 #-     sub 4 3 => 1
 #-     sub 4 4 => 0
 
-$common::apply-predicates: integer -1
+common::apply-predicates: integer -1
 
 #-     is-atom "x => true"
 #-     is-boolean "x => false"

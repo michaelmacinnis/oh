@@ -131,17 +131,17 @@ define p: point 0 0
 #
 # Only public members are accessible 'outside' an object.  For example, to
 # move the point defined above we must call the 'move' method.
-$p::move 3 4
+p::move 3 4
 
 # New public members may be added to any object:
-$p::export show: method self () = {
+p::export show: method self () = {
 	echo: ""::join "(" $self::x "," $self::y ")"
 }
 
 # Public methods may access private members.  This means it is possible to
 # add public methods that exposes private members.  Oh follows Python's
 # "we're all adults here" motto.
-$p::show
+p::show
 
 # Oh modules are objects.  Oh provides the 'source' command, which
 # inserts the contents of a file as if they were typed directly.  The Oh

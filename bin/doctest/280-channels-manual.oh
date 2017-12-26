@@ -26,7 +26,7 @@ counter 2 |+ block {
     define in = $_stdin_
 
     while $true {
-        define prime: $in::read
+        define prime: in::read
         write $prime
 
         define out: channel
