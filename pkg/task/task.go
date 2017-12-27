@@ -2501,7 +2501,7 @@ func interpolate(l context, d Cell, s string) string {
 		return Raw(c.Get())
 	}
 
-	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[-0-9A-Z_a-z]+)`)
+	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[0-9A-Z_a-z]+)`)
 	return r.ReplaceAllStringFunc(s, f)
 }
 
