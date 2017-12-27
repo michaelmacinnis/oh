@@ -1034,7 +1034,7 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 func (t *Task) External(args Cell) bool {
 	t.Dump = Cdr(t.Dump)
 
-	name := Raw(Car(t.Dump))
+	name := tildeExpand(t.Lexical, t.Frame, Raw(Car(t.Dump)))
 
 	pathenv := ""
 	c, _ := Resolve(t.Lexical, t.Frame, "PATH")
@@ -1929,10 +1929,7 @@ func (t *Task) expand(args Cell) Cell {
 		}
 
 		for _, e := range braceExpand(s) {
-			if len(e) > 0 && e[:1] == "~" {
-				ref, _ := Resolve(t.Lexical, t.Frame, "HOME")
-				e = filepath.Join(ref.Get().String(), e[1:])
-			}
+			e = tildeExpand(t.Lexical, t.Frame, e)
 
 			if !strings.ContainsAny(e, "*?[") {
 				list = AppendTo(list, NewSymbol(e))
@@ -2482,8 +2479,8 @@ func init() {
 	MakeParser(b.ReadString).ParseBuffer("boot.oh", eval)
 }
 
-func interpolate(l context, d Cell, s string) string {
-	f := func(ref string) string {
+func interpolate(l context, f Cell, s string) string {
+	cb := func(ref string) string {
 		if ref == "$$" {
 			return "$"
 		}
@@ -2493,7 +2490,7 @@ func interpolate(l context, d Cell, s string) string {
 			name = name[1 : len(name)-1]
 		}
 
-		c, _ := Resolve(l, d, name)
+		c, _ := Resolve(l, f, name)
 		if c == nil {
 			return ref
 		}
@@ -2502,7 +2499,7 @@ func interpolate(l context, d Cell, s string) string {
 	}
 
 	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[0-9A-Z_a-z]+)`)
-	return r.ReplaceAllStringFunc(s, f)
+	return r.ReplaceAllStringFunc(s, cb)
 }
 
 func jobControlEnabled() bool {
@@ -2759,6 +2756,14 @@ func stringContext() context {
 	bindStringPredicates(envs)
 
 	return envs
+}
+
+func tildeExpand(l, f Cell, s string) string {
+	if !strings.HasPrefix(s, "~") {
+		return s
+	}
+	ref, _ := Resolve(l, f, "HOME")
+	return filepath.Join(ref.Get().String(), s[1:])
 }
 
 /* Convert cell into a Conduit. */
