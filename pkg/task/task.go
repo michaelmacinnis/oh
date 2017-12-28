@@ -1189,9 +1189,9 @@ func (t *Task) Lookup(sym *Symbol) string {
 
 	c, o := Resolve(t.Lexical, t.Frame, r)
 	if c == nil {
-		if s == psEvalHead && !prefixed && !t.Strict() {
-			// External command names are symbols that are not the
-			// name of a variable, unless we are in strict mode.
+		if s == psEvalHead && !prefixed {
+			// External command names are symbols
+			// that are not the name of a variable.
 			t.Dump = Cons(sym, t.Dump)
 			return ""
 		}
@@ -1484,24 +1484,6 @@ func (t *Task) Stop() {
 			k.Stop()
 		}
 	}
-}
-
-func (t *Task) Strict() (ok bool) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-
-		ok = false
-	}()
-
-	c, _ := Resolve(t.Lexical, nil, "strict")
-	if c == nil {
-		return false
-	}
-
-	return c.Get().(Cell).Bool()
 }
 
 func (t *Task) Suspend() {

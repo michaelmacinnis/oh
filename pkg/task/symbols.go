@@ -28,8 +28,8 @@ var symbols = []string{
 	"reverse", "right", "_root_", "run", "rval", "self", "set",
 	"set-line-number", "set-source-file", "_set_", "source", "spawn",
 	"_splice_", "split", "sprintf", "status", "_stderr_", "_stdin_",
-	"_stdout_", "strict", "string", "sub", "suffix", "symbol", "syntax",
-	"_sys_", "temp-fifo", "_throw", "throw", "to-string", "to-symbol",
-	"true", "type", "unquote", "USER", "wait", "while", "write",
+	"_stdout_", "string", "sub", "suffix", "symbol", "syntax", "_sys_",
+	"temp-fifo", "_throw", "throw", "to-string", "to-symbol", "true",
+	"type", "unquote", "USER", "wait", "while", "write",
 	"_writer_close_",
 }
