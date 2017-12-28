@@ -171,7 +171,7 @@ func directories(ev string) []string {
 
 	s := ""
 	if ref != nil {
-		s = ref.Get().String()
+		s = cell.Raw(ref.Get())
 	}
 
 	for _, dir := range strings.Split(s, string(os.PathListSeparator)) {
