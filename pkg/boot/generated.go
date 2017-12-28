@@ -134,7 +134,8 @@ define coalesce: syntax (: lst) e = {
 	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
 		set lst: lst::tail
 	}
-	return: e::eval: lst::head
+	if (is-null: lst::tail): return: e::eval: lst::head
+	return: e::eval: symbol: "$%s"::sprintf: lst::head
 }
 define echo: builtin (: args) = {
 	if (is-null $args) {
