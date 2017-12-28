@@ -1131,8 +1131,8 @@ func (t *Task) LexicalVar(state int64) bool {
 	s := toContext(t.Self()).Expose()
 
 	r := Raw(Car(t.Code))
-	if t.Strict() && number(r) {
-		msg := r + " cannot be used as a variable name"
+	if strings.Contains(r, "=") {
+		msg := "'" + r + "' is not a valid variable name"
 		panic(msg)
 	}
 
@@ -2513,11 +2513,6 @@ func namedCount(c int64, n string, p string) string {
 	}
 
 	return fmt.Sprintf("%d %s%s", c, n, s)
-}
-
-func number(s string) bool {
-	m, err := regexp.MatchString(`^[0-9]+(\.[0-9]+)?$`, s)
-	return err == nil && m
 }
 
 func pairContext() context {
