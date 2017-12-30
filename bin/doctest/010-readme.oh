@@ -80,7 +80,7 @@ wc <greeting | tr -s ' ' # Replace multiple spaces with a single space.
 cat greeting | wc | tr -s ' ' # Replace multiple spaces with a single space.
 tail -n1 greeting; cal 01 2030 | sed -re 's/[ ]+$//g' # Strip trailing spaces.
 grep impossible *[a-z]ing &
-#wait
+wait
 mkdir junk && cd junk
 cd ..
 rm -r greeting junk || echo "rm failed!"

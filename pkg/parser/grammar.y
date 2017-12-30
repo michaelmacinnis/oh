@@ -200,8 +200,8 @@ tail: "@" expression {
 
 tail: expression { $$ = $1 };
 
-expression: "`" expression {
-	$$ = List(NewSymbol("_backtick_"), $2)
+expression: "`" "(" command ")" {
+	$$ = List(NewSymbol("_backtick_"), $3)
 };
 
 expression: expression CONS expression {
