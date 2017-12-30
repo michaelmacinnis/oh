@@ -2474,7 +2474,7 @@ func interpolate(l context, f Cell, s string) string {
 
 		c, _ := Resolve(l, f, name)
 		if c == nil {
-			return ref
+			panic("'" + name + "' undefined")
 		}
 
 		return Raw(c.Get())
