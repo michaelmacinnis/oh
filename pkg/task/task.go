@@ -1084,7 +1084,7 @@ func (t *Task) External(args Cell) bool {
 }
 
 func (t *Task) launch() {
-	t.Run(nil)
+	t.RunWithExceptionHandling(nil)
 	close(t.Done)
 }
 
@@ -1111,7 +1111,7 @@ func (t *Task) Listen() {
 		t.Code = c
 
 		var result Cell
-		if t.Run(end) != 0 {
+		if !t.RunWithExceptionHandling(end) {
 			t.registers = saved
 
 			SetCar(t.Code, nil)
@@ -1212,27 +1212,20 @@ func MakeParser(input InputFunc) Parser {
 	return parser.New(deref, input)
 }
 
-func (t *Task) Run(end Cell) (rv int) {
+func (t *Task) RunWithExceptionHandling(end Cell) bool {
 	for {
-		rv := t.RunWithRecovery(end)
-		if rv != 1 {
-			return rv
+		ok, err := t.run(end)
+		if err == nil {
+			return ok
 		}
+		// Inject throw and restart.
+		t.Throw(t.File, t.Line, fmt.Sprintf("%v", err))
 	}
 }
 
-func (t *Task) RunWithRecovery(end Cell) (rv int) {
-	rv = 0
-
+func (t *Task) run(end Cell) (_ bool, err interface{}) {
 	defer func() {
-		r := recover()
-		if r == nil {
-			return
-		}
-
-		t.Throw(t.File, t.Line, fmt.Sprintf("%v", r))
-
-		rv = 1
+		err = recover()
 	}()
 
 	for t.Runnable() {
@@ -1287,7 +1280,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			fallthrough
 		case psEvalBlock:
 			if t.Code == end {
-				return
+				return true, ""
 			}
 
 			if t.Code == Null ||
@@ -1432,7 +1425,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 			continue
 
 		case psFatal:
-			return -1
+			return false, ""
 
 		case psNoOp:
 			break
@@ -1457,7 +1450,7 @@ func (t *Task) RunWithRecovery(end Cell) (rv int) {
 		t.RemoveState()
 	}
 
-	return
+	return true, ""
 }
 
 func (t *Task) Runnable() bool {
@@ -1658,7 +1651,7 @@ func Call(c Cell) Cell {
 	taskc.Stack = List(NewInteger(psEvalCommand))
 	taskc.Frame = task0.Frame
 
-	taskc.Run(nil)
+	taskc.RunWithExceptionHandling(nil)
 
 	return Car(taskc.Dump)
 }
