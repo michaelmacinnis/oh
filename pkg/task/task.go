@@ -2349,6 +2349,14 @@ func init() {
 	})
 
 	/* Syntax. */
+	scope0.DefineSyntax("_splice_", func(t *Task, args Cell) bool {
+		t.ReplaceStates(psExecSplice, psEvalElement)
+
+		t.Code = Car(t.Code)
+		t.Dump = Cdr(t.Dump)
+
+		return true
+	})
 	scope0.DefineSyntax("block", func(t *Task, args Cell) bool {
 		t.ReplaceStates(svLexical, psEvalBlock)
 
@@ -2402,14 +2410,6 @@ func init() {
 		SetCar(t.Dump, child)
 
 		return false
-	})
-	scope0.DefineSyntax("_splice_", func(t *Task, args Cell) bool {
-		t.ReplaceStates(psExecSplice, psEvalElement)
-
-		t.Code = Car(t.Code)
-		t.Dump = Cdr(t.Dump)
-
-		return true
 	})
 	scope0.DefineSyntax("while", func(t *Task, args Cell) bool {
 		t.ReplaceStates(svLexical, psExecWhileTest)
