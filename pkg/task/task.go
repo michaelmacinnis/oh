@@ -42,7 +42,7 @@ type closure interface {
 	SelfLabel() Cell
 }
 
-type closureMaker func(a function, b, c, o, p Cell, s context) closure
+type closurer func(a function, b, c, o, p Cell, s context) closure
 
 type context interface {
 	Cell
@@ -76,6 +76,8 @@ const (
 	svFrame
 	svLexical
 	svMax
+
+	svCode = svCarCode | svCdrCode
 )
 
 const (
@@ -103,8 +105,6 @@ const (
 	psFatal
 	psNoOp
 	psReturn
-
-	svCode = svCarCode | svCdrCode
 )
 
 var (
@@ -123,12 +123,6 @@ var (
 	task0l      = &sync.RWMutex{}
 	taskc       *Task
 )
-
-var next = map[int64][]int64{
-	psEvalArguments:        {svCdrCode, psEvalElement},
-	psExecIf:               {psEvalBlock},
-	psExecWhileBody:        {psExecWhileTest, svCode, psEvalBlock},
-}
 
 /* Bound cell definition. */
 
@@ -458,7 +452,7 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 		} else {
 			simple = true
 		}
-		
+
 	}
 
 	cl := toContext(r.Lexical).Complete(simple, name)
@@ -585,29 +579,31 @@ func (r *registers) NewStates(l ...int64) {
 	}
 }
 
-func (r *registers) RemoveState() {
-	f := r.GetState()
+func (r *registers) RemoveState() (s int64) {
+	s = r.GetState()
 
 	r.Stack = Cdr(r.Stack)
-	if f >= svMax {
+	if s >= svMax {
 		return
 	}
 
-	if f&svLexical > 0 {
+	if s&svLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&svFrame > 0 {
+	if s&svFrame > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&svDump > 0 {
+	if s&svDump > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
 
-	if f&svCode > 0 {
+	if s&svCode > 0 {
 		r.Stack = Cdr(r.Stack)
 	}
+
+	return
 }
 
 func (r *registers) ReplaceStates(l ...int64) {
@@ -616,28 +612,28 @@ func (r *registers) ReplaceStates(l ...int64) {
 }
 
 func (r *registers) RestoreState() {
-	f := r.GetState()
+	s := r.GetState()
 
-	if f == 0 || f >= svMax {
+	if s == 0 || s >= svMax {
 		return
 	}
 
-	if f&svLexical > 0 {
+	if s&svLexical > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Lexical = Car(r.Stack).(context)
 	}
 
-	if f&svFrame > 0 {
+	if s&svFrame > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Frame = Car(r.Stack)
 	}
 
-	if f&svDump > 0 {
+	if s&svDump > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Dump = Car(r.Stack)
 	}
 
-	if f&svCode > 0 {
+	if s&svCode > 0 {
 		r.Stack = Cdr(r.Stack)
 		r.Code = Car(r.Stack)
 	}
@@ -933,7 +929,7 @@ func (t *Task) Chdir(dir string) bool {
 	return t.Return(rv)
 }
 
-func (t *Task) Closure(n closureMaker) bool {
+func (t *Task) Closure(n closurer) bool {
 	olabel := Car(t.Code)
 	t.Code = Cdr(t.Code)
 
@@ -1175,7 +1171,7 @@ func (t *Task) Lookup(sym *Symbol) string {
 		prefixed = true
 		r = r[1:]
 		if strings.HasPrefix(r, "{") && strings.HasSuffix(r, "}") {
-			r = r[1:len(r)-1]		
+			r = r[1 : len(r)-1]
 		}
 	}
 
@@ -1273,7 +1269,10 @@ func (t *Task) run(end Cell) (_ bool, err interface{}) {
 				break
 			}
 
-			t.ReplaceStates(next[t.GetState()]...)
+			if t.RemoveState() == psExecWhileBody {
+				t.NewStates(psExecWhileTest, svCode)
+			}
+			t.NewStates(psEvalBlock)
 
 			t.Code = Cdr(t.Code)
 
@@ -1353,7 +1352,7 @@ func (t *Task) run(end Cell) (_ bool, err interface{}) {
 				break
 			}
 
-			t.NewStates(next[t.GetState()]...)
+			t.NewStates(svCdrCode, psEvalElement)
 
 			t.Code = Car(t.Code)
 
