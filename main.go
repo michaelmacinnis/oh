@@ -39,9 +39,11 @@ type ui struct {
 }
 
 var (
-	cooked   liner.ModeApplier
-	parser0  cell.Parser
-	uncooked liner.ModeApplier
+	cooked            liner.ModeApplier
+	parser0           cell.Parser
+	pathListSeparator = string(os.PathListSeparator)
+	pathSeparator     = string(os.PathSeparator)
+	uncooked          liner.ModeApplier
 )
 
 func (cli ui) Close() error {
@@ -86,6 +88,19 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 	return
 }
 
+func clean(s string) string {
+	if s == pathSeparator+"." {
+		return s
+	}
+
+	head, tail := split(s)
+	if tail == s {
+		head, tail = tail, head
+	}
+
+	return filepath.Clean(head) + tail
+}
+
 func complete(line string, pos int) (head string, completions []string, tail string) {
 	first, state, completing := parser0.State(line[:pos])
 
@@ -112,15 +127,20 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	// Ensure line == prefix + completing + tail
 	prefix := head[0 : len(head)-len(completing)]
 
+	ft := task.ForegroundTask()
+
+	cwd := lookup(ft, "PWD")
+	home := lookup(ft, "HOME")
+
 	if first == "" {
-		completions = files("PATH", completing)
+		completions = files(cwd, home, lookup(ft, "PATH"), completing)
 	} else {
-		completions = files("PWD", completing)
+		completions = files(cwd, home, lookup(ft, "PWD"), completing)
 	}
 
 	completions = append(
 		completions,
-		task.ForegroundTask().Complete(first, completing)...,
+		ft.Complete(first, completing)...,
 	)
 
 	clist := task.Call(cell.List(
@@ -163,22 +183,13 @@ func complete(line string, pos int) (head string, completions []string, tail str
 	return prefix, completions, tail
 }
 
-func directories(ev string) []string {
+func directories(s string) []string {
 	dirs := []string{}
-
-	ft := task.ForegroundTask()
-	ref, _ := task.Resolve(ft.Lexical, ft.Frame, ev)
-
-	s := ""
-	if ref != nil {
-		s = cell.Raw(ref.Get())
-	}
-
-	for _, dir := range strings.Split(s, string(os.PathListSeparator)) {
+	for _, dir := range strings.Split(s, pathListSeparator) {
 		if dir == "" {
 			dir = "."
 		} else {
-			dir = path.Clean(dir)
+			dir = filepath.Clean(dir)
 		}
 
 		stat, err := os.Stat(dir)
@@ -192,31 +203,30 @@ func directories(ev string) []string {
 	return dirs
 }
 
-func files(ev, word string) []string {
+func files(cwd, home, paths, word string) []string {
 	completions := []string{}
 
 	candidate := word
-	if strings.HasPrefix(candidate, "~") {
-		ft := task.ForegroundTask()
-		ref, _ := task.Resolve(ft.Lexical, ft.Frame, "HOME")
-		candidate = filepath.Join(ref.Get().String(), candidate[1:])
+
+	prefix := word + "   "
+	if prefix[0:1] == "." {
+		candidate = join(cwd, candidate)
+	} else if prefix[0:1] == "~" {
+		candidate = join(home, candidate[1:])
+	} else {
+		candidate = clean(candidate)
 	}
 
-	candidate = path.Clean(candidate)
-
 	candidates := []string{candidate}
-	if !path.IsAbs(candidate) {
-		candidates = directories(ev)
+	if !path.IsAbs(candidate) && !strings.HasPrefix(candidate, ".") {
+		candidates = directories(paths)
 		for k, v := range candidates {
-			candidates[k] = path.Join(v, candidate)
+			candidates[k] = join(v, candidate)
 		}
 	}
 
 	for _, candidate := range candidates {
 		dirname, basename := filepath.Split(candidate)
-		if candidate != "/" && strings.HasSuffix(word, "/") {
-			dirname, basename = path.Join(dirname, basename)+"/", ""
-		}
 
 		stat, err := os.Stat(dirname)
 		if err != nil {
@@ -225,10 +235,10 @@ func files(ev, word string) []string {
 			continue
 		}
 
-		max := strings.Count(dirname, "/")
+		max := strings.Count(dirname, pathSeparator)
 
 		filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
-			depth := strings.Count(p, "/")
+			depth := strings.Count(p, pathSeparator)
 			if depth > max {
 				if i.IsDir() {
 					return filepath.SkipDir
@@ -238,25 +248,23 @@ func files(ev, word string) []string {
 				return nil
 			}
 
-			full := path.Join(dirname, basename)
-			if candidate != "/" && len(basename) == 0 {
+			if candidate != pathSeparator && len(basename) == 0 {
 				if p == dirname {
 					return nil
 				}
-				full += "/"
-			} else if !strings.HasPrefix(p, full) {
+			} else if !strings.HasPrefix(p, candidate) {
 				return nil
 			}
 
-			if p != "/" && i.IsDir() {
-				p += "/"
+			if p != pathSeparator && i.IsDir() {
+				p += pathSeparator
 			}
 
-			if len(full) > len(p) {
+			if len(candidate) > len(p) {
 				return nil
 			}
 
-			s := strings.Index(p, full) + len(full)
+			s := strings.Index(p, candidate) + len(candidate)
 			completion := word + p[s:]
 			completions = append(completions, completion)
 
@@ -265,6 +273,34 @@ func files(ev, word string) []string {
 	}
 
 	return completions
+}
+
+func join(s ...string) string {
+	last := len(s) - 1
+	head, tail := split(s[last])
+	s[last] = head
+	return filepath.Join(s...) + tail
+}
+
+func lookup(ft *task.Task, name string) string {
+	ref, _ := task.Resolve(ft.Lexical, ft.Frame, name)
+	if ref != nil {
+		return cell.Raw(ref.Get())
+	}
+	return ""
+}
+
+func split(s string) (head, tail string) {
+	head = s
+	tail = ""
+
+	index := strings.LastIndex(s, pathSeparator)
+	if index > -1 {
+		head = s[:index]
+		tail = s[index:]
+	}
+
+	return
 }
 
 func main() {
