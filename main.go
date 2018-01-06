@@ -89,7 +89,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 }
 
 func clean(s string) string {
-	if s == pathSeparator+"." {
+	if s == "." || s == pathSeparator+"." {
 		return s
 	}
 
@@ -204,13 +204,13 @@ func directories(s string) []string {
 }
 
 func files(cwd, home, paths, word string) []string {
-	completions := []string{}
-
 	candidate := word
 
+	dotdir := false
 	prefix := word + "   "
-	if prefix[0:1] == "." {
+	if prefix[0:2] == "./" || prefix[0:3] == "../" {
 		candidate = join(cwd, candidate)
+		dotdir = true
 	} else if prefix[0:1] == "~" {
 		candidate = join(home, candidate[1:])
 	} else {
@@ -218,13 +218,14 @@ func files(cwd, home, paths, word string) []string {
 	}
 
 	candidates := []string{candidate}
-	if !path.IsAbs(candidate) && !strings.HasPrefix(candidate, ".") {
+	if !path.IsAbs(candidate) && !dotdir {
 		candidates = directories(paths)
 		for k, v := range candidates {
-			candidates[k] = join(v, candidate)
+			candidates[k] = v + pathSeparator + candidate
 		}
 	}
 
+	completions := []string{}
 	for _, candidate := range candidates {
 		dirname, basename := filepath.Split(candidate)
 
