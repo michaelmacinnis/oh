@@ -365,7 +365,7 @@ func (e *Env) Prefixed(simple bool, prefix string) map[string]Cell {
 		if strings.HasPrefix(k, prefix) {
 			v := ref.Get()
 			if !simple || IsSimple(v) {
-				r[k] = ref.Get()
+				r[k] = v
 			}
 		}
 	}

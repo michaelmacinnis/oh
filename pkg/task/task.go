@@ -49,7 +49,7 @@ type context interface {
 
 	Access(key string) Reference
 	Copy() context
-	Complete(simple bool, word string) []string
+	Complete(word string) []string
 	Define(key string, value Cell)
 	Exported() map[string]Cell
 	Expose() context
@@ -348,12 +348,12 @@ func (o *object) Access(key string) Reference {
 	return nil
 }
 
-func (o *object) Complete(simple bool, word string) []string {
+func (o *object) Complete(word string) []string {
 	cl := []string{}
 
 	var obj context
 	for obj = o; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Prev().Complete(simple, word)...)
+		cl = append(cl, obj.Faces().Prev().Complete(false, word)...)
 	}
 
 	return cl
@@ -410,59 +410,20 @@ func (r *registers) Complete(first string, word string) (cmpltns []string) {
 		cmpltns = []string{word}
 	}()
 
-	parts := strings.Split(word, "::")
-	if len(parts) == 2 {
-		var c context
+	prefix, name, suffix := extractName(false, word)
 
-		ref, _ := Resolve(r.Lexical, r.Frame, parts[0])
-		if ref != nil {
-			c = toContext(ref.Get())
-		} else if len(parts[0]) > 1 &&
-			strings.HasPrefix(parts[0], "\"") &&
-			strings.HasSuffix(parts[0], "\"") {
-			c = stringContext()
-		}
-
-		methods := c.Complete(false, parts[1])
-		for k, v := range methods {
-			methods[k] = parts[0] + "::" + v
-		}
-
-		return methods
+	if first != "" && prefix == "" {
+		return []string{}
 	}
 
-	name := word
-	prefix := ""
-	simple := false
-
-	if first != "" {
-		prefix = "$"
-		if !strings.HasPrefix(name, prefix) {
-			return []string{}
-		}
-
-		name = name[1:]
-
-		ref, _ := Resolve(r.Lexical, r.Frame, first)
-		if ref != nil {
-			v := ref.Get()
-			if IsBuiltin(v) {
-				simple = true
-			}
-		} else {
-			simple = true
-		}
-
-	}
-
-	cl := toContext(r.Lexical).Complete(simple, name)
+	cl := toContext(r.Lexical).Complete(name)
 	for f := r.Frame; f != Null; f = Cdr(f) {
 		o := Car(f).(context)
-		cl = append(cl, o.Complete(simple, name)...)
+		cl = append(cl, o.Complete(name)...)
 	}
 
 	for k, v := range cl {
-		cl[k] = prefix + v
+		cl[k] = prefix + v + suffix
 	}
 
 	return cl
@@ -686,12 +647,12 @@ func (s *scope) Access(key string) Reference {
 	return nil
 }
 
-func (s *scope) Complete(simple bool, word string) []string {
+func (s *scope) Complete(word string) []string {
 	cl := []string{}
 
 	var obj context
 	for obj = s; obj != nil; obj = obj.Prev() {
-		cl = append(cl, obj.Faces().Complete(simple, word)...)
+		cl = append(cl, obj.Faces().Complete(false, word)...)
 	}
 
 	return cl
@@ -1164,20 +1125,10 @@ func (t *Task) LexicalVar(state int64) bool {
 }
 
 func (t *Task) Lookup(sym *Symbol) string {
-	r := Raw(sym)
-
-	prefixed := false
-	if strings.HasPrefix(r, "$") {
-		prefixed = true
-		r = r[1:]
-		if strings.HasPrefix(r, "{") && strings.HasSuffix(r, "}") {
-			r = r[1 : len(r)-1]
-		}
-	}
+	prefix, r, _ := extractName(true, Raw(sym))
 
 	s := t.GetState()
-
-	if !prefixed && s == psEvalElement {
+	if s == psEvalElement && prefix == "" {
 		// Variable arguments must be prefixed with a $.
 		t.Dump = Cons(sym, t.Dump)
 		return ""
@@ -1185,7 +1136,7 @@ func (t *Task) Lookup(sym *Symbol) string {
 
 	c, o := Resolve(t.Lexical, t.Frame, r)
 	if c == nil {
-		if s == psEvalHead && !prefixed {
+		if s == psEvalHead && prefix == "" {
 			// External command names are symbols
 			// that are not the name of a variable.
 			t.Dump = Cons(sym, t.Dump)
@@ -1202,10 +1153,6 @@ func (t *Task) Lookup(sym *Symbol) string {
 	}
 
 	return ""
-}
-
-func MakeParser(input InputFunc) Parser {
-	return parser.New(deref, input)
 }
 
 func (t *Task) RunWithExceptionHandling(end Cell) bool {
@@ -1675,16 +1622,8 @@ func IsText(c Cell) bool {
 	return IsSymbol(c) || IsString(c)
 }
 
-func launchForegroundTask() {
-	if task0 != nil {
-		mode, _ := liner.TerminalMode()
-		task0.Job.Lock()
-		task0.Job.mode = mode
-		task0.Job.Unlock()
-	}
-	task0 = NewTask(nil, nil, nil)
-
-	go task0.Listen()
+func MakeParser(input InputFunc) Parser {
+	return parser.New(deref, input)
 }
 
 func Resolve(s Cell, f Cell, k string) (Reference, Cell) {
@@ -1851,6 +1790,18 @@ func last() int {
 	return index
 }
 
+func launchForegroundTask() {
+	if task0 != nil {
+		mode, _ := liner.TerminalMode()
+		task0.Job.Lock()
+		task0.Job.mode = mode
+		task0.Job.Unlock()
+	}
+	task0 = NewTask(nil, nil, nil)
+
+	go task0.Listen()
+}
+
 func control(t *Task, args Cell) *Task {
 	if !jobControlEnabled() || t != task0 {
 		return nil
@@ -1926,6 +1877,35 @@ func (t *Task) expand(args Cell) Cell {
 	return list
 }
 
+func extractName(complete bool, s string) (prefix, name, suffix string) {
+	name = s
+	prefix = ""
+	suffix = ""
+
+	if !strings.HasPrefix(name, "$") {
+		return
+	}
+
+	name = s[1:]
+
+	hasSuffix := true
+	remove := 0
+	if complete {
+		hasSuffix = strings.HasSuffix(name, "}")
+		remove = 1
+	}
+
+	if strings.HasPrefix(name, "{") && hasSuffix {
+		name = name[1 : len(name)-remove]
+		prefix = "${"
+		suffix = "}"
+	} else {
+		prefix = "$"
+	}
+
+	return
+}
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
@@ -1942,7 +1922,7 @@ func init() {
 		t.Validate(args, 0, 0)
 		self := toContext(t.Self())
 		l := Null
-		for _, s := range self.Complete(false, "") {
+		for _, s := range self.Complete("") {
 			l = Cons(NewSymbol(s), l)
 		}
 		return t.Return(l)
