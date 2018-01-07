@@ -152,8 +152,8 @@ define error: builtin (: args) =: _stderr_::write @$args
 #     }
 #
 define fn: syntax (name args: body) e = {
-	e::eval: quasiquote: define (unquote $name) {
-		builtin (unquote: list $args) = (unquote @$body)
+	e::eval: list define $name {
+		list builtin (list $args) = @$body
 	}
 }
 define for: method (l m) = {
