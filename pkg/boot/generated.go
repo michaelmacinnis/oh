@@ -43,8 +43,8 @@ define _redirect_: syntax (name mode closer) = {
 		}
 		define f = ()
 		if (not: or (is-channel $c) (is-pipe $c)) {
-			set mode: e::eval $mode
-			if (and (eq $mode: quote w) (exists -i $c)) {
+			set mode: symbol: e::eval $mode
+			if (and (eq w $mode) (exists -i $c)) {
 				throw: exception "${c} exists"
 			}
 			set f: open $mode $c
@@ -83,8 +83,8 @@ define and: syntax (: lst) e = {
 	}
 	return $r
 }
-define _append_stderr_: _redirect_ _stderr_ 'a' _writer_close_
-define _append_stdout_: _redirect_ _stdout_ 'a' _writer_close_
+define _append_stderr_: _redirect_ _stderr_ a _writer_close_
+define _append_stdout_: _redirect_ _stdout_ a _writer_close_
 define _backtick_: syntax (cmd) e = {
 	define p: pipe
 	define ec-ex-chan: channel 1
@@ -108,15 +108,15 @@ define _backtick_: syntax (cmd) e = {
 	return: r::tail
 }
 define catch: syntax (name: clause) e = {
-	define args: list $name (quote throw)
-	define body: list (quote throw) (symbol: "$%s"::sprintf $name)
+	define args: list $name throw
+	define body: list throw: symbol: '$%s'::sprintf $name
 	if (is-null $clause) {
 		set body: list $body
 	} else {
 		set body: clause::append $body
 	}
 	define handler: e::eval {
-		list (quote method) $args (quote =) @$body
+		list method $args = @$body
 	}
 	define _return: e::eval (quote $return)
 	define _throw = $throw
@@ -135,7 +135,7 @@ define coalesce: syntax (: lst) e = {
 		set lst: lst::tail
 	}
 	if (is-null: lst::tail): return: e::eval: lst::head
-	return: e::eval: symbol: "$%s"::sprintf: lst::head
+	return: e::eval: symbol: '$%s'::sprintf: lst::head
 }
 define echo: builtin (: args) = {
 	if (is-null $args) {
@@ -224,15 +224,15 @@ define lcd: method () e = {
 	catch unused {
 		return
 	}
-	if (not: which 'lfm' >/dev/null) {
+	if (not: which lfm >/dev/null) {
 		return
 	}
 	export LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
-	command 'lfm' -1
+	command lfm -1
 	if (not: exists $LFMPATHFILE) {
 		return
 	}
-	define f: open 'r' $LFMPATHFILE
+	define f: open r $LFMPATHFILE
 	define dn: f::readline
 	f::close
 	rm $LFMPATHFILE
@@ -243,11 +243,11 @@ define lf: builtin (:args) e = {
 	catch unused {
 		return
 	}
-	if (not: which 'lf' >/dev/null) {
+	if (not: which lf >/dev/null) {
 		return
 	}
 	define temp-file @(_backtick_: mktemp)
-	command 'lf' "--last-dir-path=${temp-file}" @$args
+	command lf "--last-dir-path=${temp-file}" @$args
 	if (not: test -f $temp-file) {
 		return
 	}
@@ -279,7 +279,7 @@ define map: syntax (: literal) e = {
 # TODO: Replace with builtin rather than invoking bc.
 define math: method (S) e = {
 	catch ex {
-		set $ex::type = 'error/syntax'
+		set $ex::type = error/syntax
 		set $ex::message = "Malformed expression: ${S}"
 	}
 
@@ -289,7 +289,7 @@ define math: method (S) e = {
 	} | bc))
 }
 define object: syntax (: body) e = {
-	e::eval: cons (quote block): body::append: quote: context
+	e::eval: cons block: body::append: quote (context)
 }
 define or: syntax (: lst) e = {
 	define r = $false
@@ -308,7 +308,7 @@ define _process_substitution_: syntax (:args) e = {
 	define fifos = ()
 	define cmd: for $args: method (arg) = {
 		if (not: is-cons $arg): return $arg
-		if (eq (quote _substitute_stdin_) (arg::head)) {
+		if (eq _substitute_stdin_: arg::head) {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
@@ -323,7 +323,7 @@ define _process_substitution_: syntax (:args) e = {
 			set fifos: cons $fifo $fifos
 			return $fifo
 		}
-		if (eq (quote _substitute_stdout_) (arg::head)) {
+		if (eq _substitute_stdout_: arg::head) {
 			define chan: channel 1
 			define fifo: temp-fifo
 			spawn {
@@ -356,18 +356,18 @@ define _process_substitution_: syntax (:args) e = {
 define quasiquote: syntax (cell) e = {
 	if (not: is-cons $cell): return $cell
 	if (is-null $cell): return $cell
-	if (eq (quote unquote): cell::head): return: e::eval: cell::get 1
+	if (eq unquote: cell::head): return: e::eval: cell::get 1
 	cons {
-		e::eval: list (quote quasiquote) (cell::head)
-		e::eval: list (quote quasiquote) (cell::tail)
+		e::eval: list quasiquote (cell::head)
+		e::eval: list quasiquote (cell::tail)
 	}
 }
 define read: builtin () =: _stdin_::read
 define readline: builtin () =: _stdin_::readline
 define readlist: builtin () =: _stdin_::readlist
-define _redirect_stderr_: _redirect_ _stderr_ 'w' _writer_close_
-define _redirect_stdin_: _redirect_ _stdin_ 'r' _reader_close_
-define _redirect_stdout_: _redirect_ _stdout_ 'w' _writer_close_
+define _redirect_stderr_: _redirect_ _stderr_ w _writer_close_
+define _redirect_stdin_: _redirect_ _stdin_ r _reader_close_
+define _redirect_stdout_: _redirect_ _stdout_ w _writer_close_
 define _rew_: method (command) = {    # return exception wrapper => rew
 	quasiquote: (method () = {
 		define ec: status $false
@@ -446,7 +446,7 @@ _sys_::export _exception: method (type status message line file) e = {
 # If not provided value defaults to status false and type to error/runtime.
 _sys_::export exception: method (message :args) e = {
 	define s: status $false
-	define t: symbol 'error/runtime'
+	define t: symbol error/runtime
 	if (not: is-null $args) {
 		set s: args::head
 		set args: args::tail
