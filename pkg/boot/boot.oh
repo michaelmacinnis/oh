@@ -7,8 +7,8 @@ define _connect_: syntax (conduit-name name) e = {
 			define ec-ex: e::eval: _rew_: quasiquote: block {
 				export (unquote $name) = (unquote $p)
 				unquote $left
+				(unquote $p)::_writer_close_
 			}
-			p::_writer_close_
 			ec-ex-chan::write $ec-ex
 		}
 		block {
