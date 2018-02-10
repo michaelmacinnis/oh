@@ -292,6 +292,7 @@ func (j *Job) commandAndGroup() (string, int) {
 }
 
 func (j *Job) isForegroundJob(pid int) bool {
+	j.Lock()
 	defer j.Unlock()
 
 	return j.group == pid
@@ -2202,7 +2203,7 @@ func init() {
 			if k == len(jobs)-1 {
 				isdef = "+"
 			}
-			fmt.Printf("[%d] \t%d\t%s\n", v, isdef, grp, cmd)
+			fmt.Printf("[%d]%s\t%d\t%s\n", v, isdef, grp, cmd)
 		}
 		return false
 	})
