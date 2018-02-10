@@ -75,9 +75,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 
 	if line, err = cli.State.Prompt(prompt); err == nil {
 		cli.AppendHistory(line)
-		if task.ForegroundTask().Job.Command == "" {
-			task.ForegroundTask().Job.Command = line
-		}
+		task.ForegroundTask().Job.SetCommand(line)
 		line += "\n"
 	}
 

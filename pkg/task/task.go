@@ -254,14 +254,100 @@ func (c *command) SelfLabel() Cell {
 
 type Job struct {
 	sync.Mutex
-	Command string
-	Group   int
+	command string
+	group   int
 	mode    liner.ModeApplier
+	pids    map[int]struct{}
 }
 
 func NewJob() *Job {
 	mode, _ := liner.TerminalMode()
-	return &Job{sync.Mutex{}, "", 0, mode}
+	return &Job{sync.Mutex{}, "", 0, mode, map[int]struct{}{}}
+}
+
+func (j *Job) SetCommand(cmd string) {
+	j.Lock()
+	defer j.Unlock()
+
+	if j.command != "" {
+		return
+	}
+	j.command = cmd
+}
+
+func (j *Job) assignedGroup() int {
+	if !jobControlEnabled() {
+		return 0
+	}
+
+	j.Lock()
+	return j.group
+}
+
+func (j *Job) commandAndGroup() (string, int) {
+	j.Lock()
+	defer j.Unlock()
+
+	return j.command, j.group
+}
+
+func (j *Job) isForegroundJob(pid int) bool {
+	defer j.Unlock()
+
+	return j.group == pid
+}
+
+func (j *Job) moveToForeground() {
+	j.Lock()
+	defer j.Unlock()
+
+	if j.group != 0 {
+		system.SetForegroundGroup(j.group)
+		j.mode.ApplyMode()
+	}
+}
+
+func (j *Job) registerPid(pid int) {
+	if !jobControlEnabled() {
+		return
+	}
+
+	defer j.Unlock()
+
+	j.pids[pid] = struct{}{}
+	if j.group == 0 {
+		j.group = pid
+	}
+}
+
+func (j *Job) resetCommandAndGroup() {
+	j.Lock()
+	defer j.Unlock()
+
+	j.command = ""
+	j.group = 0
+}
+
+func (j *Job) saveMode() {
+	j.Lock()
+	defer j.Unlock()
+
+	mode, _ := liner.TerminalMode()
+	j.mode = mode
+}
+
+func (j *Job) unregisterPid(pid int) {
+	if !jobControlEnabled() {
+		return
+	}
+
+	j.Lock()
+	defer j.Unlock()
+
+	delete(j.pids, pid)
+	if len(j.pids) == 0 {
+		j.group = 0
+	}
 }
 
 /* Method cell definition. */
@@ -953,36 +1039,19 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	t.Lock()
 	defer t.Unlock()
 
-	if jobControlEnabled() {
-		t.Job.Lock()
-		attr.Sys = system.SysProcAttr(t.Group)
-		t.Job.Unlock()
-	}
+	attr.Sys = system.SysProcAttr(t.Job.assignedGroup())
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
 		return nil, err
 	}
 
-	if jobControlEnabled() {
-		t.Job.Lock()
-		if t.Group == 0 {
-			t.Group = proc.Pid
-		}
-		t.Job.Unlock()
-	}
-
+	t.Job.registerPid(proc.Pid)
 	t.pid = proc.Pid
 
 	rv := status(proc)
 
-	if jobControlEnabled() {
-		t.Job.Lock()
-		if t.Group == t.pid {
-			t.Group = 0
-		}
-		t.Job.Unlock()
-	}
+	t.Job.unregisterPid(proc.Pid)
 	t.pid = 0
 
 	return rv, err
@@ -1792,10 +1861,7 @@ func last() int {
 
 func launchForegroundTask() {
 	if task0 != nil {
-		mode, _ := liner.TerminalMode()
-		task0.Job.Lock()
-		task0.Job.mode = mode
-		task0.Job.Unlock()
+		task0.Job.saveMode()
 	}
 	task0 = NewTask(nil, nil, nil)
 
@@ -2131,15 +2197,12 @@ func init() {
 		}
 		sort.Ints(i)
 		for k, v := range i {
-			if k != len(jobs)-1 {
-				fmt.Printf("[%d] \t%d\t%s\n", v,
-					jobs[v].Job.Group,
-					jobs[v].Job.Command)
-			} else {
-				fmt.Printf("[%d]+\t%d\t%s\n", v,
-					jobs[v].Job.Group,
-					jobs[v].Job.Command)
+			cmd, grp := jobs[v].Job.commandAndGroup()
+			isdef := " "
+			if k == len(jobs)-1 {
+				isdef = "+"
 			}
+			fmt.Printf("[%d] \t%d\t%s\n", v, isdef, grp, cmd)
 		}
 		return false
 	})
@@ -2602,11 +2665,10 @@ func rpipe(c Cell) *os.File {
 }
 
 func setForegroundTask(t *Task) {
-	if t.Job.Group != 0 {
-		system.SetForegroundGroup(t.Job.Group)
-		t.Job.mode.ApplyMode()
-	}
+	t.Job.moveToForeground()
+
 	task0, t = t, task0
+
 	t.Stop()
 	task0.Continue()
 }

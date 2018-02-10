@@ -75,8 +75,9 @@ func SysProcAttr(group int) *syscall.SysProcAttr {
 		sys.Ctty = unix.Stdout
 		sys.Foreground = true
 	} else {
-		sys.Setpgid = true
+		sys.Foreground = true
 		sys.Pgid = group
+		sys.Setpgid = true
 	}
 
 	return sys
