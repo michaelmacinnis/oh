@@ -275,6 +275,13 @@ func (j *Job) SetCommand(cmd string) {
 	j.command = cmd
 }
 
+func (j *Job) String() string {
+	j.Lock()
+	defer j.Unlock()
+
+	return fmt.Sprintf("%d\t%s", j.group, j.command)
+}
+
 func (j *Job) assignedGroup() int {
 	if !jobControlEnabled() {
 		return 0
@@ -284,14 +291,7 @@ func (j *Job) assignedGroup() int {
 	return j.group
 }
 
-func (j *Job) commandAndGroup() (string, int) {
-	j.Lock()
-	defer j.Unlock()
-
-	return j.command, j.group
-}
-
-func (j *Job) isForegroundJob(pid int) bool {
+func (j *Job) inForeground(pid int) bool {
 	j.Lock()
 	defer j.Unlock()
 
@@ -321,7 +321,7 @@ func (j *Job) registerPid(pid int) {
 	}
 }
 
-func (j *Job) resetCommandAndGroup() {
+func (j *Job) reset() {
 	j.Lock()
 	defer j.Unlock()
 
@@ -2198,12 +2198,11 @@ func init() {
 		}
 		sort.Ints(i)
 		for k, v := range i {
-			cmd, grp := jobs[v].Job.commandAndGroup()
 			isdef := " "
 			if k == len(jobs)-1 {
 				isdef = "+"
 			}
-			fmt.Printf("[%d]%s\t%d\t%s\n", v, isdef, grp, cmd)
+			fmt.Printf("[%d]%s\t%s\n", v, isdef, jobs[v].Job)
 		}
 		return false
 	})

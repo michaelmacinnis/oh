@@ -94,7 +94,7 @@ func evaluate(c Cell) (Cell, bool) {
 	eval0 <- c
 	r := <-done0
 
-	task0.Job.resetCommandAndGroup()
+	task0.Job.reset()
 
 	return r, task0.Stack != Null
 }
@@ -168,7 +168,7 @@ func monitor(active chan bool, notify chan notification) {
 			}
 
 			if status.Stopped() {
-				if task0.Job.isForegroundJob(pid) {
+				if task0.Job.inForeground(pid) {
 					incoming <- unix.SIGTSTP
 				}
 				continue
@@ -176,7 +176,7 @@ func monitor(active chan bool, notify chan notification) {
 
 			if status.Signaled() {
 				if status.Signal() == unix.SIGINT &&
-					task0.Job.isForegroundJob(pid) {
+					task0.Job.inForeground(pid) {
 					incoming <- unix.SIGINT
 				}
 				status += 128
