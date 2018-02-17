@@ -1800,12 +1800,8 @@ func braceExpand(arg string) []string {
 	return expanded
 }
 
-func conduitContext() context {
-	if envc != nil {
-		return envc
-	}
-
-	envc = NewScope(namespace, nil)
+func createConduitContext(parent context) context {
+	envc := NewScope(parent, nil)
 	envc.PublicMethod("_reader_close_", func(t *Task, args Cell) bool {
 		t.Validate(args, 0, 0)
 		toConduit(t.Self()).ReaderClose()
@@ -1845,6 +1841,221 @@ func conduitContext() context {
 	return envc
 }
 
+func createPairContext(parent context) context {
+	envp := NewScope(parent, nil)
+	envp.PublicMethod("append", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 1)
+		var s Cell = ToPair(t.Self())
+
+		n := Cons(Car(s), Null)
+		l := n
+		for s = Cdr(s); s != Null; s = Cdr(s) {
+			SetCdr(n, Cons(Car(s), Null))
+			n = Cdr(n)
+		}
+		SetCdr(n, args)
+
+		return t.Return(l)
+	})
+	envp.PublicMethod("get", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 1, IsNumber)
+		s := ToPair(t.Self())
+
+		i := int64(0)
+		if args != Null {
+			i = Car(args).(Atom).Int()
+			args = Cdr(args)
+		}
+
+		var dflt Cell
+		if args != Null {
+			dflt = args
+		}
+
+		return t.Return(Car(Tail(s, i, dflt)))
+	})
+	envp.PublicMethod("head", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		s := ToPair(t.Self())
+
+		return t.Return(Car(s))
+	})
+	envp.PublicMethod("keys", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		var s Cell = ToPair(t.Self())
+		l := Null
+
+		i := int64(0)
+		for s != Null {
+			l = Cons(NewInteger(i), l)
+			s = Cdr(s)
+			i++
+		}
+
+		return t.Return(Reverse(l))
+	})
+	envp.PublicMethod("length", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		return t.Return(NewInteger(Length(t.Self())))
+	})
+	envp.PublicMethod("reverse", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		return t.Return(Reverse(t.Self()))
+	})
+	envp.PublicMethod("set", func(t *Task, args Cell) bool {
+		t.Validate(args, 2, 2, IsNumber)
+		s := ToPair(t.Self())
+
+		i := Car(args).(Atom).Int()
+		v := Cadr(args)
+
+		SetCar(Tail(s, i, nil), v)
+		return t.Return(v)
+	})
+	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 2)
+		s := ToPair(t.Self())
+
+		i := int64(0)
+
+		v := Car(args)
+		args = Cdr(args)
+
+		if args != Null {
+			i = v.(Atom).Int()
+			v = Car(args)
+		}
+
+		SetCdr(Tail(s, i, nil), v)
+		return t.Return(v)
+	})
+	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 2, IsNumber, IsNumber)
+		s := ToPair(t.Self())
+		i := Car(args).(Atom).Int()
+
+		j := int64(0)
+
+		args = Cdr(args)
+		if args != Null {
+			j = Car(args).(Atom).Int()
+		}
+
+		return t.Return(Slice(s, i, j))
+	})
+	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		s := ToPair(t.Self())
+
+		return t.Return(Cdr(s))
+	})
+	envp.DefineMethod("to-string", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		var s Cell
+
+		v := ""
+		for s = ToPair(t.Self()); s != Null; s = Cdr(s) {
+			v = fmt.Sprintf("%s%c", v, int(Car(s).(Atom).Int()))
+		}
+
+		return t.Return(NewString(v))
+	})
+
+	return envp
+}
+
+func createStringContext(parent context) context {
+	envs := NewScope(parent, nil)
+	envs.PublicMethod("join", func(t *Task, args Cell) bool {
+		sep := toString(t.Self())
+		arr := make([]string, Length(args))
+
+		for i := 0; args != Null; i++ {
+			arr[i] = string(Raw(Car(args)))
+			args = Cdr(args)
+		}
+
+		r := strings.Join(arr, string(Raw(sep)))
+
+		return t.Return(NewString(r))
+	})
+	envs.PublicMethod("keys", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		return t.Return(Null)
+	})
+	envs.PublicMethod("length", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		s := Raw(toString(t.Self()))
+
+		return t.Return(NewInteger(int64(len(s))))
+	})
+	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 2, IsNumber, IsNumber)
+		s := []rune(Raw(toString(t.Self())))
+
+		start := int(Car(args).(Atom).Int())
+		end := len(s)
+
+		if Cdr(args) != Null {
+			end = int(Cadr(args).(Atom).Int())
+		}
+
+		return t.Return(NewString(string(s[start:end])))
+	})
+	envs.PublicMethod("split", func(t *Task, args Cell) bool {
+		t.Validate(args, 1, 1, IsText)
+		r := Null
+
+		sep := toString(t.Self())
+		str := Car(args)
+
+		l := strings.Split(string(Raw(str)), string(Raw(sep)))
+
+		for i := len(l) - 1; i >= 0; i-- {
+			r = Cons(NewString(l[i]), r)
+		}
+
+		return t.Return(r)
+	})
+	envs.PublicMethod("sprintf", func(t *Task, args Cell) bool {
+		f := Raw(toString(t.Self()))
+
+		argv := []interface{}{}
+		for l := args; l != Null; l = Cdr(l) {
+			switch t := Car(l).(type) {
+			case *Boolean:
+				argv = append(argv, *t)
+			case *Integer:
+				argv = append(argv, *t)
+			case *Status:
+				argv = append(argv, *t)
+			case *Float:
+				argv = append(argv, *t)
+			default:
+				argv = append(argv, Raw(t))
+			}
+		}
+
+		s := fmt.Sprintf(f, argv...)
+
+		return t.Return(NewString(s))
+	})
+	envs.PublicMethod("to-list", func(t *Task, args Cell) bool {
+		t.Validate(args, 0, 0)
+		s := Raw(toString(t.Self()))
+		l := Null
+		for _, char := range s {
+			l = Cons(NewInteger(int64(char)), l)
+		}
+
+		return t.Return(Reverse(l))
+	})
+
+	bindStringPredicates(envs)
+
+	return envs
+}
+
 func last() int {
 	index := 0
 
@@ -1858,15 +2069,6 @@ func last() int {
 	}
 
 	return index
-}
-
-func launchForegroundTask() {
-	if task0 != nil {
-		task0.Job.saveMode()
-	}
-	task0 = NewTask(nil, nil, nil)
-
-	go task0.Listen()
 }
 
 func control(t *Task, args Cell) *Task {
@@ -2028,6 +2230,10 @@ func init() {
 	namespace.PublicMethod("export", func(t *Task, args Cell) bool {
 		panic("public members cannot be added to this type")
 	})
+
+	envc = createConduitContext(namespace)
+	envp = createPairContext(namespace)
+	envs = createStringContext(namespace)
 
 	object := NewScope(namespace, nil)
 
@@ -2523,6 +2729,15 @@ func jobControlEnabled() bool {
 	return interactive && system.JobControlSupported()
 }
 
+func launchForegroundTask() {
+	if task0 != nil {
+		task0.Job.saveMode()
+	}
+	task0 = NewTask(nil, nil, nil)
+
+	go task0.Listen()
+}
+
 func namedCount(c int64, n string, p string) string {
 	s := ""
 	if c != 1 {
@@ -2530,133 +2745,6 @@ func namedCount(c int64, n string, p string) string {
 	}
 
 	return fmt.Sprintf("%d %s%s", c, n, s)
-}
-
-func pairContext() context {
-	if envp != nil {
-		return envp
-	}
-
-	envp = NewScope(namespace, nil)
-	envp.PublicMethod("append", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 1)
-		var s Cell = ToPair(t.Self())
-
-		n := Cons(Car(s), Null)
-		l := n
-		for s = Cdr(s); s != Null; s = Cdr(s) {
-			SetCdr(n, Cons(Car(s), Null))
-			n = Cdr(n)
-		}
-		SetCdr(n, args)
-
-		return t.Return(l)
-	})
-	envp.PublicMethod("get", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 1, IsNumber)
-		s := ToPair(t.Self())
-
-		i := int64(0)
-		if args != Null {
-			i = Car(args).(Atom).Int()
-			args = Cdr(args)
-		}
-
-		var dflt Cell
-		if args != Null {
-			dflt = args
-		}
-
-		return t.Return(Car(Tail(s, i, dflt)))
-	})
-	envp.PublicMethod("head", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		s := ToPair(t.Self())
-
-		return t.Return(Car(s))
-	})
-	envp.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		var s Cell = ToPair(t.Self())
-		l := Null
-
-		i := int64(0)
-		for s != Null {
-			l = Cons(NewInteger(i), l)
-			s = Cdr(s)
-			i++
-		}
-
-		return t.Return(Reverse(l))
-	})
-	envp.PublicMethod("length", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		return t.Return(NewInteger(Length(t.Self())))
-	})
-	envp.PublicMethod("reverse", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		return t.Return(Reverse(t.Self()))
-	})
-	envp.PublicMethod("set", func(t *Task, args Cell) bool {
-		t.Validate(args, 2, 2, IsNumber)
-		s := ToPair(t.Self())
-
-		i := Car(args).(Atom).Int()
-		v := Cadr(args)
-
-		SetCar(Tail(s, i, nil), v)
-		return t.Return(v)
-	})
-	envp.PublicMethod("set-tail", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 2)
-		s := ToPair(t.Self())
-
-		i := int64(0)
-
-		v := Car(args)
-		args = Cdr(args)
-
-		if args != Null {
-			i = v.(Atom).Int()
-			v = Car(args)
-		}
-
-		SetCdr(Tail(s, i, nil), v)
-		return t.Return(v)
-	})
-	envp.PublicMethod("slice", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 2, IsNumber, IsNumber)
-		s := ToPair(t.Self())
-		i := Car(args).(Atom).Int()
-
-		j := int64(0)
-
-		args = Cdr(args)
-		if args != Null {
-			j = Car(args).(Atom).Int()
-		}
-
-		return t.Return(Slice(s, i, j))
-	})
-	envp.PublicMethod("tail", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		s := ToPair(t.Self())
-
-		return t.Return(Cdr(s))
-	})
-	envp.DefineMethod("to-string", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		var s Cell
-
-		v := ""
-		for s = ToPair(t.Self()); s != Null; s = Cdr(s) {
-			v = fmt.Sprintf("%s%c", v, int(Car(s).(Atom).Int()))
-		}
-
-		return t.Return(NewString(v))
-	})
-
-	return envp
 }
 
 func rpipe(c Cell) *os.File {
@@ -2671,102 +2759,6 @@ func setForegroundTask(t *Task) {
 
 	t.Stop()
 	task0.Continue()
-}
-
-func stringContext() context {
-	if envs != nil {
-		return envs
-	}
-
-	envs = NewScope(namespace, nil)
-	envs.PublicMethod("join", func(t *Task, args Cell) bool {
-		sep := toString(t.Self())
-		arr := make([]string, Length(args))
-
-		for i := 0; args != Null; i++ {
-			arr[i] = string(Raw(Car(args)))
-			args = Cdr(args)
-		}
-
-		r := strings.Join(arr, string(Raw(sep)))
-
-		return t.Return(NewString(r))
-	})
-	envs.PublicMethod("keys", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		return t.Return(Null)
-	})
-	envs.PublicMethod("length", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		s := Raw(toString(t.Self()))
-
-		return t.Return(NewInteger(int64(len(s))))
-	})
-	envs.PublicMethod("slice", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 2, IsNumber, IsNumber)
-		s := []rune(Raw(toString(t.Self())))
-
-		start := int(Car(args).(Atom).Int())
-		end := len(s)
-
-		if Cdr(args) != Null {
-			end = int(Cadr(args).(Atom).Int())
-		}
-
-		return t.Return(NewString(string(s[start:end])))
-	})
-	envs.PublicMethod("split", func(t *Task, args Cell) bool {
-		t.Validate(args, 1, 1, IsText)
-		r := Null
-
-		sep := toString(t.Self())
-		str := Car(args)
-
-		l := strings.Split(string(Raw(str)), string(Raw(sep)))
-
-		for i := len(l) - 1; i >= 0; i-- {
-			r = Cons(NewString(l[i]), r)
-		}
-
-		return t.Return(r)
-	})
-	envs.PublicMethod("sprintf", func(t *Task, args Cell) bool {
-		f := Raw(toString(t.Self()))
-
-		argv := []interface{}{}
-		for l := args; l != Null; l = Cdr(l) {
-			switch t := Car(l).(type) {
-			case *Boolean:
-				argv = append(argv, *t)
-			case *Integer:
-				argv = append(argv, *t)
-			case *Status:
-				argv = append(argv, *t)
-			case *Float:
-				argv = append(argv, *t)
-			default:
-				argv = append(argv, Raw(t))
-			}
-		}
-
-		s := fmt.Sprintf(f, argv...)
-
-		return t.Return(NewString(s))
-	})
-	envs.PublicMethod("to-list", func(t *Task, args Cell) bool {
-		t.Validate(args, 0, 0)
-		s := Raw(toString(t.Self()))
-		l := Null
-		for _, char := range s {
-			l = Cons(NewInteger(int64(char)), l)
-		}
-
-		return t.Return(Reverse(l))
-	})
-
-	bindStringPredicates(envs)
-
-	return envs
 }
 
 func tildeExpand(l, f Cell, s string) string {
@@ -2793,13 +2785,13 @@ func toContext(c Cell) context {
 	case context:
 		return t
 	case *Channel:
-		return conduitContext()
+		return envc
 	case *Pair, *PairPlus:
-		return pairContext()
+		return envp
 	case *Pipe:
-		return conduitContext()
+		return envc
 	case *String:
-		return stringContext()
+		return envs
 	}
 	panic("not an object")
 }
