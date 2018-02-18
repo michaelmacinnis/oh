@@ -1747,7 +1747,7 @@ func StartNonInteractive() {
 		bindSpecialVariables("", args)
 
 		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
-		MakeParser(b.ReadString).ParseBuffer("-c", eval)
+		MakeParser(b.ReadString).ParseBuffer(false, "-c", eval)
 	} else {
 		StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
 	}
@@ -2699,7 +2699,7 @@ func init() {
 	launchForegroundTask()
 
 	b := bufio.NewReader(strings.NewReader(boot.Script))
-	MakeParser(b.ReadString).ParseBuffer("boot.oh", eval)
+	MakeParser(b.ReadString).ParseBuffer(false, "boot.oh", eval)
 }
 
 func interpolate(l context, f Cell, s string) string {

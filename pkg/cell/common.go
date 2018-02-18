@@ -15,7 +15,7 @@ type DerefFunc func(string, uintptr) Cell
 type InputFunc func(byte) (string, error)
 
 type Parser interface {
-	ParseBuffer(string, YieldFunc) bool
+	ParseBuffer(bool, string, YieldFunc) bool
 	ParseCommands(string, YieldFunc)
 	ParsePipe(string, YieldFunc) (int, interface{})
 	State(string) (string, string, string)

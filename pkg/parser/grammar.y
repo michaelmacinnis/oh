@@ -54,7 +54,7 @@ opt_evaluate_command: command {
 		if !ok {
 			return -1
 		}
-		l.first = Cons(NewSymbol(""), Null)
+		l.Reset()
 	}
 	goto ohstart
 };

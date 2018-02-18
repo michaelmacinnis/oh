@@ -79,9 +79,9 @@ func NewLexer(
 	return &lexer{
 		alive: make(chan struct{}),
 		items: closed,
-		first: Cons(NewSymbol(""), Null),
 		state: SkipWhitespace,
 
+		first: nil,
 		label: label,
 		lines: lines,
 
@@ -119,13 +119,17 @@ func (l *lexer) Partial(line string) *partial {
 func (p *partial) Error(msg string) {}
 
 func (l *lexer) Error(msg string) {
-	l.first = Cons(NewSymbol(""), Null)
+	l.Reset()
 	close(l.alive)
 	panic(msg)
 }
 
 func (l *lexer) Fatal(lval *ohSymType) bool {
 	return lval == CtrlCPressed
+}
+
+func (l *lexer) Interactive() {
+	l.first = Cons(NewSymbol(""), Null)
 }
 
 func (p *partial) Lex() *ohSymType {
@@ -167,6 +171,12 @@ func (l *lexer) Lex() *ohSymType {
 		l.scan(line)
 
 		retries = 0
+	}
+}
+
+func (l *lexer) Reset() {
+	if l.first != nil {
+		l.Interactive()
 	}
 }
 
@@ -226,22 +236,24 @@ func (l *lexer) emit(yys int) {
 		}
 	}
 
-	first := Raw(Car(l.first))
+	if l.first != nil {
+		first := Raw(Car(l.first))
 
-	switch yys {
-	case SYMBOL:
-		if first == "" {
-			SetCar(l.first, NewSymbol(s))
+		switch yys {
+		case SYMBOL:
+			if first == "" {
+				SetCar(l.first, NewSymbol(s))
+			}
+		case '(', '{':
+			l.first = Cons(NewSymbol(""), l.first)
+		case ')', '}':
+			tail := Cdr(l.first)
+			if tail != Null {
+				l.first = tail
+			}
+		case ':':
+			SetCar(l.first, NewSymbol(""))
 		}
-	case '(', '{':
-		l.first = Cons(NewSymbol(""), l.first)
-	case ')', '}':
-		tail := Cdr(l.first)
-		if tail != Null {
-			l.first = tail
-		}
-	case ':':
-		SetCar(l.first, NewSymbol(""))
 	}
 
 	l.after = yys

@@ -584,7 +584,7 @@ ohdefault:
 				if !ok {
 					return -1
 				}
-				l.first = Cons(NewSymbol(""), Null)
+				l.Reset()
 			}
 			goto ohstart
 		}
