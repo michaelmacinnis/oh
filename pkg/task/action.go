@@ -19,7 +19,7 @@ func NewAction() *action {
 	return &action{sync.NewCond(&sync.RWMutex{}), running}
 }
 
-func (a *action) Continue() {
+func (a *action) Continue(f func()) {
 	//println("continue")
 	a.L.Lock()
 	defer a.L.Unlock()
@@ -27,6 +27,8 @@ func (a *action) Continue() {
 	if a.state != suspended {
 		panic("can't continue a task that has not been suspended")
 	}
+
+	f()
 
 	a.state = running
 	a.Signal()
@@ -44,7 +46,7 @@ func (a *action) Runnable() bool {
 	return a.state == running
 }
 
-func (a *action) Suspend() {
+func (a *action) Suspend(f func()) {
 	//println("suspend")
 	a.L.Lock()
 	defer a.L.Unlock()
@@ -53,10 +55,12 @@ func (a *action) Suspend() {
 		panic("can't suspend a task that is not running")
 	}
 
+	f()
+
 	a.state = suspended
 }
 
-func (a *action) Terminate() {
+func (a *action) Terminate(f func()) {
 	//println("terminate")
 	a.L.Lock()
 	defer a.L.Unlock()
@@ -65,6 +69,8 @@ func (a *action) Terminate() {
 	if previous == terminated {
 		panic("can't terminate a task that has already been terminated")
 	}
+
+	f()
 
 	a.state = terminated
 

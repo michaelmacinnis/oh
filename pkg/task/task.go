@@ -1017,19 +1017,19 @@ func (t *Task) Closure(n closurer) bool {
 }
 
 func (t *Task) Continue() {
-	if t.pid > 0 {
-		system.ContinueProcess(t.pid)
-	}
-
-	t.childrenl.RLock()
-	defer t.childrenl.RUnlock()
-	for k, v := range t.children {
-		if v {
-			k.Continue()
+	t.action.Continue(func() {
+		if t.pid > 0 {
+			system.ContinueProcess(t.pid)
 		}
-	}
 
-	t.action.Continue()
+		t.childrenl.RLock()
+		defer t.childrenl.RUnlock()
+		for k, v := range t.children {
+			if v {
+				k.Continue()
+			}
+		}
+	})
 }
 
 func (t *Task) debug(s string) {
@@ -1037,9 +1037,6 @@ func (t *Task) debug(s string) {
 }
 
 func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
-	t.Lock()
-	defer t.Unlock()
-
 	attr.Sys = system.SysProcAttr(t.Job.assignedGroup())
 
 	proc, err := os.StartProcess(arg0, argv, attr)
@@ -1050,7 +1047,12 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 	t.Job.registerPid(proc.Pid)
 	t.pid = proc.Pid
 
+	t.Unlock()
+
 	rv := status(proc)
+	println("status=", rv)
+
+	t.Lock()
 
 	t.Job.unregisterPid(proc.Pid)
 	t.pid = 0
@@ -1116,8 +1118,6 @@ func (t *Task) launch() {
 }
 
 func (t *Task) Listen() {
-	t.Code = Cons(nil, Null)
-
 	for c := range t.Eval {
 		t.Dump = Cdr(t.Dump)
 
@@ -1227,12 +1227,20 @@ func (t *Task) Lookup(sym *Symbol) string {
 
 func (t *Task) RunWithExceptionHandling(end Cell) bool {
 	for {
+		t.Lock()
 		ok, err := t.run(end)
+		t.Unlock()
+
 		if err == nil {
 			return ok
 		}
+
+		println("returned")
+
 		// Inject throw and restart.
+		t.Lock()
 		t.Throw(t.File, t.Line, fmt.Sprintf("%v", err))
+		t.Unlock()
 	}
 }
 
@@ -1478,37 +1486,37 @@ func (t *Task) Self() Cell {
 }
 
 func (t *Task) Stop() {
-	t.action.Terminate()
+	t.action.Terminate(func() {
+		close(t.Eval)
 
-	close(t.Eval)
-
-	if t.pid > 0 {
-		system.TerminateProcess(t.pid)
-	}
-
-	t.childrenl.RLock()
-	defer t.childrenl.RUnlock()
-	for k, v := range t.children {
-		if v {
-			k.Stop()
+		if t.pid > 0 {
+			system.TerminateProcess(t.pid)
 		}
-	}
+
+		t.childrenl.RLock()
+		defer t.childrenl.RUnlock()
+		for k, v := range t.children {
+			if v {
+				k.Stop()
+			}
+		}
+	})
 }
 
 func (t *Task) Suspend() {
-	if t.pid > 0 {
-		system.SuspendProcess(t.pid)
-	}
-
-	t.childrenl.RLock()
-	defer t.childrenl.RUnlock()
-	for k, v := range t.children {
-		if v {
-			k.Suspend()
+	t.action.Suspend(func() {
+		if t.pid > 0 {
+			system.SuspendProcess(t.pid)
 		}
-	}
 
-	t.action.Suspend()
+		t.childrenl.RLock()
+		defer t.childrenl.RUnlock()
+		for k, v := range t.children {
+			if v {
+				k.Suspend()
+			}
+		}
+	})
 }
 
 func (t *Task) Throw(file string, line int, text string) {
@@ -1656,16 +1664,15 @@ func Call(c Cell) Cell {
 	task0l.Lock()
 	defer task0l.Unlock()
 
-	if taskc == nil {
-		taskc = NewTask(nil, nil, nil)
-	}
+	taskc = NewTask(nil, nil, nil)
 
+	task0.Lock()
 	taskc.registers = task0.registers
+	task0.Unlock()
 
 	taskc.Code = c
 	taskc.Dump = List(ExitSuccess)
 	taskc.Stack = List(NewInteger(psEvalCommand))
-	taskc.Frame = task0.Frame
 
 	taskc.RunWithExceptionHandling(nil)
 
@@ -2733,7 +2740,9 @@ func launchForegroundTask() {
 	if task0 != nil {
 		task0.Job.saveMode()
 	}
+
 	task0 = NewTask(nil, nil, nil)
+	task0.Code = Cons(nil, Null)
 
 	go task0.Listen()
 }
@@ -2755,7 +2764,9 @@ func rpipe(c Cell) *os.File {
 func setForegroundTask(t *Task) {
 	t.Job.moveToForeground()
 
+	task0l.Lock()
 	task0, t = t, task0
+	task0l.Unlock()
 
 	t.Stop()
 	task0.Continue()

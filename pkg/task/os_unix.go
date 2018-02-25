@@ -59,7 +59,9 @@ func broker() {
 
 		var v Cell
 		for evaluating := true; evaluating; {
-			prev := task0
+			task0l.Lock()
+			done := task0.Done
+			task0l.Unlock()
 
 			select {
 			case sig := <-incoming: // Handle signals.
@@ -77,8 +79,12 @@ func broker() {
 
 				task0l.Unlock()
 
-			case v = <-task0.Done:
-				if task0 != prev {
+			case v = <-done:
+				task0l.Lock()
+				curr := task0.Done
+				task0l.Unlock()
+
+				if curr != done {
 					continue
 				}
 			}
@@ -175,8 +181,11 @@ func monitor(active chan bool, notify chan notification) {
 			}
 
 			if status.Signaled() {
-				if status.Signal() == unix.SIGINT &&
-					task0.Job.inForeground(pid) {
+				task0.Lock()
+				fg := task0.Job.inForeground(pid)
+				task0.Unlock()
+
+				if status.Signal() == unix.SIGINT && fg {
 					incoming <- unix.SIGINT
 				}
 				status += 128
