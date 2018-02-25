@@ -65,8 +65,6 @@ func broker() {
 
 			select {
 			case sig := <-incoming: // Handle signals.
-				task0l.Lock()
-
 				switch sig {
 				case unix.SIGTSTP:
 					background(task0)
@@ -76,8 +74,6 @@ func broker() {
 				}
 
 				launchForegroundTask()
-
-				task0l.Unlock()
 
 			case v = <-done:
 				task0l.Lock()
@@ -174,16 +170,24 @@ func monitor(active chan bool, notify chan notification) {
 			}
 
 			if status.Stopped() {
-				if task0.Job.inForeground(pid) {
+				task0l.Lock()
+				task0.pidl.Lock()
+				fg := task0.pid == pid
+				task0.pidl.Unlock()
+				task0l.Unlock()
+
+				if fg {
 					incoming <- unix.SIGTSTP
 				}
 				continue
 			}
 
 			if status.Signaled() {
-				task0.Lock()
-				fg := task0.Job.inForeground(pid)
-				task0.Unlock()
+				task0l.Lock()
+				task0.pidl.Lock()
+				fg := task0.pid == pid
+				task0.pidl.Unlock()
+				task0l.Unlock()
 
 				if status.Signal() == unix.SIGINT && fg {
 					incoming <- unix.SIGINT

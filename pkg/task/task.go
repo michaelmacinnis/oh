@@ -853,15 +853,15 @@ func (m *syntax) String() string {
 
 type Task struct {
 	*action
-	sync.Mutex
 	*Job
 	registers
 	Done      chan Cell
 	Eval      chan Cell
 	children  map[*Task]bool
-	childrenl *sync.RWMutex
+	childrenl sync.RWMutex
 	parent    *Task
 	pid       int
+	pidl      sync.Mutex
 }
 
 func NewTask(c Cell, l context, p *Task) *Task {
@@ -881,7 +881,6 @@ func NewTask(c Cell, l context, p *Task) *Task {
 
 	t := &Task{
 		action: NewAction(),
-		Mutex:  sync.Mutex{},
 		Job:    j,
 		registers: registers{
 			Continuation: Continuation{
@@ -889,7 +888,6 @@ func NewTask(c Cell, l context, p *Task) *Task {
 				Frame: frame,
 				Stack: List(NewInteger(psEvalBlock)),
 				File:  "oh",
-				Line:  0,
 			},
 			Code:    c,
 			Lexical: l,
@@ -897,7 +895,6 @@ func NewTask(c Cell, l context, p *Task) *Task {
 		Done:      make(chan Cell, 1),
 		Eval:      make(chan Cell, 1),
 		children:  make(map[*Task]bool),
-		childrenl: &sync.RWMutex{},
 		parent:    p,
 	}
 
@@ -1018,9 +1015,11 @@ func (t *Task) Closure(n closurer) bool {
 
 func (t *Task) Continue() {
 	t.action.Continue(func() {
+		t.pidl.Lock()
 		if t.pid > 0 {
 			system.ContinueProcess(t.pid)
 		}
+		t.pidl.Unlock()
 
 		t.childrenl.RLock()
 		defer t.childrenl.RUnlock()
@@ -1044,18 +1043,17 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 		return nil, err
 	}
 
+	t.pidl.Lock()
 	t.Job.registerPid(proc.Pid)
 	t.pid = proc.Pid
-
-	t.Unlock()
+	t.pidl.Unlock()
 
 	rv := status(proc)
-	println("status=", rv)
 
-	t.Lock()
-
+	t.pidl.Lock()
 	t.Job.unregisterPid(proc.Pid)
 	t.pid = 0
+	t.pidl.Unlock()
 
 	return rv, err
 }
@@ -1227,20 +1225,14 @@ func (t *Task) Lookup(sym *Symbol) string {
 
 func (t *Task) RunWithExceptionHandling(end Cell) bool {
 	for {
-		t.Lock()
 		ok, err := t.run(end)
-		t.Unlock()
 
 		if err == nil {
 			return ok
 		}
 
-		println("returned")
-
 		// Inject throw and restart.
-		t.Lock()
 		t.Throw(t.File, t.Line, fmt.Sprintf("%v", err))
-		t.Unlock()
 	}
 }
 
@@ -1489,9 +1481,11 @@ func (t *Task) Stop() {
 	t.action.Terminate(func() {
 		close(t.Eval)
 
+		t.pidl.Lock()
 		if t.pid > 0 {
 			system.TerminateProcess(t.pid)
 		}
+		t.pidl.Unlock()
 
 		t.childrenl.RLock()
 		defer t.childrenl.RUnlock()
@@ -1505,9 +1499,11 @@ func (t *Task) Stop() {
 
 func (t *Task) Suspend() {
 	t.action.Suspend(func() {
+		t.pidl.Lock()
 		if t.pid > 0 {
 			system.SuspendProcess(t.pid)
 		}
+		t.pidl.Unlock()
 
 		t.childrenl.RLock()
 		defer t.childrenl.RUnlock()
