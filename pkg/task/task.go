@@ -888,10 +888,10 @@ func NewTask(c Cell, l context, p *Task) *Task {
 			Code:    c,
 			Lexical: l,
 		},
-		Done:      make(chan Cell, 1),
-		Eval:      make(chan Cell, 1),
-		children:  make(map[*Task]bool),
-		parent:    p,
+		Done:     make(chan Cell, 1),
+		Eval:     make(chan Cell, 1),
+		children: make(map[*Task]bool),
+		parent:   p,
 	}
 
 	if p != nil {
