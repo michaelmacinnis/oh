@@ -283,10 +283,6 @@ func (j *Job) String() string {
 }
 
 func (j *Job) assignedGroup() int {
-	if !jobControlEnabled() {
-		return 0
-	}
-
 	j.Lock()
 	return j.group
 }
@@ -1036,7 +1032,9 @@ func (t *Task) debug(s string) {
 }
 
 func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, error) {
-	attr.Sys = system.SysProcAttr(t.Job.assignedGroup())
+	if jobControlEnabled() {
+		attr.Sys = system.SysProcAttr(t.Job.assignedGroup())
+	}
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
