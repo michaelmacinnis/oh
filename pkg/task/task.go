@@ -1038,6 +1038,10 @@ func (t *Task) execute(arg0 string, argv []string, attr *os.ProcAttr) (*Status, 
 
 	proc, err := os.StartProcess(arg0, argv, attr)
 	if err != nil {
+		if jobControlEnabled() {
+			t.Job.Unlock()
+		}
+
 		return nil, err
 	}
 
