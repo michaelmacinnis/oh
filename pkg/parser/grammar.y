@@ -201,7 +201,7 @@ tail: "@" expression {
 tail: expression { $$ = $1 };
 
 expression: "`" "(" command ")" {
-	$$ = List(NewSymbol("_backtick_"), $3)
+	$$ = List(NewSymbol("_capture_"), $3)
 };
 
 expression: expression CONS expression {

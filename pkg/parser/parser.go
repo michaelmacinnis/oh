@@ -31,7 +31,7 @@ func (p *parser) ParseBuffer(interactive bool, label string, yield YieldFunc) bo
 		if e != nil {
 			c := List(
 				NewSymbol("throw"), List(
-					NewSymbol("_exception"),
+					NewSymbol("_exception_"),
 					List(NewSymbol("quote"), NewSymbol("error/syntax")),
 					NewStatus(NewSymbol("1").Status()),
 					List(NewSymbol("quote"), NewSymbol(fmt.Sprintf("%v", e))),

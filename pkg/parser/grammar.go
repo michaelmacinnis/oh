@@ -827,7 +827,7 @@ ohdefault:
 		ohDollar = ohS[ohpt-4 : ohpt+1]
 		//line grammar.y:203
 		{
-			ohVAL.c = List(NewSymbol("_backtick_"), ohDollar[3].c)
+			ohVAL.c = List(NewSymbol("_capture_"), ohDollar[3].c)
 		}
 	case 44:
 		ohDollar = ohS[ohpt-3 : ohpt+1]

@@ -78,7 +78,7 @@ define and: syntax (: lst) e = {
 }
 define _append_stderr_: _redirect_ _stderr_ a _writer_close_
 define _append_stdout_: _redirect_ _stdout_ a _writer_close_
-define _backtick_: syntax (cmd) e = {
+define _capture_: syntax (cmd) e = {
 	define p: pipe
 	define ec-ex-chan: channel 1
 	spawn {
@@ -239,12 +239,12 @@ define lf: builtin (:args) e = {
 	if (not: which lf >/dev/null) {
 		return
 	}
-	define temp-file @(_backtick_: mktemp)
+	define temp-file @(_capture_: mktemp)
 	command lf "--last-dir-path=${temp-file}" @$args
 	if (not: test -f $temp-file) {
 		return
 	}
-	define dn @(_backtick_: cat $temp-file)
+	define dn @(_capture_: cat $temp-file)
 	rm $temp-file
 	if $dn {
 		e::eval: quasiquote: cd (unquote $dn)
@@ -276,7 +276,7 @@ define math: method (S) e = {
 		set $ex::message = "Malformed expression: ${S}"
 	}
 
-	float @(_backtick_ (block {
+	float @(_capture_ (block {
 		echo 'scale=6'
 		write: symbol $S
 	} | bc))
@@ -423,7 +423,7 @@ export quote: syntax (cell) =: return $cell
 _sys_::export complete: method self (first completing) = {
 	return ()
 }
-_sys_::export _exception: method (type status message line file) e = {
+_sys_::export _exception_: method (type status message line file) e = {
 	object {
 		export type = $type
 		export status = $status
@@ -449,7 +449,7 @@ _sys_::export exception: method (message :args) e = {
 		set s: args::head
 		set args: args::tail
 	}
-	_exception $t $s $message {
+	_exception_ $t $s $message {
 		export line: e::eval: get-line-number
 		export file: e::eval: get-source-file
 	}

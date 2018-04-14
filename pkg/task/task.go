@@ -1553,7 +1553,7 @@ func (t *Task) Throw(file string, line int, text string) {
 	}
 	c := List(
 		throw, List(
-			NewSymbol("_exception"),
+			NewSymbol("_exception_"),
 			List(NewSymbol("quote"), NewSymbol(kind)),
 			NewStatus(NewSymbol(code).Status()),
 			List(NewSymbol("quote"), NewSymbol(text)),
