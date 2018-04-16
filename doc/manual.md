@@ -545,8 +545,8 @@ appear before the list of arguments.
         }
     
         export move: method self (a b) = {
-            set self::x: add $self::x $a
-            set self::y: add $self::y $b
+            set $self::x: add $self::x $a
+            set $self::y: add $self::y $b
         }
     
         export show: method self () = {
@@ -555,6 +555,7 @@ appear before the list of arguments.
     }
     
     define p: point 0 0
+    p::move 1 2
     p::show
 
 Shared behavior can be implemented by defining a method in an outer scope.

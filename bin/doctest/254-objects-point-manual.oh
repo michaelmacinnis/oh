@@ -14,8 +14,8 @@ define point: method (r s) =: object {
     }
 
     export move: method self (a b) = {
-        set self::x: add $self::x $a
-        set self::y: add $self::y $b
+        set $self::x: add $self::x $a
+        set $self::y: add $self::y $b
     }
 
     export show: method self () = {
@@ -24,9 +24,10 @@ define point: method (r s) =: object {
 }
 
 define p: point 0 0
+p::move 1 2
 p::show
 #}
 ##
 
-#-     0 0
+#-     1 2
 
