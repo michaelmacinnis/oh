@@ -673,7 +673,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     
     define prime-numbers: channel
     
-    counter 2 |+ block {
+    counter 1 |+ block {
         define in = $_stdin_
     
         while $true {
@@ -740,7 +740,7 @@ to the same example (shown previously) using channels.
     
     define prime-numbers: pipe
     
-    counter 2 | block {
+    counter 1 | block {
         define in = $_stdin_
     
         while $true {
