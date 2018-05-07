@@ -658,11 +658,6 @@ Oh exposes channels as first-class values. Channels allow particularly
 elegant solutions to some problems, as shown in the prime sieve example
 below (adapted from "Newsqueak: A Language for Communicating with Mice").
 
-    define counter: method (n) = {
-        while $true {
-            write: set n: add $n 1
-        }
-    }
     
     define filter: method (base) = {
         while $true {
@@ -671,20 +666,28 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
         }
     }
     
+    define connector: channel
+    
+    spawn {
+        define n = 2
+        while $true {
+            write $n
+            set n: add $n 1
+        }
+    } >$connector
+    
     define prime-numbers: channel
     
-    counter 1 |+ block {
-        define in = $_stdin_
+    while $true {
+        define prime: $connector::read
+        write $prime
     
-        while $true {
-            define prime: in::read
-            write $prime
+        define filtered: channel
+        spawn {
+            filter $prime
+        } <$connector >$filtered
     
-            define out: channel
-            spawn: filter $prime <$in >$out
-    
-            set in = $out
-        }
+        set connector = $filtered
     } >$prime-numbers &
     
     define count: integer 100
