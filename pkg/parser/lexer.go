@@ -530,7 +530,7 @@ func scanSymbol(l *lexer) *action {
 		switch r {
 		case EOF:
 			return nil
-		case '\t', '\n', '\r', ' ', '!', '"', '#', '%', '&', '\'',
+		case '\t', '\n', '\r', ' ', '"', '#', '%', '&', '\'',
 			'(', ')', ':', ';', '<', '>', '@', '`', '|':
 			l.emit(SYMBOL)
 			return SkipWhitespace
