@@ -69,7 +69,7 @@ func (cli ui) ReadString(delim byte) (line string, err error) {
 			cell.NewSymbol("$_sys_"),
 			cell.NewSymbol("get-prompt"),
 		),
-		cell.List(cell.NewSymbol("quote"), cell.NewSymbol("> ")),
+		cell.List(cell.NewSymbol("quote"), cell.NewSymbol("$ ")),
 	)
 	prompt := cell.Raw(task.Call(command))
 
