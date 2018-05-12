@@ -939,12 +939,23 @@ func (t *Task) Apply(args Cell) bool {
 	}
 
 	params := m.ref().Params()
+	expected := Length(params)
+	actual := Length(args)
+
 	for args != Null && params != Null && IsAtom(Car(params)) {
 		c.Define(Raw(Car(params)), Car(args))
 		args, params = Cdr(args), Cdr(params)
 	}
-	if IsPair(Car(params)) {
-		c.Define(Raw(Caar(params)), args)
+
+	rest := Car(params)
+	if params != Null && IsPair(rest) && Cdr(rest) == Null {
+		c.Define(Raw(Car(rest)), args)
+	} else if actual != expected {
+		msg := fmt.Sprintf(
+			"expected %d arguments, passed %d",
+			expected, actual,
+		)
+		panic(msg)
 	}
 
 	c.Define("return", t.CurrentContinuation())
