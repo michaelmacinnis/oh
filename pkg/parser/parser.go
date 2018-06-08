@@ -81,12 +81,11 @@ func (p *parser) parsePipe(interactive bool, label string, start int, yield Yiel
 	if interactive {
 		p.Interactive()
 	}
-	/*
-		defer func() {
-			e = recover()
-			lines = p.lexer.lines
-		}()
-	*/
+
+	defer func() {
+		e = recover()
+		lines = p.lexer.lines
+	}()
 
 	p.ohParserImpl = &ohParserImpl{}
 
