@@ -64,7 +64,6 @@ var (
 )
 
 var CtrlCPressed = &ohSymType{yys: CTRLC}
-var Finished = &ohSymType{yys: 0}
 
 func NewLexer(
 	deref DerefFunc,
@@ -146,7 +145,7 @@ func (l *lexer) Lex() *ohSymType {
 		}
 
 		if l.input == nil {
-			return Finished
+			return nil
 		}
 
 		line, err := l.input('\n')

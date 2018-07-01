@@ -96,11 +96,7 @@ var ohExca = [...]int{
 	-2, 14,
 }
 
-const ohNprod = 54
 const ohPrivate = 57344
-
-var ohTokenNames []string
-var ohStates []string
 
 const ohLast = 140
 
@@ -219,22 +215,22 @@ var (
 )
 
 type ohLexer interface {
+	Lex() *ohSymType
 	Error(s string)
 	Fatal(*ohSymType) bool
-	Lex() *ohSymType
 }
 
 type ohParser interface {
-	Lookahead() int
 	Parse(ohLexer) int
+	Lookahead() int
 }
 
 type ohParserImpl struct {
-	char  int
 	lval  *ohSymType
+	stack [ohInitialStackSize]ohSymType
+	char  int
 	n     int
 	p     int
-	stack [ohInitialStackSize]ohSymType
 }
 
 func (p *ohParserImpl) Lookahead() int {
