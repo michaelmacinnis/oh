@@ -6,6 +6,7 @@ import (
 	. "github.com/michaelmacinnis/oh/pkg/cell"
 	"github.com/michaelmacinnis/oh/pkg/system"
 	"strings"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -18,6 +19,7 @@ type action struct {
 
 // The type lexer holds the lexer's state.
 type lexer struct {
+	sync.RWMutex
 	after int             // The previous scanned item type.
 	alive chan struct{}   // Closed to signal the scanner to shut down.
 	items chan *ohSymType // Channel of scanned items.
@@ -127,7 +129,15 @@ func (l *lexer) Fatal(lval *ohSymType) bool {
 	return lval == CtrlCPressed
 }
 
+func (l *lexer) First() Cell {
+	l.RLock()
+	defer l.RUnlock()
+	return l.first
+}
+
 func (l *lexer) Interactive() {
+	l.Lock()
+	defer l.Unlock()
 	l.first = Cons(NewSymbol(""), Null)
 }
 
@@ -174,7 +184,7 @@ func (l *lexer) Lex() *ohSymType {
 }
 
 func (l *lexer) Reset() {
-	if l.first != nil {
+	if l.First() != nil {
 		l.Interactive()
 	}
 }
@@ -235,6 +245,8 @@ func (l *lexer) emit(yys int) {
 		}
 	}
 
+	l.Lock()
+
 	if l.first != nil {
 		first := Raw(Car(l.first))
 
@@ -256,6 +268,8 @@ func (l *lexer) emit(yys int) {
 	}
 
 	l.after = yys
+
+	l.Unlock()
 
 	l.items <- &ohSymType{yys: yys, s: s}
 }
