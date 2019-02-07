@@ -4,6 +4,7 @@ package parser
 import __yyfmt__ "fmt"
 
 //line grammar.y:16
+
 import (
 	"github.com/michaelmacinnis/adapted"
 	. "github.com/michaelmacinnis/oh/pkg/cell"
