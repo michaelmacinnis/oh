@@ -2,12 +2,6 @@
 
 ## # A surprisingly powerful Unix shell
 ##
-## ## Note
-##
-## Development of oh is currently on hold. I'm looking for ways to fund
-## the next iteration which will focus on improving oh's interactive
-## features while making the code more robust. Suggestions are welcome.
-##
 ## ## Description
 ##
 ## Oh is a Unix shell. If you've used other Unix shells, oh should feel
