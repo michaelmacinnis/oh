@@ -5,12 +5,6 @@ package task
 import (
 	"bufio"
 	"fmt"
-	"github.com/michaelmacinnis/adapted"
-	"github.com/michaelmacinnis/oh/pkg/boot"
-	. "github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/parser"
-	"github.com/michaelmacinnis/oh/pkg/system"
-	"github.com/peterh/liner"
 	"math/rand"
 	"os"
 	"path"
@@ -21,6 +15,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/michaelmacinnis/adapted"
+	"github.com/michaelmacinnis/oh/pkg/boot"
+	. "github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/parser"
+	"github.com/michaelmacinnis/oh/pkg/system"
+	"github.com/peterh/liner"
 )
 
 type binding interface {
@@ -1751,21 +1752,14 @@ func StartInteractive(p Parser) {
 	p.ParseCommands("oh", evaluate)
 }
 
-func StartNonInteractive() {
-	if os.Args[1] == "-c" {
-		if len(os.Args) == 2 {
-			msg := "-c requires an argument"
-			println(ErrSyntax + msg)
-			os.Exit(1)
-		}
-
-		args := append([]string{os.Args[0]}, os.Args[3:]...)
+func StartNonInteractive(command bool, args []string) {
+	if command {
 		bindSpecialVariables("", args)
 
-		b := bufio.NewReader(strings.NewReader(os.Args[2] + "\n"))
+		b := bufio.NewReader(strings.NewReader(args[1] + "\n"))
 		MakeParser(b.ReadString).ParseBuffer(false, "-c", eval)
 	} else {
-		StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
+		StartFile(filepath.Dir(args[1]), args[1:])
 	}
 }
 

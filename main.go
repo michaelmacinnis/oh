@@ -23,15 +23,18 @@ Oh is released under an MIT license.
 package main
 
 import (
-	"github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/system"
-	"github.com/michaelmacinnis/oh/pkg/task"
-	"github.com/peterh/liner"
+	"flag"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/system"
+	"github.com/michaelmacinnis/oh/pkg/task"
+	"github.com/peterh/liner"
 )
 
 type ui struct {
@@ -304,9 +307,28 @@ func split(s string) (head, tail string) {
 
 func main() {
 	defer task.Exit()
+	ohFlags := flag.NewFlagSet("oh", flag.ContinueOnError)
 
-	if len(os.Args) > 1 {
-		task.StartNonInteractive()
+	interactive := ohFlags.Bool("i", true, "enable interactive mode")
+	command := ohFlags.Bool("c", false, "parses next args as a command to execute")
+
+	err := ohFlags.Parse(os.Args[1:])
+	if err != nil {
+		return
+	}
+
+	if *command {
+		*interactive = false
+	}
+
+	if ohFlags.NArg() > 0 {
+		task.StartNonInteractive(*command, append([]string{os.Args[0]}, ohFlags.Args()...))
+		return
+	}
+
+	if !*interactive {
+		fmt.Println("Non interactive session needs either a command (-c) or a file as argument")
+		ohFlags.Usage()
 		return
 	}
 
