@@ -25,16 +25,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/michaelmacinnis/oh/pkg/cell"
+	"github.com/michaelmacinnis/oh/pkg/system"
+	"github.com/michaelmacinnis/oh/pkg/task"
+	"github.com/peterh/liner"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/michaelmacinnis/oh/pkg/cell"
-	"github.com/michaelmacinnis/oh/pkg/system"
-	"github.com/michaelmacinnis/oh/pkg/task"
-	"github.com/peterh/liner"
 )
 
 type ui struct {
