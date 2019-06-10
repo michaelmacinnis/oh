@@ -304,11 +304,9 @@ func split(s string) (head, tail string) {
 	return
 }
 
-func main() {
-	defer task.Exit()
-
+func options() {
 	interactive := flag.Bool("i", true, "enable interactive mode")
-	command := flag.String("c", "", "run a shell command")
+	command := flag.String("c", "", "parse next argument instead of stdin")
 
 	flag.Parse()
 
@@ -328,6 +326,12 @@ func main() {
 		task.StartFile(filepath.Dir(args[1]), args[1:])
 		return
 	}
+}
+
+func main() {
+	defer task.Exit()
+
+	options()
 
 	// We assume the terminal starts in cooked mode.
 	cooked, _ = liner.TerminalMode()
