@@ -1751,15 +1751,11 @@ func StartInteractive(p Parser) {
 	p.ParseCommands("oh", evaluate)
 }
 
-func StartNonInteractive(command bool, args []string) {
-	if command {
-		bindSpecialVariables("", args)
+func StartNonInteractive(command string, args []string) {
+	bindSpecialVariables("", args)
 
-		b := bufio.NewReader(strings.NewReader(args[1] + "\n"))
-		MakeParser(b.ReadString).ParseBuffer(false, "-c", eval)
-	} else {
-		StartFile(filepath.Dir(args[1]), args[1:])
-	}
+	b := bufio.NewReader(strings.NewReader(command + "\n"))
+	MakeParser(b.ReadString).ParseBuffer(false, "-c", eval)
 }
 
 func bindSpecialVariables(origin string, args []string) {

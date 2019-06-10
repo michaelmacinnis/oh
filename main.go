@@ -306,28 +306,26 @@ func split(s string) (head, tail string) {
 
 func main() {
 	defer task.Exit()
-	ohFlags := flag.NewFlagSet("oh", flag.ContinueOnError)
 
-	interactive := ohFlags.Bool("i", true, "enable interactive mode")
-	command := ohFlags.Bool("c", false, "parses next args as a command to execute")
+	interactive := flag.Bool("i", true, "enable interactive mode")
+	command := flag.String("c", "", "run a shell command")
 
-	err := ohFlags.Parse(os.Args[1:])
-	if err != nil {
+	flag.Parse()
+
+	if *command != "" {
+		task.StartNonInteractive(*command, flag.Args())
 		return
 	}
 
-	if *command {
-		*interactive = false
-	}
-
-	if ohFlags.NArg() > 0 {
-		task.StartNonInteractive(*command, append([]string{os.Args[0]}, ohFlags.Args()...))
-		return
-	}
-
-	if !*interactive {
+	if !*interactive && *command == "" {
 		fmt.Println("Non interactive session needs either a command (-c) or a file as argument")
-		ohFlags.Usage()
+		flag.Usage()
+		return
+	}
+
+	if flag.NArg() > 0 {
+		args := flag.Args()
+		task.StartFile(filepath.Dir(args[1]), args[1:])
 		return
 	}
 
