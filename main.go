@@ -324,8 +324,7 @@ func main() {
 	}
 
 	if flag.NArg() > 0 {
-		args := flag.Args()
-		task.StartFile(filepath.Dir(args[1]), args[1:])
+		task.StartFile(filepath.Dir(os.Args[1]), os.Args[1:])
 		return
 	}
 
