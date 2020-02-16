@@ -1,0 +1,17 @@
+#!/usr/bin/env oh
+
+define common: import (... bin/common.oh)
+
+export _stdout_: open w (string join "/" $_origin_ generated.go)
+
+common introduction `(basename $0) $GOPACKAGE
+
+echo "func Script() string { //nolint:funlen"
+echo "	return `"
+cat (... boot.oh)
+echo "`"
+echo "}"
+echo
+echo '//go:generate ./generate.oh'
+echo '//go:generate go fmt generated.go'
+

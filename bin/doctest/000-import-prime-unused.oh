@@ -1,9 +1,0 @@
-#!/usr/bin/env oh
-
-define prime: import: "/"::join $_origin_ 000-another-prime-unused.oh
-
-define count: integer 1000
-while $count {
-	  write: prime::next-prime::read
-	  set count: sub $count 1
-}
