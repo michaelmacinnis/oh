@@ -70,3 +70,4 @@ For more detail see: [Using oh](doc/manual.md)
 
 [MIT](LICENSE)
 
+[![Run on Repl.it](https://repl.it/badge/github/michaelmacinnis/oh)](https://repl.it/github/michaelmacinnis/oh)
