@@ -1,0 +1,11 @@
+github.com/mattn/go-isatty v0.0.12 h1:wuysRhFDzyxgEmMf5xjvJ2M9dZoWAXNNr5LSBS7uHXY=
+github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
+github.com/mattn/go-runewidth v0.0.3 h1:a+kO+98RDGEfo6asOGMmpodZq4FNtnGP54yps8BzLR4=
+github.com/mattn/go-runewidth v0.0.3/go.mod h1:LwmH8dsx7+W8Uxz3IHJYH5QSwggIsqBzpuz5H//U1FU=
+github.com/michaelmacinnis/adapted v0.0.0-20171216080906-993520cda764 h1:zEbtl/wkaESHSaxgFI7AAH58DrHjIUd98HPo6gQKscA=
+github.com/michaelmacinnis/adapted v0.0.0-20171216080906-993520cda764/go.mod h1:DyGdN9LLJBpSMUZ+n1UH5g+oRaHKZEDnxffH4ZA84yQ=
+github.com/peterh/liner v1.2.0 h1:w/UPXyl5GfahFxcTOz2j9wCIHNI+pUPr2laqpojKNCg=
+github.com/peterh/liner v1.2.0/go.mod h1:CRroGNssyjTd/qIG2FyxByd2S8JEAZXBl4qUrZf8GS0=
+golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae h1:Ih9Yo4hSPImZOpfGuA4bR/ORKTAbhZo2AbWNRCnevdo=
+golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=

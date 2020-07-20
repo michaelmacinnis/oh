@@ -341,7 +341,8 @@ func main() {
 }
 
 //go:generate bin/test.oh
-//go:generate bin/generate.oh
 //go:generate bin/doc.oh manual ../doc/manual.md
 //go:generate bin/doc.oh readme ../README.md
-//go:generate go generate oh/pkg/boot oh/pkg/parser oh/pkg/task
+//go:generate go generate github.com/michaelmacinnis/oh/pkg/boot
+//go:generate go generate github.com/michaelmacinnis/oh/pkg/parser
+//go:generate go generate github.com/michaelmacinnis/oh/pkg/task
