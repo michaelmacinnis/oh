@@ -1,97 +1,229 @@
 // Released under an MIT license. See LICENSE.
 
-// Package task provides the Task object which encapsulate a thread of execution for the oh language.
+// Package task provides the machinery used by oh tasks.
 package task
 
 import (
-	"github.com/michaelmacinnis/oh/internal/engine/secd"
-	"github.com/michaelmacinnis/oh/internal/interface/cell"
-	"github.com/michaelmacinnis/oh/internal/type/pair"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/michaelmacinnis/oh/internal/common"
+	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
+	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
+	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
+	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/list"
+	"github.com/michaelmacinnis/oh/internal/common/type/pair"
+	"github.com/michaelmacinnis/oh/internal/common/type/str"
+	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 )
 
+const debug = false
+
+type monitor interface {
+	Launch(t *T, path string, argv []string, attr *os.ProcAttr) error
+	Spawn(p, c *T, w ...func())
+	Stopped(t *T)
+}
+
+// T (task) encapsulates a thread of execution.
 type T struct {
-	ancestor *T
-	children map[*T]struct{}
-
-	irq chan secd.State
-
-	//job *job.Job
-	//pid int
-	registers
+	monitor
+	*registers
+	*state
 }
 
-type registers = *secd.Machine
-
-// Global block allows continuations to work at the top level.
-var (
-	block0 = nilBlock()
-)
-
-// Foreground launches and returns a new foreground task.
-//
-// It creates a pair of actions that replace each other on the stack.
-// The first waits for a command and executes it. The second signals
-// that the command has been executed.
-//
-// The nil command serves as a sentinal value in EvalBlock.
-//
-// The head (nil) will be replaced with the command received and the
-// tail will be modified to point to a new nil block.
-func Foreground(cmd chan cell.T, done chan struct{}) *T {
-	t := New(block0)
-
-	var expect, notify secd.Action
-
-	expect = func(m *secd.Machine) secd.State {
-		c := <-cmd
-
-		pair.SetCar(block0, c)
-		pair.SetCdr(block0, nilBlock())
-
-		m.ReplaceState(notify)
-
-		return m.NewState(secd.EvalBlock)
-	}
-
-	notify = func(m *secd.Machine) secd.State {
-		// TODO: If there was an error we could skip this step.
-		// In addition to overwriting the instruction this would
-		// overwrite the nil block with another nil block.
-		block0 = pair.Cdr(block0)
-
-		done <- struct{}{}
-
-		return m.ReplaceState(expect)
-	}
-
-	go t.Run(expect)
-
-	return t
-}
-
-func New(code cell.T) *T {
+// New creates a new task.
+func New(m monitor, c cell.I, f *frame.T) *T {
 	t := &T{
-		registers: secd.New(code),
-		irq:       make(chan secd.State),
+		registers: &registers{
+			code:  c,
+			dump:  pair.Null,
+			frame: f,
+			stack: done,
+		},
+		monitor: m,
+		state:   fresh(),
 	}
 
 	return t
 }
 
-func (t *T) Run(s secd.State) {
-	t.NewState(s)
+func (t *T) CellValue(s string) cell.I {
+	_, ref := t.frame.Resolve(s)
+	if ref == nil {
+		return nil
+	}
 
-	for s != nil {
-		select {
-		case s = <-t.irq:
-			t.NewState(s)
-		default:
+	return ref.Get()
+}
+
+func (t *T) Chdir(s string) cell.I {
+	rv := boolean.True
+
+	_, r := t.frame.Resolve("PWD")
+	oldwd := r.Get()
+
+	err := os.Chdir(s)
+	if err != nil {
+		rv = boolean.False
+	} else if wd, err := os.Getwd(); err == nil {
+		t.frame.Scope().Export("PWD", sym.New(wd))
+		t.frame.Scope().Export("OLDPWD", oldwd)
+	}
+
+	return rv
+}
+
+// Closure does as the name implies and creates a closure.
+func (t *T) Closure() *Closure {
+	slabel := pair.Car(t.code)
+	t.code = pair.Cdr(t.code)
+
+	plabels := slabel
+	if sym.Is(slabel) {
+		plabels = pair.Car(t.code)
+		t.code = pair.Cdr(t.code)
+	} else {
+		slabel = pair.Null
+	}
+
+	// TODO: Check plabels is a list of symbols. Last element can be a list.
+
+	equals := pair.Car(t.code)
+	t.code = pair.Cdr(t.code)
+
+	elabel := pair.Null
+	if literal.String(equals) != "=" {
+		elabel = equals
+		equals = pair.Car(t.code)
+		t.code = pair.Cdr(t.code)
+	}
+
+	if literal.String(equals) != "=" {
+		panic("expected '='")
+	}
+
+	return &Closure{
+		Body: t.code,
+		Labels: Labels{
+			Env:    elabel,
+			Params: plabels,
+			Self:   slabel,
+		},
+		Op:    Action(apply),
+		Scope: t.frame.Scope(),
+	}
+}
+
+// Environ returns key value pairs for stringable values in the form provided by os.Environ.
+func (t *T) Environ() []string {
+	environ := []string{}
+
+	for f := t.registers.frame; f != nil; f = f.Previous() {
+		for s := f.Scope(); s != nil; s = s.Enclosing() {
+			environ = append(environ, s.Public().Environ()...)
 		}
+	}
 
+	return environ
+}
+
+func (t *T) Interrupt() {
+	t.state.Stop(func() {
+		t.stack = done
+	})
+}
+
+func (t *T) Return(c cell.I) Op {
+	t.ReplaceResult(c)
+
+	return t.PreviousOp()
+}
+
+// Run steps through a tasks operations until they are exhausted.
+func (t *T) Run() {
+	t.state.Started()
+	defer t.state.Stopped()
+
+	s := t.Op()
+	for t.state.Runnable() && s != nil {
 		s = t.Step(s)
 	}
+
+	t.monitor.Stopped(t)
 }
 
-func nilBlock() cell.T {
-	return pair.Cons(nil, pair.Null)
+// Step performs a single action and determines the next action.
+func (t *T) Step(s Op) (op Op) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+
+		t.code = list.New(sym.New("throw"), str.New(fmt.Sprintf("%v", r)))
+
+		// Push a no-op so that the saved frame isn't collapsed away.
+		t.PushOp(Action(nop))
+		t.PushOp(&registers{frame: t.frame})
+
+		op = t.PushOp(Action(EvalCommand))
+	}()
+
+	if debug {
+		print("Stack: ")
+
+		for p := t.stack; p != nil && p.op != nil; p = p.stack {
+			print(opString(p.op))
+			print(" ")
+		}
+
+		println("")
+		print("Dump: ")
+
+		for p := t.dump; p != pair.Null; p = pair.Cdr(p) {
+			c := pair.Car(p)
+			if c == nil {
+				print("<nil> ")
+			} else {
+				print(pair.Car(p).Name())
+				print(" ")
+			}
+		}
+
+		println("")
+		print("Code: ")
+
+		println(literal.String(t.code))
+
+		println("")
+	}
+
+	op = s.Perform(t)
+
+	return op
+}
+
+func (t *T) Stop() {
+	t.state.Stop(nil)
+}
+
+func (t *T) stringValue(s string) string {
+	v := t.CellValue(s)
+	if v == nil {
+		return ""
+	}
+
+	return common.String(v)
+}
+
+func (t *T) tildeExpand(s string) string {
+	if !strings.HasPrefix(s, "~") {
+		return s
+	}
+
+	return filepath.Join(t.stringValue("HOME"), s[1:])
 }

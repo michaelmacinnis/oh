@@ -1,0 +1,23 @@
+#!/usr/bin/env oh
+
+## Oh uses the same syntax for code and data. This enables it to be easily
+## extended:
+##
+#{
+# The short-circuit and operator is defined using the syntax command.
+define and: syntax ((lst)) e = {
+    define r $False
+    while (not (is-null (lst head))) {
+        set r (e eval (lst head))
+        if (not $r) {
+            return $r
+        }
+        set lst (lst tail)
+    }
+    return $r
+}
+echo (and $True $False (echo "Never reached"))
+#}
+##
+
+#-     false

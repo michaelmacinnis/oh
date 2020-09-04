@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/michaelmacinnis/oh/internal/reader/token"
-	"github.com/michaelmacinnis/oh/internal/type/loc"
+	"github.com/michaelmacinnis/oh/internal/common/struct/loc"
+	"github.com/michaelmacinnis/oh/internal/common/struct/token"
 )
 
 // T holds the state of the scanner.
@@ -32,7 +32,9 @@ type T struct {
 	tokens chan *token.T
 }
 
-// New creates a new T. Label can be a file name or other identifier.
+const qsize = 2
+
+// New creates a new lexer/scanner. Label can be a file name or other identifier.
 func New(label string) *T {
 	l := &T{
 		source: loc.T{
@@ -54,7 +56,7 @@ func (l *T) Copy() *T {
 
 	copy(c.queue, l.queue)
 
-	c.tokens = make(chan *token.T, 16)
+	c.tokens = make(chan *token.T, qsize)
 
 	return &c
 }
@@ -80,6 +82,7 @@ func (l *T) Text() string {
 func (l *T) Token() *token.T {
 	for {
 		l.gather()
+
 		if len(l.bytes) == 0 {
 			return nil
 		}
@@ -123,7 +126,9 @@ func (l *T) emit(c token.Class, v string) {
 		source.Line--
 	}
 
-	t := token.New(c, v, source)
+	source.Text = strings.TrimRight(l.bytes[l.first:], "\n")
+
+	t := token.New(c, v, &source)
 
 	//println("emitting:", t.String())
 	l.tokens <- t
@@ -155,12 +160,13 @@ func (l *T) gather() {
 	l.bytes = bytes
 	l.index -= l.first
 	l.first = 0
-	l.tokens = make(chan *token.T, 16)
+	l.tokens = make(chan *token.T, qsize)
 }
 
 func (l *T) next() token.Class {
 	r, w := l.peek()
 	l.accept(r, w)
+
 	return r
 }
 
@@ -169,12 +175,14 @@ func (l *T) peek() (token.Class, int) {
 	if l.index < len(l.bytes) {
 		r, w = utf8.DecodeRuneInString(l.bytes[l.index:])
 	}
+
 	return token.Class(r), w
 }
 
 func (l *T) resume() action {
 	resumed := l.saved
 	l.saved = nil
+
 	return resumed
 }
 
@@ -196,10 +204,12 @@ func afterAmpersand(l *T) action {
 	case '&':
 		l.accept(r, w)
 		l.emit(token.Andf, operator(l.Text()))
+
 		return skipWhitespace
 	}
 
 	l.emit(token.Background, operator(l.Text()))
+
 	return collectHorizontalSpace
 }
 
@@ -318,25 +328,31 @@ func afterPipe(l *T) action {
 	case '&':
 		l.accept(r, w)
 		l.emit(token.Pipe, operator(l.Text()))
+
 		return skipWhitespace
 	case ')':
 		l.accept(r, w)
 		l.emit(token.MetaClose, l.Text())
+
 		return collectHorizontalSpace
 	case '<':
 		l.accept(r, w)
 		l.emit(token.Substitute, operator(l.Text()))
+
 		return skipHorizontalSpace
 	case '>':
 		l.accept(r, w)
 		l.emit(token.Substitute, operator(l.Text()))
+
 		return skipHorizontalSpace
 	case '|':
 		l.accept(r, w)
 		l.emit(token.Orf, operator(l.Text()))
+
 		return skipWhitespace
 	default:
 		l.emit(token.Pipe, operator(l.Text()))
+
 		return skipWhitespace
 	}
 }
@@ -351,6 +367,7 @@ func collectHorizontalSpace(l *T) action {
 		case '\n':
 			l.accept(r, w)
 			l.emit(r, l.Text())
+
 			return skipWhitespace
 		case '#':
 			l.accept(r, w)
@@ -363,6 +380,7 @@ func collectHorizontalSpace(l *T) action {
 			if len(s) > 0 {
 				l.emit(token.Space, s)
 			}
+
 			return skipHorizontalSpace
 		}
 	}
@@ -380,6 +398,7 @@ func escapeNewline(l *T) action {
 	default:
 		l.accept(r, w)
 		l.saved = nil
+
 		return scanSymbol
 	}
 
@@ -469,16 +488,20 @@ func scanSymbol(l *T) action {
 			s := l.Text()
 			if len(s) > 0 {
 				l.emit(token.Symbol, s)
-				l.accept(r, w)
-				return scanSymbol
 			}
+
 			l.accept(r, w)
+			l.emit(token.Symbol, l.Text())
+
+			return collectHorizontalSpace
 		case '$':
 			s := l.Text()
 			if len(s) > 0 {
 				l.emit(token.Symbol, s)
 			}
+
 			l.accept(r, w)
+
 			return afterDollar
 		case '\\':
 			l.accept(r, w)

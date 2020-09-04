@@ -9,42 +9,38 @@ import (
 	"strings"
 
 	"github.com/michaelmacinnis/oh/internal/adapted"
-	"github.com/michaelmacinnis/oh/internal/interface/cell"
-	"github.com/michaelmacinnis/oh/internal/reader/token"
-	"github.com/michaelmacinnis/oh/internal/type/errsys"
-	"github.com/michaelmacinnis/oh/internal/type/list"
-	"github.com/michaelmacinnis/oh/internal/type/loc"
-	"github.com/michaelmacinnis/oh/internal/type/pair"
-	"github.com/michaelmacinnis/oh/internal/type/str"
-	"github.com/michaelmacinnis/oh/internal/type/sym"
+	"github.com/michaelmacinnis/oh/internal/common"
+	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
+	"github.com/michaelmacinnis/oh/internal/common/struct/token"
+	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/errsys"
+	"github.com/michaelmacinnis/oh/internal/common/type/list"
+	"github.com/michaelmacinnis/oh/internal/common/type/num"
+	"github.com/michaelmacinnis/oh/internal/common/type/pair"
+	"github.com/michaelmacinnis/oh/internal/common/type/str"
+	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 )
 
 // T holds the state of the parser.
 type T struct {
-	ahead  int             // Lookahead count.
-	emit   func(cell.T)    // Function to call to emit a parsed command.
-	item   func() *token.T // Function to call to get another token.
-	source loc.T           // The parser's current position.
-	token  *token.T        // Token lookahead.
+	ahead int             // Lookahead count.
+	emit  func(cell.I)    // Function to call to emit a parsed command.
+	item  func() *token.T // Function to call to get another token.
+	token *token.T        // Token lookahead.
 
 	// Completion state.
-	part  cell.T // The command being parsed, so far.
-	saved cell.T // The command being parsed.
-}
-
-// Stringer is duplicated here so we don't have to import fmt.
-type Stringer interface {
-	String() string
+	part  cell.I // The command being parsed, so far.
+	saved cell.I // The command being parsed.
 }
 
 // New creates a new parser.
 // It connects a producer of tokens with a consumer of cells.
-func New(emit func(cell.T), item func() *token.T) *T {
+func New(emit func(cell.I), item func() *token.T) *T {
 	return &T{emit: emit, item: item, part: pair.Null}
 }
 
 // Copy copies the current parser but replaces its emit and item functions.
-func (p *T) Copy(emit func(cell.T), item func() *token.T) *T {
+func (p *T) Copy(emit func(cell.I), item func() *token.T) *T {
 	c := *p
 
 	c.emit = emit
@@ -54,7 +50,7 @@ func (p *T) Copy(emit func(cell.T), item func() *token.T) *T {
 }
 
 // Current returns the command currently being parsed.
-func (p *T) Current() cell.T {
+func (p *T) Current() cell.I {
 	return p.saved
 }
 
@@ -73,7 +69,7 @@ func (p *T) Parse() {
 			p.emit(errsys.New(r))
 		case string:
 			p.emit(errsys.New(errors.New(r)))
-		case Stringer:
+		case common.Stringer:
 			p.emit(errsys.New(errors.New(r.String())))
 		default:
 			p.emit(errsys.New(errors.New("unexpected error")))
@@ -85,6 +81,7 @@ func (p *T) Parse() {
 			p.consume()
 			continue
 		}
+
 		p.emit(p.possibleBackground())
 	}
 }
@@ -102,7 +99,7 @@ func (p *T) consume() *token.T {
 	return t
 }
 
-func (p *T) check(c cell.T) cell.T {
+func (p *T) check(c cell.I) cell.I {
 	if c == nil {
 		t := p.peek()
 
@@ -126,12 +123,13 @@ func (p *T) expect(cs ...token.Class) {
 	// Make a nice error message.
 	n := len(cs)
 	e := make([]string, n)
+
 	for i, c := range cs[:n-1] {
 		e[i] = c.String()
 	}
 
 	l := cs[n-1].String()
-	if n > 2 {
+	if n > 2 { //nolint:gomnd
 		l = ", or " + l
 	} else if n > 1 {
 		l = " or " + l
@@ -151,8 +149,6 @@ func (p *T) peek() *token.T {
 	t := p.item()
 	if t == nil {
 		p.saved = p.part
-	} else if p.source.Line == 0 {
-		p.source = t.Source()
 	}
 
 	p.token = t
@@ -164,29 +160,26 @@ func (p *T) peek() *token.T {
 // T state functions.
 
 // <possibleBackground> ::= <command> '&'?
-func (p *T) possibleBackground() cell.T {
+func (p *T) possibleBackground() cell.I {
 	c := p.command()
 
 	t := p.peek()
 	if t.Is(token.Background) {
 		p.consume()
 
-		c = list.New(sym.New(t.Value()), c)
+		c = list.New(sym.Token(t), c)
 	}
-
-	// Reset line so that it will be set when the next token is comsumed.
-	p.source.Line = 0
 
 	return c
 }
 
-// <command> ::= <possibleAndf> (Orf <possibleAndf>)*
-func (p *T) command() cell.T {
+// <command> ::= <possibleAndf> (Orf <possibleAndf>)* .
+func (p *T) command() cell.I {
 	c := p.possibleAndf()
 
 	t := p.peek()
 	if t.Is(token.Orf) {
-		c = list.New(sym.New(t.Value()), c)
+		c = list.New(sym.Token(t), c)
 
 		for p.peek().Is(token.Orf) {
 			p.consume()
@@ -197,13 +190,13 @@ func (p *T) command() cell.T {
 	return c
 }
 
-// <possibleAndf> ::= <possiblePipeline> (Andf <possiblePipeline>)*
-func (p *T) possibleAndf() cell.T {
+// <possibleAndf> ::= <possiblePipeline> (Andf <possiblePipeline>)* .
+func (p *T) possibleAndf() cell.I {
 	c := p.possiblePipeline()
 
 	t := p.peek()
 	if t.Is(token.Andf) {
-		c = list.New(sym.New(t.Value()), c)
+		c = list.New(sym.Token(t), c)
 
 		for p.peek().Is(token.Andf) {
 			p.consume()
@@ -215,11 +208,11 @@ func (p *T) possibleAndf() cell.T {
 }
 
 // <possiblePipeline> ::= <possibleSequence> (Pipe <possiblePipeline>)?
-func (p *T) possiblePipeline() cell.T {
+func (p *T) possiblePipeline() cell.I {
 	c := p.possibleSequence()
 
 	if p.peek().Is(token.Pipe) {
-		s := sym.New(p.consume().Value())
+		s := sym.Token(p.consume())
 
 		c = pair.Cons(p.possiblePipeline(), c)
 		c = pair.Cons(s, c)
@@ -228,8 +221,8 @@ func (p *T) possiblePipeline() cell.T {
 	return c
 }
 
-// <possibleSequence> ::= <possibleRedirection> (';' <possibleRedirection>)*
-func (p *T) possibleSequence() cell.T {
+// <possibleSequence> ::= <possibleRedirection> (';' <possibleRedirection>)* .
+func (p *T) possibleSequence() cell.I {
 	c := p.possibleRedirection()
 
 	if p.peek().Is(';') {
@@ -245,13 +238,13 @@ func (p *T) possibleSequence() cell.T {
 	return c
 }
 
-// <possibleRedirection> ::= <possibleSustitution> (Redirect <expression>)*
-func (p *T) possibleRedirection() cell.T {
+// <possibleRedirection> ::= <possibleSustitution> (Redirect <expression>)* .
+func (p *T) possibleRedirection() cell.I {
 	c := p.possibleSubstitution()
 
 	for p.peek().Is(token.Redirect) {
-		s := sym.New(p.consume().Value())
-		c = list.New(s, p.check(p.possibleImplicitJoin()), c)
+		s := sym.Token(p.consume())
+		c = list.New(s, p.check(p.implicitJoin(p.element())), c)
 
 		for p.peek().Is(token.Space) {
 			p.consume()
@@ -261,8 +254,8 @@ func (p *T) possibleRedirection() cell.T {
 	return c
 }
 
-// <possibleSubstitution> ::= <statement> (Substitute <command> ')' <statement>?)*
-func (p *T) possibleSubstitution() cell.T {
+// <possibleSubstitution> ::= <statement> (Substitute <command> ')' <statement>?)* .
+func (p *T) possibleSubstitution() cell.I {
 	c := p.statement()
 	if c == nil {
 		return c
@@ -272,7 +265,7 @@ func (p *T) possibleSubstitution() cell.T {
 		c = pair.Cons(sym.New("_process_substitution_"), c)
 
 		for p.peek().Is(token.Substitute) {
-			s := sym.New(p.consume().Value())
+			s := sym.Token(p.consume())
 			l := list.New(s, p.element())
 			c = list.Append(c, l)
 
@@ -288,13 +281,7 @@ func (p *T) possibleSubstitution() cell.T {
 	return c
 }
 
-func (p *T) statement() (c cell.T) {
-	for p.peek().Is(token.Space) {
-		p.consume()
-	}
-
-	// TODO: Pull this if-else block into its own function.
-	//       It is repeated below.
+func (p *T) braces() (c cell.I) {
 	if p.peek().Is('{') {
 		p.consume()
 
@@ -303,44 +290,83 @@ func (p *T) statement() (c cell.T) {
 
 			c = p.subStatement()
 		} else {
-			c = p.possibleImplicitJoin()
-			c = pair.Cons(c, pair.Null, p.source)
+			c = p.implicitJoin(p.element())
+			c = pair.Cons(c, pair.Null)
 			p.expect('}')
 		}
-	} else {
-		c = p.possibleImplicitJoin()
-		if c == nil {
-			return nil
+	}
+
+	return
+}
+
+func (p *T) assignments() (c cell.I, l cell.I) {
+	l = pair.Null
+
+	for {
+		for p.peek().Is(token.Space) {
+			p.consume()
 		}
 
-		c = pair.Cons(c, pair.Null, p.source)
+		c = p.braces()
+		if c != nil {
+			break
+		}
+
+		c = p.element()
+		if c == nil {
+			break
+		}
+
+		e := p.peek()
+		if sym.Is(c) && e.Is(token.Symbol) && e.Value() == "=" {
+			p.consume()
+
+			v := p.check(p.element())
+
+			l = list.Append(l, list.New(sym.New("export"), c, v))
+
+			continue
+		} else {
+			c = p.implicitJoin(c)
+			break
+		}
 	}
+
+	return c, l
+}
+
+func (p *T) statement() (c cell.I) {
+	c, l := p.assignments()
+	if l != pair.Null {
+		defer func() {
+			if c != nil {
+				c = list.Join(l, c)
+			} else {
+				c = l
+			}
+
+			c = pair.Cons(sym.New("block"), c)
+		}()
+	}
+
+	if c == nil {
+		return
+	}
+
+	c = pair.Cons(c, pair.Null)
 
 	// Push new part onto current stack.
 	p.part = pair.Cons(c, p.part)
 
 	for {
-		var t cell.T
-
 		if p.peek().Is(token.Space) {
 			p.consume()
 			continue
 		}
 
-		if p.peek().Is('{') {
-			p.consume()
-
-			if p.peek().Is('\n') {
-				p.consume()
-
-				t = p.subStatement()
-			} else {
-				t = p.possibleImplicitJoin()
-				t = pair.Cons(t, pair.Null)
-				p.expect('}')
-			}
-		} else {
-			t = p.possibleImplicitJoin()
+		t := p.braces()
+		if t == nil {
+			t = p.implicitJoin(p.element())
 			if t == nil {
 				break
 			}
@@ -360,7 +386,7 @@ func (p *T) statement() (c cell.T) {
 	return c
 }
 
-func (p *T) subStatement() cell.T {
+func (p *T) subStatement() cell.I {
 	c := p.block()
 
 	p.expect('}')
@@ -377,7 +403,7 @@ func (p *T) subStatement() cell.T {
 	return c
 }
 
-func (p *T) block() cell.T {
+func (p *T) block() cell.I {
 	c := pair.Null
 
 	for !p.peek().Is('}') {
@@ -392,26 +418,25 @@ func (p *T) block() cell.T {
 	return c
 }
 
-func (p *T) possibleImplicitJoin() cell.T {
-	c := p.element()
+func (p *T) implicitJoin(c cell.I) cell.I {
 	if c == nil {
 		return nil
 	}
 
-	c = list.New(c)
+	l := list.New(c)
 
 	for t := p.element(); t != nil; t = p.element() {
-		c = list.Append(c, t)
+		l = list.Append(l, t)
 	}
 
-	if list.Length(c) == 1 {
-		return pair.Car(c)
+	if list.Length(l) == 1 {
+		return c
 	}
 
-	return pair.Cons(sym.New("_join_"), c)
+	return pair.Cons(sym.New("_join_"), l)
 }
 
-func (p *T) element() cell.T {
+func (p *T) element() cell.I {
 	if p.peek().Is('`') {
 		p.consume()
 
@@ -426,7 +451,7 @@ func (p *T) element() cell.T {
 	return p.expression()
 }
 
-func (p *T) expression() cell.T {
+func (p *T) expression() cell.I {
 	if p.peek().Is('$') {
 		p.consume()
 
@@ -436,8 +461,50 @@ func (p *T) expression() cell.T {
 	return p.value()
 }
 
-func (p *T) value() cell.T {
-	if !p.peek().Is('(') {
+func (p *T) meta(c cell.I) cell.I {
+	t := pair.Car(c)
+
+	if !sym.Is(t) {
+		panic("meta command must start with a symbol not " + t.Name())
+	}
+
+	var create func(string) cell.I = nil
+
+	switch sym.To(t).String() {
+	case "cons":
+		return pair.Cons(pair.Cadr(c), pair.Caddr(c))
+
+	case "boolean":
+		create = boolean.New
+
+	case "number":
+		create = num.New
+
+	case "symbol":
+		create = sym.New
+	}
+
+	if create == nil {
+		panic("invalid meta command")
+	}
+
+	t = pair.Cadr(c)
+
+	arg, ok := t.(common.Stringer)
+	if ok {
+		return create(arg.String())
+	}
+
+	return num.New(arg.String())
+}
+
+func (p *T) value() cell.I {
+	t := p.peek()
+
+	meta := false
+	if t.Is(token.MetaOpen) {
+		meta = true
+	} else if !t.Is('(') {
 		return p.word()
 	}
 
@@ -451,7 +518,14 @@ func (p *T) value() cell.T {
 
 			return pair.Null
 		}
+
 		panic("unexpected '" + t.Value() + "'")
+	}
+
+	if meta {
+		p.expect(token.MetaClose)
+
+		return p.meta(c)
 	}
 
 	p.expect(')')
@@ -459,16 +533,28 @@ func (p *T) value() cell.T {
 	return c
 }
 
-func (p *T) word() cell.T {
+func (p *T) symbol(t *token.T) cell.I {
+	if t.Is(token.Symbol) {
+		p.consume()
+
+		return sym.Token(t)
+	}
+
+	return nil
+}
+
+func (p *T) word() cell.I {
 	t := p.peek()
 	if t.Is(token.DollarSingleQuoted) {
 		p.consume()
 
 		text := t.Value()
+
 		s, err := adapted.ActualBytes(text[2 : len(text)-1])
 		if err != nil {
 			panic(err)
 		}
+
 		return str.New(s)
 	}
 
@@ -476,10 +562,12 @@ func (p *T) word() cell.T {
 		p.consume()
 
 		text := t.Value()
+
 		s, err := adapted.ActualBytes(text[1 : len(text)-1])
 		if err != nil {
 			panic(err)
 		}
+
 		return list.New(sym.New("interpolate"), str.New(s))
 	}
 
@@ -487,14 +575,9 @@ func (p *T) word() cell.T {
 		p.consume()
 
 		s := t.Value()
+
 		return str.New(s[1 : len(s)-1])
 	}
 
-	if t.Is(token.Symbol) {
-		p.consume()
-
-		return sym.New(t.Value())
-	}
-
-	return nil
+	return p.symbol(t)
 }

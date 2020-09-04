@@ -1,0 +1,12 @@
+#!/usr/bin/env oh
+
+define blah: method () = {
+    define foo = "I'm a local variable!"
+}
+
+blah
+
+echo $foo
+
+#-     000-local-test.oh:2:1: echo $foo
+#-     $'foo not defined'
