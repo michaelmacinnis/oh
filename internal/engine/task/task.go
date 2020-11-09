@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/michaelmacinnis/oh/internal/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -23,6 +24,8 @@ import (
 const debug = false
 
 type monitor interface {
+	Await(t *T, f func())
+	AwaitAll(t *T, f func())
 	Launch(t *T, path string, argv []string, attr *os.ProcAttr) error
 	Spawn(p, c *T, w ...func())
 	Stopped(t *T)
@@ -209,6 +212,55 @@ func (t *T) Step(s Op) (op Op) {
 
 func (t *T) Stop() {
 	t.state.Stop(nil)
+}
+
+func (t *T) expand(args cell.I) cell.I {
+	l := pair.Null
+
+	for ; args != pair.Null; args = pair.Cdr(args) {
+		c := pair.Car(args)
+
+		if !sym.Is(c) {
+			l = list.Append(l, c)
+
+			continue
+		}
+
+		s := common.String(c)
+
+		path := t.tildeExpand(s)
+		if !strings.ContainsAny(path, "*?[") {
+			l = list.Append(l, sym.New(path))
+
+			continue
+		}
+
+		pwd := ""
+		if !filepath.IsAbs(path) {
+			pwd = t.stringValue("PWD")
+			// path = filepath.Join(pwd, path)
+			path = pwd + string(os.PathSeparator) + path
+			pwd = filepath.Clean(pwd)
+		}
+
+		m, err := adapted.Glob(path)
+		if err != nil || len(m) == 0 {
+			panic("no matches found: " + s)
+		}
+
+		for _, v := range m {
+			if pwd != "" {
+				rel, err := filepath.Rel(pwd, v)
+				if err == nil {
+					v = rel
+				}
+			}
+
+			l = list.Append(l, str.New(v))
+		}
+	}
+
+	return l
 }
 
 func (t *T) stringValue(s string) string {

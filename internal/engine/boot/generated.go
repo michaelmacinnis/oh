@@ -16,14 +16,14 @@ define list: method ((l)) = {
 }
 
 sys export throw: method (msg) = {
-	_stack_trace_
+	#stack-trace
 	debug $msg
 	fatal 1
 }
 
 define and: syntax ((lst)) e = {
     define r $False
-    while (not (is-null $lst)) {
+    while (not (null? $lst)) {
         set r: e eval (lst head)
         if (not $r) {
             return $r
@@ -35,7 +35,7 @@ define and: syntax ((lst)) e = {
 
 define or: syntax ((lst)) e = {
     define r $False
-    while (not (is-null $lst)) {
+    while (not (null? $lst)) {
         set r: e eval (lst head)
         if $r {
             return $r
@@ -45,16 +45,20 @@ define or: syntax ((lst)) e = {
     return $r
 }
 
+define not:: syntax ((v)) e = {
+    return (not (e eval $v))
+}
+
 define source: method (basename) e = {
 	define name $basename
 	define paths ()
 
-	if (resolves OHPATH) {
-		set paths: _split_ : $OHPATH
+	if (resolves? OHPATH) {
+		set paths: rend : $OHPATH
 	}
 
-	while (and (not (is-null $paths)) (not (exists $name))) {
-		set name: _join_ (paths head) / $basename
+	while (and (not (null? $paths)) (not (exists $name))) {
+		set name: mend / (paths head) $basename
 		set paths: paths tail
 	}
 
@@ -72,7 +76,7 @@ define source: method (basename) e = {
 
 	define rval $False
 	define eval-list: method (first rest) = {
-		if (is-null $first) {
+		if (null? $first) {
 			return $rval
 		}
 		set rval: e eval $first
@@ -84,15 +88,15 @@ define source: method (basename) e = {
 }
 
 define quasiquote: syntax (cell) e = {
-    if (not (is-cons $cell)) {
+    if (not (cons? $cell)) {
         return $cell
     }
 
-    if (is-null $cell) {
+    if (null? $cell) {
         return $cell
     }
 
-    if (eq unquote (cell head)) {
+    if (eq? unquote (cell head)) {
         return (e eval (cell get 1))
     }
 
@@ -103,9 +107,9 @@ define quasiquote: syntax (cell) e = {
 }
 
 define catch: syntax (name (clause)) e = {
-    define body: list throw (list _lookup_ $name)
+    define body: list throw (list resolve $name)
 
-    if (is-null $clause) {
+    if (null? $clause) {
         set body: list body
     } else {
         set body: clause append $body
@@ -116,7 +120,7 @@ define catch: syntax (name (clause)) e = {
 
     define handler: e eval $defn
 
-    define _return_: e eval (list _lookup_ return)
+    define _return_: e eval (list resolve return)
     define _throw_ $throw
 
     e export throw: method (msg) = {
@@ -125,31 +129,35 @@ define catch: syntax (name (clause)) e = {
     }
 }
 
-define _rew_: method (cmd) = {
+define wrap-redir-r-ex: method ((block)) = {
+    set block: cons block $block
+
     quasiquote ((method () = {
-        define r $False
+        define r: boolean false
 
         catch ex {
             return (cons $r $ex)
         }
 
-        set r (unquote $cmd)
+        set r (unquote $block)
 
         throw ()
     }))
 }
 
-define _few_: method (c n) = {
+define collect-unwrap-r-ex: method (c n) = {
     define r $False
 
-    define zero (|number 0|)
-    while (not (eq $n $zero)) {
+    define zero: number 0
+
+    set n: number $n
+    while (not (eq? $n $zero)) {
         define rex: c read
 
         set r: rex head
 
         define ex: rex tail
-        if (not (is-null $ex)) {
+        if (not (null? $ex)) {
             throw $ex
         }
 
@@ -159,23 +167,352 @@ define _few_: method (c n) = {
     return $r
 }
 
-define _pipe_output_to_: syntax (right (left)) e = {
-    define c: channel 2
+define quote: syntax (v) = {
+    return $v
+}
+
+define object: syntax ((body)) e = {
+    body append (quote ((method self () = (return (resolve self)))))
+    e eval (cons block $body)
+}
+
+# TODO: Add optional map literal argument.
+define map: method () = {
+    object {
+        export del $unset
+        export get $get
+        export has ${set?}
+        export set $export
+    }
+}
+
+define glob: builtin ((args)) = {
+    return $args
+}
+
+define wrapped-umask $umask
+define umask: method ((args)) = {
+    define mask: wrapped-umask (splice $args)
+    if (null? $args) {
+        echo $mask
+    }
+    return $mask
+}
+
+define _override_stdin_: method (e c cmd) = {
+    e eval (wrap-redir-r-ex {
+        list export _stdin_ $c
+    } $cmd)
+}
+
+define _override_stdout_: method (e c cmd) = {
+    e eval (wrap-redir-r-ex {
+        list export _stdout_ $c
+    } $cmd)
+}
+
+define _override_stdout_stderr_: method (e c cmd) = {
+    e eval (wrap-redir-r-ex {
+        list export _stdout_ $c
+        list export _stderr_ $c
+    } $cmd)
+}
+
+define _pipe_: method (override) = {
+    syntax (right (left)) e = {
+        define c: channel 2
+        define p: pipe
+
+        spawn {
+            c write (override $e $p $left)
+            p _writer_close_
+        } 
+
+        c write (_override_stdin_ $e $p $right)
+        p _reader_close_
+
+        collect-unwrap-r-ex $c 2
+    }
+}
+
+define _pipe_output_to_: _pipe_ $_override_stdout_
+define _pipe_output_errors_to_: _pipe_ $_override_stdout_stderr_
+
+define _redirect_: method (override mode closer) = {
+    syntax (c cmd) e = {
+        define c: e eval $c
+        if (symbol? $c) {
+            define l: glob $c
+            if (lt? 1 (l length)) {
+                throw "can't redirect to/from multiple files"
+            }
+            set c: l head
+        }
+        define f ()
+        if (not (or (channel? $c) (pipe? $c))) {
+            set mode: symbol $mode
+            if (exists -i $c) {
+                if (eq? w $mode) {
+                    throw "${c} exists"
+                }
+            } else {
+                if (eq? r $mode) {
+                    throw "${c} does not exist"
+                }
+            }
+            set f: open $mode $c
+            set c $f
+        }
+        define ec-ex: override $e $c $cmd
+        if (not: null? $f) {
+            f $closer
+        }
+        define ex: ec-ex tail
+        if (not: null? $ex) {
+            throw $ex
+        }
+        return (ec-ex head)
+    }
+}
+
+define _append_output_to_: _redirect_ $_override_stdout_ a _writer_close_
+define _append_output_errors_to_: _redirect_ $_override_stdout_stderr_ a _writer_close_
+define _input_from_: _redirect_ $_override_stdin_ r _reader_close_
+define _output_to_: _redirect_ $_override_stdout_ w _writer_close_
+define _output_errors_to_: _redirect_ $_override_stdout_stderr_ w _writer_close_
+
+define clobber: syntax (filename) e = {
+    e eval (quasiquote (block {
+        tee (unquote $filename) > /dev/null
+    }))
+}
+
+define for: method (l m) = {
+    define r: cons () ()
+    define c $r
+    while (not: null? $l) {
+        c set-tail (cons (m (l head)) ())
+        set c (c tail)
+        set l (l tail)
+    }
+    return (r tail)
+}
+
+define capture: syntax ((cmd)) e = {
+    define c: channel 1
     define p: pipe
 
     spawn {
-        export _stdout_ $p
-        c write (e eval (_rew_ $left))
+        c write (_override_stdout_ $e $p $cmd)
         p _writer_close_
-    } 
-
-    block {
-        export _stdin_ $p
-        c write (e eval (_rew_ $right))
-        p _reader_close_
     }
 
-    _few_ $c (|number 2|)
+    define s: cons () ()
+    define r $s
+
+    while (not: null? (define l: p read-line)) {
+        r set-tail (cons $l ())
+        set r (r tail)
+    }
+
+    p _reader_close_
+
+    collect-unwrap-r-ex $c 1
+
+    return (s tail)
+}
+
+define _process_substitution_: syntax ((args)) e = {
+    define chans ()
+    define fifos ()
+
+    define cmd: for $args (method (arg) = {
+        if (not: cons? $arg) {
+            return $arg
+        }
+
+        if (eq? _named_pipe_input_from_ (arg head)) {
+            define chan: channel 1
+            define fifo: temp-fifo
+
+            spawn {
+                define f: open w $fifo
+                chan write (_override_stdout_ $e $f (arg tail))
+                f close
+            }
+
+            set chans: cons $chan $chans
+            set fifos: cons $fifo $fifos
+
+            return $fifo
+        }
+
+        if (eq? _named_pipe_output_to_ (arg head)) {
+            define chan: channel 1
+            define fifo: temp-fifo
+
+            spawn {
+                define f: open r $fifo
+                chan write (_override_stdin_ $e $f (arg tail))
+                f close
+            }
+
+            set chans: cons $chan $chans
+            set fifos: cons $fifo $fifos
+
+            return $fifo
+        }
+
+        return $arg
+    })
+
+    define mainecex: e eval (wrap-redir-r-ex $cmd)
+
+    define ecexs ()
+    for $chans (method (chan) = {
+        set ecexs: cons (chan read) ${ecexs}
+    })
+
+    set ecexs: cons $mainecex ${ecexs}
+
+    for $fifos (method (fifo) = {
+        rm $fifo
+    })
+
+    for ${ecexs} (method (ecex) = {
+        define ex: ecex tail
+        if (not: null? $ex) {
+            throw $ex
+        }
+    })
+
+    return (mainecex head)
+}
+
+define _import_request_: channel 1
+define _import_: method (modules callback path) = {
+    define import-return $return
+
+    catch ex {
+        callback (cons () $ex)
+        import-return
+    }
+
+    define import: method (path) = {
+        define ecex: (method () = {
+            _import_request_ write $return $path
+            return ()
+        })
+
+        define ex: ecex tail
+        if (not: null? $ex) {
+            throw $ex
+        }
+
+        define ec: ecex head
+        if (not: null? $ec) {
+            return $ec
+        }
+
+        import-return
+    }
+
+    define module-name ()
+
+    define module: method (name) = {
+        if (modules has $name) {
+            define module-object: modules get $name
+            callback (list ${module-object})
+            import-return
+        }
+        set module-name $name
+    }
+
+    define module-object: object {
+        source $path
+    }
+
+    if (not: null? ${module-name}) {
+        modules set ${module-name} ${module-object}
+    }
+
+    callback (list ${module-object})
+}
+
+define import: method (path) = {
+    define response: channel
+
+    _import_request_ write (method (returned) = {
+        response write $returned
+    }) $path
+
+    define ecex: response read
+
+    define ex: ecex tail
+    if (not: null? $ex) {
+        throw $ex
+    }
+
+    return (ecex head)
+}
+
+# TODO: Add disown so we can disown this.
+spawn {
+    define modules: map
+    while (boolean true) {
+        _import_ $modules (splice (_import_request_ read-list))
+    }
+}
+
+define prompt
+define replace-prompt-fn
+
+block {
+    define call-make-prompt: method (suffix) = {
+        catch ignored {
+            return $suffix
+        }
+
+        make-prompt $suffix
+    }
+
+    define make-prompt: method (suffix) = {
+        define d: string-replace $PWD $HOME ~
+        mend '' $USER @ (splice (capture hostname)) : $d $suffix
+    }
+
+    define request: channel 1
+
+    define service: method (request) = {
+        define type: request get 0
+        define response: request get 1
+
+        if (eq? $type get) {
+            response write (call-make-prompt (request get 2))
+        } else {
+            define previous-make-prompt ${make-prompt}
+            set make-prompt (request get 2)
+            response write ${previous-make-prompt}
+        }
+    }
+
+    set prompt: method (suffix) = {
+        define response: channel 1
+        request write get $response $suffix
+        response read
+    }
+
+    set replace-prompt-fn: method (fn) = {
+        define response: channel 1
+        request write set $response $fn
+        response read
+    }
+
+    spawn {
+        while (boolean true) {
+            service (request read-list)
+        }
+    }
 }
 `
 }

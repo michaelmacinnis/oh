@@ -25,7 +25,7 @@ func BecomeForegroundGroup() {
 		group, _ = unix.Getpgid(id)
 	}
 
-	//signal.Ignore(unix.SIGTTIN, unix.SIGTTOU)
+	// signal.Ignore(unix.SIGTTIN, unix.SIGTTOU)
 
 	if id != group {
 		unix.Setpgid(id, id)

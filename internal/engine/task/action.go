@@ -4,6 +4,7 @@ package task
 
 import (
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
+	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
@@ -25,6 +27,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 	"github.com/michaelmacinnis/oh/internal/engine/commands"
+	"github.com/michaelmacinnis/oh/internal/system/options"
 )
 
 // Action performs a single step of the machine and returns the next operation.
@@ -42,27 +45,35 @@ func Actions(s scope.I) {
 	s.Define("define", &Syntax{Op: Action(evalDefine)})
 	s.Define("if", &Syntax{Op: Action(evalIf)})
 	s.Define("while", &Syntax{Op: Action(evalWhile)})
-
+	s.Define("set", &Syntax{Op: Action(evalSet)})
 	s.Define("spawn", &Syntax{Op: Action(spawn)})
 
-	s.Export("eval", &Method{Op: Action(eval)})
-	s.Export("set", &Syntax{Op: Action(evalSet)})
+	s.Define("get", &Method{Op: Action(get)})
+	s.Define("eval", &Method{Op: Action(eval)})
+	s.Define("set?", &Method{Op: Action(isSet)})
+	s.Define("unset", &Method{Op: Action(unset)})
 
 	// Builtins.
-	s.Export("cd", &Method{Op: Action(cd)})
+	s.Define("cd", &Builtin{Op: Action(cd)})
+	s.Define("command", &Builtin{Op: Action(cmd)})
 
 	for k, v := range commands.Builtins() {
 		s.Define(k, b(v))
 	}
 
 	// Methods.
-	s.Export("interpolate", &Method{Op: Action(interpolate)})
-
-	s.Define("_lookup_", &Method{Op: Action(_lookup_)})
-	s.Define("_stack_trace_", &Method{Op: Action(_stack_trace_)})
-
+	s.Define("builtin?", &Method{Op: Action(isBuiltin)})
+	s.Define("continuation?", &Method{Op: Action(isContinuation)})
+	s.Define("exit", &Method{Op: Action(exit)})
 	s.Define("fatal", &Method{Op: Action(fatal)})
-	s.Define("resolves", &Method{Op: Action(resolves)})
+	s.Define("interpolate", &Method{Op: Action(interpolate)})
+	s.Define("method?", &Method{Op: Action(isMethod)})
+	s.Define("resolve", &Method{Op: Action(resolve)})
+	s.Define("resolves?", &Method{Op: Action(resolves)})
+	s.Define("splice", &Method{Op: Action(splice)})
+	s.Define("stack-trace", &Method{Op: Action(stackTrace)})
+	s.Define("syntax?", &Method{Op: Action(isSyntax)})
+	s.Define("wait", &Method{Op: Action(wait)})
 
 	// Syntax.
 	s.Define("builtin", &Syntax{Op: Action(builtin)})
@@ -173,7 +184,7 @@ func accessMember(t *T) Op {
 	}
 
 	if r == nil {
-		panic("undefined: " + n)
+		panic(n + " not defined")
 	}
 
 	v := r.Get()
@@ -233,7 +244,7 @@ func apply(t *T) Op {
 
 	if c.Labels.Self != pair.Null {
 		slabel := literal.String(c.Labels.Self)
-		e.Define(slabel, scope.To(b.self).Expose())
+		e.Define(slabel, scope.To(b.self))
 	}
 
 	args := t.code
@@ -321,7 +332,7 @@ func eval(t *T) Op {
 	t.code = pair.Car(t.code)
 
 	// If the visibility differs, create a new frame.
-    	e := scope.To(b.self)
+	e := scope.To(b.self)
 	if !e.Visible(t.frame.Scope()) {
 		t.frame = frame.New(e, t.frame)
 	} else {
@@ -463,7 +474,7 @@ func evalBlock(t *T) Op {
 		t.PushOp(&registers{code: next})
 	}
 
-	//println(list.Length(t.dump))
+	// println(list.Length(t.dump))
 
 	t.code = current
 
@@ -711,10 +722,6 @@ func execSet(t *T) Op {
 	s := scope.To(b.self)
 	r := s.Lookup(k)
 
-	if r == nil && s.Expose() == t.frame.Scope() {
-		_, r = t.frame.Resolve(k)
-	}
-
 	if r == nil {
 		panic(k + " not defined")
 	}
@@ -891,6 +898,18 @@ func spawn(t *T) Op {
 	return t.Return(child)
 }
 
+func splice(t *T) Op {
+	t.PopResult()
+
+	v := validate.Fixed(t.code, 1, 1)
+
+	for c := v[0]; c != pair.Null; c = pair.Cdr(c) {
+		t.PushResult(pair.Car(c))
+	}
+
+	return t.PreviousOp()
+}
+
 func sublistKey(t *T) Op {
 	s := literal.String(t.Result())
 
@@ -957,4 +976,304 @@ func makeListScope() scope.I {
 	}
 
 	return obj.New(s)
+}
+
+// Builtins.
+
+func cd(t *T) Op {
+	dir := ""
+
+	if t.code == pair.Null {
+		_, r := t.frame.Resolve("HOME")
+		dir = common.String(r.Get())
+	} else {
+		dir = t.tildeExpand(common.String(pair.Car(t.code)))
+	}
+
+	if dir == "-" {
+		_, r := t.frame.Resolve("OLDPWD")
+		dir = common.String(r.Get())
+	}
+
+	return t.Return(t.Chdir(dir))
+}
+
+func cmd(t *T) Op {
+	validate.Variadic(t.code, 1, 1)
+
+	t.ReplaceOp(Action(resume))
+
+	return t.PushOp(Action(external))
+}
+
+// Methods.
+
+func exit(t *T) Op {
+	t.Exit()
+
+	return fatal(t)
+}
+
+func fatal(t *T) Op {
+	t.stack = done
+
+	t.ReplaceResult(pair.Car(t.code))
+
+	return t.Op()
+}
+
+func get(t *T) Op {
+	k := literal.String(pair.Car(t.code))
+
+	b := bound(t.Result())
+
+	s := scope.To(b.self)
+
+	r := s.Lookup(k)
+	if r == nil {
+		panic(k + " not defined")
+	}
+
+	v := r.Get()
+	if c, ok := v.(command); ok {
+		v = bind(c, s)
+	}
+
+	return t.Return(v)
+}
+
+func interpolate(t *T) Op {
+	v := validate.Fixed(t.code, 1, 1)
+
+	e := t.frame.Scope()
+
+	b := bound(t.Result())
+
+	s := b.self
+
+	if scope.To(s).Expose() == e {
+		// TODO: This seems wrong.
+		// We should split out the part of resolve that
+		// does the lookup and share it with interpolate.
+		s = e
+	}
+
+	cb := func(ref string) string {
+		if ref == "$$" {
+			return "$"
+		}
+
+		name := ref[1:]
+		if name[0] == '{' {
+			name = name[1 : len(name)-1]
+		}
+
+		_, r := t.frame.Resolve(name)
+		if r == nil {
+			panic("'" + name + "' undefined")
+		}
+
+		return common.String(r.Get())
+	}
+
+	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[0-9A-Z_a-z]+)`)
+
+	return t.Return(str.New(r.ReplaceAllStringFunc(common.String(v[0]), cb)))
+}
+
+func isBuiltin(t *T) Op {
+	v := validate.Fixed(t.code, 1, 1)
+
+	b, ok := v[0].(*binding)
+	if ok {
+		_, ok = b.command.(*Builtin)
+	}
+
+	return t.Return(boolean.Bool(ok))
+}
+
+func isContinuation(t *T) Op {
+	v := validate.Fixed(t.code, 1, 1)
+
+	_, ok := v[0].(*registers)
+
+	return t.Return(boolean.Bool(ok))
+}
+
+func isMethod(t *T) Op {
+	v := validate.Fixed(t.code, 1, 1)
+
+	b, ok := v[0].(*binding)
+	if ok {
+		_, ok = b.command.(*Method)
+	}
+
+	return t.Return(boolean.Bool(ok))
+}
+
+func isSet(t *T) Op {
+	k := literal.String(pair.Car(t.code))
+
+	b := bound(t.Result())
+
+	s := scope.To(b.self)
+
+	r := s.Lookup(k)
+
+	return t.Return(boolean.Bool(r != nil))
+}
+
+func isSyntax(t *T) Op {
+	v := validate.Fixed(t.code, 1, 1)
+
+	b, ok := v[0].(*binding)
+	if ok {
+		_, ok = b.command.(*Syntax)
+	}
+
+	return t.Return(boolean.Bool(ok))
+}
+
+func resolve(t *T) Op {
+	k := literal.String(pair.Car(t.code))
+
+	b := bound(t.Result())
+
+	var r reference.I
+
+	s := scope.To(b.self)
+	if s.Expose() != t.frame.Scope() {
+		r = s.Lookup(k)
+	} else {
+		s, r = t.frame.Resolve(k)
+	}
+
+	if r == nil {
+		panic(k + " not defined")
+	}
+
+	v := r.Get()
+	if c, ok := v.(command); ok {
+		v = bind(c, s)
+	}
+
+	return t.Return(v)
+}
+
+func resolves(t *T) Op {
+	k := literal.String(pair.Car(t.code))
+
+	b := bound(t.Result())
+
+	var r reference.I
+
+	s := scope.To(b.self)
+	if s.Expose() != t.frame.Scope() {
+		r = s.Lookup(k)
+	} else {
+		_, r = t.frame.Resolve(k)
+	}
+
+	return t.Return(boolean.Bool(r != nil))
+}
+
+func stackTrace(t *T) Op {
+	type point struct {
+		loc string
+		txt string
+	}
+
+	max := 0
+	trace := []*point{}
+
+	for s := t.stack; s != done; s = s.stack {
+		if r, ok := s.op.(*registers); ok {
+			if r.frame != nil {
+				l := r.frame.Loc()
+				n := strconv.Itoa
+				p := &point{
+					loc: l.Name + ":" + n(l.Line) + ":" + n(l.Char) + ":",
+					txt: l.Text,
+				}
+
+				trace = append(trace, p)
+			}
+		}
+	}
+
+	if options.Script() {
+		trace = trace[:len(trace)-3]
+	}
+
+	for _, p := range trace {
+		sz := len(p.loc)
+		if sz > max {
+			max = sz
+		}
+	}
+
+	depth := 0
+
+	for i := len(trace) - 1; i >= 0; i-- {
+		p := trace[i]
+		sz := len(p.loc)
+
+		println(p.loc + strings.Repeat(" ", 2*depth+max-sz+1) + p.txt)
+
+		depth++
+	}
+
+	return t.PreviousOp()
+}
+
+func unset(t *T) Op {
+	k := literal.String(pair.Car(t.code))
+
+	b := bound(t.Result())
+
+	s := scope.To(b.self)
+
+	return t.Return(boolean.Bool(s.Remove(k)))
+}
+
+func wait(t *T) Op {
+	c := t
+	v := pair.Car(t.code)
+
+	if v != pair.Null {
+		ok := false
+
+		c, ok = v.(*T)
+		if !ok {
+			panic("can't wait on " + v.Name())
+		}
+	}
+
+	t.Wait()
+
+	if v != pair.Null {
+		t.monitor.Await(c, func() {
+			t.Notify(c.Result())
+		})
+	} else {
+		t.monitor.AwaitAll(c, func() {
+			t.Notify(pair.Null)
+		})
+	}
+
+	return t.ReplaceOp(Action(resume))
+}
+
+// Syntax.
+
+func builtin(t *T) Op {
+	return t.Return(bind((*Builtin)(t.Closure()), obj.New(t.frame.Scope())))
+}
+
+func method(t *T) Op {
+	return t.Return(bind((*Method)(t.Closure()), obj.New(t.frame.Scope())))
+}
+
+func syntax(t *T) Op {
+	return t.Return(bind((*Syntax)(t.Closure()), obj.New(t.frame.Scope())))
 }

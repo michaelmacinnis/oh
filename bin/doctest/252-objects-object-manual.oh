@@ -1,0 +1,24 @@
+#!/usr/bin/env oh
+
+## #### Object
+##
+## Oh's `object` command is really just a convenience wrapper around a `block`
+## command with an anonymous method that returns self as the final action.
+##
+## The previous example can be rewritten as,
+##
+#{
+define o: object {
+    export get $resolve
+
+    export x 1
+    define y 2
+}
+
+echo "public member" (o get x)
+echo "private member" (o get y)
+#}
+##
+
+#-     public member 1
+#-     $'y not defined'

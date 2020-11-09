@@ -48,11 +48,16 @@ func New(name string) *T {
 	return r
 }
 
-// TODO: Add Parse(path string) (cell.I, error). Returns parse tree as list.
-//       Actually, maybe look at the pipe type first and how to simplify it.
-
 func (r *T) Close() {
 	close(r.i)
+}
+
+func (r *T) Lexer() *lexer.T {
+	return r.s
+}
+
+func (r *T) Parser() *parser.T {
+	return r.p
 }
 
 func (r *T) Scan(line string) cell.I {

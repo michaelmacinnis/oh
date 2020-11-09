@@ -8,41 +8,59 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
+	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
+	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
-func _join_(args cell.I) cell.I { //nolint:golint
+func debug(args cell.I) cell.I {
+	println(literal.String(args))
+
+	return boolean.True
+}
+
+func isObject(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return boolean.Bool(scope.Is(v[0]))
+}
+
+func mend(args cell.I) cell.I {
+	v, rest := validate.Variadic(args, 2, 2)
+
+	sep := common.String(v[0])
+	c := v[1]
+
 	var create func(string) cell.I = sym.New
+	if str.Is(c) {
+		create = str.New
+	}
 
 	var joined strings.Builder
 
-	for args != pair.Null {
-		c := pair.Car(args)
+	joined.WriteString(common.String(c))
 
-		switch c := c.(type) {
-		case *str.T:
+	for rest != pair.Null {
+		joined.WriteString(sep)
+
+		c = pair.Car(rest)
+		if str.Is(c) {
 			create = str.New
-
-			joined.WriteString(c.String())
-		case *sym.Plus:
-			joined.WriteString(c.String())
-		case *sym.T:
-			joined.WriteString(c.String())
-		default:
-			panic("only strings and symbols can be joined")
 		}
 
-		args = pair.Cdr(args)
+		joined.WriteString(common.String(c))
+
+		rest = pair.Cdr(rest)
 	}
 
 	return create(joined.String())
 }
 
-func _split_(args cell.I) cell.I { //nolint:golint
+func rend(args cell.I) cell.I {
 	sep := pair.Car(args)
 	s := pair.Cadr(args)
 
@@ -59,10 +77,4 @@ func _split_(args cell.I) cell.I { //nolint:golint
 	}
 
 	return list.New(res...)
-}
-
-func debug(args cell.I) cell.I {
-	println(literal.String(args))
-
-	return boolean.True
 }

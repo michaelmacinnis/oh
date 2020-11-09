@@ -10,6 +10,5 @@ import (
 )
 
 func file(op func(string) (*os.File, error)) (*os.File, error) {
-	// TODO: Change .tui_history to .oh_history.
 	return op(path.Join(os.Getenv("HOME"), ".oh_history"))
 }

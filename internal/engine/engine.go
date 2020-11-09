@@ -10,7 +10,9 @@ import (
 
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
+	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
+	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
 	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
@@ -51,8 +53,10 @@ func Boot(arguments []string) {
 	}
 }
 
+// TODO: Evaluate should call System.
+
 // Evaluate evaluates the command c.
-func Evaluate(j *job.T, c cell.I) {
+func Evaluate(j *job.T, c cell.I) cell.I {
 	task0 := task.New(j, c, frame0)
 
 	task0.PushOp(task.Action(task.EvalCommand))
@@ -65,7 +69,38 @@ func Evaluate(j *job.T, c cell.I) {
 
 	<-done
 
-	scope0.Define("?", task0.Result())
+	r := task0.Result()
+
+	if task0.Exited() {
+		exitcode, ok := status(r)
+		if !ok {
+			exitcode = success(r)
+		}
+
+		os.Exit(exitcode)
+	}
+
+	scope0.Define("?", r)
+
+	return r
+}
+
+func Resolve(k string) (v string) {
+	defer func () {
+		r := recover()
+		if r != nil {
+			v = ""
+		}
+	}()
+
+	_, r := frame0.Resolve(k)
+	if r == nil {
+		return
+	}
+
+	v = common.String(r.Get())
+
+    return
 }
 
 // System evaluates the command c and returns the result.
@@ -74,7 +109,13 @@ func System(j *job.T, c cell.I) cell.I {
 
 	t.PushOp(task.Action(task.EvalCommand))
 
-	t.Run()
+	done := make(chan struct{})
+
+	j.Spawn(nil, t, func() {
+		close(done)
+	})
+
+	<-done
 
 	return t.Result()
 }
@@ -139,4 +180,26 @@ func jobs(t *task.T) task.Op {
 	job.Jobs(pipe.W(t.CellValue("_stdout_")))
 
 	return t.Return(num.Int(0))
+}
+
+func status(c cell.I) (exitcode int, ok bool) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			ok = false
+		}
+	}()
+
+	return int(integer.Value(c)), true
+}
+
+func success(c cell.I) (exitcode int) {
+	defer func() {
+		recover() //nolint:errcheck
+	}()
+
+	return map[bool]int{
+		true:  0,
+		false: 1,
+	}[truth.Value(c)]
 }

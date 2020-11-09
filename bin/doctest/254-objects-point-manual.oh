@@ -1,0 +1,33 @@
+#!/usr/bin/env oh
+
+#{
+define point: method (r s) = (object {
+    define x: add 0 $r
+    define y: add 0 $s
+
+    export get-x: method () = {
+        return x
+    }
+
+    export get-y: method () = {
+        return y
+    }
+
+    export move: method self (a b) = {
+        set x: add $x $a
+        set y: add $y $b
+    }
+
+    export show: method () = {
+        echo $x $y
+    }
+})
+
+define p: point 0 0
+p move 1 2
+p show
+#}
+##
+
+#-     1 2
+

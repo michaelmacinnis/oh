@@ -13,31 +13,138 @@ import (
 func eq(args cell.I) cell.I {
 	v, rest := validate.Variadic(args, 2, 2)
 
-	if !v[0].Equal(v[1]) {
-		return boolean.False
-	}
-
-	for rest != pair.Null {
-		if !v[0].Equal(pair.Car(rest)) {
+	for {
+		if !v[0].Equal(v[1]) {
 			return boolean.False
 		}
+
+		if rest == pair.Null {
+			return boolean.True
+		}
+
+		v[0] = v[1]
+		v[1] = pair.Car(rest)
 
 		rest = pair.Cdr(rest)
 	}
+}
 
-	return boolean.True
+func ge(args cell.I) cell.I {
+	v, rest := validate.Variadic(args, 2, 2)
+
+	prev := rational.Number(v[0])
+	curr := rational.Number(v[1])
+
+	for {
+		if prev.Cmp(curr) < 0 {
+			return boolean.False
+		}
+
+		if rest == pair.Null {
+			return boolean.True
+		}
+
+		prev = curr
+		curr = rational.Number(pair.Car(rest))
+
+		rest = pair.Cdr(rest)
+	}
+}
+
+func gt(args cell.I) cell.I {
+	v, rest := validate.Variadic(args, 2, 2)
+
+	prev := rational.Number(v[0])
+	curr := rational.Number(v[1])
+
+	for {
+		if prev.Cmp(curr) <= 0 {
+			return boolean.False
+		}
+
+		if rest == pair.Null {
+			return boolean.True
+		}
+
+		prev = curr
+		curr = rational.Number(pair.Car(rest))
+
+		rest = pair.Cdr(rest)
+	}
+}
+
+func le(args cell.I) cell.I {
+	v, rest := validate.Variadic(args, 2, 2)
+
+	prev := rational.Number(v[0])
+	curr := rational.Number(v[1])
+
+	for {
+		if prev.Cmp(curr) > 0 {
+			return boolean.False
+		}
+
+		if rest == pair.Null {
+			return boolean.True
+		}
+
+		prev = curr
+		curr = rational.Number(pair.Car(rest))
+
+		rest = pair.Cdr(rest)
+	}
 }
 
 func lt(args cell.I) cell.I {
-	prev := rational.Number(pair.Car(args))
+	v, rest := validate.Variadic(args, 2, 2)
 
-	for args := pair.Cdr(args); args != pair.Null; args = pair.Cdr(args) {
-		curr := rational.Number(pair.Car(args))
+	prev := rational.Number(v[0])
+	curr := rational.Number(v[1])
 
+	for {
 		if prev.Cmp(curr) >= 0 {
 			return boolean.False
 		}
-	}
 
-	return boolean.True
+		if rest == pair.Null {
+			return boolean.True
+		}
+
+		prev = curr
+		curr = rational.Number(pair.Car(rest))
+
+		rest = pair.Cdr(rest)
+	}
+}
+
+func ne(args cell.I) cell.I {
+	v, args := validate.Variadic(args, 2, 2)
+
+	for {
+		next := v[1]
+		rest := args
+
+		for {
+			if v[0].Equal(v[1]) {
+				return boolean.False
+			}
+
+			if rest == pair.Null {
+				break
+			}
+
+			v[1] = pair.Car(rest)
+
+			rest = pair.Cdr(rest)
+		}
+
+		if args == pair.Null {
+			return boolean.True
+		}
+
+		v[0] = next
+		v[1] = pair.Car(args)
+
+		args = pair.Cdr(args)
+	}
 }

@@ -24,6 +24,7 @@ type conduit = I
 // Is returns true if c is an I.
 func Is(c cell.I) bool {
 	_, ok := c.(conduit)
+
 	return ok
 }
 

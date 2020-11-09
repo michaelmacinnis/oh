@@ -14,6 +14,7 @@ type Syntax Closure
 // Equal returns true if the cell c is the same syntax as a.
 func (a *Syntax) Equal(c cell.I) bool {
 	p, ok := c.(*Syntax)
+
 	return ok && p == a
 }
 

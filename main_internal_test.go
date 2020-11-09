@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/engine"
@@ -10,6 +11,38 @@ import (
 	"github.com/michaelmacinnis/oh/internal/system/job"
 	"github.com/michaelmacinnis/oh/internal/system/process"
 )
+
+func TestCompletion(*testing.T) {
+	r := reader.New("test")
+	s := "ls "
+	n := 3
+
+	h := s[:n]
+	//t := s[n:]
+
+	lc := r.Lexer().Copy()
+
+	lc.Scan(h)
+
+	lp := r.Parser().Copy(func(_ cell.I) {}, lc.Token)
+
+	lp.Parse()
+
+	cs := lc.Expected()
+	if len(cs) != 0 {
+		return
+	}
+}
+
+func TestPrintingSymbol(*testing.T) {
+	engine.Boot(nil)
+
+	j := job.New(process.Group())
+	r := reader.New("oh")
+
+	engine.Evaluate(j, r.Scan(`echo (symbol '')
+	`))
+}
 
 func TestFunctionScope(*testing.T) {
 	engine.Boot(nil)
@@ -162,7 +195,7 @@ func TestStackTrace(*testing.T) {
 	r := reader.New("oh")
 
 	r.Scan("define f: method () = {\n")
-	r.Scan("    _stack_trace_\n")
+	r.Scan("    stack-trace\n")
 	r.Scan("    debug leaving f\n")
 	engine.Evaluate(j, r.Scan("}\n"))
 	r.Scan("define g: method () = {\n")

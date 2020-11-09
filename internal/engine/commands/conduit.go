@@ -20,6 +20,7 @@ func ConduitMethods() map[string]func(cell.I, cell.I) cell.I {
 
 func close(s cell.I, _ cell.I) cell.I {
 	conduit.To(s).Close()
+
 	return pair.Null
 }
 
@@ -29,6 +30,7 @@ func read(s cell.I, _ cell.I) cell.I {
 
 func readerClose(s cell.I, _ cell.I) cell.I {
 	conduit.To(s).ReaderClose()
+
 	return pair.Null
 }
 
@@ -48,5 +50,6 @@ func write(s cell.I, args cell.I) cell.I {
 
 func writerClose(s cell.I, _ cell.I) cell.I {
 	conduit.To(s).WriterClose()
+
 	return pair.Null
 }

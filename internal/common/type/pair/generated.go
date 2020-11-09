@@ -7,6 +7,7 @@ import "github.com/michaelmacinnis/oh/internal/common/interface/cell"
 // Is returns true if c is a *T.
 func Is(c cell.I) bool {
 	_, ok := c.(*T)
+
 	return ok
 }
 

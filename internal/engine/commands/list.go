@@ -4,6 +4,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
+	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
@@ -14,6 +15,8 @@ func ListMethods() map[string]func(cell.I, cell.I) cell.I {
 		"extend":   extend,
 		"get":      get,
 		"head":     head,
+		"length":   length,
+		"reverse":  reverse,
 		"set-head": setHead,
 		"set-tail": setTail,
 		"slice":    slice,
@@ -55,19 +58,33 @@ func get(s cell.I, args cell.I) cell.I {
 	return pair.Car(list.Tail(self, i, dflt))
 }
 
-func head(s cell.I, args cell.I) cell.I {
+func head(s cell.I, _ cell.I) cell.I {
 	return pair.Car(pair.To(s))
+}
+
+func length(s cell.I, args cell.I) cell.I {
+	validate.Fixed(args, 0, 0)
+
+	return num.Int(int(list.Length(pair.To(s))))
+}
+
+func reverse(s cell.I, args cell.I) cell.I {
+	validate.Fixed(args, 0, 0)
+
+	return list.Reverse(pair.To(s))
 }
 
 func setHead(s cell.I, args cell.I) cell.I {
 	v := pair.Car(args)
 	pair.SetCar(s, v)
+
 	return v
 }
 
 func setTail(s cell.I, args cell.I) cell.I {
 	v := pair.Car(args)
 	pair.SetCdr(s, v)
+
 	return v
 }
 
@@ -87,6 +104,6 @@ func slice(s cell.I, args cell.I) cell.I {
 	return list.Slice(s, start, end)
 }
 
-func tail(s cell.I, args cell.I) cell.I {
+func tail(s cell.I, _ cell.I) cell.I {
 	return pair.Cdr(pair.To(s))
 }

@@ -88,6 +88,10 @@ func (c *Class) String() string {
 
 // Is returns true if the token t is any of the classes in cs.
 func (t *token) Is(cs ...Class) bool {
+	if t == nil {
+		return false
+	}
+
 	for _, c := range cs {
 		if t.class == c {
 			return true

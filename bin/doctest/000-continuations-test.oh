@@ -12,11 +12,11 @@ define continue: method (label) = {
     label $label
 }
 
-define count 0
+define count: number 0
 
 define loop: label
 
-if (lt $count 100) {
+if (lt? $count 100) {
         set count: add $count 1
         echo "Hello, World! (${count})"
         continue $loop

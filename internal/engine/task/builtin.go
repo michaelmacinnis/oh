@@ -14,6 +14,7 @@ type Builtin Closure
 // Equal returns true if the cell c is the same builtin as m.
 func (a *Builtin) Equal(c cell.I) bool {
 	p, ok := c.(*Builtin)
+
 	return ok && p == a
 }
 

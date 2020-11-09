@@ -51,7 +51,7 @@ func (s *sym) Rat() *big.Rat {
 
 // String returns the text of the sym s.
 func (s *sym) String() string {
-	return s.Literal()
+	return string(*s)
 }
 
 // Functions specific to sym.

@@ -1,0 +1,45 @@
+#!/usr/bin/env oh
+
+mkdir /tmp/pipelines
+cd /tmp/pipelines
+touch 1 2 3
+
+## ### Pipelines and Filters
+##
+## The standard output of one command may be connected to the standard input
+## of another command using the pipe operator.
+##
+##     ls | wc -l
+ls | wc -l | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and leading whitespace.
+##
+## The commands connected in this way constitute a pipeline. The overall
+## effect is the same as,
+##
+##     ls >file; wc -l file
+ls >file; wc -l file | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and leading whitespace.
+##
+## except that no file is used. Instead the two processes are connected by a
+## pipe and are run in parallel.
+##
+## A pipeline may consist of more than two commands.
+##
+##     ls | grep old | wc -l
+ls | grep old | wc -l | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and leading whitespace.
+##
+## To redirect the output of a command to a file that already exists (replacing
+## the contents of the file), pipe the output of the command to the `clobber`
+## command.
+##
+#{
+ls | clobber file
+#}
+##
+
+#-     3
+#-     4 file
+#-     0
+
+rm file 1 2 3
+cd -
+rmdir /tmp/pipelines
+

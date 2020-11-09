@@ -1,0 +1,36 @@
+#!/usr/bin/env oh
+
+## #### Method
+##
+## A sequence of actions can be saved with the `method` command.
+##
+#{
+define hello: method () = {
+    echo "Hello, World!"
+}
+#}
+##
+## Once defined, a method can be called in the same way as other commands.
+##
+#{
+hello
+#}
+##
+
+#-     Hello, World!
+
+## Methods can have named parameters.
+##
+#{
+define sum3: method (a b c) = {
+    add $a $b $c
+}
+echo (sum3 1 2 3)
+#}
+##
+
+#-     6
+
+## Methods may have a self parameter. The name for the self parameter must
+## appear before the list of arguments.
+##

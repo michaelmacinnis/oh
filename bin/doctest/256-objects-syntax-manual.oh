@@ -1,0 +1,36 @@
+#!/usr/bin/env oh
+
+## #### Syntax
+##
+## Oh can be extended with the `syntax` command. The `syntax` command is
+## very similar to the `method` command except that the methods it creates
+## are passed their arguments unevaluated. The `eval` command can be used
+## to explicitly evaluate arguments. A name may be specified for the calling
+## environment after the list of arguments. This can then be used to
+## evaluate arguments in the calling environment.
+##
+## The example below uses the `syntax` command to define a new `until` command.
+##
+#{
+define until: syntax (condition (body)) e = {
+    e eval (cons while (cons (list not $condition) $body))
+}
+
+define x: number 10
+until $x {
+    echo $x
+    set x: sub $x 1
+}
+#}
+##
+
+#-     10
+#-     9
+#-     8
+#-     7
+#-     6
+#-     5
+#-     4
+#-     3
+#-     2
+#-     1

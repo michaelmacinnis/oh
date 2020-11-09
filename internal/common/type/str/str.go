@@ -21,6 +21,7 @@ type str = T
 // New creates a new str cell.
 func New(v string) cell.I {
 	s := str(v)
+
 	return &s
 }
 

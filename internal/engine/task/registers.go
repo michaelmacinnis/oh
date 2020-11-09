@@ -53,7 +53,7 @@ func (m *registers) Op() Op {
 
 // PopResult removes the top result from dump.
 func (m *registers) PopResult() cell.I {
-	//println("pop result")
+	// println("pop result")
 	r := pair.Car(m.dump)
 	m.dump = pair.Cdr(m.dump)
 
@@ -85,13 +85,14 @@ func (m *registers) PushOp(s Op) Op {
 
 // PushResult adds the result r to dump.
 func (m *registers) PushResult(r cell.I) {
-	//println("push result")
+	// println("push result")
 	m.dump = pair.Cons(r, m.dump)
 }
 
 // PreviousOp pops the current operation and returns the previous operation.
 func (m *registers) PreviousOp() Op {
 	m.RemoveOp()
+
 	return m.Op()
 }
 
@@ -110,12 +111,13 @@ func (m *registers) RemoveOp() {
 // ReplaceOp replaces the operation at the top of the stack.
 func (m *registers) ReplaceOp(s Op) Op {
 	m.RemoveOp()
+
 	return m.PushOp(s)
 }
 
 // ReplaceResult replaced the current result.
 func (m *registers) ReplaceResult(r cell.I) {
-	//println("replace result")
+	// println("replace result")
 	m.dump = pair.Cons(r, pair.Cdr(m.dump))
 }
 
@@ -145,11 +147,6 @@ func (m *registers) arguments() cell.I {
 		e = m.PopResult()
 	}
 
-	return l
-}
-
-func (m *registers) expand(l cell.I) cell.I {
-	// TODO: Actually do expansion.
 	return l
 }
 

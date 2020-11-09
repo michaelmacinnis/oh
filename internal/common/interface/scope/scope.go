@@ -32,6 +32,7 @@ type scope = I
 // Is returns true if c is a scope.
 func Is(c cell.I) bool {
 	_, ok := c.(scope)
+
 	return ok
 }
 

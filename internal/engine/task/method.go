@@ -14,6 +14,7 @@ type Method Closure
 // Equal returns true if the cell c is the same method as a.
 func (a *Method) Equal(c cell.I) bool {
 	p, ok := c.(*Method)
+
 	return ok && p == a
 }
 

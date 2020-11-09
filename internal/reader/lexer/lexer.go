@@ -130,13 +130,14 @@ func (l *T) emit(c token.Class, v string) {
 
 	t := token.New(c, v, &source)
 
-	//println("emitting:", t.String())
+	// println("emitting:", t.String())
 	l.tokens <- t
 	l.skip()
 }
 
 func (l *T) escape(escaped, a action) action {
 	l.saved = escaped
+
 	return a
 }
 
@@ -228,12 +229,11 @@ func afterDollar(l *T) action {
 		l.emit(token.Symbol, l.Text())
 	case '\'':
 		l.accept(r, w)
+
 		return scanDollarSingleQuoted
 	case '\t', '\n', ' ', '"', '#', '&', '(',
 		')', ';', '<', '>', '`', '|', '}':
 		l.emit(token.Symbol, l.Text())
-	case '{':
-		l.emit('$', l.Text())
 	default:
 		l.emit('$', l.Text())
 	}
@@ -269,9 +269,11 @@ func afterGreaterThan(l *T) action {
 		return nil
 	case '&':
 		l.accept(r, w)
+
 		return afterGreaterThanAmpersand
 	case '>':
 		l.accept(r, w)
+
 		return afterDoubleGreaterThan
 	case '|':
 		l.accept(r, w)
@@ -371,9 +373,11 @@ func collectHorizontalSpace(l *T) action {
 			return skipWhitespace
 		case '#':
 			l.accept(r, w)
+
 			return skipComment
 		case '\t', ' ':
 			l.accept(r, w)
+
 			continue
 		default:
 			s := l.Text()
@@ -424,6 +428,7 @@ func scanDollarSingleQuoted(l *T) action {
 			return nil
 		case '\'':
 			l.emit(token.DollarSingleQuoted, l.Text())
+
 			return collectHorizontalSpace
 		case '\\':
 			return l.escape(scanDollarSingleQuoted, escapeNextCharacter)
@@ -440,6 +445,7 @@ func scanDoubleQuoted(l *T) action {
 			return nil
 		case '"':
 			l.emit(token.DoubleQuoted, l.Text())
+
 			return collectHorizontalSpace
 		case '\\':
 			return l.escape(scanDoubleQuoted, escapeNextCharacter)
@@ -542,6 +548,7 @@ func startState(l *T, state action, ignore string) action {
 
 		if strings.ContainsRune(ignore, rune(r)) {
 			l.skip()
+
 			continue
 		}
 
@@ -587,13 +594,13 @@ func operator(s string) string {
 		"&&":  "and",
 		"<":   "_input_from_",
 		">":   "_output_to_",
-		">&":  "_output_and_errors_to_",
-		">&|": "_output_and_errors_clobber_",
+		">&":  "_output_errors_to_",
+		">&|": "_output_errors_clobber_",
 		">>":  "_append_output_to_",
-		">>&": "_append_output_and_errors_to_",
-		">|":  "_output_clobbers_",
+		">>&": "_append_output_errors_to_",
+		">|":  "_output_clobber_",
 		"|":   "_pipe_output_to_",
-		"|&":  "_pipe_output_and_errors_to_",
+		"|&":  "_pipe_output_errors_to_",
 		"|<":  "_named_pipe_input_from_",
 		"|>":  "_named_pipe_output_to_",
 		"||":  "or",

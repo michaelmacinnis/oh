@@ -8,15 +8,18 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 )
 
-// R S W
-// 1 0 X Task is running.
-// 1 1 X Task is stopping but Runnable has not yet been called.
-// 0 1 X Task is stopping but has not returned from Run.
-// 0 0 X Task is stopped.
+// E R S W
+// 0 1 0 X Task is running.
+// 0 1 1 X Task is stopping but Runnable has not yet been called.
+// 0 0 1 X Task is stopping but has not returned from Run.
+// 0 0 0 X Task is stopped.
 
-// R S W
-// X X 0 Task is not waiting.
-// X X 1 Task is waiting for an external process to finish.
+// E R S W
+// X X X 0 Task is not waiting.
+// X X X 1 Task is waiting for an external process to finish.
+
+// E R S W
+// 1 X X X Task is no longer runnable.
 
 // The type state is a task's state.
 type state struct {
@@ -26,6 +29,7 @@ type state struct {
 
 	result cell.I
 
+	exited   bool
 	running  bool
 	stopping bool
 	waiting  bool
@@ -33,7 +37,22 @@ type state struct {
 
 func fresh() *state {
 	m := &sync.Mutex{}
+
 	return &state{Mutex: m, resume: sync.NewCond(m), stopped: sync.NewCond(m)}
+}
+
+func (s *state) Exit() {
+	s.Lock()
+	defer s.Unlock()
+
+	s.exited = true
+}
+
+func (s *state) Exited() bool {
+	s.Lock()
+	defer s.Unlock()
+
+	return s.exited
 }
 
 // Notify notifies a waiting task that it can continue. If running is set,
@@ -152,8 +171,7 @@ func (s *state) Stop(f func()) {
 // the task has stopped.
 //
 // R S W -> R S W
-// X 0 X -> X 0 X
-// 1 X X -> 1 X X
+// X 0 X -> 0 0 X
 // 0 1 X -> 0 0 X signals task has stopped
 //
 func (s *state) Stopped() {

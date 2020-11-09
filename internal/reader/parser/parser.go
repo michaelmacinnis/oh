@@ -30,7 +30,6 @@ type T struct {
 
 	// Completion state.
 	part  cell.I // The command being parsed, so far.
-	saved cell.I // The command being parsed.
 }
 
 // New creates a new parser.
@@ -51,7 +50,7 @@ func (p *T) Copy(emit func(cell.I), item func() *token.T) *T {
 
 // Current returns the command currently being parsed.
 func (p *T) Current() cell.I {
-	return p.saved
+	return pair.Car(p.part)
 }
 
 // Parse consumes tokens and emits cells until there are no more tokens.
@@ -79,6 +78,7 @@ func (p *T) Parse() {
 	for t := p.peek(); t != nil; t = p.peek() {
 		if t.Is('\n') {
 			p.consume()
+
 			continue
 		}
 
@@ -117,6 +117,7 @@ func (p *T) check(c cell.I) cell.I {
 func (p *T) expect(cs ...token.Class) {
 	if p.peek().Is(cs...) {
 		p.consume()
+
 		return
 	}
 
@@ -147,9 +148,6 @@ func (p *T) peek() *token.T {
 	}
 
 	t := p.item()
-	if t == nil {
-		p.saved = p.part
-	}
 
 	p.token = t
 	p.ahead = 1
@@ -285,10 +283,14 @@ func (p *T) braces() (c cell.I) {
 	if p.peek().Is('{') {
 		p.consume()
 
-		if p.peek().Is('\n') {
+		n := p.peek()
+		if n.Is('\n') {
 			p.consume()
 
 			c = p.subStatement()
+		} else if n.Is('{') {
+			c = p.braces()
+			p.expect('}')
 		} else {
 			c = p.implicitJoin(p.element())
 			c = pair.Cons(c, pair.Null)
@@ -328,6 +330,7 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 			continue
 		} else {
 			c = p.implicitJoin(c)
+
 			break
 		}
 	}
@@ -336,11 +339,17 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 }
 
 func (p *T) statement() (c cell.I) {
+	// Push new part onto current stack.
+	p.part = pair.Null
+    defer func() {
+        p.part = c
+    }()
+
 	c, l := p.assignments()
 	if l != pair.Null {
 		defer func() {
 			if c != nil {
-				c = list.Join(l, c)
+				c = list.Join(l, pair.Cons(c, pair.Null))
 			} else {
 				c = l
 			}
@@ -355,12 +364,10 @@ func (p *T) statement() (c cell.I) {
 
 	c = pair.Cons(c, pair.Null)
 
-	// Push new part onto current stack.
-	p.part = pair.Cons(c, p.part)
-
 	for {
 		if p.peek().Is(token.Space) {
 			p.consume()
+
 			continue
 		}
 
@@ -376,12 +383,7 @@ func (p *T) statement() (c cell.I) {
 
 		c = list.Join(c, t)
 
-		// Update current part.
-		pair.SetCar(p.part, c)
 	}
-
-	// Pop previous part off stack.
-	p.part = pair.Cdr(p.part)
 
 	return c
 }
@@ -409,6 +411,7 @@ func (p *T) block() cell.I {
 	for !p.peek().Is('}') {
 		if p.peek().Is('\n') {
 			p.consume()
+
 			continue
 		}
 
@@ -433,7 +436,9 @@ func (p *T) implicitJoin(c cell.I) cell.I {
 		return c
 	}
 
-	return pair.Cons(sym.New("_join_"), l)
+	l = pair.Cons(sym.New(""), l)
+
+	return pair.Cons(sym.New("mend"), l)
 }
 
 func (p *T) element() cell.I {
@@ -442,8 +447,8 @@ func (p *T) element() cell.I {
 
 		c := p.check(p.value())
 
-		c = list.New(sym.New("_capture_"), c)
-		c = list.New(sym.New("_splice_"), c)
+		c = pair.Cons(sym.New("capture"), c)
+		c = list.New(sym.New("splice"), c)
 
 		return c
 	}
@@ -455,7 +460,14 @@ func (p *T) expression() cell.I {
 	if p.peek().Is('$') {
 		p.consume()
 
-		return list.New(sym.New("_lookup_"), p.check(p.expression()))
+		c := p.braces()
+		if c == nil {
+			c = p.check(p.expression())
+		} else {
+			c = pair.Car(c)
+		}
+
+		return list.New(sym.New("resolve"), p.check(c))
 	}
 
 	return p.value()

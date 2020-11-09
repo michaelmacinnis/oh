@@ -2,7 +2,6 @@ package job
 
 import (
 	"fmt"
-
 	"io"
 	"os"
 	"os/signal"
@@ -38,6 +37,29 @@ func New(group int) *T {
 
 func (j *T) Append(line string) {
 	j.lines = append(j.lines, line)
+}
+
+func (j *T) Await(t *task.T, f func()) {
+	requestq <- func() {
+		if _, found := parent[t]; !found {
+			f()
+		} else {
+			waiting[t] = append(waiting[t], f)
+		}
+	}
+}
+
+func (j *T) AwaitAll(t *task.T, f func()) {
+	requestq <- func() {
+		if t != foreground.main {
+			return
+		}
+		for _, cb := range all {
+			cb()
+		}
+		all = map[*task.T]func(){t: f}
+		checkall()
+	}
 }
 
 func (j *T) Launch(t *task.T, path string, argv []string, attr *os.ProcAttr) error {
@@ -128,6 +150,7 @@ func (j *T) Stopped(t *task.T) {
 		} else {
 			if p, found := parent[t]; found {
 				delete(parent, t)
+				checkall()
 
 				cs := children[p]
 
@@ -135,6 +158,7 @@ func (j *T) Stopped(t *task.T) {
 				for i, c := range cs {
 					if c == t {
 						n = i
+
 						break
 					}
 				}
@@ -150,16 +174,6 @@ func (j *T) Stopped(t *task.T) {
 	}
 }
 
-func (j *T) Wait(t *task.T, f func()) {
-	requestq <- func() {
-		if _, found := parent[t]; !found {
-			f()
-		} else {
-			waiting[t] = append(waiting[t], f)
-		}
-	}
-}
-
 func Fg(w io.Writer, n int) int {
 	r := make(chan int)
 
@@ -167,6 +181,7 @@ func Fg(w io.Writer, n int) int {
 		if len(jobs) == 0 {
 			r <- 1
 			close(r)
+
 			return
 		}
 
@@ -178,6 +193,7 @@ func Fg(w io.Writer, n int) int {
 		if !found {
 			r <- 1
 			close(r)
+
 			return
 		}
 
@@ -229,6 +245,7 @@ var (
 	signalq  chan os.Signal
 
 	active   = map[int]*T{}
+	all      = map[*task.T]func(){}
 	children = map[*task.T][]*task.T{}
 	jobs     = map[int]*T{}
 	parent   = map[*task.T]*task.T{}
@@ -248,6 +265,7 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 		t, found := j.stopped[pid]
 		if !found {
 			println("UNKNOWN PID CONTINUED", pid)
+
 			return
 		}
 
@@ -314,6 +332,26 @@ func (j *T) stop() {
 	for pid := range j.running {
 		process.Stop(pid)
 	}
+}
+
+func checkall() {
+	count := 0
+
+	for p := range parent {
+		if p != foreground.main && all[p] == nil {
+			count++
+		}
+	}
+
+	if count > 0 {
+		return
+	}
+
+	for _, cb := range all {
+		cb()
+	}
+
+	all = map[*task.T]func(){}
 }
 
 func init() { //nolint:gochecknoinits

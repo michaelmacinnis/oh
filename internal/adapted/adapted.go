@@ -1,7 +1,7 @@
 // Use of code in this package is governed by Go's BSD-style license.
 
 // Package adapted contains functions adapted from Go's standard library.
-//nolint:funlen,gomnd,nakedret,wsl
+//nolint:funlen,gomnd,nakedret,nlreturn,wsl
 package adapted
 
 import (
@@ -147,7 +147,7 @@ func findPath(file string) (bool, error) {
 	m := d.Mode()
 	if m.IsDir() {
 		return false, nil
-	} else if m&0111 != 0 {
+	} else if m&0o111 != 0 {
 		return true, nil
 	}
 	return false, os.ErrPermission

@@ -1,0 +1,58 @@
+#!/usr/bin/env oh
+
+mkdir /tmp/redirection
+cd /tmp/redirection
+touch 1 2 3
+
+## ### Input/Output Redirection
+##
+## Standard input, standard output and standard error are initially connected
+## to the terminal. Standard output may be sent to a file.
+##
+#{
+ls > file
+#}
+##
+## The notation `>file` is interpreted by the shell and is not passed as an
+## argument to `ls`. If the file does not exist then the shell creates it.
+## If the file already exists, oh will refuse to clobber the file.
+## Output may also be appended to a file.
+##
+#{
+ls >> file
+#}
+##
+## Standard output and standard error may be redirected,
+#{
+ls non-existent-filename >&errors
+#}
+## or appended to a file.
+#{
+ls errors >>&errors
+#}
+## Standard input may also be redirected.
+##
+##     wc -l <file
+wc -l <file | tr -s ' ' | sed -e 's/^[ 	] *//' # Remove duplicate spaces and leading whitespace.
+wc -l <errors | tr -s ' ' | sed -e 's/^[ 	] *//' # Remove duplicate spaces and leading whitespace.
+##
+
+sort file | awk '{ print "stdout" FS count++ FS $0 }'
+sort errors | awk '{ print "stdout and stderr" FS count++ FS $0 }'
+rm errors file 1 2 3
+cd -
+rmdir /tmp/redirection
+
+#-     8
+#-     2
+#-     stdout 0 1
+#-     stdout 1 1
+#-     stdout 2 2
+#-     stdout 3 2
+#-     stdout 4 3
+#-     stdout 5 3
+#-     stdout 6 file
+#-     stdout 7 file
+#-     stdout and stderr 0 errors
+#-     stdout and stderr 1 ls: cannot access 'non-existent-filename': No such file or directory
+

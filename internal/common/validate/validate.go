@@ -14,9 +14,13 @@ func Variadic(actual cell.I, min, max int) ([]cell.I, cell.I) {
 	expected := make([]cell.I, 0, max)
 
 	for i := 0; i < max; i++ {
-		if actual == pair.Null && i < min {
-			s := Count(min, "argument", "s")
-			panic(fmt.Sprintf("expected %s, passed %d", s, i))
+		if actual == pair.Null {
+			if i < min {
+				s := Count(min, "argument", "s")
+				panic(fmt.Sprintf("expected %s, passed %d", s, i))
+			}
+
+			break
 		}
 
 		expected = append(expected, pair.Car(actual))

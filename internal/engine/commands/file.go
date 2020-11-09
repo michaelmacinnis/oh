@@ -6,12 +6,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/michaelmacinnis/oh/internal/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
 	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
+	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
@@ -23,6 +25,7 @@ func exists(args cell.I) cell.I {
 		path := literal.String(pair.Car(args))
 		if path == "-i" {
 			ignore = true
+
 			continue
 		}
 
@@ -39,12 +42,6 @@ func exists(args cell.I) cell.I {
 	}
 
 	return boolean.Bool(count > 0)
-}
-
-func makePipe(args cell.I) cell.I {
-	validate.Fixed(args, 0, 0)
-
-	return pipe.New(nil, nil)
 }
 
 func open(args cell.I) cell.I {
@@ -83,7 +80,7 @@ func open(args cell.I) cell.I {
 		flags |= os.O_WRONLY
 	}
 
-	f, err := os.OpenFile(path, flags, 0666)
+	f, err := os.OpenFile(path, flags, 0o666)
 	if err != nil {
 		panic(err)
 	}
@@ -99,4 +96,15 @@ func open(args cell.I) cell.I {
 	}
 
 	return pipe.New(r, w)
+}
+
+func tempfifo(args cell.I) cell.I {
+	validate.Fixed(args, 0, 0)
+
+	name, err := adapted.TempFifo("fifo-")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return sym.New(name)
 }

@@ -38,7 +38,7 @@ func New(r *os.File, w *os.File) *pipe {
 
 		r, w, err = os.Pipe()
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
 	}
 
@@ -109,26 +109,18 @@ func (p *pipe) ReadLine() cell.I {
 	p.RLock()
 	defer p.RUnlock()
 
-	s, _ := p.line()
+	s, ok := p.line()
+	if !ok {
+		return pair.Null
+	}
 
 	return str.New(strings.TrimRight(s, "\n"))
 }
 
-// ReaderClose closes the read end of the pipe.
+// ReaderClose closes the read end of the pipe and sets it to nil.
 func (p *pipe) ReaderClose() {
-	p.Lock()
-	defer p.Unlock()
-
-	if p.r == nil {
-		return
-	}
-
-	err := p.r.Close()
-	if err != nil {
-		panic(err)
-	}
-
-	p.r = nil
+	p.readerClosePipe()
+	p.readerPipeNil()
 }
 
 // Write writes a cell to the pipe.
@@ -143,30 +135,19 @@ func (p *pipe) Write(c cell.I) {
 
 	_, err := p.w.WriteString(literal.String(c))
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	_, err = p.w.WriteString("\n")
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 }
 
 // WriterClose closes the write end of the pipe.
 func (p *pipe) WriterClose() {
-	p.Lock()
-	defer p.Unlock()
-
-	if p.w == nil {
-		return
-	}
-
-	err := p.w.Close()
-	if err != nil {
-		panic(err)
-	}
-
-	p.w = nil
+	p.writerClosePipe()
+	p.writerPipeNil()
 }
 
 func (p *pipe) closeableReadEnd() bool {
@@ -196,10 +177,56 @@ func (p *pipe) line() (string, bool) {
 	}
 
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	return s, true
+}
+
+// readerClosePipe closes the read end of the pipe.
+func (p *pipe) readerClosePipe() {
+	p.RLock()
+	defer p.RUnlock()
+
+	if p.r == nil {
+		return
+	}
+
+	err := p.r.Close()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+// readerPipeNil sets the read end of the pipe to nil.
+func (p *pipe) readerPipeNil() {
+	p.Lock()
+	defer p.Unlock()
+
+	p.r = nil
+}
+
+// writerClosePipe closes the write end of the pipe.
+func (p *pipe) writerClosePipe() {
+	p.RLock()
+	defer p.RUnlock()
+
+	if p.w == nil {
+		return
+	}
+
+	err := p.w.Close()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+// writerPipeNil sets the write end of the pipe to nil.
+func (p *pipe) writerPipeNil() {
+	p.Lock()
+	defer p.Unlock()
+
+	p.w = nil
 }
 
 // R converts c to a pipe and returns the read end of the pipe.

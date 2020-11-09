@@ -3,12 +3,13 @@
 // Package common defines common interfaces
 package common
 
-import "github.com/michaelmacinnis/oh/internal/common/interface/cell"
+import (
+	"fmt"
 
-// Stringer is duplicated here so we don't have to import fmt.
-type Stringer interface {
-	String() string
-}
+	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
+)
+
+type Stringer = fmt.Stringer
 
 // String returns the string value for a cell, if possible.
 func String(c cell.I) string {
