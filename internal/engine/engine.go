@@ -86,7 +86,7 @@ func Evaluate(j *job.T, c cell.I) cell.I {
 }
 
 func Resolve(k string) (v string) {
-	defer func () {
+	defer func() {
 		r := recover()
 		if r != nil {
 			v = ""
@@ -100,7 +100,7 @@ func Resolve(k string) (v string) {
 
 	v = common.String(r.Get())
 
-    return
+	return
 }
 
 // System evaluates the command c and returns the result.

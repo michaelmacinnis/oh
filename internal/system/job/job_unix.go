@@ -25,14 +25,20 @@ type T struct {
 }
 
 func New(group int) *T {
-	foreground = &T{
-		group:   group,
-		initial: group,
-		running: map[int]*task.T{},
-		stopped: map[int]*task.T{},
+	r := make(chan *T)
+
+	requestq <- func() {
+		foreground = &T{
+			group:   group,
+			initial: group,
+			running: map[int]*task.T{},
+			stopped: map[int]*task.T{},
+		}
+
+		r <- foreground
 	}
 
-	return foreground
+	return <-r
 }
 
 func (j *T) Append(line string) {

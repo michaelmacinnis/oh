@@ -29,7 +29,7 @@ type T struct {
 	token *token.T        // Token lookahead.
 
 	// Completion state.
-	part  cell.I // The command being parsed, so far.
+	part cell.I // The command being parsed, so far.
 }
 
 // New creates a new parser.
@@ -341,9 +341,9 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 func (p *T) statement() (c cell.I) {
 	// Push new part onto current stack.
 	p.part = pair.Null
-    defer func() {
-        p.part = c
-    }()
+	defer func() {
+		p.part = c
+	}()
 
 	c, l := p.assignments()
 	if l != pair.Null {
