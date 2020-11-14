@@ -52,9 +52,13 @@ func mod(args cell.I) cell.I {
 		panic("divisor must be an integer")
 	}
 
-	dividend := remainder.Num()
+	dividend := &big.Int{}
+	dividend.Set(remainder.Num())
 
 	dividend.Mod(dividend, divisor.Num())
+
+	remainder = &big.Rat{}
+	remainder.SetInt(dividend)
 
 	return num.Rat(remainder)
 }

@@ -55,8 +55,9 @@ func (f *frame) Resolve(k string) (s scope.I, r reference.I) {
 	r = s.Lookup(k)
 
 	for f = f.previous; f != nil && r == nil; f = f.previous {
-		s = f.scope
-		r = s.Public().Get(k)
+		for s = f.scope; s != nil && r == nil; s = s.Enclosing() {
+			r = s.Public().Get(k)
+		}
 	}
 
 	return

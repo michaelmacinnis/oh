@@ -456,7 +456,6 @@ define import: method (path) = {
     return (ecex head)
 }
 
-# TODO: Add disown so we can disown this.
 spawn {
     define modules: map
     while (boolean true) {
@@ -513,6 +512,22 @@ block {
             service (request read-list)
         }
     }
+}
+
+define error: method ((args)) = {
+    _stderr_ write (splice $args)
+}
+
+define read: method () = {
+    _stdin_ read
+}
+
+define read-list: method () = {
+    _stdin_ read-list
+}
+
+define write: method ((args)) e = {
+    _stdout_ write (splice $args)
 }
 `
 }

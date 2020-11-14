@@ -24,6 +24,26 @@ type T struct {
 	stopped map[int]*task.T
 }
 
+type wg struct {
+	fn func()
+	on map[*task.T]struct{}
+}
+
+func Job(group int) *T {
+	r := make(chan *T)
+
+	requestq <- func() {
+		r <- &T{
+			group:   group,
+			initial: group,
+			running: map[int]*task.T{},
+			stopped: map[int]*task.T{},
+		}
+	}
+
+	return <-r
+}
+
 func New(group int) *T {
 	r := make(chan *T)
 
@@ -45,26 +65,38 @@ func (j *T) Append(line string) {
 	j.lines = append(j.lines, line)
 }
 
-func (j *T) Await(t *task.T, f func()) {
+func (j *T) Await(fn func(), p *task.T, ts ...*task.T) {
 	requestq <- func() {
-		if _, found := parent[t]; !found {
-			f()
-		} else {
-			waiting[t] = append(waiting[t], f)
+		w := &wg{
+			fn: fn,
+			on: map[*task.T]struct{}{},
 		}
-	}
-}
 
-func (j *T) AwaitAll(t *task.T, f func()) {
-	requestq <- func() {
-		if t != foreground.main {
-			return
+		if len(ts) == 0 {
+			if foreground != nil && p == foreground.main {
+				ts = background
+			} else {
+				ts = children[p]
+			}
 		}
-		for _, cb := range all {
-			cb()
+
+		for _, t := range ts {
+			if _, found := parent[t]; !found {
+				continue
+			}
+			w.on[t] = struct{}{}
+
+			wgs, ok := waiting[t]
+			if !ok {
+				wgs = map[*wg]struct{}{}
+				waiting[t] = wgs
+			}
+			wgs[w] = struct{}{}
 		}
-		all = map[*task.T]func(){t: f}
-		checkall()
+
+		if len(w.on) == 0 {
+			fn()
+		}
 	}
 }
 
@@ -100,22 +132,32 @@ func (j *T) Launch(t *task.T, path string, argv []string, attr *os.ProcAttr) err
 	return <-errq
 }
 
-func (j *T) Spawn(p, c *task.T, w ...func()) {
+func (j *T) Spawn(p, c *task.T, fn func()) {
 	done := make(chan struct{})
 
 	requestq <- func() {
 		parent[c] = p
 		if p != nil {
 			children[p] = append(children[p], c)
+			if foreground != nil && p == foreground.main {
+				background = append(background, c)
+			}
 		} else {
 			j.main = c
 		}
 
-		if w != nil {
-			if len(w) > 1 {
-				panic("more than one next function")
+		if fn != nil {
+			w := &wg{
+				fn: fn,
+				on: map[*task.T]struct{}{c: struct{}{}},
 			}
-			next = w[0]
+
+			wgs, ok := waiting[c]
+			if !ok {
+				wgs = map[*wg]struct{}{}
+				waiting[c] = wgs
+			}
+			wgs[w] = struct{}{}
 		}
 
 		go c.Run()
@@ -130,19 +172,22 @@ func (j *T) Spawn(p, c *task.T, w ...func()) {
 
 func (j *T) Stopped(t *task.T) {
 	requestq <- func() {
-		if fs, found := waiting[t]; found {
-			for _, f := range fs {
-				f()
+		if wgs, found := waiting[t]; found {
+			for w, _ := range wgs {
+				delete(w.on, t)
+				if len(w.on) == 0 {
+					w.fn()
+					delete(wgs, w)
+				}
 			}
-			delete(waiting, t)
-		}
 
-		if foreground.main == t {
-			next()
+			if len(wgs) == 0 {
+				delete(waiting, t)
+			}
 		}
 
 		if !t.Completed() {
-			if foreground.main == t {
+			if foreground != nil && foreground.main == t {
 				number := 1
 				for n := range jobs {
 					if n >= number {
@@ -156,11 +201,10 @@ func (j *T) Stopped(t *task.T) {
 		} else {
 			if p, found := parent[t]; found {
 				delete(parent, t)
-				checkall()
 
 				cs := children[p]
 
-				n := 0
+				n := -1
 				for i, c := range cs {
 					if c == t {
 						n = i
@@ -170,10 +214,28 @@ func (j *T) Stopped(t *task.T) {
 				}
 
 				last := len(cs) - 1
-				if last >= 0 {
+				if n >= 0 && last >= 0 {
 					cs[n] = cs[last]
 					cs[last] = nil
 					children[p] = cs[:last]
+				}
+
+				cs = background
+
+				n = -1
+				for i, c := range cs {
+					if c == t {
+						n = i
+
+						break
+					}
+				}
+
+				last = len(cs) - 1
+				if n >= 0 && last >= 0 {
+					cs[n] = cs[last]
+					cs[last] = nil
+					background = cs[:last]
 				}
 			}
 		}
@@ -202,6 +264,14 @@ func Fg(w io.Writer, n int) int {
 
 			return
 		}
+
+		wgs := waiting[foreground.main]
+		for wg, _ := range wgs {
+			wg.on[j.main] = wg.on[foreground.main]
+			delete(wg.on, foreground.main)
+		}
+		waiting[j.main] = waiting[foreground.main]
+		delete(waiting, foreground.main)
 
 		foreground.main = j.main
 
@@ -245,17 +315,16 @@ func Jobs(w io.Writer) {
 //nolint:gochecknoglobals
 var (
 	foreground *T
-	next       func()
 
 	requestq chan func()
 	signalq  chan os.Signal
 
-	active   = map[int]*T{}
-	all      = map[*task.T]func(){}
-	children = map[*task.T][]*task.T{}
-	jobs     = map[int]*T{}
-	parent   = map[*task.T]*task.T{}
-	waiting  = map[*task.T][]func(){}
+	active     = map[int]*T{}
+	background = []*task.T{}
+	children   = map[*task.T][]*task.T{}
+	jobs       = map[int]*T{}
+	parent     = map[*task.T]*task.T{}
+	waiting    = map[*task.T]map[*wg]struct{}{}
 )
 
 func (j *T) interrupt() {
@@ -338,26 +407,6 @@ func (j *T) stop() {
 	for pid := range j.running {
 		process.Stop(pid)
 	}
-}
-
-func checkall() {
-	count := 0
-
-	for p := range parent {
-		if p != foreground.main && all[p] == nil {
-			count++
-		}
-	}
-
-	if count > 0 {
-		return
-	}
-
-	for _, cb := range all {
-		cb()
-	}
-
-	all = map[*task.T]func(){}
 }
 
 func init() { //nolint:gochecknoinits

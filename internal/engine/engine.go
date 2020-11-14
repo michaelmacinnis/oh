@@ -42,13 +42,13 @@ func Boot(arguments []string) {
 		env0.Export("_args_", list.New(args[1:]...))
 	}
 
-	j := job.New(0)
+	j := job.Job(0)
 	r := reader.New("boot.oh")
 
 	for _, line := range strings.SplitAfter(boot.Script(), "\n") {
 		c := r.Scan(line)
 		if c != nil {
-			Evaluate(j, c)
+			System(j, c)
 		}
 	}
 }

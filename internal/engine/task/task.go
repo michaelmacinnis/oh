@@ -24,10 +24,9 @@ import (
 const debug = false
 
 type monitor interface {
-	Await(t *T, f func())
-	AwaitAll(t *T, f func())
+	Await(fn func(), t *T, ts ...*T)
 	Launch(t *T, path string, argv []string, attr *os.ProcAttr) error
-	Spawn(p, c *T, w ...func())
+	Spawn(p, c *T, fn func())
 	Stopped(t *T)
 }
 

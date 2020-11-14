@@ -893,7 +893,7 @@ func spawn(t *T) Op {
 
 	child.PushOp(Action(evalBlock))
 
-	t.monitor.Spawn(t, child)
+	t.monitor.Spawn(t, child, nil)
 
 	return t.Return(child)
 }
@@ -1237,29 +1237,29 @@ func unset(t *T) Op {
 }
 
 func wait(t *T) Op {
-	c := t
-	v := pair.Car(t.code)
+	v := []*T{}
 
-	if v != pair.Null {
-		ok := false
-
-		c, ok = v.(*T)
+	var last *T
+	for args := t.code; args != pair.Null; args = pair.Cdr(args) {
+		c := pair.Car(args)
+		t, ok := c.(*T)
 		if !ok {
-			panic("can't wait on " + v.Name())
+			panic("can't wait on " + c.Name())
 		}
+
+		v = append(v, t)
 	}
 
 	t.Wait()
 
-	if v != pair.Null {
-		t.monitor.Await(c, func() {
-			t.Notify(c.Result())
-		})
-	} else {
-		t.monitor.AwaitAll(c, func() {
-			t.Notify(pair.Null)
-		})
-	}
+	t.monitor.Await(func() {
+		res := pair.Null
+		if last != nil {
+			res = last.Result()
+		}
+
+		t.Notify(res)
+	}, t, v...)
 
 	return t.ReplaceOp(Action(resume))
 }
