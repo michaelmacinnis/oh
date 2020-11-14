@@ -1,0 +1,110 @@
+#!/usr/bin/env oh
+
+## # A surprisingly powerful Unix shell
+##
+## ## Description
+##
+## Oh is a Unix shell. If you've used other Unix shells, oh should feel
+## familiar.
+##
+## ![gif](img/oh.gif)
+##
+## Where oh diverges from traditional Unix shells is in its programming
+## language features.
+##
+## At its core, oh is a heavily modified dialect of the Scheme programming
+## language, complete with first-class continuations and proper tail
+## recursion. Like early Scheme implementations, oh exposes environments
+## as first-class values. Oh extends environments to allow both public and
+## private members and uses these extended first-class environments as the
+## basis for its prototype-based object system.
+##
+## Written in Go, oh is also a concurrent programming language. It exposes
+## channels, in addition to pipes, as first-class values. As oh uses the
+## same syntax for code and data, channels and pipes can, in many cases, be
+## used interchangeably. This homoiconic nature also allows oh to support
+## fexprs which, in turn, allow oh to be easily extended. In fact, much of
+## oh is written in oh.
+##
+## For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
+##
+## ## Installing
+##
+## With Go 1.5 or greater installed,
+##
+##     go get github.com/michaelmacinnis/oh
+##
+## According to [gox](https://github.com/mitchellh/gox), oh compiles on the
+## following platforms:
+##
+##     darwin/386
+##     darwin/amd64
+##     dragonfly/amd64
+##     freebsd/386
+##     freebsd/amd64
+##     freebsd/arm
+##     linux/386
+##     linux/amd64
+##     linux/arm
+##     linux/arm64
+##     linux/ppc64
+##     linux/ppc64le
+##     netbsd/386
+##     netbsd/amd64
+##     netbsd/arm
+##     openbsd/386
+##     openbsd/amd64
+##     plan9/386
+##     plan9/amd64
+##     solaris/amd64
+##     windows/386
+##     windows/amd64
+##
+## (Oh compiles and runs on Plan 9 and Windows but should be considered
+## experimental on those plarforms. On Solaris, interactive features are
+## limited).
+##
+## ## Using
+##
+## For more detail see: [Using oh](doc/manual.md)
+##
+## ## License
+##
+## [MIT](LICENSE)
+##
+
+echo "Hello, World!"
+cal 01 2030 | sed -re 's/[ ]+$//g' # Strip trailing spaces.
+date >greeting
+echo "Hello, World!" >>greeting
+wc <greeting | tr -s ' ' # Replace multiple spaces with a single space.
+# Useless use of cat.
+cat greeting | wc | tr -s ' ' # Replace multiple spaces with a single space.
+tail -n1 greeting; cal 01 2030 | sed -re 's/[ ]+$//g' # Strip trailing spaces.
+grep impossible *[a-z]ing &
+wait
+mkdir junk && cd junk
+cd ..
+rm -r greeting junk || echo "rm failed!"
+
+#-     Hello, World!
+#-         January 2030
+#-     Su Mo Tu We Th Fr Sa
+#-            1  2  3  4  5
+#-      6  7  8  9 10 11 12
+#-     13 14 15 16 17 18 19
+#-     20 21 22 23 24 25 26
+#-     27 28 29 30 31
+#-     
+#-      2 8 43
+#-      2 8 43
+#-     Hello, World!
+#-         January 2030
+#-     Su Mo Tu We Th Fr Sa
+#-            1  2  3  4  5
+#-      6  7  8  9 10 11 12
+#-     13 14 15 16 17 18 19
+#-     20 21 22 23 24 25 26
+#-     27 28 29 30 31
+#-     
+
