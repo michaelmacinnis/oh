@@ -264,7 +264,7 @@ func (p *T) possibleSubstitution() cell.I {
 
 		for p.peek().Is(token.Substitute) {
 			s := sym.Token(p.consume())
-			l := list.New(s, p.element())
+			l := pair.Cons(s, p.element())
 			c = list.Append(c, l)
 
 			if !p.peek().Is(token.Substitute) {

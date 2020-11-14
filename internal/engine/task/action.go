@@ -3,6 +3,7 @@
 package task
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -604,7 +605,9 @@ func execBuiltin(t *T) Op {
 //  stack: execCommand Previous ...
 //
 func execCommand(t *T) Op {
-	switch v := t.Result().(type) {
+	r := t.Result()
+
+	switch v := r.(type) {
 	case scope.I, conduit.I, *pair.T:
 		t.PushOp(&registers{code: pair.Cdr(t.code)})
 		t.code = pair.Car(t.code)
@@ -631,7 +634,7 @@ func execCommand(t *T) Op {
 		return t.PushOp(Action(evalArg))
 
 	default:
-		panic("unexpected problem evaluating command")
+		panic("unexpected problem evaluating command " + fmt.Sprintf("%T", r))
 	}
 }
 
