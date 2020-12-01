@@ -8,6 +8,7 @@ import (
 )
 
 type T struct {
+	e chan error
 	i chan string
 	o chan cell.I
 	p *parser.T
@@ -16,6 +17,7 @@ type T struct {
 
 func New(name string) *T {
 	r := &T{
+		e: make(chan error),
 		i: make(chan string),
 		o: make(chan cell.I),
 		s: lexer.New(name),
@@ -60,9 +62,15 @@ func (r *T) Parser() *parser.T {
 	return r.p
 }
 
-func (r *T) Scan(line string) cell.I {
+func (r *T) Scan(line string) (c cell.I, err error) {
 	r.i <- line
-	return <-r.o
+
+	select {
+	case c = <-r.o:
+	case err = <-r.e:
+	}
+
+	return c, err
 }
 
 func (r *T) next() bool {
@@ -77,5 +85,6 @@ func (r *T) next() bool {
 func (r *T) start() {
 	r.next()
 
-	r.p.Parse()
+	r.e <- r.p.Parse()
+	close(r.e)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
+	"github.com/michaelmacinnis/oh/internal/common/interface/rational"
 	"github.com/michaelmacinnis/oh/internal/common/type/num"
 )
 
@@ -46,7 +47,7 @@ func (s *sym) Name() string {
 
 // Rat returns the value of the sym as a big.Rat, if possible.
 func (s *sym) Rat() *big.Rat {
-	return num.Num(s.Literal()).Rat()
+	return rational.Number(num.Num(s.Literal()))
 }
 
 // String returns the text of the sym s.

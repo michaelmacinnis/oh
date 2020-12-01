@@ -1,485 +1,620 @@
-define _connect_: syntax (conduit-name name) e = {
-	define conduit-maker: e::eval $conduit-name
-	syntax (left right) e = {
-		define p: conduit-maker
-		define ec-ex-chan: channel 1
-		spawn {
-			define ec-ex: e::eval: _rew_: quasiquote: block {
-				export (unquote $name) = (unquote $p)
-				unquote $left
-			}
-			p::_writer_close_
-			ec-ex-chan::write $ec-ex
-		}
-		block {
-			define right-ec-ex: e::eval: _rew_: quasiquote: block {
-				export _stdin_ = (unquote $p)
-				unquote $right
-			}
-			p::_reader_close_
-			define left-ec-ex: ec-ex-chan::read
-			define ex: or (left-ec-ex::tail) (right-ec-ex::tail)
-			if $ex: throw $ex
-			return: and (left-ec-ex::head) (right-ec-ex::head)
-		}
-	}
+# For debugging.
+define show: syntax ((args)) = {
+    debug $args
 }
-define _redirect_: syntax (name mode closer) = {
-	syntax (c cmd) e = {
-		define c: e::eval $c
-		if (is-symbol $c) {
-			define l: glob $c
-			if (lt 1: l::length) {
-				throw: exception "can't redirect to/from multiple files"
-			}
-			set c =: l::head
-		}
-		define f = ()
-		if (not: or (is-channel $c) (is-pipe $c)) {
-			set mode: symbol: e::eval $mode
-			if (and (eq w $mode) (exists -i $c)) {
-				throw: exception "${c} exists"
-			}
-			set f: open $mode $c
-			set c = $f
-		}
-		define ec-ex: e::eval: _rew_: quasiquote: block {
-			export (unquote $name) (unquote $c)
-			unquote $cmd
-		}
-		if (not: is-null $f): (f::_get_ $closer)
-		define ex: ec-ex::tail
-		if $ex: throw $ex
-		return: ec-ex::head
-	}
-}
-define ...: method (: args) = {
-	cd $_origin_
-	define path: args::head
-	if (eq 2: args::length) {
-		cd $path
-		set path: args::get 1
-	}
-	while $true {
-		define abs: symbol: '/'::join $PWD $path
-		if (exists $abs): return $abs
-		if (eq $PWD /): return $path
-		cd ..
-	}
-}
-define and: syntax (: lst) e = {
-	define r = $false
-	while (not: is-null $lst) {
-		set r: e::eval: lst::head
-		if (not $r): return $r
-		set lst: lst::tail
-	}
-	return $r
-}
-define _append_stderr_: _redirect_ _stderr_ a _writer_close_
-define _append_stdout_: _redirect_ _stdout_ a _writer_close_
-define _capture_: syntax (cmd) e = {
-	define p: pipe
-	define ec-ex-chan: channel 1
-	spawn {
-		define ec-ex: e::eval: _rew_: quasiquote: block {
-			export _stdout_ = (unquote $p)
-			unquote $cmd
-		}
-		p::_writer_close_
-		ec-ex-chan::write $ec-ex
-	}
-	define r: cons () ()
-	define c = $r
-	while (define l: p::readline) {
-		c::set-tail: cons $l ()
-		set c: c::tail
-	}
-	p::_reader_close_
-	define ex: (ec-ex-chan::read)::tail
-	if $ex: throw $ex
-	return: r::tail
-}
-define catch: syntax (name: clause) e = {
-	define args: list $name throw
-	define body: list throw: symbol: '$%s'::sprintf $name
-	if (is-null $clause) {
-		set body: list $body
-	} else {
-		set body: clause::append $body
-	}
-	define handler: e::eval {
-		list method $args = @$body
-	}
-	define _return: e::eval (quote $return)
-	define _throw = $throw
-	e::export throw: method (condition) = {
-		export throw = $_throw
-		_return: handler $condition $_throw
-	}
-}
-define _channel_stderr_: _connect_ $channel _stderr_
-define _channel_stdout_: _connect_ $channel _stdout_
-define clobber: builtin (: args) = {
-	tee @$args >/dev/null
-}
-define coalesce: syntax (: lst) e = {
-	while (and (not: is-null: lst::tail) (not: resolves: lst::head)) {
-		set lst: lst::tail
-	}
-	if (is-null: lst::tail): return: e::eval: lst::head
-	return: e::eval: symbol: '$%s'::sprintf: lst::head
-}
-define echo: builtin (: args) = {
-	if (is-null $args) {
-		_stdout_::write: symbol ''
-	} else {
-		_stdout_::write @(for $args $symbol)
-	}
-}
-define error: builtin (: args) =: _stderr_::write @$args
-# Shortcut for defining simple functions with a single parameter:
-#
-#     fn foo(bar) {
-#         ...
-#     }
-#
-define fn: syntax (name args: body) e = {
-	e::eval: list define $name {
-		list builtin (list $args) = @$body
-	}
-}
-define for: method (l m) = {
-	define r: cons () ()
-	define c = $r
-	while (not: is-null $l) {
-		c::set-tail: cons (m: l::head) ()
-		set c: c::tail
-		set l: l::tail
-	}
-	return: r::tail
-}
-define glob: builtin (: args) =: return $args
-define _import_request_: channel 1
-define _import_: method (modules callback path) = {
-	define import-return = $return
-	catch ex {
-		callback: cons () $ex
-		import-return
-	}
-	define import: method (path) = {
-		define ec-ex: (method () = {
-			_import_request_::write $return $path
-			return ()
-		})
-		define ex: ec-ex::tail
-		if $ex: throw $ex
-		define ec: ec-ex::head
-		if $ec: return $ec
-		import-return
-	}
-	define module-name = $false
-	define module: method (name) = {
-		if (modules::has $name) {
-			define module-object: modules::get $name
-			callback: list $module-object
-			import-return
-		}
-		set module-name = $name
-	}
-	define module-object: object {
-		source $path
-	}
-	if $module-name {
-		modules::set $module-name $module-object
-	}
-	callback: list $module-object
-}
-define import: method (path) = {
-	define response: channel
-	_import_request_::write (method (returned) = {
-		response::write $returned
-	}) $path
-	define ec-ex: response::read
-	define ex: ec-ex::tail
-	if $ex: throw $ex
-	return: ec-ex::head
-}
-define is-list: method (l) = {
-	if (is-null $l): return $false
-	if (not: is-cons $l): return $false
-	if (is-null: l::tail): return $true
-	is-list: l::tail
-}
-define is-text: method (t) =: or (is-string $t) (is-symbol $t)
-# Last File Manager cd.
-define lcd: method () e = {
-	catch unused {
-		return
-	}
-	if (not: which lfm >/dev/null) {
-		return
-	}
-	export LFMPATHFILE = "/tmp/lfm-${_pid_}.path"
-	command lfm -1
-	if (not: exists $LFMPATHFILE) {
-		return
-	}
-	define f: open r $LFMPATHFILE
-	define dn: f::readline
-	f::close
-	rm $LFMPATHFILE
-	e::eval: quasiquote: cd (unquote $dn)
-}
-# Change working dir to last dir on exit from lf.
-define lf: builtin (:args) e = {
-	catch unused {
-		return
-	}
-	if (not: which lf >/dev/null) {
-		return
-	}
-	define temp-file @(_capture_: mktemp)
-	command lf "--last-dir-path=${temp-file}" @$args
-	if (not: test -f $temp-file) {
-		return
-	}
-	define dn @(_capture_: cat $temp-file)
-	rm $temp-file
-	if $dn {
-		e::eval: quasiquote: cd (unquote $dn)
-	}
-}
-define module: method (name) = # no-op
-define map: syntax (: literal) e = {
-    define o: object
-    for $literal: method (entry) = {
-        define k: entry::head
-        if (is-list $k) {
-            set k: e::eval $k
-	}
-        define v: entry::get 1
-        if (eq 1: v::length) {
-            set v: v::head
+
+# Foundational stuff.
+
+define and: syntax ((lst)) e = {
+    define r $False
+    while (not (null? $lst)) {
+        set r: e eval (lst head)
+        if (not $r) {
+            return $r
         }
-        o::_set_ k: e::eval $v
+        set lst (lst tail)
     }
-    export del = $_del_
-    export get = $_get_
-    export set = $_set_
-    return $o
+    return $r
 }
-# TODO: Replace with builtin rather than invoking bc.
-define math: method (S) e = {
-	catch ex {
-		set $ex::type = error/syntax
-		set $ex::message = "Malformed expression: ${S}"
-	}
 
-	float @(_capture_ (block {
-		echo 'scale=6'
-		write: symbol $S
-	} | bc))
+define eq?: method ((args)) = {
+    define len: args length
+    if (gt? 2 $len) {
+        throw "expected 2 arguments, passed ${len}"
+    }
+
+    define c: args head
+    set args: args tail
+    while (not: null? $args) {
+        if (not: equal? (string $c) (string (args head))) {
+            return $False
+        }
+
+        set args: args tail
+    }
+
+    return $True
 }
-define object: syntax (: body) e = {
-	e::eval: cons block: body::append: quote (context)
+
+define list: method ((l)) = {
+    return $l
 }
-define or: syntax (: lst) e = {
-	define r = $false
-	while (not: is-null $lst) {
-		set r: e::eval: lst::head
-		if $r: return $r
-		set lst: lst::tail
-	}
-	return $r
+
+define ne?: method ((args)) = {
+    not: eq? (splice $args)
 }
-define _pipe_stderr_: _connect_ $pipe _stderr_
-define _pipe_stdout_: _connect_ $pipe _stdout_
-define printf: method (f: args) =: echo: (string $f)::sprintf @$args
-define _process_substitution_: syntax (:args) e = {
-	define chans = ()
-	define fifos = ()
-	define cmd: for $args: method (arg) = {
-		if (not: is-cons $arg): return $arg
-		if (eq _substitute_stdin_: arg::head) {
-			define chan: channel 1
-			define fifo: temp-fifo
-			spawn {
-				chan::write: e::eval: _rew_: quasiquote {
-					_redirect_stdin_ {
-						unquote $fifo
-						unquote: arg::tail
-					}
-				}
-			}
-			set chans: cons $chan $chans
-			set fifos: cons $fifo $fifos
-			return $fifo
-		}
-		if (eq _substitute_stdout_: arg::head) {
-			define chan: channel 1
-			define fifo: temp-fifo
-			spawn {
-				chan::write: e::eval: _rew_: quasiquote {
-					_redirect_stdout_ {
-						unquote $fifo
-						unquote: arg::tail
-					}
-				}
-			}
-			set chans: cons $chan $chans
-			set fifos: cons $fifo $fifos
-			return $fifo
-		}
-		return $arg
-	}
-	define main-ec-ex: e::eval: _rew_ $cmd
-	define ec-exs ()
-	for $chans: method (chan) = {
-		set ec-exs: cons (chan::read) $ec-exs
-	}
-	set ec-exs: cons $main-ec-ex $ec-exs
-	for $ec-exs: method (ec-ex) = {
-		define ex: ec-ex::tail
-		if $ex: throw $ex
-	}
-	rm @$fifos
-	return: main-ec-ex::head
+
+define not:: syntax ((v)) e = {
+    return (not (e eval $v))
 }
+
+define or: syntax ((lst)) e = {
+    define r $False
+    while (not (null? $lst)) {
+        set r: e eval (lst head)
+        if $r {
+            return $r
+        }
+        set lst (lst tail)
+    }
+    return $r
+}
+
+define source: builtin (basename) e = {
+    define name $basename
+    define paths ()
+
+    if (resolves? OHPATH) {
+        set paths: rend : $OHPATH
+    }
+
+    while (and (not (null? $paths)) (not (exists $name))) {
+        set name: mend / (paths head) $basename
+        set paths: paths tail
+    }
+
+    define f: open r- $name
+
+    define r: cons () ()
+    define c $r
+    while (define l: f read-list) {
+        c set-tail (cons $l ())
+        set c: c tail
+    }
+    set c: r tail
+
+    f close
+
+    define rval $False
+    define eval-list: method (first rest) = {
+        if (null? $first) {
+            return $rval
+        }
+        set rval: e eval $first
+        eval-list (rest head) (rest tail)
+    }
+    eval-list (c head) (c tail)
+
+    return $rval
+}
+
 define quasiquote: syntax (cell) e = {
-	if (not: is-cons $cell): return $cell
-	if (is-null $cell): return $cell
-	if (eq unquote: cell::head): return: e::eval: cell::get 1
-	cons {
-		e::eval: list quasiquote (cell::head)
-		e::eval: list quasiquote (cell::tail)
-	}
-}
-define read: builtin () =: _stdin_::read
-define readline: builtin () =: _stdin_::readline
-define readlist: builtin () =: _stdin_::readlist
-define _redirect_stderr_: _redirect_ _stderr_ w _writer_close_
-define _redirect_stdin_: _redirect_ _stdin_ r _reader_close_
-define _redirect_stdout_: _redirect_ _stdout_ w _writer_close_
-define _rew_: method (command) = {    # return exception wrapper => rew
-	quasiquote: (method () = {
-		define ec: status $false
-		catch ex {
-			return: cons $ec $ex
-		}
-		set ec: unquote $command
-		throw ()
-	})
-}
-define source: syntax (name) e = {
-	define basename: e::eval $name
-	define paths = ()
-	define name = $basename
+    if (not (cons? $cell)) {
+        return $cell
+    }
 
-	if (has OHPATH): set paths: ':'::split $OHPATH
-	while (and (not: is-null $paths) (not: exists $name)) {
-		set name: '/'::join (paths::head) $basename
-		set paths: paths::tail
-	}
+    if (null? $cell) {
+        return $cell
+    }
 
-	if (not: exists $name): set name = $basename
+    if (equal? unquote (cell head)) {
+        return (e eval (cell get 1))
+    }
 
-	define f: open r- $name
+    cons {
+        e eval (list quasiquote (cell head))
+        e eval (list quasiquote (cell tail))
+    }
+}
 
-	define r: cons () ()
-	define c = $r
-	while (define l: f::readlist) {
-		c::set-tail: cons $l ()
-		set c: c::tail
-	}
-	set c: r::tail
-	f::close
+define quote: syntax (v) = {
+    return $v
+}
 
-	define rval: status 0
-	define eval-list: method (first rest) o = {
-		if (is-null $first): return $rval
-		set rval: e::eval $first
-		eval-list (rest::head) (rest::tail)
-	}
-	eval-list (c::head) (c::tail)
-	return $rval
+define object: syntax ((body)) e = {
+    body append (quote ((method self () = (return (resolve self)))))
+    e eval (cons block $body)
 }
-define umask: method (: args) = {
-	catch ex {
-		if (eq '_umask_: command not found' $ex::message) {
-			set $ex::message = "not implemented on ${_platform_}"
-		}
-	}
 
-	if (is-null args) {
-		define omask: _umask_
-		printf '%03o' omask
-		return omask
-	}
-	_umask_ @args
+# TODO: Add optional map literal argument.
+define map: method () = {
+    object {
+        export del $unset
+        export get $get
+        export has $set?
+        export set $export
+    }
 }
-define write: method (: args) =: _stdout_::write @$args
-export quote: syntax (cell) =: return $cell
-_sys_::export complete: method self (first completing) = {
-	return ()
-}
-_sys_::export _exception_: method (type status message line file) e = {
-	object {
-		export type = $type
-		export status = $status
-		export message = $message
-		export line = $line
-		export file = $file
-	}
-}
-# The generator method exception can be called in three ways:
-# exception <message>
-# exception <value> <message>
-# exception <type> <value> <message>
-# If not provided value defaults to status false and type to error/runtime.
-_sys_::export exception: method (message :args) e = {
-	define s: status $false
-	define t: symbol error/runtime
-	if (not: is-null $args) {
-		set s: args::head
-		set args: args::tail
-	}
-	if (not: is-null $args) {
-		set t = $s
-		set s: args::head
-		set args: args::tail
-	}
-	_exception_ $t $s $message {
-		export line: e::eval: get-line-number
-		export file: e::eval: get-source-file
-	}
-}
-_sys_::export get-completions: method self (first completing) = {
-	catch unused {
-		return ()
-	}
-	self::complete $first $completing
-}
-_sys_::export get-prompt: method self (suffix) = {
-	catch unused {
-		return $suffix
-	}
-	self::prompt $suffix
-}
-_sys_::export prompt: method (suffix) = {
-	define dirs: '/'::split $PWD
-	return: ''::join (dirs::get: integer '-1') $suffix
-}
-_sys_::export throw: method (c) = {
-	error: ': '::join $c::file $c::line $c::type $c::message
-	fatal $c::status
-}
-# Importer. (Double spawn so that wait won't wait for this).
-spawn: spawn {
-	define modules: map
-	while $true {
-		_import_ $modules @(_import_request_::readlist)
-	}
-}
-exists ('/'::join $HOME .ohrc) && source ('/'::join $HOME .ohrc)
 
+define for: method (l m) = {
+    define r: cons () ()
+    define c $r
+    while (not: null? $l) {
+        c set-tail (cons (m (l head)) ())
+        set c (c tail)
+        set l (l tail)
+    }
+    return (r tail)
+}
+
+# Capture, pipe, and redirection stuff.
+
+define append-output-to
+define append-output-errors-to
+define capture
+define input-from
+define output-clobbers
+define output-to
+define output-errors-clobbers
+define output-errors-to
+define pipe-output-to
+define pipe-output-errors-to
+define process-substitution
+
+block {
+    define wrap-redir-r-ex: method ((block)) = {
+        set block: cons block $block
+
+        quasiquote ((method () = {
+            define r: boolean false
+
+            catch ex {
+                return (cons $r $ex)
+            }
+
+            set r (unquote $block)
+
+            throw ()
+        }))
+    }
+
+    define collect-unwrap-r-ex: method (c n) = {
+        define r $False
+
+        set n: number $n
+        while (not $n) {
+            define rex: c read
+
+            set r: rex head
+
+            define ex: rex tail
+            if (not (null? $ex)) {
+                throw $ex
+            }
+
+            set n: add $n -1
+        }
+
+        return $r
+    }
+
+    define override-stdin: method (e c cmd) = {
+        e eval (wrap-redir-r-ex {
+            list export stdin $c
+        } $cmd)
+    }
+
+    define override-stdout: method (e c cmd) = {
+        e eval (wrap-redir-r-ex {
+            list export stdout $c
+        } $cmd)
+    }
+
+    define override-stdout-stderr: method (e c cmd) = {
+        e eval (wrap-redir-r-ex {
+            list export stdout $c
+            list export stderr $c
+        } $cmd)
+    }
+
+    define make-pipe: method (override) = {
+        syntax (right (left)) e = {
+            define c: channel 2
+            define p: pipe
+
+            spawn {
+                c write (override $e $p $left)
+                p writer-close
+            } 
+
+            c write (override-stdin $e $p $right)
+            p reader-close
+
+            collect-unwrap-r-ex $c 2
+        }
+    }
+
+    define make-redirect: method (check closer mode override) = {
+        syntax (c cmd) e = {
+            define c: e eval $c
+            if (symbol? $c) {
+                define l: glob $c
+                if (lt? 1 (l length)) {
+                    throw "can't redirect to/from multiple files"
+                }
+                set c: l head
+            }
+            define f ()
+            if (not (or (channel? $c) (pipe? $c))) {
+                if (and $check (exists -i $c)) {
+                    if (eq? w $mode) {
+                        throw "${c} exists"
+                    }
+                } else {
+                    if (eq? r $mode) {
+                        throw "${c} does not exist"
+                    }
+                }
+                set f: open $mode $c
+                set c $f
+            }
+            define ec-ex: override $e $c $cmd
+            if (not: null? $f) {
+                f $closer
+            }
+            define ex: ec-ex tail
+            if (not: null? $ex) {
+                throw $ex
+            }
+            return (ec-ex head)
+        }
+    }
+
+    set append-output-to: make-redirect true writer-close a $override-stdout
+    set append-output-errors-to: make-redirect true writer-close a $override-stdout-stderr
+
+    set capture: syntax ((cmd)) e = {
+        define c: channel 1
+        define p: pipe
+
+        spawn {
+            c write (override-stdout $e $p $cmd)
+            p writer-close
+        }
+
+        define s: cons () ()
+        define r $s
+
+        while (not: null? (define l: p read-line)) {
+            r set-tail (cons $l ())
+            set r (r tail)
+        }
+
+        p reader-close
+
+        collect-unwrap-r-ex $c 1
+
+        return (s tail)
+    }
+
+    set input-from: make-redirect true reader-close r $override-stdin
+    set output-clobbers: make-redirect () writer-close w $override-stdout
+    set output-to: make-redirect true writer-close w $override-stdout
+    set output-errors-clobbers: make-redirect () writer-close w $override-stdout-stderr
+    set output-errors-to: make-redirect true writer-close w $override-stdout-stderr
+    set pipe-output-to: make-pipe $override-stdout
+    set pipe-output-errors-to: make-pipe $override-stdout-stderr
+
+    set process-substitution: syntax ((args)) e = {
+        define chans ()
+        define fifos ()
+
+        define cmd: for $args (method (arg) = {
+            if (not: cons? $arg) {
+                return $arg
+            }
+
+            if (equal? -named-pipe-input-from (arg head)) {
+                define chan: channel 1
+                define fifo: temp-fifo
+
+                spawn {
+                    define f: open w $fifo
+                    chan write (override-stdout $e $f (arg tail))
+                    f close
+                }
+
+                set chans: cons $chan $chans
+                set fifos: cons $fifo $fifos
+
+                return $fifo
+            }
+
+            if (equal? -named-pipe-output-to (arg head)) {
+                define chan: channel 1
+                define fifo: temp-fifo
+
+                spawn {
+                    define f: open r $fifo
+                    chan write (override-stdin $e $f (arg tail))
+                    f close
+                }
+
+                set chans: cons $chan $chans
+                set fifos: cons $fifo $fifos
+
+                return $fifo
+            }
+
+            return $arg
+        })
+
+        define mainecex: e eval (wrap-redir-r-ex $cmd)
+
+        define ecexs ()
+        for $chans (method (chan) = {
+            set ecexs: cons (chan read) $ecexs
+        })
+
+        set ecexs: cons $mainecex $ecexs
+
+        for $fifos (method (fifo) = {
+            rm $fifo
+        })
+
+        for $ecexs (method (ecex) = {
+            define ex: ecex tail
+            if (not: null? $ex) {
+                throw $ex
+            }
+        })
+
+        return (mainecex head)
+    }
+}
+
+# Import stuff.
+
+define import
+define module: method (name) = # At the top-level module is a no-op.
+
+block {
+    define do-import: method (callback path) = {
+        define import-return $return
+
+        catch ex {
+            callback (cons () $ex)
+            import-return
+        }
+
+        define import: method (path) = {
+            define ecex: (method () = {
+                request write $return $path
+                return ()
+            })
+
+            define ex: ecex tail
+            if (not: null? $ex) {
+                throw $ex
+            }
+
+            define ec: ecex head
+            if (not: null? $ec) {
+                return $ec
+            }
+
+            import-return
+        }
+
+        define module-name ()
+
+        define module: method (name) = {
+            if (modules has $name) {
+                define module-object: modules get $name
+                callback (list $module-object)
+                import-return
+            }
+            set module-name $name
+        }
+
+        define module-object: object {
+            source $path
+        }
+
+        if (not: null? $module-name) {
+            modules set $module-name $module-object
+        }
+
+        callback (list $module-object)
+    }
+
+    set import: method (path) = {
+        define response: channel
+
+        request write (method (returned) = {
+            response write $returned
+        }) $path
+
+        define ecex: response read
+
+        define ex: ecex tail
+        if (not: null? $ex) {
+            throw $ex
+        }
+
+        return (ecex head)
+    }
+
+    define modules: map
+    define request: channel 1
+
+    spawn {
+        while (boolean true) {
+            do-import (splice (request read-list))
+        }
+    }
+}
+
+# Prompt stuff.
+
+define prompt
+define replace-prompt-fn
+
+block {
+    define call-make-prompt: method (suffix) = {
+        catch ignored {
+            return $suffix
+        }
+
+        make-prompt $suffix
+    }
+
+    define make-prompt: method (suffix) = {
+        define d: string-replace $PWD $HOME ~
+        mend '' $USER @ (splice (capture hostname)) : $d $suffix
+    }
+
+    set prompt: method (suffix) = {
+        define response: channel 1
+        request write get $response $suffix
+        response read
+    }
+
+    set replace-prompt-fn: method (fn) = {
+        define response: channel 1
+        request write set $response $fn
+        response read
+    }
+
+    define request: channel 1
+
+    define service: method (request) = {
+        define type: request get 0
+        define response: request get 1
+
+        if (equal? $type get) {
+            response write (call-make-prompt (request get 2))
+        } else {
+            define previous-make-prompt $make-prompt
+            set make-prompt (request get 2)
+            response write $previous-make-prompt
+        }
+    }
+
+    spawn {
+        while (boolean true) {
+            service (request read-list)
+        }
+    }
+}
+
+# Exception stuff.
+
+define catch: syntax (name (clause)) e = {
+    define body: list throw (list resolve $name)
+
+    if (null? $clause) {
+        set body: list body
+    } else {
+        set body: clause append $body
+    }
+
+    define defn: list method (list $name throw) =
+    defn extend $body
+
+    define handler: e eval $defn
+
+    define _return_: e eval (list resolve return)
+    define _throw_ $throw
+
+    e export throw: method (msg) = {
+        #export throw $_throw_
+        _return_ (handler $msg $_throw_)
+    }
+}
+
+sys export throw: method s (msg) = {
+    error $msg
+    fatal 1
+}
+
+# Wrapped command stuff.
+
+block {
+    define wrapped-umask $umask
+
+    set umask: method ((args)) = {
+        define mask: wrapped-umask (splice $args)
+        if (null? $args) {
+            echo $mask
+        }
+        return $mask
+    }
+}
+
+# Command stuff.
+
+define ...: method (dir base) = {
+    cd $dir || return $base
+    while $True {
+        define path: mend / $PWD $base
+        if (exists $path) {
+            return $path
+        }
+        if (eq? $PWD /) {
+            return $base
+        }
+        cd ..
+    }
+}
+
+define coalesce: method ((terms)) e = {
+    define next: terms tail
+    define term: terms head
+
+    while $next {
+        if (e eval (list resolves? $term)) {
+            return (e eval (list resolve $term))
+        }
+
+        set term: next head
+        set next: next tail
+    }
+
+    return $term
+}
+
+define error: method ((args)) = {
+    stderr write-line (splice $args)
+}
+
+define glob: builtin ((args)) = {
+    return $args
+}
+
+define ls: method ((args)) = {
+    command ls --color=auto (splice $args)
+}
+
+define read: method () = {
+    stdin read
+}
+
+define read-line: method () = {
+    stdin read-line
+}
+
+define read-list: method () = {
+    stdin read-list
+}
+
+define write: method ((args)) e = {
+    stdout write (splice $args)
+}
+
+define write-line: method ((args)) = {
+    stdout write-line (splice $args)
+}
+
+export OH_RC: coalesce OH_RC ~/.oh-rc
+exists $OH_RC && source $OH_RC

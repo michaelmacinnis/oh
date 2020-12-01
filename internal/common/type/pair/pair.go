@@ -7,7 +7,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
-	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 )
 
 const name = "cons"
@@ -26,11 +25,6 @@ type T struct {
 
 type pair = T
 
-// Bool returns the boolean value of the pair p.
-func (p *pair) Bool() bool {
-	return p != Null
-}
-
 // Equal returns true if c is a pair with elements that are equal to p's.
 func (p *pair) Equal(c cell.I) bool {
 	if p == Null && c == Null {
@@ -42,6 +36,20 @@ func (p *pair) Equal(c cell.I) bool {
 
 // Literal returns the literal representation of the pair p.
 func (p *pair) Literal() string {
+	return p.string(literal.String)
+}
+
+// Name returns the name for a pair type.
+func (p *pair) Name() string {
+	return name
+}
+
+// String returns the text representation of the pair p.
+func (p *pair) String() string {
+	return p.string(common.String)
+}
+
+func (p *pair) string(toString func(cell.I) string) string {
 	s := ""
 
 	improper := false
@@ -63,7 +71,7 @@ func (p *pair) Literal() string {
 	if head == nil {
 		s += "()"
 	} else if head != Null {
-		s += literal.String(head)
+		s += toString(head)
 	}
 
 	if sublist {
@@ -78,7 +86,7 @@ func (p *pair) Literal() string {
 	if tail == nil {
 		s += "()"
 	} else {
-		s += literal.String(tail)
+		s += toString(tail)
 	}
 
 	if improper {
@@ -86,16 +94,6 @@ func (p *pair) Literal() string {
 	}
 
 	return s
-}
-
-// Name returns the name for a pair type.
-func (p *pair) Name() string {
-	return name
-}
-
-// String returns the text representation of the pair p.
-func (p *pair) String() string {
-	return p.Literal()
 }
 
 // Functions specific to pair.
@@ -171,9 +169,6 @@ func implements() { //nolint:deadcode,unused
 
 	// The pair type is a stringer.
 	_ = common.Stringer(&t)
-
-	// The pair type has a truth value.
-	_ = truth.I(&t)
 }
 
 func init() { //nolint:gochecknoinits

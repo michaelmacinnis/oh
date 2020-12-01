@@ -21,7 +21,7 @@ type T chan cell.I
 type channel = T
 
 // New creates a new channel cell.
-func New(cap int64) *channel {
+func New(cap int64) cell.I {
 	c := channel(make(chan cell.I, cap))
 
 	return &c
@@ -75,6 +75,11 @@ func (c *channel) ReaderClose() {}
 
 // Write writes a cell to the channel.
 func (c *channel) Write(v cell.I) {
+	*c <- v
+}
+
+// WriteLine writes a cell to the channel.
+func (c *channel) WriteLine(v cell.I) {
 	*c <- v
 }
 

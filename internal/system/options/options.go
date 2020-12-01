@@ -13,7 +13,7 @@ var (
 	command     string
 	interactive bool
 	monitor     bool
-	script      bool
+	script      string
 	terminal    int
 	usage       = `oh
 
@@ -62,7 +62,7 @@ func Parse() {
 		panic(err.Error())
 	}
 
-	script = false
+	script = ""
 
 	command, _ = opts.String("--command")
 
@@ -75,7 +75,7 @@ func Parse() {
 	if path != "" {
 		command = "source " + path
 		name = path
-		script = true
+		script = path
 	} else if command == "" && isatty.IsTerminal(os.Stdin.Fd()) {
 		interactive = true
 		monitor = true
@@ -92,7 +92,7 @@ func Parse() {
 	monitor = monitor != invertMonitor
 }
 
-func Script() bool {
+func Script() string {
 	return script
 }
 

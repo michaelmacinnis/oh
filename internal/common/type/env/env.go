@@ -16,14 +16,10 @@ const name = "environment"
 type T struct {
 	previous scope.I
 	private  *hash.T
-	*public
+	public   *hash.T
 }
 
 type env = T
-
-// We alias hash.T to public so that when embedded it is easy to refer to
-// it by name. Embedding public also lets us access its methods directly.
-type public = hash.T
 
 // New creates a new env.
 func New(previous scope.I) scope.I {
@@ -60,12 +56,12 @@ func (e *env) Equal(c cell.I) bool {
 
 // Export associates the public name k with the cell v in the env e.
 func (e *env) Export(k string, v cell.I) {
-	e.Set(k, v)
+	e.public.Set(k, v)
 }
 
 // Exported returns the number of exported variables.
 func (e *env) Exported() int {
-	return e.Size()
+	return e.public.Size()
 }
 
 // Expose returns a scope with public and private members visible.
@@ -82,7 +78,7 @@ func (e *env) Lookup(k string) reference.I {
 	v := e.private.Get(k)
 
 	if v == nil {
-		v = e.Get(k)
+		v = e.public.Get(k)
 	}
 
 	if v == nil && e.previous != nil {
@@ -108,7 +104,16 @@ func (e *env) Remove(k string) bool {
 		return false
 	}
 
-	return e.private.Del(k) || e.Del(k) || e.Enclosing().Remove(k)
+	if e.private.Del(k) || e.public.Del(k) {
+		return true
+	}
+
+	parent := e.Enclosing()
+	if parent == nil {
+		return false
+	}
+
+	return parent.Remove(k)
 }
 
 // Visible returns true if exported variables in o are visible in e.

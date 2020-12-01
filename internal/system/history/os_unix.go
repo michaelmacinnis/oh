@@ -10,5 +10,10 @@ import (
 )
 
 func file(op func(string) (*os.File, error)) (*os.File, error) {
-	return op(path.Join(os.Getenv("HOME"), ".oh_history"))
+	s, ok := os.LookupEnv("OH_HISTORY")
+	if !ok {
+		s = path.Join(os.Getenv("HOME"), ".oh-history")
+	}
+
+	return op(s)
 }

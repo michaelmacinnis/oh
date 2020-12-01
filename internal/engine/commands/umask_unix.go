@@ -1,8 +1,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
-
 package commands
 
 import (
@@ -12,7 +10,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
-	"golang.org/x/sys/unix"
+	"github.com/michaelmacinnis/oh/internal/system/process"
 )
 
 func umask(args cell.I) cell.I {
@@ -23,10 +21,10 @@ func umask(args cell.I) cell.I {
 		nmask = integer.Value(v[0])
 	}
 
-	omask := unix.Umask(int(nmask))
+	omask := process.Umask(int(nmask))
 
 	if nmask == 0 {
-		unix.Umask(omask)
+		process.Umask(omask)
 	}
 
 	return sym.New(fmt.Sprintf("0o%o", omask))

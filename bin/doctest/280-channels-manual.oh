@@ -39,7 +39,7 @@ while $True {
     } <$connector >$filtered
 
     set connector $filtered
-} >${prime-numbers} &
+} >$prime-numbers &
 
 
 define count: number 100
@@ -47,13 +47,15 @@ printf "The first %d prime numbers\n" $count
 
 define line ''
 while (not $count) {
-	define p: prime-numbers read
-	set line: mend '' $line (sprintf "%7.7s" $p)
+    define p: prime-numbers read
+
+    set line: mend '' $line (sprintf "%7.7s" $p)
+
     set count: sub $count 1
     if (mod $count 10) {
-		echo $line
-		set line ''
-	}
+        echo $line
+        set line ''
+    }
 }
 #}
 ##

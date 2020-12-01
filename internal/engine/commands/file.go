@@ -17,6 +17,10 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
+func device(m os.FileMode) bool {
+	return m&(os.ModeDevice|os.ModeCharDevice) > 0
+}
+
 func exists(args cell.I) cell.I {
 	count := 0
 	ignore := false
@@ -36,7 +40,9 @@ func exists(args cell.I) cell.I {
 			return boolean.False
 		}
 
-		if ignore && !s.Mode().IsRegular() {
+		if ignore && device(s.Mode()) {
+			// Report device files as not existing.
+			// So that redirections to /dev/null etc. work.
 			return boolean.False
 		}
 	}
@@ -82,7 +88,7 @@ func open(args cell.I) cell.I {
 
 	f, err := os.OpenFile(path, flags, 0o666)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	r := f

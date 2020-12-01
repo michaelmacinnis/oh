@@ -1,0 +1,27 @@
+#!/usr/bin/env oh
+
+if (ne? 2 (@ length)) {
+    error "usage: $0 <pattern> <output>"
+    exit 1
+}
+
+define dir: ... $ORIGIN doctest
+define pattern $1
+define output $2
+
+define base `(basename $output)
+echo "generating ${base}"
+
+export stdout: open 'w' (mend '/' $ORIGIN $output)
+
+find $dir -name "[0-9]*.oh" |
+grep -i $pattern | sort |
+while (define path: read-line) {
+    awk '
+BEGIN { code = 0 }
+$0 ~ /^#[#+]/ { print substr($0, 4) }
+$1 ~ /^#[}]/ { code = 0 }
+code > 0 { print "    " $0 }
+$1 ~ /^#[{]/ { code = 1 }
+' $path
+}

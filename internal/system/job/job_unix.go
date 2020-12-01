@@ -1,3 +1,9 @@
+// Released under an MIT license. See LICENSE.
+
+// WCONTINUED is missing on NetBSD.
+
+// +build aix darwin dragonfly freebsd linux openbsd solaris
+
 package job
 
 import (
@@ -100,7 +106,7 @@ func (j *T) Await(fn func(), p *task.T, ts ...*task.T) {
 	}
 }
 
-func (j *T) Launch(t *task.T, path string, argv []string, attr *os.ProcAttr) error {
+func (j *T) Execute(t *task.T, path string, argv []string, attr *os.ProcAttr) error {
 	errq := make(chan error)
 
 	requestq <- func() {
@@ -149,7 +155,7 @@ func (j *T) Spawn(p, c *task.T, fn func()) {
 		if fn != nil {
 			w := &wg{
 				fn: fn,
-				on: map[*task.T]struct{}{c: struct{}{}},
+				on: map[*task.T]struct{}{c: {}},
 			}
 
 			wgs, ok := waiting[c]
@@ -172,22 +178,12 @@ func (j *T) Spawn(p, c *task.T, fn func()) {
 
 func (j *T) Stopped(t *task.T) {
 	requestq <- func() {
-		if wgs, found := waiting[t]; found {
-			for w, _ := range wgs {
-				delete(w.on, t)
-				if len(w.on) == 0 {
-					w.fn()
-					delete(wgs, w)
-				}
-			}
-
-			if len(wgs) == 0 {
-				delete(waiting, t)
-			}
-		}
+		t.Stopped()
 
 		if !t.Completed() {
 			if foreground != nil && foreground.main == t {
+				tell(t)
+
 				number := 1
 				for n := range jobs {
 					if n >= number {
@@ -198,46 +194,17 @@ func (j *T) Stopped(t *task.T) {
 
 				printJobs(os.Stdout, number)
 			}
-		} else {
-			if p, found := parent[t]; found {
-				delete(parent, t)
 
-				cs := children[p]
+			return
+		}
 
-				n := -1
-				for i, c := range cs {
-					if c == t {
-						n = i
+		tell(t)
 
-						break
-					}
-				}
+		if p, found := parent[t]; found {
+			delete(parent, t)
 
-				last := len(cs) - 1
-				if n >= 0 && last >= 0 {
-					cs[n] = cs[last]
-					cs[last] = nil
-					children[p] = cs[:last]
-				}
-
-				cs = background
-
-				n = -1
-				for i, c := range cs {
-					if c == t {
-						n = i
-
-						break
-					}
-				}
-
-				last = len(cs) - 1
-				if n >= 0 && last >= 0 {
-					cs[n] = cs[last]
-					cs[last] = nil
-					background = cs[:last]
-				}
-			}
+			children[p] = remove(children[p], t)
+			background = remove(background, t)
 		}
 	}
 }
@@ -266,7 +233,7 @@ func Fg(w io.Writer, n int) int {
 		}
 
 		wgs := waiting[foreground.main]
-		for wg, _ := range wgs {
+		for wg := range wgs {
 			wg.on[j.main] = wg.on[foreground.main]
 			delete(wg.on, foreground.main)
 		}
@@ -312,6 +279,23 @@ func Jobs(w io.Writer) {
 	<-r
 }
 
+func Monitor() {
+	signals := []os.Signal{unix.SIGCHLD}
+
+	if options.Monitor() {
+		signal.Ignore(unix.SIGQUIT, unix.SIGTTIN, unix.SIGTTOU)
+
+		signals = append(signals, unix.SIGINT, unix.SIGTSTP)
+	}
+
+	requestq = make(chan func(), 1)
+	signalq = make(chan os.Signal, len(signals)+1)
+
+	signal.Notify(signalq, signals...)
+
+	go monitor()
+}
+
 //nolint:gochecknoglobals
 var (
 	foreground *T
@@ -324,7 +308,15 @@ var (
 	children   = map[*task.T][]*task.T{}
 	jobs       = map[int]*T{}
 	parent     = map[*task.T]*task.T{}
-	waiting    = map[*task.T]map[*wg]struct{}{}
+
+	// Waiting is a map from a task to a set of "wait groups".
+	// Each "wait group" is a set of tasks being waited "on"
+	// and a function "fn" to call when the set becomes empty.
+	// If we wanted to wait on tasks 1 and 3 we would create
+	// a wait group containing 1 and 3 and a callback function
+	// and then add this same wait group to the set of wait
+	// groups for both tasks 1 and 3.
+	waiting = map[*task.T]map[*wg]struct{}{}
 )
 
 func (j *T) interrupt() {
@@ -358,6 +350,7 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 	t, found := j.running[pid]
 	if !found {
 		println("UNKNOWN PID STATUS CHANGE", pid)
+
 		return
 	}
 
@@ -375,11 +368,14 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 
 	code := int(status)
 
-	if status.Exited() {
+	switch {
+	case status.Exited():
 		code = status.ExitStatus()
-	} else if status.Signaled() {
+
+	case status.Signaled():
 		code += 128
-	} else {
+
+	default:
 		return
 	}
 
@@ -407,21 +403,6 @@ func (j *T) stop() {
 	for pid := range j.running {
 		process.Stop(pid)
 	}
-}
-
-func init() { //nolint:gochecknoinits
-	signal.Ignore(unix.SIGQUIT, unix.SIGTTIN, unix.SIGTTOU)
-
-	signals := []os.Signal{
-		unix.SIGCHLD, unix.SIGINT, unix.SIGTSTP,
-	}
-
-	requestq = make(chan func(), 1)
-	signalq = make(chan os.Signal, len(signals)+1)
-
-	signal.Notify(signalq, signals...)
-
-	go monitor()
 }
 
 func interrupt(t *task.T) {
@@ -517,6 +498,30 @@ func reap() {
 	}
 }
 
+func remove(cs []*task.T, t *task.T) []*task.T {
+	n := -1
+
+	for i, c := range cs {
+		if c == t {
+			n = i
+
+			break
+		}
+	}
+
+	if n == -1 {
+		return cs
+	}
+
+	// We know len(cs) is at least 1.
+	last := len(cs) - 1
+
+	cs[n] = cs[last]
+	cs[last] = nil
+
+	return cs[:last]
+}
+
 func resume(t *task.T) {
 	for _, child := range children[t] {
 		resume(child)
@@ -531,4 +536,24 @@ func stop(t *task.T) {
 	}
 
 	t.Stop()
+}
+
+func tell(t *task.T) {
+	wgs, found := waiting[t]
+	if !found {
+		return
+	}
+
+	for w := range wgs {
+		delete(w.on, t)
+
+		if len(w.on) == 0 {
+			w.fn()
+			delete(wgs, w)
+		}
+	}
+
+	if len(wgs) == 0 {
+		delete(waiting, t)
+	}
 }

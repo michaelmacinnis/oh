@@ -1,0 +1,19 @@
+linters:
+  enable-all: true
+  disable:
+    - exhaustivestruct
+    - scopelint
+    - wrapcheck
+
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true
+  funlen:
+    lines: 120
+    statements: 80
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

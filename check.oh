@@ -1,0 +1,6 @@
+#!/usr/bin/env oh
+
+golangci-lint run --sort-results | grep -Fv TODO
+
+# To see the warnings we've silenced.
+# git grep nolint | grep -v adapted | grep -Ev 'checkno(globals|inits)' | grep -v implements

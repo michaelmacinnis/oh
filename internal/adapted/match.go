@@ -1,6 +1,5 @@
 // Use of code in this package is governed by Go's BSD-style license.
 
-// Package adapted contains functions adapted from Go's standard library.
 //nolint:nakedret,nlreturn,wsl
 package adapted
 

@@ -18,7 +18,7 @@ func TestCompletion(*testing.T) {
 	n := 3
 
 	h := s[:n]
-	//t := s[n:]
+	// t := s[n:]
 
 	lc := r.Lexer().Copy()
 
@@ -35,7 +35,7 @@ func TestCompletion(*testing.T) {
 }
 
 func TestPrintingSymbol(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -45,7 +45,7 @@ func TestPrintingSymbol(*testing.T) {
 }
 
 func TestFunctionScope(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -61,7 +61,7 @@ func TestFunctionScope(*testing.T) {
 }
 
 func TestContinuations(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	r := reader.New("oh")
 
@@ -71,7 +71,7 @@ source convoluted.oh
 }
 
 func TestDollarQuestionMark(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -86,7 +86,7 @@ func TestDollarQuestionMark(*testing.T) {
 }
 
 func TestExported(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -106,7 +106,7 @@ define g: method () = {
 }
 
 func TestInnerScope(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -122,7 +122,7 @@ func TestInnerScope(*testing.T) {
 }
 
 func TestEvaluate(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	c := list.New(sym.New("ls"))
 
@@ -130,7 +130,7 @@ func TestEvaluate(*testing.T) {
 }
 
 func TestSource(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	r := reader.New("oh")
 
@@ -138,7 +138,7 @@ func TestSource(*testing.T) {
 }
 
 func TestInput(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	r := reader.New("oh")
 
@@ -176,7 +176,7 @@ f (define x 7)
 }
 
 func TestObject(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	r := reader.New("oh")
 
@@ -189,7 +189,7 @@ debug (l head)
 }
 
 func TestStackTrace(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")
@@ -206,7 +206,7 @@ func TestStackTrace(*testing.T) {
 }
 
 func TestThrow(*testing.T) {
-	engine.Boot(nil)
+	engine.Boot("", nil)
 
 	j := job.New(process.Group())
 	r := reader.New("oh")

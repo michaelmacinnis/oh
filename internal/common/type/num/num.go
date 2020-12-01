@@ -26,7 +26,7 @@ func New(s string) cell.I {
 }
 
 // Num creates a new num from a string.
-func Num(s string) *num {
+func Num(s string) cell.I {
 	v := &big.Rat{}
 
 	if _, ok := v.SetString(s); !ok {
@@ -37,12 +37,12 @@ func Num(s string) *num {
 }
 
 // Int creates a num from the integer i.
-func Int(i int) *num {
+func Int(i int) cell.I {
 	return Rat(big.NewRat(int64(i), 1))
 }
 
 // Rat creates wraps the *big.Rat r as a num.
-func Rat(r *big.Rat) *num {
+func Rat(r *big.Rat) cell.I {
 	return (*num)(r)
 }
 

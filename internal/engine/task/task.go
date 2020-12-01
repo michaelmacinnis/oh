@@ -13,6 +13,8 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
+	"github.com/michaelmacinnis/oh/internal/common/interface/reference"
+	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
 	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
@@ -25,14 +27,14 @@ const debug = false
 
 type monitor interface {
 	Await(fn func(), t *T, ts ...*T)
-	Launch(t *T, path string, argv []string, attr *os.ProcAttr) error
+	Execute(t *T, path string, argv []string, attr *os.ProcAttr) error
 	Spawn(p, c *T, fn func())
 	Stopped(t *T)
 }
 
 // T (task) encapsulates a thread of execution.
 type T struct {
-	monitor
+	job monitor
 	*registers
 	*state
 }
@@ -46,20 +48,20 @@ func New(m monitor, c cell.I, f *frame.T) *T {
 			frame: f,
 			stack: done,
 		},
-		monitor: m,
-		state:   fresh(),
+		job:   m,
+		state: fresh(),
 	}
 
 	return t
 }
 
-func (t *T) CellValue(s string) cell.I {
-	_, ref := t.frame.Resolve(s)
-	if ref == nil {
+func (t *T) CellValue(k string) cell.I {
+	v := t.value(nil, k)
+	if v == nil {
 		return nil
 	}
 
-	return ref.Get()
+	return v
 }
 
 func (t *T) Chdir(s string) cell.I {
@@ -68,11 +70,17 @@ func (t *T) Chdir(s string) cell.I {
 	_, r := t.frame.Resolve("PWD")
 	oldwd := r.Get()
 
+	wd := common.String(oldwd)
+
+	if !filepath.IsAbs(s) {
+		s = filepath.Join(wd, s)
+	}
+
 	err := os.Chdir(s)
 	if err != nil {
 		rv = boolean.False
-	} else if wd, err := os.Getwd(); err == nil {
-		t.frame.Scope().Export("PWD", sym.New(wd))
+	} else {
+		t.frame.Scope().Export("PWD", sym.New(s))
 		t.frame.Scope().Export("OLDPWD", oldwd)
 	}
 
@@ -122,12 +130,21 @@ func (t *T) Closure() *Closure {
 
 // Environ returns key value pairs for stringable values in the form provided by os.Environ.
 func (t *T) Environ() []string {
-	environ := []string{}
+	exported := map[string]string{}
 
 	for f := t.registers.frame; f != nil; f = f.Previous() {
 		for s := f.Scope(); s != nil; s = s.Enclosing() {
-			environ = append(environ, s.Public().Environ()...)
+			for k, v := range s.Public().Exported() {
+				if _, ok := exported[k]; !ok {
+					exported[k] = v
+				}
+			}
 		}
+	}
+
+	environ := make([]string, 0, len(exported))
+	for k, v := range exported {
+		environ = append(environ, k+"="+v)
 	}
 
 	return environ
@@ -147,15 +164,13 @@ func (t *T) Return(c cell.I) Op {
 
 // Run steps through a tasks operations until they are exhausted.
 func (t *T) Run() {
-	t.state.Started()
-	defer t.state.Stopped()
+	t.Started()
+	defer t.job.Stopped(t)
 
 	s := t.Op()
 	for t.state.Runnable() && s != nil {
 		s = t.Step(s)
 	}
-
-	t.monitor.Stopped(t)
 }
 
 // Step performs a single action and determines the next action.
@@ -166,11 +181,9 @@ func (t *T) Step(s Op) (op Op) {
 			return
 		}
 
-		t.code = list.New(sym.New("throw"), str.New(fmt.Sprintf("%v", r)))
-
-		// Push a no-op so that the saved frame isn't collapsed away.
-		t.PushOp(Action(nop))
-		t.PushOp(&registers{frame: t.frame})
+		l := t.frame.Loc()
+		errmsg := fmt.Sprintf("%s:%d:%d: %v", l.Name, l.Line, l.Char, r)
+		t.code = list.New(sym.New("throw"), str.New(errmsg))
 
 		op = t.PushOp(Action(EvalCommand))
 	}()
@@ -262,8 +275,17 @@ func (t *T) expand(args cell.I) cell.I {
 	return l
 }
 
-func (t *T) stringValue(s string) string {
-	v := t.CellValue(s)
+func (t *T) resolve(s scope.I, k string) cell.I {
+	v := t.value(s, k)
+	if v == nil {
+		panic("'" + k + "' not defined")
+	}
+
+	return v
+}
+
+func (t *T) stringValue(k string) string {
+	v := t.value(nil, k)
 	if v == nil {
 		return ""
 	}
@@ -277,4 +299,25 @@ func (t *T) tildeExpand(s string) string {
 	}
 
 	return filepath.Join(t.stringValue("HOME"), s[1:])
+}
+
+func (t *T) value(s scope.I, k string) cell.I {
+	var r reference.I
+
+	if s != nil && s.Expose() != t.frame.Scope() {
+		r = s.Lookup(k)
+	} else {
+		s, r = t.frame.Resolve(k)
+	}
+
+	if r == nil {
+		return nil
+	}
+
+	v := r.Get()
+	if c, ok := v.(command); ok {
+		v = bind(c, s)
+	}
+
+	return v
 }

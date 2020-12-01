@@ -8,4 +8,4 @@ blah
 
 echo $foo
 
-#-     $'foo not defined'
+#-     9:1: 'foo' not defined

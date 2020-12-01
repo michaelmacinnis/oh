@@ -16,6 +16,7 @@ type I interface {
 	ReadLine() cell.I
 	ReaderClose()
 	Write(v cell.I)
+	WriteLine(v cell.I)
 	WriterClose()
 }
 

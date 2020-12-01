@@ -9,6 +9,12 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 )
 
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
+}
+
 type Stringer = fmt.Stringer
 
 // String returns the string value for a cell, if possible.

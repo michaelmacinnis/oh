@@ -9,7 +9,7 @@ import (
 )
 
 func TestWriteRead(t *testing.T) {
-	p := New(1)
+	p := New(1).(*channel)
 
 	sent := str.New("hello")
 
@@ -23,7 +23,7 @@ func TestWriteRead(t *testing.T) {
 }
 
 func TestWriteReadLine(t *testing.T) {
-	p := New(1)
+	p := New(1).(*channel)
 
 	sent := str.New("hello")
 

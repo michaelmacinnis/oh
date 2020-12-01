@@ -1,21 +1,19 @@
 #!/usr/bin/env oh
 
-# This script still uses old oh syntax.
+define common: import (... $ORIGIN bin/common.oh)
 
-define common: import (... bin/common.oh)
+export stdout: open 'w' (... $ORIGIN generated.go)
 
-export _stdout_: open w ("/"::join $_origin_ generated.go)
+common introduction `(basename $0) $GOPACKAGE
 
-common::introduction `(basename $0) $GOPACKAGE
-
+echo
 echo "// Script returns the boot script for oh."
 echo "func Script() string { //nolint:funlen"
 echo "	return `"
-cat (... boot.oh)
+cat (... $ORIGIN boot.oh)
 echo "`"
 echo "}"
 echo
-echo '//go:generate ./generate.oh'
+echo '//go:generate ../../../oh ./generate.oh'
 echo '//go:generate go fmt generated.go'
-
 

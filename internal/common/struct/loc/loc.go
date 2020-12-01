@@ -18,6 +18,10 @@ type T struct {
 
 type loc = T
 
+func (l loc) Error() string {
+	return l.String() + " " + l.Text
+}
+
 func (l *loc) String() string {
 	return l.Name + ":" + strconv.Itoa(l.Line) + ":" + strconv.Itoa(l.Char)
 }

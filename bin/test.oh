@@ -1,0 +1,21 @@
+#!/usr/bin/env oh
+
+define dir: ... $ORIGIN doctest
+define oh: ... $ORIGIN oh
+
+define prefix-lines: method (prefix) = {
+    define count: number 1
+    while (define line: read-line) {
+        echo (mend ': ' $prefix $count $line)
+        set count: add $count 1
+    }
+}
+
+# Run tests.
+find $dir -name "[0-9]*.oh" | grep -Fv unused | sort |
+while (define path: read-line) {
+    define file `(basename $path)
+    echo running $file
+    diff |<(grep "^#[+-]     " $path | sed -e "s/^#[+-]     //g" | prefix-lines $file) \
+        |<($oh $path |& prefix-lines $file | sed -Ee "s|${path}:||")
+}

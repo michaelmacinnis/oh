@@ -28,7 +28,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 	"github.com/michaelmacinnis/oh/internal/engine/commands"
-	"github.com/michaelmacinnis/oh/internal/system/options"
 )
 
 // Action performs a single step of the machine and returns the next operation.
@@ -72,7 +71,6 @@ func Actions(s scope.I) {
 	s.Define("resolve", &Method{Op: Action(resolve)})
 	s.Define("resolves?", &Method{Op: Action(resolves)})
 	s.Define("splice", &Method{Op: Action(splice)})
-	s.Define("stack-trace", &Method{Op: Action(stackTrace)})
 	s.Define("syntax?", &Method{Op: Action(isSyntax)})
 	s.Define("wait", &Method{Op: Action(wait)})
 
@@ -185,7 +183,7 @@ func accessMember(t *T) Op {
 	}
 
 	if r == nil {
-		panic(n + " not defined")
+		panic("'" + n + "' not defined")
 	}
 
 	v := r.Get()
@@ -268,7 +266,7 @@ func apply(t *T) Op {
 	if plabels != pair.Null && pair.Is(rest) && pair.Cdr(rest) == pair.Null {
 		e.Define(literal.String(pair.Car(rest)), args)
 	} else if actual != expected {
-		panic("expected " + validate.Count(expected, "argument", "s") + ", passed " + strconv.Itoa(actual)) // TODO: Better message.
+		panic("expected " + validate.Count(expected, "argument", "s") + ", passed " + strconv.Itoa(actual))
 	}
 
 	t.code = c.Body
@@ -325,12 +323,13 @@ func continuation(t *T) Op {
 //  stack: eval Previous ...
 //
 func eval(t *T) Op {
-	// TODO: Check that one and only one argument is passed.
+	v := validate.Fixed(t.code, 1, 1)
+
 	b := bound(t.Result())
 
 	t.ReplaceOp(&registers{frame: t.frame})
 
-	t.code = pair.Car(t.code)
+	t.code = v[0]
 
 	// If the visibility differs, create a new frame.
 	e := scope.To(b.self)
@@ -474,8 +473,6 @@ func evalBlock(t *T) Op {
 	} else {
 		t.PushOp(&registers{code: next})
 	}
-
-	// println(list.Length(t.dump))
 
 	t.code = current
 
@@ -671,11 +668,34 @@ func execExport(t *T) Op {
 //  stack: execIfBody Previous ...
 //
 func execIfBody(t *T) Op {
-	if !t.selectBranch() {
-		return t.PreviousOp()
+	alternate := !truth.Value(t.Result())
+	if alternate {
+		t.code = pair.Cdr(t.code)
+		c := pair.Car(t.code)
+
+		for pair.Is(c) && c != pair.Null {
+			t.code = pair.Cdr(t.code)
+			c = pair.Car(t.code)
+		}
+
+		if c != pair.Null && literal.String(c) != "else" {
+			panic("expected else")
+		}
 	}
 
 	t.code = pair.Cdr(t.code)
+	if t.code == pair.Null {
+		return t.PreviousOp()
+	}
+
+	next := pair.Car(t.code)
+	if alternate && !pair.Is(next) {
+		if literal.String(next) != "if" {
+			panic("expected if")
+		}
+
+		return t.ReplaceOp(Action(EvalCommand))
+	}
 
 	return t.ReplaceOp(Action(evalBlock))
 }
@@ -726,7 +746,7 @@ func execSet(t *T) Op {
 	r := s.Lookup(k)
 
 	if r == nil {
-		panic(k + " not defined")
+		panic("'" + k + "' not defined")
 	}
 
 	r.Set(v)
@@ -806,16 +826,15 @@ func external(t *T) Op {
 	}
 
 	dir := t.stringValue("PWD")
-	stdin := t.CellValue("_stdin_")
-	stdout := t.CellValue("_stdout_")
-	stderr := t.CellValue("_stderr_")
+	stdin := t.value(nil, "stdin")
+	stdout := t.value(nil, "stdout")
+	stderr := t.value(nil, "stderr")
 
 	files := []*os.File{pipe.R(stdin), pipe.W(stdout), pipe.W(stderr)}
 
 	attr := &os.ProcAttr{Dir: dir, Env: t.Environ(), Files: files}
 
-	// TODO: Launch executable and handle job control stuff...
-	err = t.Launch(t, arg0, argv, attr)
+	err = t.job.Execute(t, arg0, argv, attr)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -850,28 +869,21 @@ func external(t *T) Op {
 // updated with this information.
 //
 func implicitLookup(t *T) Op {
-	v := t.Result()
+	c := t.Result()
 
-	if plus, ok := v.(*sym.Plus); ok {
+	if plus, ok := c.(*sym.Plus); ok {
 		t.frame.Update(plus.Source())
 	}
 
-	if sym.Is(v) {
-		s, r := t.frame.Resolve(literal.String(v))
-		if r != nil {
-			v = r.Get()
-			if c, ok := v.(command); ok {
-				v = bind(c, s)
-			}
+	if sym.Is(c) {
+		v := t.value(nil, common.String(c))
+		if v != nil {
+			c = v
 		}
 	}
 
-	t.ReplaceResult(v)
+	t.ReplaceResult(c)
 
-	return t.PreviousOp()
-}
-
-func nop(t *T) Op {
 	return t.PreviousOp()
 }
 
@@ -892,11 +904,11 @@ func resume(t *T) Op {
 }
 
 func spawn(t *T) Op {
-	child := New(t.monitor, t.code, frame.Dup(env.New(t.frame.Scope()), t.frame))
+	child := New(t.job, t.code, frame.Dup(env.New(t.frame.Scope()), t.frame))
 
 	child.PushOp(Action(evalBlock))
 
-	t.monitor.Spawn(t, child, nil)
+	t.job.Spawn(t, child, nil)
 
 	return t.Return(child)
 }
@@ -1034,7 +1046,7 @@ func get(t *T) Op {
 
 	r := s.Lookup(k)
 	if r == nil {
-		panic(k + " not defined")
+		panic("'" + k + "' not defined")
 	}
 
 	v := r.Get()
@@ -1048,18 +1060,9 @@ func get(t *T) Op {
 func interpolate(t *T) Op {
 	v := validate.Fixed(t.code, 1, 1)
 
-	e := t.frame.Scope()
-
 	b := bound(t.Result())
 
-	s := b.self
-
-	if scope.To(s).Expose() == e {
-		// TODO: This seems wrong.
-		// We should split out the part of resolve that
-		// does the lookup and share it with interpolate.
-		s = e
-	}
+	s := scope.To(b.self)
 
 	cb := func(ref string) string {
 		if ref == "$$" {
@@ -1071,15 +1074,17 @@ func interpolate(t *T) Op {
 			name = name[1 : len(name)-1]
 		}
 
-		_, r := t.frame.Resolve(name)
-		if r == nil {
-			panic("'" + name + "' undefined")
-		}
-
-		return common.String(r.Get())
+		return common.String(t.resolve(s, name))
 	}
-
-	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[0-9A-Z_a-z]+)`)
+	// '!', '%', '*', '+', '-',
+	// '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+	// '?', '@',
+	// 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+	// 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	// '[', ']', '^', '_',
+	// 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+	// 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[!%*+\-0-9?@A-Z\[\]^_a-z]+)`)
 
 	return t.Return(str.New(r.ReplaceAllStringFunc(common.String(v[0]), cb)))
 }
@@ -1142,25 +1147,9 @@ func resolve(t *T) Op {
 
 	b := bound(t.Result())
 
-	var r reference.I
-
 	s := scope.To(b.self)
-	if s.Expose() != t.frame.Scope() {
-		r = s.Lookup(k)
-	} else {
-		s, r = t.frame.Resolve(k)
-	}
 
-	if r == nil {
-		panic(k + " not defined")
-	}
-
-	v := r.Get()
-	if c, ok := v.(command); ok {
-		v = bind(c, s)
-	}
-
-	return t.Return(v)
+	return t.Return(t.resolve(s, k))
 }
 
 func resolves(t *T) Op {
@@ -1168,65 +1157,11 @@ func resolves(t *T) Op {
 
 	b := bound(t.Result())
 
-	var r reference.I
-
 	s := scope.To(b.self)
-	if s.Expose() != t.frame.Scope() {
-		r = s.Lookup(k)
-	} else {
-		_, r = t.frame.Resolve(k)
-	}
 
-	return t.Return(boolean.Bool(r != nil))
-}
+	v := t.value(s, k)
 
-func stackTrace(t *T) Op {
-	type point struct {
-		loc string
-		txt string
-	}
-
-	max := 0
-	trace := []*point{}
-
-	for s := t.stack; s != done; s = s.stack {
-		if r, ok := s.op.(*registers); ok {
-			if r.frame != nil {
-				l := r.frame.Loc()
-				n := strconv.Itoa
-				p := &point{
-					loc: l.Name + ":" + n(l.Line) + ":" + n(l.Char) + ":",
-					txt: l.Text,
-				}
-
-				trace = append(trace, p)
-			}
-		}
-	}
-
-	if options.Script() {
-		trace = trace[:len(trace)-3]
-	}
-
-	for _, p := range trace {
-		sz := len(p.loc)
-		if sz > max {
-			max = sz
-		}
-	}
-
-	depth := 0
-
-	for i := len(trace) - 1; i >= 0; i-- {
-		p := trace[i]
-		sz := len(p.loc)
-
-		println(p.loc + strings.Repeat(" ", 2*depth+max-sz+1) + p.txt)
-
-		depth++
-	}
-
-	return t.PreviousOp()
+	return t.Return(boolean.Bool(v != nil))
 }
 
 func unset(t *T) Op {
@@ -1243,8 +1178,10 @@ func wait(t *T) Op {
 	v := []*T{}
 
 	var last *T
+
 	for args := t.code; args != pair.Null; args = pair.Cdr(args) {
 		c := pair.Car(args)
+
 		t, ok := c.(*T)
 		if !ok {
 			panic("can't wait on " + c.Name())
@@ -1255,7 +1192,7 @@ func wait(t *T) Op {
 
 	t.Wait()
 
-	t.monitor.Await(func() {
+	t.job.Await(func() {
 		res := pair.Null
 		if last != nil {
 			res = last.Result()

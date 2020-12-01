@@ -8,7 +8,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
-	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 )
 
 const name = "string"
@@ -23,11 +22,6 @@ func New(v string) cell.I {
 	s := str(v)
 
 	return &s
-}
-
-// Bool returns the boolean value of the str s.
-func (s *str) Bool() bool {
-	return s.String() == ""
 }
 
 // Equal returns true if the cell c wraps the same string and false otherwise.
@@ -62,7 +56,4 @@ func implements() { //nolint:deadcode,unused
 
 	// The str type is a stringer.
 	_ = common.Stringer(&t)
-
-	// The str type has a truth value.
-	_ = truth.I(&t)
 }

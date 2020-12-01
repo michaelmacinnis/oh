@@ -4,8 +4,6 @@ package task
 
 import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
-	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
-	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 )
@@ -166,24 +164,6 @@ func (m *registers) restoreOver(target *registers) {
 	if m.stack != nil {
 		target.stack = m.stack
 	}
-}
-
-func (m *registers) selectBranch() bool {
-	if !truth.Value(m.Result()) {
-		m.code = pair.Cdr(m.code)
-
-		c := pair.Car(m.code)
-		for pair.Is(c) && c != pair.Null {
-			m.code = pair.Cdr(m.code)
-			c = pair.Car(m.code)
-		}
-
-		if c != pair.Null && literal.String(c) != "else" {
-			panic("expected else")
-		}
-	}
-
-	return pair.Cdr(m.code) != pair.Null
 }
 
 func init() { //nolint:gochecknoinits

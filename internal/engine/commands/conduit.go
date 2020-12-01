@@ -8,13 +8,14 @@ import (
 
 func ConduitMethods() map[string]func(cell.I, cell.I) cell.I {
 	return map[string]func(cell.I, cell.I) cell.I{
-		"_reader_close_": readerClose,
-		"_writer_close_": writerClose,
-		"close":          close,
-		"read":           read,
-		"read-line":      readLine,
-		"read-list":      readList,
-		"write":          write,
+		"close":        close,
+		"read":         read,
+		"read-line":    readLine,
+		"read-list":    readList,
+		"reader-close": readerClose,
+		"write":        write,
+		"write-line":   writeLine,
+		"writer-close": writerClose,
 	}
 }
 
@@ -44,6 +45,12 @@ func readList(s cell.I, _ cell.I) cell.I {
 
 func write(s cell.I, args cell.I) cell.I {
 	conduit.To(s).Write(args)
+
+	return args
+}
+
+func writeLine(s cell.I, args cell.I) cell.I {
+	conduit.To(s).WriteLine(args)
 
 	return args
 }

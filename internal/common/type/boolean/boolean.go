@@ -10,9 +10,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 )
 
-const (
-	name = "boolean"
-)
+const name = "boolean"
 
 // T (boolean) wraps Go's bool type.
 type T bool
@@ -26,7 +24,7 @@ var (
 )
 
 // Bool creates new boolean from the bool b.
-func Bool(b bool) *boolean {
+func Bool(b bool) cell.I {
 	if b {
 		return True
 	}

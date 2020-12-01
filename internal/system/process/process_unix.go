@@ -19,24 +19,37 @@ var (
 	terminal = int(os.Stdin.Fd())
 )
 
-func BecomeForegroundGroup() {
+func BecomeForegroundGroup() (err error) {
 	for group != ForegroundGroup() {
-		unix.Kill(-group, unix.SIGTTIN)
-		group, _ = unix.Getpgid(id)
+		err = unix.Kill(-group, unix.SIGTTIN)
+		if err != nil {
+			return
+		}
+
+		group, err = unix.Getpgid(id)
+		if err != nil {
+			return
+		}
 	}
 
 	// signal.Ignore(unix.SIGTTIN, unix.SIGTTOU)
 
 	if id != group {
-		unix.Setpgid(id, id)
+		err = unix.Setpgid(id, id)
+		if err != nil {
+			return
+		}
+
 		group = id
 	}
 
 	SetForegroundGroup(group)
+
+	return
 }
 
 func Continue(pid int) {
-	unix.Kill(pid, unix.SIGCONT)
+	_ = unix.Kill(pid, unix.SIGCONT)
 }
 
 func ForegroundGroup() int {
@@ -57,7 +70,7 @@ func ID() int {
 }
 
 func Interrupt(pid int) {
-	unix.Kill(pid, unix.SIGINT)
+	_ = unix.Kill(pid, unix.SIGINT)
 }
 
 func RestoreForegroundGroup() {
@@ -76,7 +89,7 @@ func SetForegroundGroup(g int) {
 }
 
 func Stop(pid int) {
-	unix.Kill(pid, unix.SIGSTOP)
+	_ = unix.Kill(pid, unix.SIGSTOP)
 }
 
 func SysProcAttr(foreground bool, group int) *unix.SysProcAttr {
@@ -92,5 +105,9 @@ func SysProcAttr(foreground bool, group int) *unix.SysProcAttr {
 }
 
 func Terminate(pid int) {
-	unix.Kill(pid, unix.SIGTERM)
+	_ = unix.Kill(pid, unix.SIGTERM)
+}
+
+func Umask(mask int) int {
+	return unix.Umask(mask)
 }

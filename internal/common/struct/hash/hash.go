@@ -61,20 +61,20 @@ func (h *hash) Del(k string) bool {
 	return true
 }
 
-// Environ returns key value pairs for stringable values in the form provided by os.Environ.
-func (h *hash) Environ() []string {
+// Exported returns a map with containing all entries in h with a string value.
+func (h *hash) Exported() map[string]string {
 	h.Lock()
 	defer h.Unlock()
 
-	environ := make([]string, 0, len(h.m))
+	exported := map[string]string{}
 
 	for k, v := range h.m {
 		if s, ok := v.Get().(common.Stringer); ok {
-			environ = append(environ, k+"="+s.String())
+			exported[k] = s.String()
 		}
 	}
 
-	return environ
+	return exported
 }
 
 // Get retrieves the reference associated with the name k in the hash h.

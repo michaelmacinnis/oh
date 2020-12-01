@@ -26,14 +26,6 @@ ls >file; wc -l file | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate space
 ##     ls | grep old | wc -l
 ls | grep old | wc -l | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and leading whitespace.
 ##
-## To redirect the output of a command to a file that already exists (replacing
-## the contents of the file), pipe the output of the command to the `clobber`
-## command.
-##
-#{
-ls | clobber file
-#}
-##
 
 #-     3
 #-     4 file

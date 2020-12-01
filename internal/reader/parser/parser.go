@@ -4,7 +4,7 @@
 package parser
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -13,7 +13,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/struct/token"
 	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
-	"github.com/michaelmacinnis/oh/internal/common/type/errsys"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
@@ -54,7 +53,7 @@ func (p *T) Current() cell.I {
 }
 
 // Parse consumes tokens and emits cells until there are no more tokens.
-func (p *T) Parse() {
+func (p *T) Parse() (err error) {
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -62,16 +61,12 @@ func (p *T) Parse() {
 		}
 
 		switch r := r.(type) {
-		case *errsys.T:
-			p.emit(r)
 		case error:
-			p.emit(errsys.New(r))
+			err = r
 		case string:
-			p.emit(errsys.New(errors.New(r)))
-		case common.Stringer:
-			p.emit(errsys.New(errors.New(r.String())))
+			err = common.Error(r)
 		default:
-			p.emit(errsys.New(errors.New("unexpected error")))
+			err = fmt.Errorf("unexpected error: %v", r) //nolint:goerr113
 		}
 	}()
 
@@ -84,6 +79,8 @@ func (p *T) Parse() {
 
 		p.emit(p.possibleBackground())
 	}
+
+	return nil
 }
 
 func (p *T) consume() *token.T {
@@ -108,7 +105,7 @@ func (p *T) check(c cell.I) cell.I {
 		x := strconv.Itoa(loc.Char)
 		y := strconv.Itoa(loc.Line)
 
-		panic(l + ":" + y + ":" + x + ": unexpected '" + t.Value() + "'")
+		panic(l + ":" + y + ":" + x + ": unexpected '" + t.Source().Text + "'")
 	}
 
 	return c
@@ -260,7 +257,7 @@ func (p *T) possibleSubstitution() cell.I {
 	}
 
 	if p.peek().Is(token.Substitute) {
-		c = pair.Cons(sym.New("_process_substitution_"), c)
+		c = pair.Cons(sym.New("process-substitution"), c)
 
 		for p.peek().Is(token.Substitute) {
 			s := sym.Token(p.consume())
@@ -284,16 +281,19 @@ func (p *T) braces() (c cell.I) {
 		p.consume()
 
 		n := p.peek()
-		if n.Is('\n') {
+
+		switch {
+		case n.Is('\n'):
 			p.consume()
 
 			c = p.subStatement()
-		} else if n.Is('{') {
+		case n.Is('{'):
 			c = p.braces()
 			p.expect('}')
-		} else {
+		default:
 			c = p.implicitJoin(p.element())
 			c = pair.Cons(c, pair.Null)
+
 			p.expect('}')
 		}
 	}
@@ -323,7 +323,7 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 		if sym.Is(c) && e.Is(token.Symbol) && e.Value() == "=" {
 			p.consume()
 
-			v := p.check(p.element())
+			v := p.check(p.implicitJoin(p.element()))
 
 			l = list.Append(l, list.New(sym.New("export"), c, v))
 
@@ -341,6 +341,7 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 func (p *T) statement() (c cell.I) {
 	// Push new part onto current stack.
 	p.part = pair.Null
+
 	defer func() {
 		p.part = c
 	}()
@@ -382,7 +383,6 @@ func (p *T) statement() (c cell.I) {
 		}
 
 		c = list.Join(c, t)
-
 	}
 
 	return c
@@ -531,7 +531,7 @@ func (p *T) value() cell.I {
 			return pair.Null
 		}
 
-		panic("unexpected '" + t.Value() + "'")
+		panic("unexpected '" + t.Source().Text + "'")
 	}
 
 	if meta {
@@ -564,7 +564,7 @@ func (p *T) word() cell.I {
 
 		s, err := adapted.ActualBytes(text[2 : len(text)-1])
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
 
 		return str.New(s)
@@ -577,7 +577,7 @@ func (p *T) word() cell.I {
 
 		s, err := adapted.ActualBytes(text[1 : len(text)-1])
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
 
 		return list.New(sym.New("interpolate"), str.New(s))

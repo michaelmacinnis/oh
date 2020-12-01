@@ -52,11 +52,18 @@ func (f *frame) Previous() *frame {
 // The scope where the reference r was found is also returned.
 func (f *frame) Resolve(k string) (s scope.I, r reference.I) {
 	s = f.scope
-	r = s.Lookup(k)
 
-	for f = f.previous; f != nil && r == nil; f = f.previous {
-		for s = f.scope; s != nil && r == nil; s = s.Enclosing() {
+	r = s.Lookup(k)
+	if r != nil {
+		return
+	}
+
+	for f = f.previous; f != nil; f = f.previous {
+		for s = f.scope; s != nil; s = s.Enclosing() {
 			r = s.Public().Get(k)
+			if r != nil {
+				return
+			}
 		}
 	}
 

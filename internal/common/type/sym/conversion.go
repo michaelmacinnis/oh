@@ -6,20 +6,20 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 )
 
-// Is returns true if c is a sym or sym plus.
+// Is returns true if c is a *T or *Plus.
 func Is(c cell.I) bool {
 	switch c.(type) {
-	case *sym, *Plus:
+	case *T, *Plus:
 		return true
 	}
 
 	return false
 }
 
-// To returns a sym if c is a sym or sym plus; Otherwise it panics.
-func To(c cell.I) *sym {
+// To returns a *T if c is a *T or *Plus; Otherwise it panics.
+func To(c cell.I) *T {
 	switch t := c.(type) {
-	case *sym:
+	case *T:
 		return t
 	case *Plus:
 		return t.sym

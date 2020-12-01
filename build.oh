@@ -1,0 +1,24 @@
+#!/usr/bin/env oh
+
+echo "darwin amd64
+dragonfly amd64
+freebsd amd64
+freebsd arm
+linux amd64
+linux arm
+linux arm64
+linux mips
+linux mips64
+linux mips64le
+linux mipsle
+linux ppc64
+linux ppc64le
+linux s390x
+openbsd amd64
+solaris amd64
+" | while (define params: read-list) {
+    export GOOS: params get 0
+    export GOARCH: params get 1
+    echo ${GOOS}/${GOARCH}
+    go build -ldflags='-s -w' -trimpath && mv oh oh_${GOOS}_${GOARCH}
+}

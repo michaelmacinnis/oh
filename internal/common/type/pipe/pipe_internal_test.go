@@ -10,7 +10,7 @@ import (
 )
 
 func TestWriteRead(t *testing.T) {
-	p := New(nil, nil)
+	p := New(nil, nil).(*pipe)
 
 	sent := str.New("hello")
 

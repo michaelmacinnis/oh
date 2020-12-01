@@ -24,6 +24,7 @@ import (
 	"github.com/peterh/liner"
 )
 
+//nolint:gochecknoglobals
 var (
 	pathListSeparator = string(os.PathListSeparator)
 	pathSeparator     = string(os.PathSeparator)
@@ -44,6 +45,7 @@ func clean(s string) string {
 
 func directories(s string) []string {
 	dirs := []string{}
+
 	for _, dir := range strings.Split(s, pathListSeparator) {
 		if dir == "" {
 			dir = "."
@@ -62,19 +64,27 @@ func directories(s string) []string {
 	return dirs
 }
 
-func files(cwd, home, paths, word string) []string {
-	candidate := word
-
+func expand(cwd, home, candidate string) (string, bool) {
 	dotdir := false
-	prefix := word + "   "
-	if prefix[0:2] == "./" || prefix[0:3] == "../" {
+	prefix := candidate + "   "
+
+	switch {
+	case prefix[0:2] == "./" || prefix[0:3] == "../":
 		candidate = join(cwd, candidate)
 		dotdir = true
-	} else if prefix[0:1] == "~" {
+
+	case prefix[0:1] == "~":
 		candidate = join(home, candidate[1:])
-	} else if candidate != "" {
+
+	default:
 		candidate = clean(candidate)
 	}
+
+	return candidate, dotdir
+}
+
+func files(cwd, home, paths, word string) []string {
+	candidate, dotdir := expand(cwd, home, word)
 
 	candidates := []string{candidate}
 	if !path.IsAbs(candidate) && !dotdir {
@@ -84,25 +94,36 @@ func files(cwd, home, paths, word string) []string {
 		}
 	}
 
+	return matches(candidates, word)
+}
+
+func join(s ...string) string {
+	last := len(s) - 1
+	head, tail := split(s[last])
+	s[last] = head
+
+	return filepath.Join(s...) + tail
+}
+
+func matches(candidates []string, word string) []string {
 	completions := []string{}
+
 	for _, candidate := range candidates {
 		dirname, basename := filepath.Split(candidate)
 
-		stat, err := os.Stat(dirname)
-		if err != nil {
-			continue
-		} else if len(basename) == 0 && !stat.IsDir() {
+		if skip(dirname, basename) {
 			continue
 		}
 
 		max := strings.Count(dirname, pathSeparator)
 
-		filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
+		_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 			depth := strings.Count(p, pathSeparator)
 			if depth > max {
 				if i.IsDir() {
 					return filepath.SkipDir
 				}
+
 				return nil
 			} else if depth < max {
 				return nil
@@ -135,11 +156,15 @@ func files(cwd, home, paths, word string) []string {
 	return completions
 }
 
-func join(s ...string) string {
-	last := len(s) - 1
-	head, tail := split(s[last])
-	s[last] = head
-	return filepath.Join(s...) + tail
+func skip(dirname, basename string) bool {
+	stat, err := os.Stat(dirname)
+	if err != nil {
+		return true
+	} else if len(basename) == 0 && !stat.IsDir() {
+		return true
+	}
+
+	return false
 }
 
 func split(s string) (head, tail string) {
@@ -160,11 +185,16 @@ func command() bool {
 		return false
 	}
 
-	r := reader.New(options.Args()[0])
+	r := reader.New(os.Args[0])
 
-	c := r.Scan(options.Command() + "\n")
+	c, err := r.Scan(options.Command() + "\n")
+	if err != nil {
+		println("problem parsing command:", err.Error())
+		os.Exit(1)
+	}
+
 	if c == nil {
-		println("incomplete command:", options.Command)
+		println("incomplete command")
 		os.Exit(1)
 	}
 
@@ -180,7 +210,12 @@ func interactive() bool {
 
 	name := options.Args()[0]
 
-	process.BecomeForegroundGroup()
+	err := process.BecomeForegroundGroup()
+	if err != nil {
+		println(err.Error())
+
+		return false
+	}
 
 	// We assume the terminal starts in cooked mode.
 	cooked, err := liner.TerminalMode()
@@ -256,7 +291,7 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 
 		lp := r.Parser().Copy(func(_ cell.I) {}, lc.Token)
 
-		lp.Parse()
+		_ = lp.Parse()
 
 		cs = lc.Expected()
 		if len(cs) != 0 {
@@ -272,6 +307,7 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 		if lp.Current() == pair.Null {
 			if completing == "" {
 				cs = []string{"    "}
+
 				return
 			}
 
@@ -303,7 +339,8 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 	cli.SetTabCompletionStyle(liner.TabPrints)
 
 	for {
-		p := common.String(engine.System(j, list.New(sym.New("prompt"), str.New("> "))))
+		v, _ := engine.System(j, list.New(sym.New("prompt"), str.New(": ")))
+		p := common.String(v)
 
 		err := uncooked.ApplyMode()
 		if err != nil {
@@ -312,6 +349,7 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 
 		line, err := cli.Prompt(p)
 		for errors.Is(err, liner.ErrPromptAborted) {
+			r.Close()
 			r = reader.New(name)
 			line, err = cli.Prompt(p)
 		}
@@ -328,7 +366,16 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 		cli.AppendHistory(line)
 		j.Append(line)
 
-		c := r.Scan(line + "\n")
+		c, err := r.Scan(line + "\n")
+		if err != nil {
+			println(err.Error())
+
+			r.Close()
+			r = reader.New(name)
+
+			continue
+		}
+
 		if c != nil {
 			engine.Evaluate(j, c)
 
@@ -342,9 +389,22 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 func main() {
 	options.Parse()
 
-	engine.Boot(options.Args())
+	engine.Boot(options.Script(), options.Args())
 
 	if !command() && !interactive() {
 		println("unexpected error")
 	}
 }
+
+//go:generate ./oh bin/test.oh
+//go:generate ./oh bin/doc.oh manual ../doc/manual.md
+//go:generate ./oh bin/doc.oh readme ../README.md
+//go:generate go generate github.com/michaelmacinnis/oh/internal/engine/boot
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/boolean
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/channel
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/env
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/num
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/obj
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/pair
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/pipe
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/str

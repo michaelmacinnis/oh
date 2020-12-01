@@ -1,7 +1,12 @@
-// Released under an MIT license. See LICENSE.
+#!/usr/bin/env oh
 
-package errsys
+define common: import (... $ORIGIN bin/common.oh)
 
+export stdout: open 'w' (mend / $PWD generated.go)
+
+common introduction `(basename $0) $GOPACKAGE
+
+echo '
 import "github.com/michaelmacinnis/oh/internal/common/interface/cell"
 
 // Is returns true if c is a *T.
@@ -19,3 +24,6 @@ func To(c cell.I) *T {
 
 	panic("not a " + name)
 }
+
+//go:generate ../../../../oh ../generate.oh
+//go:generate go fmt generated.go'

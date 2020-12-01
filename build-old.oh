@@ -1,0 +1,5 @@
+#!/usr/bin/env oh
+
+gox -osarch `(gox -osarch-list | grep default: |
+    awk '$1 !~ /386|android|darwin\/arm|nacl|netbsd|plan9|windows/ { print $1 }' |
+    paste -sd ' ')

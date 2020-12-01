@@ -130,7 +130,6 @@ func (l *T) emit(c token.Class, v string) {
 
 	t := token.New(c, v, &source)
 
-	// println("emitting:", t.String())
 	l.tokens <- t
 	l.skip()
 }
@@ -202,16 +201,17 @@ func afterAmpersand(l *T) action {
 	switch r {
 	case eof:
 		return nil
+
 	case '&':
 		l.accept(r, w)
 		l.emit(token.Andf, operator(l.Text()))
 
 		return skipWhitespace
+	default:
+		l.emit(token.Background, operator(l.Text()))
+
+		return collectHorizontalSpace
 	}
-
-	l.emit(token.Background, operator(l.Text()))
-
-	return collectHorizontalSpace
 }
 
 func afterDollar(l *T) action {
@@ -426,12 +426,16 @@ func scanDollarSingleQuoted(l *T) action {
 		switch c {
 		case eof:
 			return nil
+
 		case '\'':
 			l.emit(token.DollarSingleQuoted, l.Text())
 
 			return collectHorizontalSpace
+
 		case '\\':
 			return l.escape(scanDollarSingleQuoted, escapeNextCharacter)
+
+		default: // Continue and get next character.
 		}
 	}
 }
@@ -443,12 +447,16 @@ func scanDoubleQuoted(l *T) action {
 		switch c {
 		case eof:
 			return nil
+
 		case '"':
 			l.emit(token.DoubleQuoted, l.Text())
 
 			return collectHorizontalSpace
+
 		case '\\':
 			return l.escape(scanDoubleQuoted, escapeNextCharacter)
+
+		default: // Continue and get next character.
 		}
 	}
 }
@@ -460,37 +468,48 @@ func scanSingleQuoted(l *T) action {
 		switch r {
 		case eof:
 			return nil
+
 		case '\'':
 			l.emit(token.SingleQuoted, l.Text())
+
 			return collectHorizontalSpace
+
+		default: // Continue and get next character.
 		}
 	}
 }
 
 func scanSymbol(l *T) action {
 	// Characters that can be in a symbol:
-	// '!', '%', '*', '+', ',', '-', '.', '/',
+	// '!', '%', '*', '+', '-',
 	// '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-	// ':', '=', '?', '@',
+	// '?', '@',
 	// 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 	// 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	// '[', ']', '^', '_',
 	// 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
 	// 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	// '~'
-	// And a trailing '$'
+	//
+	// And a trailing '$'.
+	// (A trailing '$' should not be used in a variable name).
+	//
+	// The characters ',', '.', '/', ':', '=', and '~' result in a symbol
+	// of on character. (These characters should not be used in variable
+	// names).
 	for {
 		r, w := l.peek()
 
 		switch r {
 		case eof:
 			return nil
+
 		case '\t', '\n', ' ', '"', '#', '&', '\'', '(',
 			')', ';', '<', '>', '`', '{', '|', '}':
 			l.emit(token.Symbol, l.Text())
+
 			return collectHorizontalSpace
-		case '!', '%', '*', '+', ',', '-', '.', '/',
-			':', '=', '?', '@', '[', ']', '^', '~':
+
+		case ',', '.', '/', ':', '=', '~':
 			s := l.Text()
 			if len(s) > 0 {
 				l.emit(token.Symbol, s)
@@ -500,6 +519,7 @@ func scanSymbol(l *T) action {
 			l.emit(token.Symbol, l.Text())
 
 			return collectHorizontalSpace
+
 		case '$':
 			s := l.Text()
 			if len(s) > 0 {
@@ -509,9 +529,12 @@ func scanSymbol(l *T) action {
 			l.accept(r, w)
 
 			return afterDollar
+
 		case '\\':
 			l.accept(r, w)
+
 			return l.escape(scanSymbol, escapeNextCharacter)
+
 		default:
 			l.accept(r, w)
 		}
@@ -525,9 +548,13 @@ func skipComment(l *T) action {
 		switch r {
 		case eof:
 			return nil
+
 		case '\n':
 			l.emit('\n', l.Text())
+
 			return skipWhitespace
+
+		default: // Continue and get next character.
 		}
 	}
 }
@@ -556,30 +583,49 @@ func startState(l *T, state action, ignore string) action {
 		case eof:
 			return nil
 			// { <-- For the unmatched brace below.
+
 		case '\n', ')', ';', '`', '{', '}':
 			l.emit(r, l.Text())
+
 			return collectHorizontalSpace
+
 		case '"':
 			return scanDoubleQuoted
+
 		case '#':
 			return skipComment
+
 		case '$':
 			return afterDollar
+
 		case '&':
 			return afterAmpersand
+
 		case '\'':
 			return scanSingleQuoted
+
 		case '(':
 			return afterOpenParen
+
 		case '<':
 			l.emit(token.Redirect, operator(l.Text()))
+
 			return skipHorizontalSpace
+
 		case '>':
 			return afterGreaterThan
+
 		case '\\':
 			return l.escape(state, escapeNewline)
+
 		case '|':
 			return afterPipe
+
+		case ',', '.', '/', ':', '=', '~':
+			l.emit(token.Symbol, l.Text())
+
+			return collectHorizontalSpace
+
 		default:
 			return scanSymbol
 		}
@@ -592,17 +638,17 @@ func operator(s string) string {
 	return map[string]string{
 		"&":   "spawn",
 		"&&":  "and",
-		"<":   "_input_from_",
-		">":   "_output_to_",
-		">&":  "_output_errors_to_",
-		">&|": "_output_errors_clobber_",
-		">>":  "_append_output_to_",
-		">>&": "_append_output_errors_to_",
-		">|":  "_output_clobber_",
-		"|":   "_pipe_output_to_",
-		"|&":  "_pipe_output_errors_to_",
-		"|<":  "_named_pipe_input_from_",
-		"|>":  "_named_pipe_output_to_",
+		"<":   "input-from",
+		">":   "output-to",
+		">&":  "output-errors-to",
+		">&|": "output-errors-clobbers",
+		">>":  "append-output-to",
+		">>&": "append-output-errors-to",
+		">|":  "output-clobbers",
+		"|":   "pipe-output-to",
+		"|&":  "pipe-output-errors-to",
+		"|<":  "-named-pipe-input-from",
+		"|>":  "-named-pipe-output-to",
 		"||":  "or",
 	}[s]
 }

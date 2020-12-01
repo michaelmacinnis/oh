@@ -1,7 +1,6 @@
 // Use of code in this package is governed by Go's BSD-style license.
 
-// Package adapted contains functions adapted from Go's standard library.
-//nolint:gochecknoglobals,goerr113,nlreturn,wsl
+//nolint:errorlint,gochecknoglobals,goerr113,nlreturn,wsl
 package adapted
 
 import (

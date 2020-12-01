@@ -19,7 +19,7 @@ const name = "object"
 // of their creation. Or that is my current thinking. Let's see what I'm
 // forgetting about that this breaks.
 
-// T object limits access to top-level, public names in the wrapped env.
+// T (object) limits access to top-level, public names in the wrapped env.
 type T struct {
 	wrapped
 }

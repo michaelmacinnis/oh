@@ -5,6 +5,7 @@ package truth
 
 import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
+	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 )
 
 // I (truth) is anything that evaluates to a true or false value.
@@ -12,11 +13,11 @@ type I interface {
 	Bool() bool
 }
 
-// Value returns the truth value for a cell, if possible.
+// Value returns the truth value for a cell.
 func Value(c cell.I) bool {
 	b, ok := c.(I)
 	if !ok {
-		panic(c.Name() + " cannot be used in a boolean context")
+		return c != pair.Null
 	}
 
 	return b.Bool()

@@ -174,8 +174,6 @@ func (h *harness) expect(tokens ...*token.T) {
 
 		a := h.lexer.Token()
 
-		// TODO: Print actual and expected on command-line option.
-
 		switch {
 		case a == e:
 			continue
@@ -245,6 +243,7 @@ func (h *harness) escapedNewline() *token.T {
 
 func (h *harness) silentSpace(n int) *token.T {
 	h.index += n
+
 	return skip
 }
 

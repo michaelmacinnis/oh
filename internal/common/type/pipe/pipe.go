@@ -5,12 +5,14 @@ package pipe
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
 
+	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/conduit"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -25,6 +27,7 @@ const name = "pipe"
 type T struct {
 	sync.RWMutex
 	b *bufio.Reader
+	p *reader.T
 	r *os.File
 	w *os.File
 }
@@ -32,7 +35,7 @@ type T struct {
 type pipe = T
 
 // New creates a new pipe cell.
-func New(r *os.File, w *os.File) *pipe {
+func New(r *os.File, w *os.File) cell.I {
 	if r == nil && w == nil {
 		var err error
 
@@ -43,7 +46,6 @@ func New(r *os.File, w *os.File) *pipe {
 	}
 
 	p := &pipe{
-		b: bufio.NewReader(r),
 		r: r,
 		w: w,
 	}
@@ -76,25 +78,36 @@ func (p *pipe) Name() string {
 
 // Read reads a cell from the pipe.
 func (p *pipe) Read() cell.I {
-	p.RLock()
-	defer p.RUnlock()
-
-	if p.r == nil {
+	b := p.buffer()
+	if b == nil {
 		return pair.Null
 	}
 
-	r := reader.New(p.r.Name())
+	r := p.reader()
+	if r == nil {
+		return pair.Null
+	}
 
-	var c cell.I
+	p.RLock()
+	defer p.RUnlock()
 
-	s, ok := p.line()
+	var (
+		c   cell.I
+		err error
+	)
+
+	s, ok := line(b)
 	for ok {
-		c = r.Scan(s)
+		c, err = r.Scan(s)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		if c != nil {
 			break
 		}
 
-		s, ok = p.line()
+		s, ok = line(b)
 	}
 
 	if c == nil {
@@ -106,10 +119,15 @@ func (p *pipe) Read() cell.I {
 
 // ReadLine reads a line from the pipe.
 func (p *pipe) ReadLine() cell.I {
+	b := p.buffer()
+	if b == nil {
+		return pair.Null
+	}
+
 	p.RLock()
 	defer p.RUnlock()
 
-	s, ok := p.line()
+	s, ok := line(b)
 	if !ok {
 		return pair.Null
 	}
@@ -144,10 +162,46 @@ func (p *pipe) Write(c cell.I) {
 	}
 }
 
+// WriteLine writes the string value of a cell to the pipe.
+func (p *pipe) WriteLine(c cell.I) {
+	// Yes, RLock. This is a write but doesn't change the pipe itself.
+	p.RLock()
+	defer p.RUnlock()
+
+	if p.w == nil {
+		panic("write to closed pipe")
+	}
+
+	_, err := p.w.WriteString(common.String(c))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = p.w.WriteString("\n")
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 // WriterClose closes the write end of the pipe.
 func (p *pipe) WriterClose() {
 	p.writerClosePipe()
 	p.writerPipeNil()
+}
+
+func (p *pipe) buffer() *bufio.Reader {
+	p.Lock()
+	defer p.Unlock()
+
+	if p.r == nil {
+		return nil
+	}
+
+	if p.b == nil {
+		p.b = bufio.NewReader(p.r)
+	}
+
+	return p.b
 }
 
 func (p *pipe) closeableReadEnd() bool {
@@ -164,23 +218,19 @@ func (p *pipe) closeableWriteEnd() bool {
 	return p.w != nil && len(p.w.Name()) > 0
 }
 
-// Read a line from the pipe and return it, including the newline.
-func (p *pipe) line() (string, bool) {
-	s, err := p.b.ReadString('\n')
+func (p *pipe) reader() *reader.T {
+	p.Lock()
+	defer p.Unlock()
 
-	if err == io.EOF {
-		if len(s) > 0 {
-			return s, true
-		}
-
-		return "", false
+	if p.r == nil {
+		return nil
 	}
 
-	if err != nil {
-		panic(err.Error())
+	if p.p == nil {
+		p.p = reader.New(p.r.Name())
 	}
 
-	return s, true
+	return p.p
 }
 
 // readerClosePipe closes the read end of the pipe.
@@ -188,13 +238,15 @@ func (p *pipe) readerClosePipe() {
 	p.RLock()
 	defer p.RUnlock()
 
-	if p.r == nil {
-		return
+	if p.p != nil {
+		p.p.Close()
 	}
 
-	err := p.r.Close()
-	if err != nil {
-		panic(err.Error())
+	if p.r != nil {
+		err := p.r.Close()
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 }
 
@@ -203,6 +255,8 @@ func (p *pipe) readerPipeNil() {
 	p.Lock()
 	defer p.Unlock()
 
+	p.b = nil
+	p.p = nil
 	p.r = nil
 }
 
@@ -237,6 +291,25 @@ func R(c cell.I) *os.File {
 // W converts c to a pipe and returns the write end of the pipe.
 func W(c cell.I) *os.File {
 	return To(c).w
+}
+
+// Read a line and return it, including the newline.
+func line(b *bufio.Reader) (string, bool) {
+	s, err := b.ReadString('\n')
+
+	if errors.Is(err, io.EOF) {
+		if len(s) > 0 {
+			return s, true
+		}
+
+		return "", false
+	}
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return s, true
 }
 
 // A compiler-checked list of interfaces this type satisfies. Never called.

@@ -35,7 +35,8 @@ func sreplace(args cell.I) cell.I {
 	replacement := common.String(v[2])
 
 	n := -1
-	if len(v) == 4 {
+	// The 4th argument, if passed, limits the number of replacements.
+	if len(v) == 4 { //nolint:gomnd
 		n = int(integer.Value(v[3]))
 	}
 

@@ -5,6 +5,7 @@ package engine
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,17 +20,38 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
-	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
+	"github.com/michaelmacinnis/oh/internal/common/validate"
 	"github.com/michaelmacinnis/oh/internal/engine/boot"
 	"github.com/michaelmacinnis/oh/internal/engine/task"
 	"github.com/michaelmacinnis/oh/internal/reader"
 	"github.com/michaelmacinnis/oh/internal/system/job"
 )
 
-func Boot(arguments []string) {
+func Boot(path string, arguments []string) {
+	job.Monitor()
+
+	if path != "" {
+		path = filepath.Dir(path)
+	}
+
+	path, err := filepath.Abs(path)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	env0.Export("ORIGIN", sym.New(path))
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	env0.Export("OLDPWD", sym.New(pwd))
+	env0.Export("PWD", sym.New(pwd))
+
 	if len(arguments) > 0 {
 		args := make([]cell.I, 0, len(arguments))
 
@@ -39,39 +61,29 @@ func Boot(arguments []string) {
 			env0.Export(strconv.Itoa(n), v)
 		}
 
-		env0.Export("_args_", list.New(args[1:]...))
+		env0.Export("@", list.New(args[1:]...))
 	}
 
 	j := job.Job(0)
 	r := reader.New("boot.oh")
 
 	for _, line := range strings.SplitAfter(boot.Script(), "\n") {
-		c := r.Scan(line)
+		c, err := r.Scan(line)
+		if err != nil {
+			panic(err.Error())
+		}
+
 		if c != nil {
 			System(j, c)
 		}
 	}
 }
 
-// TODO: Evaluate should call System.
-
 // Evaluate evaluates the command c.
 func Evaluate(j *job.T, c cell.I) cell.I {
-	task0 := task.New(j, c, frame0)
+	r, exited := System(j, c)
 
-	task0.PushOp(task.Action(task.EvalCommand))
-
-	done := make(chan struct{})
-
-	j.Spawn(nil, task0, func() {
-		close(done)
-	})
-
-	<-done
-
-	r := task0.Result()
-
-	if task0.Exited() {
+	if exited {
 		exitcode, ok := status(r)
 		if !ok {
 			exitcode = success(r)
@@ -103,8 +115,8 @@ func Resolve(k string) (v string) {
 	return
 }
 
-// System evaluates the command c and returns the result.
-func System(j *job.T, c cell.I) cell.I {
+// System evaluates the command c returning the result and if the task exited.
+func System(j *job.T, c cell.I) (cell.I, bool) {
 	t := task.New(j, c, frame0)
 
 	t.PushOp(task.Action(task.EvalCommand))
@@ -117,7 +129,7 @@ func System(j *job.T, c cell.I) cell.I {
 
 	<-done
 
-	return t.Result()
+	return t.Result(), t.Exited()
 }
 
 //nolint:gochecknoglobals
@@ -128,16 +140,15 @@ var (
 )
 
 func fg(t *task.T) task.Op {
-	// TODO: Add error checking.
-	n := 0
+	v := validate.Fixed(t.Code(), 0, 1)
 
-	args := t.Code()
-	if args != pair.Null {
-		s := common.String(pair.Car(t.Code()))
-		n, _ = strconv.Atoi(s)
+	n := 0
+	if len(v) > 0 {
+		n = int(integer.Value(v[0]))
 	}
 
-	return t.Return(num.Int(job.Fg(pipe.W(t.CellValue("_stdout_")), n)))
+	// TODO: Convert this to a function that returns what a wrapper needs.
+	return t.Return(num.Int(job.Fg(pipe.W(t.CellValue("stdout")), n)))
 }
 
 func init() { //nolint:gochecknoinits
@@ -147,9 +158,9 @@ func init() { //nolint:gochecknoinits
 
 	env0.Export("export", ee)
 
-	env0.Export("_stdin_", pipe.New(os.Stdin, nil))
-	env0.Export("_stdout_", pipe.New(nil, os.Stdout))
-	env0.Export("_stderr_", pipe.New(nil, os.Stderr))
+	env0.Export("stdin", pipe.New(os.Stdin, nil))
+	env0.Export("stdout", pipe.New(nil, os.Stdout))
+	env0.Export("stderr", pipe.New(nil, os.Stderr))
 
 	// Environment variables.
 	for _, entry := range os.Environ() {
@@ -177,7 +188,8 @@ func init() { //nolint:gochecknoinits
 }
 
 func jobs(t *task.T) task.Op {
-	job.Jobs(pipe.W(t.CellValue("_stdout_")))
+	// TODO: Convert this to a function that returns what a wrapper needs.
+	job.Jobs(pipe.W(t.CellValue("stdout")))
 
 	return t.Return(num.Int(0))
 }
