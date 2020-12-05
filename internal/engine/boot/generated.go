@@ -7,13 +7,13 @@ package boot
 func Script() string { //nolint:funlen
 	return `
 # For debugging.
-define show: syntax ((args)) = {
+define show: syntax ((args)) {
     debug $args
 }
 
 # Foundational stuff.
 
-define and: syntax ((lst)) e = {
+define and: syntax ((lst)) e {
     define r $False
     while (not (null? $lst)) {
         set r: e eval (lst head)
@@ -25,7 +25,7 @@ define and: syntax ((lst)) e = {
     return $r
 }
 
-define eq?: method ((args)) = {
+define eq?: method ((args)) {
     define len: args length
     if (gt? 2 $len) {
         throw "expected 2 arguments, passed ${len}"
@@ -44,19 +44,19 @@ define eq?: method ((args)) = {
     return $True
 }
 
-define list: method ((l)) = {
+define list: method ((l)) {
     return $l
 }
 
-define ne?: method ((args)) = {
+define ne?: method ((args)) {
     not: eq? (splice $args)
 }
 
-define not:: syntax ((v)) e = {
+define not:: syntax ((v)) e {
     return (not (e eval $v))
 }
 
-define or: syntax ((lst)) e = {
+define or: syntax ((lst)) e {
     define r $False
     while (not (null? $lst)) {
         set r: e eval (lst head)
@@ -68,7 +68,7 @@ define or: syntax ((lst)) e = {
     return $r
 }
 
-define source: builtin (basename) e = {
+define source: builtin (basename) e {
     define name $basename
     define paths ()
 
@@ -94,7 +94,7 @@ define source: builtin (basename) e = {
     f close
 
     define rval $False
-    define eval-list: method (first rest) = {
+    define eval-list: method (first rest) {
         if (null? $first) {
             return $rval
         }
@@ -106,7 +106,7 @@ define source: builtin (basename) e = {
     return $rval
 }
 
-define quasiquote: syntax (cell) e = {
+define quasiquote: syntax (cell) e {
     if (not (cons? $cell)) {
         return $cell
     }
@@ -125,17 +125,17 @@ define quasiquote: syntax (cell) e = {
     }
 }
 
-define quote: syntax (v) = {
+define quote: syntax (v) {
     return $v
 }
 
-define object: syntax ((body)) e = {
+define object: syntax ((body)) e {
     body append (quote ((method self () = (return (resolve self)))))
     e eval (cons block $body)
 }
 
 # TODO: Add optional map literal argument.
-define map: method () = {
+define map: method () {
     object {
         export del $unset
         export get $get
@@ -144,7 +144,7 @@ define map: method () = {
     }
 }
 
-define for: method (l m) = {
+define for: method (l m) {
     define r: cons () ()
     define c $r
     while (not: null? $l) {
@@ -170,10 +170,10 @@ define pipe-output-errors-to
 define process-substitution
 
 block {
-    define wrap-redir-r-ex: method ((block)) = {
+    define wrap-redir-r-ex: method ((block)) {
         set block: cons block $block
 
-        quasiquote ((method () = {
+        quasiquote ((method () {
             define r: boolean false
 
             catch ex {
@@ -186,7 +186,7 @@ block {
         }))
     }
 
-    define collect-unwrap-r-ex: method (c n) = {
+    define collect-unwrap-r-ex: method (c n) {
         define r $False
 
         set n: number $n
@@ -206,27 +206,27 @@ block {
         return $r
     }
 
-    define override-stdin: method (e c cmd) = {
+    define override-stdin: method (e c cmd) {
         e eval (wrap-redir-r-ex {
             list export stdin $c
         } $cmd)
     }
 
-    define override-stdout: method (e c cmd) = {
+    define override-stdout: method (e c cmd) {
         e eval (wrap-redir-r-ex {
             list export stdout $c
         } $cmd)
     }
 
-    define override-stdout-stderr: method (e c cmd) = {
+    define override-stdout-stderr: method (e c cmd) {
         e eval (wrap-redir-r-ex {
             list export stdout $c
             list export stderr $c
         } $cmd)
     }
 
-    define make-pipe: method (override) = {
-        syntax (right (left)) e = {
+    define make-pipe: method (override) {
+        syntax (right (left)) e {
             define c: channel 2
             define p: pipe
 
@@ -242,8 +242,8 @@ block {
         }
     }
 
-    define make-redirect: method (check closer mode override) = {
-        syntax (c cmd) e = {
+    define make-redirect: method (check closer mode override) {
+        syntax (c cmd) e {
             define c: e eval $c
             if (symbol? $c) {
                 define l: glob $c
@@ -281,7 +281,7 @@ block {
     set append-output-to: make-redirect true writer-close a $override-stdout
     set append-output-errors-to: make-redirect true writer-close a $override-stdout-stderr
 
-    set capture: syntax ((cmd)) e = {
+    set capture: syntax ((cmd)) e {
         define c: channel 1
         define p: pipe
 
@@ -313,11 +313,11 @@ block {
     set pipe-output-to: make-pipe $override-stdout
     set pipe-output-errors-to: make-pipe $override-stdout-stderr
 
-    set process-substitution: syntax ((args)) e = {
+    set process-substitution: syntax ((args)) e {
         define chans ()
         define fifos ()
 
-        define cmd: for $args (method (arg) = {
+        define cmd: for $args (method (arg) {
             if (not: cons? $arg) {
                 return $arg
             }
@@ -360,17 +360,17 @@ block {
         define mainecex: e eval (wrap-redir-r-ex $cmd)
 
         define ecexs ()
-        for $chans (method (chan) = {
+        for $chans (method (chan) {
             set ecexs: cons (chan read) $ecexs
         })
 
         set ecexs: cons $mainecex $ecexs
 
-        for $fifos (method (fifo) = {
+        for $fifos (method (fifo) {
             rm $fifo
         })
 
-        for $ecexs (method (ecex) = {
+        for $ecexs (method (ecex) {
             define ex: ecex tail
             if (not: null? $ex) {
                 throw $ex
@@ -387,7 +387,7 @@ define import
 define module: method (name) = # At the top-level module is a no-op.
 
 block {
-    define do-import: method (callback path) = {
+    define do-import: method (callback path) {
         define import-return $return
 
         catch ex {
@@ -395,8 +395,8 @@ block {
             import-return
         }
 
-        define import: method (path) = {
-            define ecex: (method () = {
+        define import: method (path) {
+            define ecex: (method () {
                 request write $return $path
                 return ()
             })
@@ -416,7 +416,7 @@ block {
 
         define module-name ()
 
-        define module: method (name) = {
+        define module: method (name) {
             if (modules has $name) {
                 define module-object: modules get $name
                 callback (list $module-object)
@@ -436,10 +436,10 @@ block {
         callback (list $module-object)
     }
 
-    set import: method (path) = {
+    set import: method (path) {
         define response: channel
 
-        request write (method (returned) = {
+        request write (method (returned) {
             response write $returned
         }) $path
 
@@ -469,7 +469,7 @@ define prompt
 define replace-prompt-fn
 
 block {
-    define call-make-prompt: method (suffix) = {
+    define call-make-prompt: method (suffix) {
         catch ignored {
             return $suffix
         }
@@ -477,18 +477,18 @@ block {
         make-prompt $suffix
     }
 
-    define make-prompt: method (suffix) = {
+    define make-prompt: method (suffix) {
         define d: string-replace $PWD $HOME ~
         mend '' $USER @ (splice (capture hostname)) : $d $suffix
     }
 
-    set prompt: method (suffix) = {
+    set prompt: method (suffix) {
         define response: channel 1
         request write get $response $suffix
         response read
     }
 
-    set replace-prompt-fn: method (fn) = {
+    set replace-prompt-fn: method (fn) {
         define response: channel 1
         request write set $response $fn
         response read
@@ -496,7 +496,7 @@ block {
 
     define request: channel 1
 
-    define service: method (request) = {
+    define service: method (request) {
         define type: request get 0
         define response: request get 1
 
@@ -518,7 +518,7 @@ block {
 
 # Exception stuff.
 
-define catch: syntax (name (clause)) e = {
+define catch: syntax (name (clause)) e {
     define body: list throw (list resolve $name)
 
     if (null? $clause) {
@@ -535,13 +535,13 @@ define catch: syntax (name (clause)) e = {
     define _return_: e eval (list resolve return)
     define _throw_ $throw
 
-    e export throw: method (msg) = {
+    e export throw: method (msg) {
         #export throw $_throw_
         _return_ (handler $msg $_throw_)
     }
 }
 
-sys export throw: method s (msg) = {
+sys export throw: method s (msg) {
     error $msg
     fatal 1
 }
@@ -551,7 +551,7 @@ sys export throw: method s (msg) = {
 block {
     define wrapped-umask $umask
 
-    set umask: method ((args)) = {
+    set umask: method ((args)) {
         define mask: wrapped-umask (splice $args)
         if (null? $args) {
             echo $mask
@@ -562,7 +562,7 @@ block {
 
 # Command stuff.
 
-define ...: method (dir base) = {
+define ...: method (dir base) {
     cd $dir || return $base
     while $True {
         define path: mend / $PWD $base
@@ -576,7 +576,7 @@ define ...: method (dir base) = {
     }
 }
 
-define coalesce: method ((terms)) e = {
+define coalesce: method ((terms)) e {
     define next: terms tail
     define term: terms head
 
@@ -592,35 +592,47 @@ define coalesce: method ((terms)) e = {
     return $term
 }
 
-define error: method ((args)) = {
+define error: method ((args)) {
     stderr write-line (splice $args)
 }
 
-define glob: builtin ((args)) = {
+define glob: builtin ((args)) {
     return $args
 }
 
-define ls: method ((args)) = {
+define here: method (s) {
+    write-line (string-trim-prefix (string-trim-suffix $s $'\n') $'\n')
+}
+
+define ls: method ((args)) {
     command ls --color=auto (splice $args)
 }
 
-define read: method () = {
+define mill: syntax ((defn)) e {
+        define miller: e eval (cons method $defn)
+
+        while (define l: read-list) {
+                miller (splice $l)
+        }
+}
+
+define read: method () {
     stdin read
 }
 
-define read-line: method () = {
+define read-line: method () {
     stdin read-line
 }
 
-define read-list: method () = {
+define read-list: method () {
     stdin read-list
 }
 
-define write: method ((args)) e = {
+define write: method ((args)) e {
     stdout write (splice $args)
 }
 
-define write-line: method ((args)) = {
+define write-line: method ((args)) {
     stdout write-line (splice $args)
 }
 

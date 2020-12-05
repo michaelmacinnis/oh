@@ -2,7 +2,7 @@
 
 // WCONTINUED is missing on NetBSD.
 
-// +build aix darwin dragonfly freebsd linux openbsd solaris
+// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package job
 

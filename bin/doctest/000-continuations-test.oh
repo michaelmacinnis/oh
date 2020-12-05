@@ -4,11 +4,11 @@
 ## values:
 ##
 #{
-define label: method () = {
+define label: method () {
     return $return
 }
 
-define continue: method (label) = {
+define continue: method (label) {
     label $label
 }
 

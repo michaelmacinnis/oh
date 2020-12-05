@@ -8,7 +8,7 @@
 ##
 #{
 
-define filter: method (base) = {
+define filter: method (base) {
     while $True {
         define n: read
         if (not: mod $n $base) {

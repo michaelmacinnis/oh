@@ -8,7 +8,7 @@
 #{
 define exit-status: map
 
-define pipe-fitting: method (label (cmd)) e = {
+define pipe-fitting: method (label (cmd)) e {
     exit-status set $label (e eval $cmd)
 }
 

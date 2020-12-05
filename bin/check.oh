@@ -2,5 +2,5 @@
 
 golangci-lint run --sort-results | grep -Fv TODO
 
-# To see the warnings we've silenced.
+# To see the silenced linter warnings.
 # git grep nolint | grep -v adapted | grep -Ev 'checkno(globals|inits)' | grep -v implements

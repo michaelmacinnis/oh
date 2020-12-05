@@ -1,13 +1,13 @@
 #!/usr/bin/env oh
 
 export y "and"
-define m1: method () = {
+define m1: method () {
     export x "Hello"
     define z "Goodbye"
     m2
     m2
 }
-define m2: method () = {
+define m2: method () {
     catch ignored {
         echo Here
         return

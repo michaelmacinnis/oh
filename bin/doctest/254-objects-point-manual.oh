@@ -5,20 +5,20 @@ define point: method (r s) = (object {
     define x: add 0 $r
     define y: add 0 $s
 
-    export get-x: method () = {
+    export get-x: method () {
         return x
     }
 
-    export get-y: method () = {
+    export get-y: method () {
         return y
     }
 
-    export move: method self (a b) = {
+    export move: method self (a b) {
         set x: add $x $a
         set y: add $y $b
     }
 
-    export show: method () = {
+    export show: method () {
         echo $x $y
     }
 })

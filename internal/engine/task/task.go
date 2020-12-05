@@ -102,18 +102,12 @@ func (t *T) Closure() *Closure {
 
 	// TODO: Check plabels is a list of symbols. Last element can be a list.
 
-	equals := pair.Car(t.code)
-	t.code = pair.Cdr(t.code)
+	first := pair.Car(t.code)
 
 	elabel := pair.Null
-	if literal.String(equals) != "=" {
-		elabel = equals
-		equals = pair.Car(t.code)
+	if !pair.Is(first) {
+		elabel = first
 		t.code = pair.Cdr(t.code)
-	}
-
-	if literal.String(equals) != "=" {
-		panic("expected '='")
 	}
 
 	return &Closure{

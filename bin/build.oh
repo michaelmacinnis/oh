@@ -1,0 +1,38 @@
+#!/usr/bin/env oh
+
+# To see missing GOOS/GOARCH pairs compare with: go tool dist list
+
+here "
+# aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
+darwin amd64
+dragonfly amd64
+freebsd 386
+freebsd amd64
+freebsd arm
+freebsd arm64
+illumos amd64
+linux 386
+linux amd64
+linux arm
+linux arm64
+linux mips
+linux mips64
+linux mips64le
+linux mipsle
+linux ppc64
+linux ppc64le
+linux riscv64
+linux s390x
+# netbsd 386 - missing unix.WCONTINUED
+# netbsd amd64 - missing unix.WCONTINUED
+# netbsd arm - missing unix.WCONTINUED
+# netbsd arm64 - missing unix.WCONTINUED
+openbsd 386
+openbsd amd64
+openbsd arm
+openbsd arm64
+solaris amd64
+" | mill (o a) {
+    echo ${o}/${a}
+    GOOS=${o} GOARCH=${a} go build -ldflags='-s -w' -o oh_${o}_${a} -trimpath
+}

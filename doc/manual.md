@@ -223,7 +223,7 @@ The previous example can be rewritten as,
 
 A sequence of actions can be saved with the `method` command.
 
-    define hello: method () = {
+    define hello: method () {
         echo "Hello, World!"
     }
 
@@ -233,7 +233,7 @@ Once defined, a method can be called in the same way as other commands.
 
 Methods can have named parameters.
 
-    define sum3: method (a b c) = {
+    define sum3: method (a b c) {
         add $a $b $c
     }
     echo (sum3 1 2 3)
@@ -245,20 +245,20 @@ appear before the list of arguments.
         define x: add 0 $r
         define y: add 0 $s
     
-        export get-x: method () = {
+        export get-x: method () {
             return x
         }
     
-        export get-y: method () = {
+        export get-y: method () {
             return y
         }
     
-        export move: method self (a b) = {
+        export move: method self (a b) {
             set x: add $x $a
             set y: add $y $b
         }
     
-        export show: method () = {
+        export show: method () {
             echo $x $y
         }
     })
@@ -272,13 +272,13 @@ and explicitly pulling that method "up".
 
 The following code,
 
-    export me: method self () = {
+    export me: method self () {
         echo 'my name is:' (self name)
     }
     
     define x: object {
         export me $me
-        export name: method () = {
+        export name: method () {
             return 'x'
         }
     }
@@ -293,10 +293,10 @@ An object may redirect a call to another object. The code below,
 
     define z: object {
         export me $me
-        export name: method () = {
+        export name: method () {
             return 'z'
         }
-        export you: method () = {
+        export you: method () {
             x me    # Redirection.
         }
     }
@@ -320,7 +320,7 @@ evaluate arguments in the calling environment.
 
 The example below uses the `syntax` command to define a new `until` command.
 
-    define until: syntax (condition (body)) e = {
+    define until: syntax (condition (body)) e {
         e eval (cons while (cons (list not $condition) $body))
     }
     
@@ -337,7 +337,7 @@ for each stage in a pipeline. The code below,
 
     define exit-status: map
     
-    define pipe-fitting: method (label (cmd)) e = {
+    define pipe-fitting: method (label (cmd)) e {
         exit-status set $label (e eval $cmd)
     }
     
@@ -363,7 +363,7 @@ elegant solutions to some problems, as shown in the prime sieve example
 below (adapted from "Newsqueak: A Language for Communicating with Mice").
 
     
-    define filter: method (base) = {
+    define filter: method (base) {
         while $True {
             define n: read
             if (not: mod $n $base) {

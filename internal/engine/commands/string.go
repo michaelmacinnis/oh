@@ -56,3 +56,15 @@ func sprintf(args cell.I) cell.I {
 
 	return str.New(fmt.Sprintf(common.String(v[0]), argv...))
 }
+
+func trimPrefix(args cell.I) cell.I {
+	v := validate.Fixed(args, 2, 2)
+
+	return str.New(strings.TrimPrefix(common.String(v[0]), common.String(v[1])))
+}
+
+func trimSuffix(args cell.I) cell.I {
+	v := validate.Fixed(args, 2, 2)
+
+	return str.New(strings.TrimSuffix(common.String(v[0]), common.String(v[1])))
+}

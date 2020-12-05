@@ -6,13 +6,13 @@
 ## The following code,
 ##
 #{
-export me: method self () = {
+export me: method self () {
     echo 'my name is:' (self name)
 }
 
 define x: object {
     export me $me
-    export name: method () = {
+    export name: method () {
         return 'x'
     }
 }
@@ -30,10 +30,10 @@ x me
 #{
 define z: object {
     export me $me
-    export name: method () = {
+    export name: method () {
         return 'z'
     }
-    export you: method () = {
+    export you: method () {
         x me    # Redirection.
     }
 }

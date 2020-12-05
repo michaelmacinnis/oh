@@ -5,7 +5,7 @@
 ##
 #{
 # The short-circuit and operator is defined using the syntax command.
-define and: syntax ((lst)) e = {
+define and: syntax ((lst)) e {
     define r $False
     while (not (null? (lst head))) {
         set r (e eval (lst head))

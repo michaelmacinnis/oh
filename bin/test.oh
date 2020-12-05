@@ -3,7 +3,7 @@
 define dir: ... $ORIGIN doctest
 define oh: ... $ORIGIN oh
 
-define prefix-lines: method (prefix) = {
+define prefix-lines: method (prefix) {
     define count: number 1
     while (define line: read-line) {
         echo (mend ': ' $prefix $count $line)

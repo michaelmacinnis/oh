@@ -5,6 +5,7 @@ package commands
 import (
 	"strings"
 
+	"github.com/michaelmacinnis/oh/internal/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -27,6 +28,17 @@ func isObject(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
 	return boolean.Bool(scope.Is(v[0]))
+}
+
+func match(args cell.I) cell.I {
+	v := validate.Fixed(args, 2, 2)
+
+	ok, err := adapted.Match(common.String(v[0]), common.String(v[1]))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return boolean.Bool(ok)
 }
 
 func mend(args cell.I) cell.I {

@@ -5,7 +5,7 @@
 ## A sequence of actions can be saved with the `method` command.
 ##
 #{
-define hello: method () = {
+define hello: method () {
     echo "Hello, World!"
 }
 #}
@@ -22,7 +22,7 @@ hello
 ## Methods can have named parameters.
 ##
 #{
-define sum3: method (a b c) = {
+define sum3: method (a b c) {
     add $a $b $c
 }
 echo (sum3 1 2 3)
