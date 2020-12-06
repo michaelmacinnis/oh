@@ -175,8 +175,7 @@ func (t *T) Step(s Op) (op Op) {
 			return
 		}
 
-		l := t.frame.Loc()
-		errmsg := fmt.Sprintf("%s:%d:%d: %v", l.Name, l.Line, l.Char, r)
+		errmsg := fmt.Sprintf("%v", r)
 		t.code = list.New(sym.New("throw"), str.New(errmsg))
 
 		op = t.PushOp(Action(EvalCommand))

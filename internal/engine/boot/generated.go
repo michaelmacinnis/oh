@@ -5,8 +5,7 @@ package boot
 
 // Script returns the boot script for oh.
 func Script() string { //nolint:funlen
-	return `
-# For debugging.
+	return `# For debugging.
 define show: syntax ((args)) {
     debug $args
 }
@@ -98,10 +97,10 @@ define source: builtin (basename) e {
         if (null? $first) {
             return $rval
         }
-        set rval: e eval $first
+        set rval: e eval $first # oh:omit-from-trace
         eval-list (rest head) (rest tail)
     }
-    eval-list (c head) (c tail)
+    eval-list (c head) (c tail) # oh:omit-from-trace
 
     return $rval
 }
@@ -542,7 +541,8 @@ define catch: syntax (name (clause)) e {
 }
 
 sys export throw: method s (msg) {
-    error $msg
+    for (trace) $error
+    error error: $msg
     fatal 1
 }
 

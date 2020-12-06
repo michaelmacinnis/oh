@@ -21,4 +21,5 @@ echo "private member" (o get y)
 ##
 
 #-     public member 1
-#-     19:24: 'y' not defined
+#-     19:24: o get y)
+#-     error: 'y' not defined

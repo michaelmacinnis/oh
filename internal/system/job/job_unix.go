@@ -209,12 +209,12 @@ func (j *T) Stopped(t *task.T) {
 	}
 }
 
-func Fg(w io.Writer, n int) int {
-	r := make(chan int)
+func Bg(w io.Writer, n int) *task.T {
+	r := make(chan *task.T)
 
 	requestq <- func() {
+		// TODO: Factor out the bits below that are common to this and the func in Fg.
 		if len(jobs) == 0 {
-			r <- 1
 			close(r)
 
 			return
@@ -226,7 +226,49 @@ func Fg(w io.Writer, n int) int {
 
 		j, found := jobs[n]
 		if !found {
-			r <- 1
+			close(r)
+
+			return
+		}
+
+		delete(jobs, n)
+
+		for _, line := range j.lines {
+			fmt.Fprintf(w, "%s\n", line)
+		}
+
+		for pid, t := range j.stopped {
+			process.Continue(pid)
+			j.running[pid] = t
+		}
+
+		go j.main.Run()
+
+		r <- j.main
+
+		close(r)
+	}
+
+	return <-r
+}
+
+func Fg(w io.Writer, n int) bool {
+	r := make(chan bool)
+
+	requestq <- func() {
+		// TODO: Factor out the bits below that are common to this and the func in Bg.
+		if len(jobs) == 0 {
+			close(r)
+
+			return
+		}
+
+		if n == 0 {
+			n = jobNumbers()[len(jobs)-1]
+		}
+
+		j, found := jobs[n]
+		if !found {
 			close(r)
 
 			return
@@ -260,6 +302,8 @@ func Fg(w io.Writer, n int) int {
 		}
 
 		go foreground.main.Run()
+
+		r <- true
 
 		close(r)
 	}

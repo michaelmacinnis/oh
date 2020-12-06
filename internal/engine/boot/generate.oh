@@ -9,7 +9,7 @@ common introduction `(basename $0) $GOPACKAGE
 echo
 echo "// Script returns the boot script for oh."
 echo "func Script() string { //nolint:funlen"
-echo "	return `"
+echo -n "	return `"
 cat (... $ORIGIN boot.oh)
 echo "`"
 echo "}"

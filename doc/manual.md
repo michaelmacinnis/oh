@@ -200,7 +200,7 @@ The commands,
 produce the output,
 
     public variable 1
-    20:26: 'y' not defined
+    error: 'y' not defined
 
 #### Object
 

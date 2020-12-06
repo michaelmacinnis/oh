@@ -72,6 +72,7 @@ func Actions(s scope.I) {
 	s.Define("resolves?", &Method{Op: Action(resolves)})
 	s.Define("splice", &Method{Op: Action(splice)})
 	s.Define("syntax?", &Method{Op: Action(isSyntax)})
+	s.Define("trace", &Method{Op: Action(trace)})
 	s.Define("wait", &Method{Op: Action(wait)})
 
 	// Syntax.
@@ -1162,6 +1163,37 @@ func resolves(t *T) Op {
 	v := t.value(s, k)
 
 	return t.Return(boolean.Bool(v != nil))
+}
+
+func trace(t *T) Op {
+	dup := *t.registers
+
+	l := dup.frame.Loc()
+	trace := []cell.I{}
+
+	for dup.stack != done {
+		r, ok := dup.Op().(*registers)
+		if !ok {
+			dup.PreviousOp()
+
+			continue
+		}
+
+		n := dup.frame.Loc()
+		if n != l {
+			l = n
+			if !strings.HasSuffix(l.Text, "# oh:omit-from-trace") {
+				s := str.New(l.String() + ": " + l.Text)
+				trace = append(trace, s)
+			}
+		}
+
+		r.restoreOver(&dup)
+
+		dup.PreviousOp()
+	}
+
+	return t.Return(list.Reverse(list.New(trace...)))
 }
 
 func unset(t *T) Op {

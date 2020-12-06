@@ -43,6 +43,96 @@ func clean(s string) string {
 	return filepath.Clean(head) + tail
 }
 
+func command() bool {
+	if options.Command() == "" {
+		return false
+	}
+
+	r := reader.New(os.Args[0])
+
+	c, err := r.Scan(options.Command() + "\n")
+	if err != nil {
+		println("problem parsing command:", err.Error())
+		os.Exit(1)
+	}
+
+	if c == nil {
+		println("incomplete command")
+		os.Exit(1)
+	}
+
+	engine.Evaluate(job.New(process.Group()), c)
+
+	return true
+}
+
+func completer(r **reader.T) func(s string, n int) (h string, cs []string, t string) {
+	return func(s string, n int) (h string, cs []string, t string) {
+		h = s[:n]
+		t = s[n:]
+
+		completing := h[strings.LastIndex(h, " ")+1:]
+
+		defer func() {
+			r := recover()
+			if r == nil {
+				return
+			}
+
+			cs = []string{}
+		}()
+
+		lc := (*r).Lexer().Copy()
+
+		lc.Scan(h)
+
+		lp := (*r).Parser().Copy(func(_ cell.I) {}, lc.Token)
+
+		_ = lp.Parse()
+
+		cs = lc.Expected()
+		if len(cs) != 0 {
+			return
+		}
+
+		// Ensure line == prefix + completing + tail
+		prefix := h[0 : len(h)-len(completing)]
+
+		cwd := engine.Resolve("PWD")
+		home := engine.Resolve("HOME")
+
+		if lp.Current() == pair.Null {
+			if completing == "" {
+				cs = []string{"    "}
+
+				return
+			}
+
+			cs = files(cwd, home, engine.Resolve("PATH"), completing)
+		} else {
+			cs = files(cwd, home, engine.Resolve("PWD"), completing)
+		}
+
+		if len(cs) == 0 {
+			return prefix, []string{completing}, t
+		}
+
+		unique := make(map[string]bool)
+		for _, completion := range cs {
+			unique[completion] = true
+		}
+
+		cs = make([]string, 0, len(unique))
+		for completion := range unique {
+			cs = append(cs, completion)
+		}
+
+		sort.Strings(cs)
+
+		return prefix, cs, t
+	}
+}
+
 func directories(s string) []string {
 	dirs := []string{}
 
@@ -95,6 +185,69 @@ func files(cwd, home, paths, word string) []string {
 	}
 
 	return matches(candidates, word)
+}
+
+func interactive() bool {
+	if !options.Interactive() {
+		return false
+	}
+
+	name := options.Args()[0]
+
+	err := process.BecomeForegroundGroup()
+	if err != nil {
+		println(err.Error())
+
+		return false
+	}
+
+	// We assume the terminal starts in cooked mode.
+	cooked, err := liner.TerminalMode()
+	if err != nil {
+		println(err.Error())
+
+		return false
+	}
+
+	// Restore terminal state when we exit.
+	defer func() {
+		err := cooked.ApplyMode()
+		if err != nil {
+			println(err.Error())
+		}
+	}()
+
+	cli := liner.NewLiner()
+
+	cli.SetCtrlCAborts(true)
+
+	uncooked, err := liner.TerminalMode()
+	if err != nil {
+		println(err.Error())
+
+		return false
+	}
+
+	err = history.Load(cli.ReadHistory)
+	if err != nil {
+		println(err.Error())
+	}
+
+	defer func() {
+		err = history.Save(cli.WriteHistory)
+		if err != nil {
+			println(err.Error())
+		}
+
+		_, _ = os.Stdout.Write([]byte{'\n'})
+	}()
+
+	err = repl(cli, cooked, uncooked, name)
+	if !errors.Is(err, io.EOF) {
+		println(err.Error())
+	}
+
+	return true
 }
 
 func join(s ...string) string {
@@ -180,166 +333,19 @@ func split(s string) (head, tail string) {
 	return
 }
 
-func command() bool {
-	if options.Command() == "" {
-		return false
-	}
-
-	r := reader.New(os.Args[0])
-
-	c, err := r.Scan(options.Command() + "\n")
-	if err != nil {
-		println("problem parsing command:", err.Error())
-		os.Exit(1)
-	}
-
-	if c == nil {
-		println("incomplete command")
-		os.Exit(1)
-	}
-
-	engine.Evaluate(job.New(process.Group()), c)
-
-	return true
-}
-
-func interactive() bool {
-	if !options.Interactive() {
-		return false
-	}
-
-	name := options.Args()[0]
-
-	err := process.BecomeForegroundGroup()
-	if err != nil {
-		println(err.Error())
-
-		return false
-	}
-
-	// We assume the terminal starts in cooked mode.
-	cooked, err := liner.TerminalMode()
-	if err != nil {
-		println(err.Error())
-
-		return false
-	}
-
-	// Restore terminal state when we exit.
-	defer func() {
-		err := cooked.ApplyMode()
-		if err != nil {
-			println(err.Error())
-		}
-	}()
-
-	cli := liner.NewLiner()
-
-	cli.SetCtrlCAborts(true)
-
-	uncooked, err := liner.TerminalMode()
-	if err != nil {
-		println(err.Error())
-
-		return false
-	}
-
-	err = history.Load(cli.ReadHistory)
-	if err != nil {
-		println(err.Error())
-	}
-
-	defer func() {
-		err = history.Save(cli.WriteHistory)
-		if err != nil {
-			println(err.Error())
-		}
-
-		_, _ = os.Stdout.Write([]byte{'\n'})
-	}()
-
-	err = repl(cli, cooked, uncooked, name)
-	if !errors.Is(err, io.EOF) {
-		println(err.Error())
-	}
-
-	return true
-}
-
 func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) error {
 	j := job.New(0)
 	r := reader.New(name)
 
-	complete := func(s string, n int) (h string, cs []string, t string) {
-		h = s[:n]
-		t = s[n:]
-
-		completing := h[strings.LastIndex(h, " ")+1:]
-
-		defer func() {
-			r := recover()
-			if r == nil {
-				return
-			}
-
-			cs = []string{}
-		}()
-
-		lc := r.Lexer().Copy()
-
-		lc.Scan(h)
-
-		lp := r.Parser().Copy(func(_ cell.I) {}, lc.Token)
-
-		_ = lp.Parse()
-
-		cs = lc.Expected()
-		if len(cs) != 0 {
-			return
-		}
-
-		// Ensure line == prefix + completing + tail
-		prefix := h[0 : len(h)-len(completing)]
-
-		cwd := engine.Resolve("PWD")
-		home := engine.Resolve("HOME")
-
-		if lp.Current() == pair.Null {
-			if completing == "" {
-				cs = []string{"    "}
-
-				return
-			}
-
-			cs = files(cwd, home, engine.Resolve("PATH"), completing)
-		} else {
-			cs = files(cwd, home, engine.Resolve("PWD"), completing)
-		}
-
-		if len(cs) == 0 {
-			return prefix, []string{completing}, t
-		}
-
-		unique := make(map[string]bool)
-		for _, completion := range cs {
-			unique[completion] = true
-		}
-
-		cs = make([]string, 0, len(unique))
-		for completion := range unique {
-			cs = append(cs, completion)
-		}
-
-		sort.Strings(cs)
-
-		return prefix, cs, t
-	}
-
-	cli.SetWordCompleter(complete)
+	cli.SetWordCompleter(completer(&r))
 	cli.SetTabCompletionStyle(liner.TabPrints)
 
+	continued := str.New("  ")
+	initial := str.New(": ")
+	suffix := initial
+
 	for {
-		v, _ := engine.System(j, list.New(sym.New("prompt"), str.New(": ")))
+		v, _ := engine.System(j, list.New(sym.New("prompt"), suffix))
 		p := common.String(v)
 
 		err := uncooked.ApplyMode()
@@ -348,14 +354,16 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 		}
 
 		line, err := cli.Prompt(p)
-		for errors.Is(err, liner.ErrPromptAborted) {
-			r.Close()
-			r = reader.New(name)
-			line, err = cli.Prompt(p)
-		}
-
 		if err != nil {
-			return err
+			if errors.Is(err, liner.ErrPromptAborted) {
+				r.Close()
+				r = reader.New(name)
+				suffix = initial
+
+				continue
+			} else {
+				return err
+			}
 		}
 
 		err = cooked.ApplyMode()
@@ -363,8 +371,14 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 			return err
 		}
 
+		if line == "" {
+			continue
+		}
+
 		cli.AppendHistory(line)
 		j.Append(line)
+
+		suffix = continued
 
 		c, err := r.Scan(line + "\n")
 		if err != nil {
@@ -372,6 +386,7 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 
 			r.Close()
 			r = reader.New(name)
+			suffix = initial
 
 			continue
 		}
@@ -382,6 +397,8 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 			j = job.New(0)
 
 			process.RestoreForegroundGroup()
+
+			suffix = initial
 		}
 	}
 }

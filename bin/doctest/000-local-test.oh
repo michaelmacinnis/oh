@@ -8,4 +8,5 @@ blah
 
 echo $foo
 
-#-     9:1: 'foo' not defined
+#-     9:1: echo $foo
+#-     error: 'foo' not defined

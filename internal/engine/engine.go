@@ -139,6 +139,23 @@ var (
 	scope0 scope.I
 )
 
+func bg(t *task.T) task.Op {
+	v := validate.Fixed(t.Code(), 0, 1)
+
+	n := 0
+	if len(v) > 0 {
+		n = int(integer.Value(v[0]))
+	}
+
+	// TODO: Convert this to a function that returns what a wrapper needs.
+	bt := job.Bg(pipe.W(t.CellValue("stdout")), n)
+	if bt == nil {
+		panic("job does not exist")
+	}
+
+	return t.Return(bt)
+}
+
 func fg(t *task.T) task.Op {
 	v := validate.Fixed(t.Code(), 0, 1)
 
@@ -148,7 +165,11 @@ func fg(t *task.T) task.Op {
 	}
 
 	// TODO: Convert this to a function that returns what a wrapper needs.
-	return t.Return(num.Int(job.Fg(pipe.W(t.CellValue("stdout")), n)))
+	if !job.Fg(pipe.W(t.CellValue("stdout")), n) {
+		panic("job does not exist")
+	}
+
+	return t.Return(boolean.True)
 }
 
 func init() { //nolint:gochecknoinits
@@ -175,6 +196,7 @@ func init() { //nolint:gochecknoinits
 	scope0.Define("sys", obj.New(env0))
 
 	// Methods.
+	scope0.Define("bg", &task.Method{Op: task.Action(bg)})
 	scope0.Define("fg", &task.Method{Op: task.Action(fg)})
 	scope0.Define("jobs", &task.Method{Op: task.Action(jobs)})
 
