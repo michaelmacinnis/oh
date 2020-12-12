@@ -10,7 +10,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/create"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
@@ -37,17 +37,17 @@ func exists(args cell.I) cell.I {
 
 		s, err := os.Stat(path)
 		if err != nil {
-			return boolean.False
+			return pair.Null
 		}
 
 		if ignore && device(s.Mode()) {
 			// Report device files as not existing.
 			// So that redirections to /dev/null etc. work.
-			return boolean.False
+			return pair.Null
 		}
 	}
 
-	return boolean.Bool(count > 0)
+	return create.Bool(count > 0)
 }
 
 func open(args cell.I) cell.I {

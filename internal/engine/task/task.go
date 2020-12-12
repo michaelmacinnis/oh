@@ -16,7 +16,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/reference"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
@@ -65,7 +64,7 @@ func (t *T) CellValue(k string) cell.I {
 }
 
 func (t *T) Chdir(s string) cell.I {
-	rv := boolean.True
+	rv := sym.True
 
 	_, r := t.frame.Resolve("PWD")
 	oldwd := r.Get()
@@ -78,7 +77,7 @@ func (t *T) Chdir(s string) cell.I {
 
 	err := os.Chdir(s)
 	if err != nil {
-		rv = boolean.False
+		rv = pair.Null
 	} else {
 		t.frame.Scope().Export("PWD", sym.New(s))
 		t.frame.Scope().Export("OLDPWD", oldwd)

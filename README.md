@@ -1,70 +1,120 @@
-# A surprisingly powerful Unix shell
+# Oh, a new Unix shell
 
-## Description
+## Why oh?
 
-Oh is a Unix shell. If you've used other Unix shells, oh should feel
-familiar.
+Oh is a reimagining of the Unix shell as a programming language.
 
-![gif](img/oh.gif)
+Oh's goal is a language that is not only more powerful and more regular
+but one that works with and within the interactive constraints and
+conventions established by the Unix shell over the last half-century.
 
-Where oh diverges from traditional Unix shells is in its programming
-language features.
+## Getting started
 
-At its core, oh is a heavily modified dialect of the Scheme programming
-language, complete with first-class continuations and proper tail
-recursion. Like early Scheme implementations, oh exposes environments
-as first-class values. Oh extends environments to allow both public and
-private members and uses these extended first-class environments as the
-basis for its prototype-based object system.
+### Installing oh
 
-Written in Go, oh is also a concurrent programming language. It exposes
-channels, in addition to pipes, as first-class values. As oh uses the
-same syntax for code and data, channels and pipes can, in many cases, be
-used interchangeably. This homoiconic nature also allows oh to support
-fexprs which, in turn, allow oh to be easily extended. In fact, much of
-oh is written in oh.
+The easiest way to try oh is to download a precompiled binary. There
+are oh binaries for Linux, macOS, DragonflyBSD, FreeBSD, OpenBSD and
+Solaris/Illumos.
 
-For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
+[TODO: Add link to binaries for current release]
 
-## Installing
-
-With Go 1.5 or greater installed,
+Alternatively, oh can be build from source. With a recent version of
+Go installed, type,
 
     go get github.com/michaelmacinnis/oh
 
-According to [gox](https://github.com/mitchellh/gox), oh compiles on the
-following platforms:
+to install oh.
 
-    darwin/386
-    darwin/amd64
-    dragonfly/amd64
-    freebsd/386
-    freebsd/amd64
-    freebsd/arm
-    linux/386
-    linux/amd64
-    linux/arm
-    linux/arm64
-    linux/ppc64
-    linux/ppc64le
-    netbsd/386
-    netbsd/amd64
-    netbsd/arm
-    openbsd/386
-    openbsd/amd64
-    plan9/386
-    plan9/amd64
-    solaris/amd64
-    windows/386
-    windows/amd64
+### Configuring oh
 
-(Oh compiles and runs on Plan 9 and Windows but should be considered
-experimental on those plarforms. On Solaris, interactive features are
-limited).
+When oh starts it attempts to read a file called `.oh-rc` in the home
+directory of the current user. This path can be overridden by setting
+the OH_RC environment variable to an alternative file's full path
+before invoking oh.
 
-## Using
+The oh rc file is useful for setting environment variables and defining
+custom commands. It's also a good place to override oh's default prompt.
+The commands below replaces oh's default make-prompt method with one that
+displays the current date.
 
-For more detail see: [Using oh](doc/manual.md)
+    define make-prompt: method (suffix) {
+        return `(date)$suffix
+    }
+    
+    define old-make-prompt: replace-make-prompt $make-prompt
+
+Oh also provides a searchable command history. This history is stored
+in a file called `.oh-history` in the home directory of the current
+user. This path can also be overridden but setting the OH_HISTORY
+environment variable to the full path of an alternative location before
+invoking oh.
+
+## Comparing oh to other Unix shells
+
+Oh is a Unix shell. If you've used other Unix shells, oh should feel
+familiar. Below are some specific differences you may encounter.
+
+### Clobbering
+
+When redirecting output oh will not overwrite an existing file. To force
+oh to overwrite (clobber) and existing file add a pipe, `|`, character
+immediately after the redirection operator. For example,
+
+    command >| out.txt
+
+### Command substitution
+
+Many Unix shells allow the historical backtick form,
+
+    ``command``
+
+and the POSIX form,
+
+    `$(command)`
+
+of command substitution. Oh has one syntax for command substitution,
+
+    ``(command)`
+
+This syntax is both nestable and unambiguous.
+
+### Here documents
+
+Oh does not have heredocs. It does however allow strings to span lines
+and provides a here command that takes a string argument and serves a
+similar purpose. For example,
+
+    # Build oh for supported BSD platforms
+    here "
+    dragonfly amd64
+    freebsd 386
+    freebsd amd64
+    freebsd arm
+    freebsd arm64
+    openbsd 386
+    openbsd amd64
+    openbsd arm
+    openbsd arm64
+    " | mill (o a) {
+        echo ${o}/${a}
+        GOOS=${o} GOARCH=${a} go build -o oh_${o}_${a}
+    }
+
+### Variables and implicit concatenation
+
+Like other shells, oh implicitly concatenates adjacent string/symbol
+values. Unlike other shells, oh allows is more generous when it comes to
+the characters that can appear in a symbol. What this means, is that it
+is that when implicit concatenation is being used variable names should
+be enclosed in curly braces, `{}`, to avoid unexpected behavior.
+
+### More information
+
+For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
+
+## Using oh
+
+For more information on using oh, see: [Using oh](doc/manual.md)
 
 ## License
 

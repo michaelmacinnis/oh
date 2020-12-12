@@ -11,14 +11,14 @@ import (
 
 	"github.com/michaelmacinnis/oh/internal/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
+	"github.com/michaelmacinnis/oh/internal/common/interface/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/conduit"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
 	"github.com/michaelmacinnis/oh/internal/common/interface/reference"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
-	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/create"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
@@ -669,7 +669,7 @@ func execExport(t *T) Op {
 //  stack: execIfBody Previous ...
 //
 func execIfBody(t *T) Op {
-	alternate := !truth.Value(t.Result())
+	alternate := !boolean.Value(t.Result())
 	if alternate {
 		t.code = pair.Cdr(t.code)
 		c := pair.Car(t.code)
@@ -777,7 +777,7 @@ func execTest(t *T) Op {
 //  stack: execWhileBody Previous ...
 //
 func execWhileBody(t *T) Op {
-	if !truth.Value(t.Result()) {
+	if !boolean.Value(t.Result()) {
 		return t.PreviousOp()
 	}
 
@@ -1031,9 +1031,17 @@ func exit(t *T) Op {
 }
 
 func fatal(t *T) Op {
+	v := validate.Fixed(t.code, 0, 1)
+
+	c := sym.True
+
+	if len(v) > 0 {
+		c = v[0]
+	}
+
 	t.stack = done
 
-	t.ReplaceResult(pair.Car(t.code))
+	t.ReplaceResult(c)
 
 	return t.Op()
 }
@@ -1098,7 +1106,7 @@ func isBuiltin(t *T) Op {
 		_, ok = b.command.(*Builtin)
 	}
 
-	return t.Return(boolean.Bool(ok))
+	return t.Return(create.Bool(ok))
 }
 
 func isContinuation(t *T) Op {
@@ -1106,7 +1114,7 @@ func isContinuation(t *T) Op {
 
 	_, ok := v[0].(*registers)
 
-	return t.Return(boolean.Bool(ok))
+	return t.Return(create.Bool(ok))
 }
 
 func isMethod(t *T) Op {
@@ -1117,7 +1125,7 @@ func isMethod(t *T) Op {
 		_, ok = b.command.(*Method)
 	}
 
-	return t.Return(boolean.Bool(ok))
+	return t.Return(create.Bool(ok))
 }
 
 func isSet(t *T) Op {
@@ -1129,7 +1137,7 @@ func isSet(t *T) Op {
 
 	r := s.Lookup(k)
 
-	return t.Return(boolean.Bool(r != nil))
+	return t.Return(create.Bool(r != nil))
 }
 
 func isSyntax(t *T) Op {
@@ -1140,7 +1148,7 @@ func isSyntax(t *T) Op {
 		_, ok = b.command.(*Syntax)
 	}
 
-	return t.Return(boolean.Bool(ok))
+	return t.Return(create.Bool(ok))
 }
 
 func resolve(t *T) Op {
@@ -1162,7 +1170,7 @@ func resolves(t *T) Op {
 
 	v := t.value(s, k)
 
-	return t.Return(boolean.Bool(v != nil))
+	return t.Return(create.Bool(v != nil))
 }
 
 func trace(t *T) Op {
@@ -1203,7 +1211,7 @@ func unset(t *T) Op {
 
 	s := scope.To(b.self)
 
-	return t.Return(boolean.Bool(s.Remove(k)))
+	return t.Return(create.Bool(s.Remove(k)))
 }
 
 func wait(t *T) Op {

@@ -13,7 +13,7 @@ import (
 	"os/signal"
 	"sort"
 
-	"github.com/michaelmacinnis/oh/internal/common/type/num"
+	"github.com/michaelmacinnis/oh/internal/common/type/status"
 	"github.com/michaelmacinnis/oh/internal/engine/task"
 	"github.com/michaelmacinnis/oh/internal/system/options"
 	"github.com/michaelmacinnis/oh/internal/system/process"
@@ -371,8 +371,8 @@ func (j *T) interrupt() {
 	}
 }
 
-func (j *T) notify(pid int, status unix.WaitStatus) {
-	if status.Continued() {
+func (j *T) notify(pid int, ws unix.WaitStatus) {
+	if ws.Continued() {
 		t, found := j.stopped[pid]
 		if !found {
 			println("UNKNOWN PID CONTINUED", pid)
@@ -398,7 +398,7 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 		return
 	}
 
-	if status.Stopped() {
+	if ws.Stopped() {
 		if len(j.running) == 1 {
 			// The last running process is stopping. Stop the task.
 			j.stop()
@@ -410,13 +410,13 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 		return
 	}
 
-	code := int(status)
+	code := int(ws)
 
 	switch {
-	case status.Exited():
-		code = status.ExitStatus()
+	case ws.Exited():
+		code = ws.ExitStatus()
 
-	case status.Signaled():
+	case ws.Signaled():
 		code += 128
 
 	default:
@@ -430,7 +430,7 @@ func (j *T) notify(pid int, status unix.WaitStatus) {
 		j.group = j.initial
 	}
 
-	t.Notify(num.Int(code))
+	t.Notify(status.Int(code))
 }
 
 func (j *T) resume() {

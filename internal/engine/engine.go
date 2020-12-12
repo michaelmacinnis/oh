@@ -10,17 +10,16 @@ import (
 	"strings"
 
 	"github.com/michaelmacinnis/oh/internal/common"
+	"github.com/michaelmacinnis/oh/internal/common/interface/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
-	"github.com/michaelmacinnis/oh/internal/common/interface/truth"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
-	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
+	"github.com/michaelmacinnis/oh/internal/common/type/status"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
@@ -31,6 +30,8 @@ import (
 )
 
 func Boot(path string, arguments []string) {
+	sym.Cache(true)
+
 	job.Monitor()
 
 	if path != "" {
@@ -77,6 +78,8 @@ func Boot(path string, arguments []string) {
 			System(j, c)
 		}
 	}
+
+	sym.Cache(false)
 }
 
 // Evaluate evaluates the command c.
@@ -84,12 +87,12 @@ func Evaluate(j *job.T, c cell.I) cell.I {
 	r, exited := System(j, c)
 
 	if exited {
-		exitcode, ok := status(r)
+		code, ok := exitcode(r)
 		if !ok {
-			exitcode = success(r)
+			code = success(r)
 		}
 
-		os.Exit(exitcode)
+		os.Exit(code)
 	}
 
 	scope0.Define("?", r)
@@ -169,7 +172,7 @@ func fg(t *task.T) task.Op {
 		panic("job does not exist")
 	}
 
-	return t.Return(boolean.True)
+	return t.Return(sym.True)
 }
 
 func init() { //nolint:gochecknoinits
@@ -200,10 +203,6 @@ func init() { //nolint:gochecknoinits
 	scope0.Define("fg", &task.Method{Op: task.Action(fg)})
 	scope0.Define("jobs", &task.Method{Op: task.Action(jobs)})
 
-	// Values.
-	scope0.Define("False", boolean.False)
-	scope0.Define("True", boolean.True)
-
 	task.Actions(scope0)
 
 	frame0 = frame.New(scope0, frame.New(env0, nil))
@@ -213,10 +212,10 @@ func jobs(t *task.T) task.Op {
 	// TODO: Convert this to a function that returns what a wrapper needs.
 	job.Jobs(pipe.W(t.CellValue("stdout")))
 
-	return t.Return(num.Int(0))
+	return t.Return(status.Int(0))
 }
 
-func status(c cell.I) (exitcode int, ok bool) {
+func exitcode(c cell.I) (code int, ok bool) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -235,5 +234,5 @@ func success(c cell.I) (exitcode int) {
 	return map[bool]int{
 		true:  0,
 		false: 1,
-	}[truth.Value(c)]
+	}[boolean.Value(c)]
 }

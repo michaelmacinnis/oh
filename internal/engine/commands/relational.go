@@ -5,8 +5,8 @@ package commands
 import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/rational"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
+	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
@@ -15,11 +15,11 @@ func equal(args cell.I) cell.I {
 
 	for {
 		if !v[0].Equal(v[1]) {
-			return boolean.False
+			return pair.Null
 		}
 
 		if rest == pair.Null {
-			return boolean.True
+			return sym.True
 		}
 
 		v[0] = v[1]
@@ -37,11 +37,11 @@ func ge(args cell.I) cell.I {
 
 	for {
 		if prev.Cmp(curr) < 0 {
-			return boolean.False
+			return pair.Null
 		}
 
 		if rest == pair.Null {
-			return boolean.True
+			return sym.True
 		}
 
 		prev = curr
@@ -59,11 +59,11 @@ func gt(args cell.I) cell.I {
 
 	for {
 		if prev.Cmp(curr) <= 0 {
-			return boolean.False
+			return pair.Null
 		}
 
 		if rest == pair.Null {
-			return boolean.True
+			return sym.True
 		}
 
 		prev = curr
@@ -81,11 +81,11 @@ func le(args cell.I) cell.I {
 
 	for {
 		if prev.Cmp(curr) > 0 {
-			return boolean.False
+			return pair.Null
 		}
 
 		if rest == pair.Null {
-			return boolean.True
+			return sym.True
 		}
 
 		prev = curr
@@ -103,11 +103,11 @@ func lt(args cell.I) cell.I {
 
 	for {
 		if prev.Cmp(curr) >= 0 {
-			return boolean.False
+			return pair.Null
 		}
 
 		if rest == pair.Null {
-			return boolean.True
+			return sym.True
 		}
 
 		prev = curr

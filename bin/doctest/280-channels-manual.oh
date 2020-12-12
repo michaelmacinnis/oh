@@ -9,31 +9,27 @@
 #{
 
 define filter: method (base) {
-    while $True {
-        define n: read
-        if (not: mod $n $base) {
-            write $n
-        }
+    mill (n) {
+        mod $n $base && write $n
     }
 }
 
-define connector: channel
+define connector: chan
 
 spawn {
-    define n: number 2
-    while $True {
-        write $n
-        set n: add $n 1
+    define n: number 1
+    while true {
+        write (set n: add $n 1)
     }
 } >$connector
 
-define prime-numbers: channel
+define prime-numbers: chan
 
-while $True {
+while true {
     define prime: connector read
     write $prime
 
-    define filtered: channel
+    define filtered: chan
     spawn {
         filter $prime
     } <$connector >$filtered
@@ -46,13 +42,13 @@ define count: number 100
 printf "The first %d prime numbers\n" $count
 
 define line ''
-while (not $count) {
+while $count {
     define p: prime-numbers read
 
     set line: mend '' $line (sprintf "%7.7s" $p)
 
     set count: sub $count 1
-    if (mod $count 10) {
+    mod $count 10 || block {
         echo $line
         set line ''
     }

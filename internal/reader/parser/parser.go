@@ -12,10 +12,10 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/struct/token"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
+	"github.com/michaelmacinnis/oh/internal/common/type/status"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 )
@@ -486,11 +486,11 @@ func (p *T) meta(c cell.I) cell.I {
 	case "cons":
 		return pair.Cons(pair.Cadr(c), pair.Caddr(c))
 
-	case "boolean":
-		create = boolean.New
-
 	case "number":
 		create = num.New
+
+	case "status":
+		create = status.New
 
 	case "symbol":
 		create = sym.New
@@ -507,6 +507,7 @@ func (p *T) meta(c cell.I) cell.I {
 		return create(arg.String())
 	}
 
+	// TODO: What case are we handling here?
 	return num.New(arg.String())
 }
 

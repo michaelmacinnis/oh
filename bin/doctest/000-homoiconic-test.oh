@@ -6,8 +6,8 @@
 #{
 # The short-circuit and operator is defined using the syntax command.
 define and: syntax ((lst)) e {
-    define r $False
-    while (not (null? (lst head))) {
+    define r ()
+    while $lst {
         set r (e eval (lst head))
         if (not $r) {
             return $r
@@ -16,8 +16,8 @@ define and: syntax ((lst)) e {
     }
     return $r
 }
-echo (and $True $False (echo "Never reached"))
+echo (and true () (echo "Never reached"))
 #}
 ##
 
-#-     false
+#-     ()

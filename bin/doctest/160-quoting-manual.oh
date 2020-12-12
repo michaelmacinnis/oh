@@ -39,10 +39,8 @@ World!"
 ## Double quoted strings also automatically perform string interpolation.
 ## In a double quoted string, a dollar sign, `$`, followed by a variable name,
 ## optionally enclosed in braces, will be replaced by the variable's value.
-## If no variable exists with the name specified the dollar sign, optional
-## opening brace, `{`, variable name, and optional closing brace, `}`, are
-## not replaced. While the opening and closing braces are not required their
-## use is encouraged to avoid ambiguity.
+## If no variable exists an exception is thrown. While the opening and closing
+## braces are not required their use is encouraged to avoid ambiguity.
 ##
 
 #-     Hello,

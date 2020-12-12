@@ -23,13 +23,17 @@ ls >> file
 #}
 ##
 ## Standard output and standard error may be redirected,
+##
 #{
 ls non-existent-filename >&errors
 #}
+##
 ## or appended to a file.
+##
 #{
 ls errors >>&errors
 #}
+##
 ## Standard input may also be redirected.
 ##
 ##     wc -l <file
@@ -37,12 +41,10 @@ wc -l <file | tr -s ' ' | sed -e 's/^[ 	] *//' # Remove duplicate spaces and lea
 wc -l <errors | tr -s ' ' | sed -e 's/^[ 	] *//' # Remove duplicate spaces and leading whitespace.
 ##
 ## To redirect the output of a command to a file that already exists (replacing
-### the contents of the file), use the "clobber" redirection.
-###
-##{
-#ls >| file
-##}
-###
+## the contents of the file), use the "clobber" redirection.
+##
+##     ls >| file
+##
 
 sort file | awk '{ print "stdout" FS count++ FS $0 }'
 sort errors | awk '{ print "stdout and stderr" FS count++ FS $0 }'

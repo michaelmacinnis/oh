@@ -14,18 +14,20 @@ define pipe-fitting: method (label (cmd)) e {
 
 pipe-fitting 1st echo 1 2 3 |
 pipe-fitting 2nd tr ' ' '\n' |
-pipe-fitting 3rd grep 2
+pipe-fitting 3rd grep 2 |
+pipe-fitting 4th grep 3
 
 echo '1st stage exit status =>' (exit-status get 1st)
 echo '2nd stage exit status =>' (exit-status get 2nd)
 echo '3rd stage exit status =>' (exit-status get 3rd)
+echo '4th stage exit status =>' (exit-status get 4th)
 #}
 ##
 ## produces the output,
 ##
-#+     2
 #+     1st stage exit status => 0
 #+     2nd stage exit status => 0
 #+     3rd stage exit status => 0
+#+     4th stage exit status => 1
 ##
 

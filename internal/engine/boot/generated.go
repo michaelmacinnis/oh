@@ -13,8 +13,8 @@ define show: syntax ((args)) {
 # Foundational stuff.
 
 define and: syntax ((lst)) e {
-    define r $False
-    while (not (null? $lst)) {
+    define r ()
+    while $lst {
         set r: e eval (lst head)
         if (not $r) {
             return $r
@@ -32,15 +32,15 @@ define eq?: method ((args)) {
 
     define c: args head
     set args: args tail
-    while (not: null? $args) {
+    while $args {
         if (not: equal? (string $c) (string (args head))) {
-            return $False
+            return ()
         }
 
         set args: args tail
     }
 
-    return $True
+    return true
 }
 
 define list: method ((l)) {
@@ -56,8 +56,8 @@ define not:: syntax ((v)) e {
 }
 
 define or: syntax ((lst)) e {
-    define r $False
-    while (not (null? $lst)) {
+    define r ()
+    while $lst {
         set r: e eval (lst head)
         if $r {
             return $r
@@ -75,7 +75,7 @@ define source: builtin (basename) e {
         set paths: rend : $OHPATH
     }
 
-    while (and (not (null? $paths)) (not (exists $name))) {
+    while (and $paths (not (exists $name))) {
         set name: mend / (paths head) $basename
         set paths: paths tail
     }
@@ -92,7 +92,7 @@ define source: builtin (basename) e {
 
     f close
 
-    define rval $False
+    define rval ()
     define eval-list: method (first rest) {
         if (null? $first) {
             return $rval
@@ -146,7 +146,7 @@ define map: method () {
 define for: method (l m) {
     define r: cons () ()
     define c $r
-    while (not: null? $l) {
+    while $l {
         c set-tail (cons (m (l head)) ())
         set c (c tail)
         set l (l tail)
@@ -173,7 +173,7 @@ block {
         set block: cons block $block
 
         quasiquote ((method () {
-            define r: boolean false
+            define r ()
 
             catch ex {
                 return (cons $r $ex)
@@ -186,20 +186,22 @@ block {
     }
 
     define collect-unwrap-r-ex: method (c n) {
-        define r $False
+        define r ()
 
         set n: number $n
-        while (not $n) {
+        while $n {
             define rex: c read
 
             set r: rex head
 
             define ex: rex tail
+
+            # TODO: Handle cases where we want to throw ().
             if (not (null? $ex)) {
                 throw $ex
             }
 
-            set n: add $n -1
+            set n: sub $n 1
         }
 
         return $r
@@ -226,7 +228,7 @@ block {
 
     define make-pipe: method (override) {
         syntax (right (left)) e {
-            define c: channel 2
+            define c: chan 2
             define p: pipe
 
             spawn {
@@ -251,8 +253,9 @@ block {
                 }
                 set c: l head
             }
+
             define f ()
-            if (not (or (channel? $c) (pipe? $c))) {
+            if (not (or (chan? $c) (pipe? $c))) {
                 if (and $check (exists -i $c)) {
                     if (eq? w $mode) {
                         throw "${c} exists"
@@ -265,14 +268,19 @@ block {
                 set f: open $mode $c
                 set c $f
             }
+
             define ec-ex: override $e $c $cmd
             if (not: null? $f) {
                 f $closer
             }
+
             define ex: ec-ex tail
+
+            # TODO: Handle cases where we want to throw ().
             if (not: null? $ex) {
                 throw $ex
             }
+
             return (ec-ex head)
         }
     }
@@ -281,7 +289,7 @@ block {
     set append-output-errors-to: make-redirect true writer-close a $override-stdout-stderr
 
     set capture: syntax ((cmd)) e {
-        define c: channel 1
+        define c: chan 1
         define p: pipe
 
         spawn {
@@ -292,7 +300,7 @@ block {
         define s: cons () ()
         define r $s
 
-        while (not: null? (define l: p read-line)) {
+        while (define l: p read-line) {
             r set-tail (cons $l ())
             set r (r tail)
         }
@@ -313,7 +321,7 @@ block {
     set pipe-output-errors-to: make-pipe $override-stdout-stderr
 
     set process-substitution: syntax ((args)) e {
-        define chans ()
+        define channels ()
         define fifos ()
 
         define cmd: for $args (method (arg) {
@@ -322,32 +330,32 @@ block {
             }
 
             if (equal? -named-pipe-input-from (arg head)) {
-                define chan: channel 1
+                define c: chan 1
                 define fifo: temp-fifo
 
                 spawn {
                     define f: open w $fifo
-                    chan write (override-stdout $e $f (arg tail))
+                    c write (override-stdout $e $f (arg tail))
                     f close
                 }
 
-                set chans: cons $chan $chans
+                set channels: cons $c $channels
                 set fifos: cons $fifo $fifos
 
                 return $fifo
             }
 
             if (equal? -named-pipe-output-to (arg head)) {
-                define chan: channel 1
+                define c: chan 1
                 define fifo: temp-fifo
 
                 spawn {
                     define f: open r $fifo
-                    chan write (override-stdin $e $f (arg tail))
+                    c write (override-stdin $e $f (arg tail))
                     f close
                 }
 
-                set chans: cons $chan $chans
+                set channels: cons $c $channels
                 set fifos: cons $fifo $fifos
 
                 return $fifo
@@ -359,8 +367,8 @@ block {
         define mainecex: e eval (wrap-redir-r-ex $cmd)
 
         define ecexs ()
-        for $chans (method (chan) {
-            set ecexs: cons (chan read) $ecexs
+        for $channels (method (c) {
+            set ecexs: cons (c read) $ecexs
         })
 
         set ecexs: cons $mainecex $ecexs
@@ -371,6 +379,8 @@ block {
 
         for $ecexs (method (ecex) {
             define ex: ecex tail
+
+            # TODO: Handle cases where we want to throw ().
             if (not: null? $ex) {
                 throw $ex
             }
@@ -401,6 +411,8 @@ block {
             })
 
             define ex: ecex tail
+
+            # TODO: Handle cases where we want to throw ().
             if (not: null? $ex) {
                 throw $ex
             }
@@ -436,7 +448,7 @@ block {
     }
 
     set import: method (path) {
-        define response: channel
+        define response: chan
 
         request write (method (returned) {
             response write $returned
@@ -445,6 +457,8 @@ block {
         define ecex: response read
 
         define ex: ecex tail
+
+        # TODO: Handle cases where we want to throw ().
         if (not: null? $ex) {
             throw $ex
         }
@@ -453,10 +467,10 @@ block {
     }
 
     define modules: map
-    define request: channel 1
+    define request: chan 1
 
     spawn {
-        while (boolean true) {
+        while true {
             do-import (splice (request read-list))
         }
     }
@@ -465,7 +479,7 @@ block {
 # Prompt stuff.
 
 define prompt
-define replace-prompt-fn
+define replace-make-prompt
 
 block {
     define call-make-prompt: method (suffix) {
@@ -482,18 +496,18 @@ block {
     }
 
     set prompt: method (suffix) {
-        define response: channel 1
+        define response: chan 1
         request write get $response $suffix
         response read
     }
 
-    set replace-prompt-fn: method (fn) {
-        define response: channel 1
+    set replace-make-prompt: method (fn) {
+        define response: chan 1
         request write set $response $fn
         response read
     }
 
-    define request: channel 1
+    define request: chan 1
 
     define service: method (request) {
         define type: request get 0
@@ -509,7 +523,7 @@ block {
     }
 
     spawn {
-        while (boolean true) {
+        while true {
             service (request read-list)
         }
     }
@@ -564,7 +578,7 @@ block {
 
 define ...: method (dir base) {
     cd $dir || return $base
-    while $True {
+    while true {
         define path: mend / $PWD $base
         if (exists $path) {
             return $path

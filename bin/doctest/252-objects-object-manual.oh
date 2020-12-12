@@ -2,10 +2,10 @@
 
 ## #### Object
 ##
-## Oh's `object` command is really just a convenience wrapper around a `block`
-## command with an anonymous method that returns self as the final action.
-##
-## The previous example can be rewritten as,
+## In oh, environments are first-class values with public and private halves.
+## For a variable to be public it must be created with the `export` command
+## instead of the `define` command. A reference to an environment can be
+## created with the `object` command.
 ##
 #{
 define o: object {

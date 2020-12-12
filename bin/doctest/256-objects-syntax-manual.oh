@@ -16,21 +16,21 @@ define until: syntax (condition (body)) e {
     e eval (cons while (cons (list not $condition) $body))
 }
 
-define x: number 10
-until $x {
+define x 0
+until (eq? 10 $x) {
     echo $x
-    set x: sub $x 1
+    set x: add $x 1
 }
 #}
 ##
 
-#-     10
-#-     9
-#-     8
-#-     7
-#-     6
-#-     5
-#-     4
-#-     3
-#-     2
+#-     0
 #-     1
+#-     2
+#-     3
+#-     4
+#-     5
+#-     6
+#-     7
+#-     8
+#-     9

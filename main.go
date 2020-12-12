@@ -417,11 +417,11 @@ func main() {
 //go:generate ./oh bin/doc.oh manual ../doc/manual.md
 //go:generate ./oh bin/doc.oh readme ../README.md
 //go:generate go generate github.com/michaelmacinnis/oh/internal/engine/boot
-//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/boolean
-//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/channel
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/chn
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/env
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/num
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/obj
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/pair
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/pipe
+//go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/status
 //go:generate go generate github.com/michaelmacinnis/oh/internal/common/type/str

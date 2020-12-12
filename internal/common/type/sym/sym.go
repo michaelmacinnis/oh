@@ -25,6 +25,8 @@ type T string
 
 type sym = T
 
+var True cell.I //nolint:gochecknoglobals
+
 // New creates a sym cell.
 func New(v string) cell.I {
 	return symnew(v)
@@ -47,7 +49,7 @@ func (s *sym) Name() string {
 
 // Rat returns the value of the sym as a big.Rat, if possible.
 func (s *sym) Rat() *big.Rat {
-	return rational.Number(num.Num(s.Literal()))
+	return rational.Number(num.New(s.Literal()))
 }
 
 // String returns the text of the sym s.
@@ -55,20 +57,28 @@ func (s *sym) String() string {
 	return string(*s)
 }
 
-// Functions specific to sym.
+// Cache enables (or disables) caching of all symbols.
+func Cache(a bool) {
+	cachel.Lock()
+	defer cachel.Unlock()
 
-// Cache caches the specified sym to reduce allocations.
-func Cache(symbols ...string) {
-	for _, v := range symbols {
-		cache[v] = symnew(v)
-	}
+	all = a
 }
 
 //nolint:gochecknoglobals
 var (
+	all    = false
 	cache  = map[string]*sym{}
 	cachel = &sync.RWMutex{}
 )
+
+func init() { //nolint:gochecknoinits
+	v := "true"
+	s := sym(v)
+
+	True = &s
+	cache[v] = &s
+}
 
 func meta(s string) string {
 	return "(|" + name + " " + s + "|)"
@@ -95,9 +105,9 @@ func repr(s string) string {
 }
 
 func symnew(v string) *sym {
-	p, ok := symtry(v)
+	p, ok, cacheable := symtry(v)
 	if !ok {
-		if len(v) <= short {
+		if cacheable {
 			cachel.Lock()
 			defer cachel.Unlock()
 
@@ -109,7 +119,7 @@ func symnew(v string) *sym {
 		s := sym(v)
 		p = &s
 
-		if len(v) <= short {
+		if cacheable {
 			cache[v] = p
 		}
 	}
@@ -117,9 +127,11 @@ func symnew(v string) *sym {
 	return p
 }
 
-func symtry(v string) (p *sym, ok bool) {
+func symtry(v string) (p *sym, ok bool, cacheable bool) {
 	cachel.RLock()
 	defer cachel.RUnlock()
+
+	cacheable = all || len(v) <= short
 
 	p, ok = cache[v]
 

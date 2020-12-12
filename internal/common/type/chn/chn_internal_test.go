@@ -1,6 +1,6 @@
 // Released under an MIT license. See LICENSE.
 
-package channel
+package chn
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 )
 
 func TestWriteRead(t *testing.T) {
-	p := New(1).(*channel)
+	p := New(1).(*chn)
 
 	sent := str.New("hello")
 
@@ -23,7 +23,7 @@ func TestWriteRead(t *testing.T) {
 }
 
 func TestWriteReadLine(t *testing.T) {
-	p := New(1).(*channel)
+	p := New(1).(*chn)
 
 	sent := str.New("hello")
 

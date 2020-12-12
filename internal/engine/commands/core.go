@@ -7,12 +7,15 @@ import (
 
 	"github.com/michaelmacinnis/oh/internal/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
+	"github.com/michaelmacinnis/oh/internal/common/interface/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
+	"github.com/michaelmacinnis/oh/internal/common/interface/rational"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/create"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
+	"github.com/michaelmacinnis/oh/internal/common/type/status"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
@@ -21,13 +24,25 @@ import (
 func debug(args cell.I) cell.I {
 	println(literal.String(args))
 
-	return boolean.True
+	return sym.True
 }
 
 func isObject(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
-	return boolean.Bool(scope.Is(v[0]))
+	return create.Bool(scope.Is(v[0]))
+}
+
+func makeBool(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return create.Bool(boolean.Value(v[0]))
+}
+
+func makeStatus(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return status.Rat(rational.Number(v[0]))
 }
 
 func match(args cell.I) cell.I {
@@ -38,7 +53,7 @@ func match(args cell.I) cell.I {
 		panic(err.Error())
 	}
 
-	return boolean.Bool(ok)
+	return create.Bool(ok)
 }
 
 func mend(args cell.I) cell.I {

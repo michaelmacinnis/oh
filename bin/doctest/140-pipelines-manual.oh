@@ -18,7 +18,7 @@ ls | wc -l | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and lead
 ##     ls >file; wc -l file
 ls >file; wc -l file | tr -s ' ' | sed -e 's/^[ 	]*//g' # Remove duplicate spaces and leading whitespace.
 ##
-## except that no file is used. Instead the two processes are connected by a
+## except that no file is used. Instead the two commands are connected by a
 ## pipe and are run in parallel.
 ##
 ## A pipeline may consist of more than two commands.

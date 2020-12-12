@@ -2,8 +2,7 @@
 
 ## Using oh Interactively
 
-The oh shell provides a command-line interface to Unix and Unix-like
-systems.
+Oh provides a command-line interface to Unix and Unix-like systems.
 
 (Much of this section shamelessly copied from "An Introduction to the
 UNIX Shell")
@@ -37,18 +36,21 @@ Output may also be appended to a file.
     ls >> file
 
 Standard output and standard error may be redirected,
+
     ls non-existent-filename >&errors
+
 or appended to a file.
+
     ls errors >>&errors
+
 Standard input may also be redirected.
 
     wc -l <file
 
 To redirect the output of a command to a file that already exists (replacing
- the contents of the file), use the "clobber" redirection.
+the contents of the file), use the "clobber" redirection.
 
-
-
+    ls >| file
 
 ### Pipelines and Filters
 
@@ -62,7 +64,7 @@ effect is the same as,
 
     ls >file; wc -l file
 
-except that no file is used. Instead the two processes are connected by a
+except that no file is used. Instead the two commands are connected by a
 pipe and are run in parallel.
 
 A pipeline may consist of more than two commands.
@@ -143,10 +145,8 @@ no way to escape it.
 Double quoted strings also automatically perform string interpolation.
 In a double quoted string, a dollar sign, `$`, followed by a variable name,
 optionally enclosed in braces, will be replaced by the variable's value.
-If no variable exists with the name specified the dollar sign, optional
-opening brace, `{`, variable name, and optional closing brace, `}`, are
-not replaced. While the opening and closing braces are not required their
-use is encouraged to avoid ambiguity.
+If no variable exists an exception is thrown. While the opening and closing
+braces are not required their use is encouraged to avoid ambiguity.
 
 ## Using oh Programmatically
 
@@ -204,10 +204,10 @@ produce the output,
 
 #### Object
 
-Oh's `object` command is really just a convenience wrapper around a `block`
-command with an anonymous method that returns self as the final action.
-
-The previous example can be rewritten as,
+In oh, environments are first-class values with public and private halves.
+For a variable to be public it must be created with the `export` command
+instead of the `define` command. A reference to an environment can be
+created with the `object` command.
 
     define o: object {
         export get $resolve
@@ -324,10 +324,10 @@ The example below uses the `syntax` command to define a new `until` command.
         e eval (cons while (cons (list not $condition) $body))
     }
     
-    define x: number 10
-    until $x {
+    define x 0
+    until (eq? 10 $x) {
         echo $x
-        set x: sub $x 1
+        set x: add $x 1
     }
 
 ### Maps
@@ -343,18 +343,20 @@ for each stage in a pipeline. The code below,
     
     pipe-fitting 1st echo 1 2 3 |
     pipe-fitting 2nd tr ' ' '\n' |
-    pipe-fitting 3rd grep 2
+    pipe-fitting 3rd grep 2 |
+    pipe-fitting 4th grep 3
     
     echo '1st stage exit status =>' (exit-status get 1st)
     echo '2nd stage exit status =>' (exit-status get 2nd)
     echo '3rd stage exit status =>' (exit-status get 3rd)
+    echo '4th stage exit status =>' (exit-status get 4th)
 
 produces the output,
 
-    2
     1st stage exit status => 0
     2nd stage exit status => 0
     3rd stage exit status => 0
+    4th stage exit status => 1
 
 ### Channels
 
@@ -364,31 +366,27 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
 
     
     define filter: method (base) {
-        while $True {
-            define n: read
-            if (not: mod $n $base) {
-                write $n
-            }
+        mill (n) {
+            mod $n $base && write $n
         }
     }
     
-    define connector: channel
+    define connector: chan
     
     spawn {
-        define n: number 2
-        while $True {
-            write $n
-            set n: add $n 1
+        define n: number 1
+        while true {
+            write (set n: add $n 1)
         }
     } >$connector
     
-    define prime-numbers: channel
+    define prime-numbers: chan
     
-    while $True {
+    while true {
         define prime: connector read
         write $prime
     
-        define filtered: channel
+        define filtered: chan
         spawn {
             filter $prime
         } <$connector >$filtered
@@ -401,13 +399,13 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     printf "The first %d prime numbers\n" $count
     
     define line ''
-    while (not $count) {
+    while $count {
         define p: prime-numbers read
     
         set line: mend '' $line (sprintf "%7.7s" $p)
     
         set count: sub $count 1
-        if (mod $count 10) {
+        mod $count 10 || block {
             echo $line
             set line ''
         }

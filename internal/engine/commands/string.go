@@ -9,7 +9,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
-	"github.com/michaelmacinnis/oh/internal/common/type/boolean"
+	"github.com/michaelmacinnis/oh/internal/common/type/create"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
@@ -18,7 +18,7 @@ import (
 func isString(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
-	return boolean.Bool(str.Is(v[0]))
+	return create.Bool(str.Is(v[0]))
 }
 
 func makeString(args cell.I) cell.I {

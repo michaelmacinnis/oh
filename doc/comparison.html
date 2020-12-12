@@ -1,0 +1,2925 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0036)http://hyperpolyglot.org/unix-shells -->
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Comparing oh to other Unix shells</title>
+<style type="text/css" id="internal-style">
+
+/* base.css */
+
+body{
+	margin: 0px;
+	padding: 0px;
+}
+
+body
+{
+	font-family: verdana,arial,helvetica,sans-serif;
+	font-size: 0.82em;
+}
+
+h1,h2,h3,h4,h5,h6{
+	font-family: "Trebuchet MS", Trebuchet, Verdana, Arial, Helvetica;
+}
+
+h1{
+	font-size: 190%;
+	font-weight: normal;
+}
+h2{
+	font-weight: normal;
+	font-size: 150%;
+}
+h3{
+	font-weight: bold;
+	font-size: 130%;
+}
+h4{
+	font-weight: bold;
+	font-size: 120%;
+}
+h5 {
+	font-weight: bold;
+	font-size: 100%;
+}
+h6 {
+	font-weight: bold;
+	font-size: 90%;
+}
+
+img{
+	border-width: 0px;
+}
+
+blockquote{
+	border: 1px dashed #999;
+	padding: 0 1em;
+	background-color: #f4f4f4;
+}
+
+table {
+	empty-cells: show;
+}
+td {
+	text-align: left;
+}
+
+a{
+	color: #00A;
+       -webkit-transition: background-color 0.3s ease;
+       transition: background-color 0.3s ease;
+}
+
+a:hover{
+	background-color: #EEE;
+}
+
+h1 a{
+	text-decoration: none;
+}
+
+body.wait, body.wait *{
+	cursor: wait;
+}
+
+form{
+	margin: 0; padding: 0;
+}
+
+a.newpage{
+	color: #933;
+}
+
+#container-wrap-wrap {
+	position: relative;
+}
+
+#page-content{
+	
+}
+
+#container {
+	margin: 0;
+	padding: 0;
+}
+
+#header {
+	position: relative;
+	z-index: 30;
+	height: 7em;
+}
+
+#header h1{
+	margin: 0;
+	padding: 0;
+}
+#header h2{
+	margin: 0;
+	padding: 0;
+}
+
+#content-wrap{
+	padding:0; margin:0;
+}
+
+/* fixes the peekaboo bug in most of the themes (ie6, ie7)*/
+#content-wrap {
+	_height: 1%;
+	min-height: 1px;
+}
+
+#page-title{
+	margin: 0 0 0.5em 0;
+	padding-top: 0.5em; /* Firefox bug? */
+	font-size: 190%;
+	border-bottom: 1px solid #666;
+}
+
+#main-content{
+	margin-left: 17em;
+	padding: 0 1em;
+}
+
+#license-area {
+	padding: 0.5em 0;
+	color: #555;
+	text-align: center;
+}
+
+table.wiki-content-table{
+	border: 1px solid #888;
+	border-collapse: collapse;
+	border-spacing: 0;
+	margin: 0.5em auto;
+}
+table.wiki-content-table td{
+	border: 1px solid #888;
+	padding: 0.3em 0.7em;
+}
+table.wiki-content-table th{
+	border: 0px solid #888;
+	padding: 0.3em 0.7em;
+	background-color: #EEE;
+}
+
+tt{
+	font-family: 'Andale Mono', 'Courier New', Courier, monospace; 
+	font-size: 98%;
+}
+
+
+pre{
+	font-family: 'Andale Mono', 'Courier New', Courier, monospace;
+}
+
+.code { 
+	border: 1px dashed #888;
+	background-color: #EEE;
+	font-family: 'Andale Mono', 'Courier New', Courier, monospace;
+	padding: 0 1em;
+	margin: 0.4em 0;
+	overflow: auto;
+}
+
+code {
+	font-family: 'Andale Mono', 'Courier New', Courier, monospace;
+}
+
+.math-equation{
+	text-align: center;
+	padding: 0.5em 0;
+	height: 1%; /* for IE to blink ;-) */
+}
+
+#MathJax_Message {
+    display: none !important;
+}
+
+.math-inline span.merror {
+    color: red !important;
+}
+
+a.inline-math-error {
+    padding: 0 0.5em;
+    font-weight: bold;
+}
+
+a.math-equation-error {
+    padding: 0 2em;
+    font-weight: bold;
+}
+
+.wiki-parse-error{
+	color: red;
+	padding: 0.2em 0;
+}
+
+hr{
+ 	margin: 1em 2em;
+	padding: 0;
+	height: 1px;
+	border: none;
+	/*color: #555545;*/
+	color: #DDD;
+	background-color: #AAA;
+	/*background-color: #555545;*/
+}
+
+* html hr {
+	margin: 2px 2em;
+}
+
+input {
+	font-size: 100%; /* ie6 sucks so much... */
+}
+
+div.buttons{
+	text-align: center;
+	padding: 1em 0;
+}
+
+div.buttons.alignleft{
+	text-align: left; 
+}
+
+div.buttons input, input.button, button, file, a.button{
+	margin: 0 2px;
+	padding: 0px 0.5em;
+	text-decoration: none;
+	background-color: #F4F4F4;
+	border: 1px solid #AAA;
+	color: #000;
+}
+div.buttons input:hover, input.button:hover, button:hover,  a.button:hover{
+	background-color: #DDD;
+	color: #000;
+}
+
+input.button.disabled, div.buttons input.disabled{
+	background-color: #F7F7F7;
+	color: #BBB;
+}
+input.button.disabled:hover, div.buttons input.disabled:hover{
+	background-color: #F7F7F7;
+	color: #BBB;
+}
+
+input.checkbox{
+	background-color: #FFF;
+	color: #000;
+}
+
+input.text{
+	border: 1px solid #777;
+	margin: 0 1px;
+	padding: 1px 2px;
+	background-color: #FFF;
+	color: #000;
+}
+
+input.text.invalid{
+	border-color: red;
+}
+
+textarea{
+	font-family: verdana,arial,helvetica,sans-serif;
+	padding: 2px;
+	font-size: 100%;
+	border: 1px solid #777;
+	background-color: #FFF;
+	color: #000;
+}
+
+.hl-default {
+    color: #000;
+}
+.hl-code {
+    color: #000;
+}
+.hl-brackets {
+    color: #000;
+}
+.hl-comment {
+    color: #494;
+}
+.hl-quotes {
+    color: #009;
+}
+.hl-string {
+    color: #009;
+}
+.hl-identifier {
+    color: #000;
+}
+.hl-builtin {
+    color: Teal;
+}
+.hl-reserved {
+    color: #55D;
+}
+.hl-inlinedoc {
+    color: Blue;
+}
+.hl-var {
+    color: #494;
+}
+.hl-url {
+    color: Blue;
+}
+.hl-special {
+    color: Navy;
+	font-weight: bold;
+}
+.hl-number {
+    color: Maroon;
+}
+.hl-inlinetags {
+    color: #949;
+	font-weight: bold;
+}
+.hl-main { 
+   /* background-color: White;*/
+}
+.hl-gutter {
+    background-color: #999999;
+    color: White
+}
+.hl-table {
+  
+}
+
+/* clean.css */
+
+h1{
+	border-bottom: 1px solid #CCC;
+}
+
+#container {
+	margin: 0 20px;
+}
+
+#header {
+	margin: 10px 0 10px 0px; 
+	height: 5em;
+
+	background-color: #DDD;
+}
+
+#header h1{
+	font-size: 170%;
+	border: none;
+	font-weight: bold;
+	color: #000;
+	margin: 0;
+	padding: 4px 10px 0 10px;
+}
+#header h2{
+	font-size: 140%;
+	color: #555;
+	padding: 4px 10px;
+}
+
+/* local.css */
+
+#header {
+height: 2em;
+background-color: #FFFFFF;
+}
+
+#header h1 {
+font-size: 190%;
+font-weight: normal;
+padding-left: 0px;
+}
+
+h1 {
+border-bottom: none;
+}
+
+#page-title {
+border-bottom: none;
+}
+
+#main-content {
+margin-left: 0em;
+padding: 2px;
+}
+
+#search-top-box {
+display: none;
+}
+
+#page-content p, #page-content .code, #page-content h1, #page-content ul, .math-equation {
+width: 700px;
+}
+
+#page-content .wiki-content-table {
+margin-left: 0em;
+}
+
+#page-content blockquote {
+width: 650px;
+}
+
+tt {
+color: #006060;
+padding-left: 2px;
+padding-right: 1px;
+}
+
+table.wiki-content-table  *, code, table.wiki-content-table tr td span.fixed, table.wiki-content-table tr td span.fixed * {
+font-family: consolas, inconsolata, andale mono, monospace;
+}
+
+*, table.wiki-content-table th *,  table.wiki-content-table td:first-child *, table.wiki-content-table td:first-child {
+font-family: lucida grande, helvetica, arial, san-serif;
+}
+
+h1 span, div#page-title {
+font-family: helvetica, arial, san-serif;
+}
+
+</style>
+<meta http-equiv="content-language" content="en">
+</head>
+<body>
+<a name="top" id="top"></a>
+<div id="container-wrap-wrap">
+  <div id="container-wrap">
+    <div id="container">
+      <div id="header">
+        <h1><a href="http://hyperpolyglot.org/unix-shells"><span>(Adapted from Hyperpolyglot)</span></a></h1>
+      </div>
+      <div id="content-wrap">
+        <div id="main-content">
+<div id="page-title">
+                            Comparing oh to other Unix shells
+                        </div>
+<div id="page-content">
+                        
+
+<h1 id="toc0"><span><a href="#top">Grammar</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="simple-cmd" id="simple-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-note">simple command</a></td>
+<td>ls</td>
+<td>ls</td>
+<td>ls</td>
+<td>ls</td>
+<td>ls</td>
+</tr><tr><td><a name="simple-cmd-arg" id="simple-cmd-arg"></a><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-arg-note">simple command with argument</a></td>
+<td>echo hi</td>
+<td>echo hi</td>
+<td>echo hi</td>
+<td>echo hi</td>
+<td>echo hi</td>
+</tr><tr><td><a name="simple-cmd-redirect" id="simple-cmd-redirect"></a><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-redirect-note">simple command with redirect</a></td>
+<td>ls &gt; /tmp/ls.out</td>
+<td>ls &gt; /tmp/ls.out</td>
+<td>ls &gt; /tmp/ls.out</td>
+<td>ls &gt; /tmp/ls.out</td>
+<td>ls &gt; /tmp/ls.out</td>
+</tr><tr><td><a name="simple-cmd-env-var" id="simple-cmd-env-var"></a><a href="http://hyperpolyglot.org/unix-shells#simple-cmd-env-var-note">simple command with environment variable</a></td>
+<td>EDITOR=vi git commit</td>
+<td>env EDITOR=vi git commit</td>
+<td>EDITOR=vi git commit</td>
+<td>env EDITOR=vi git commit</td>
+<td>EDITOR=vi git commit</td>
+</tr><tr><td><a name="pipeline" id="pipeline"></a><a href="http://hyperpolyglot.org/unix-shells#pipeline-note">pipeline</a></td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+</tr><tr><td><a name="sublist-separators" id="sublist-separators"></a><a href="http://hyperpolyglot.org/unix-shells#sublist-separators-note">sublist separators</a></td>
+<td>&amp;&amp; <span style="white-space: pre-wrap;">||</span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>&amp;&amp; <span style="white-space: pre-wrap;">||</span></td>
+<td>&amp;&amp; <span style="white-space: pre-wrap;">||</span></td>
+<td>&amp;&amp; <span style="white-space: pre-wrap;">||</span></td>
+</tr><tr><td><a name="list-terminators" id="list-terminators"></a><a href="http://hyperpolyglot.org/unix-shells#list-terminators-note">list terminators</a></td>
+<td>; &amp;</td>
+<td>; &amp;</td>
+<td>&amp;</td>
+<td>; &amp;</td>
+<td>; &amp;</td>
+</tr><tr><td><a name="group-cmd" id="group-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#group-cmd-note">group command</a></td>
+<td>{ ls; ls;} | wc</td>
+<td>begin; ls; ls; end | wc</td>
+<td>ls; ls | wc</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>{ ls; ls;} | wc</td>
+</tr><tr><td><a name="subshell" id="subshell"></a><a href="http://hyperpolyglot.org/unix-shells#subshell-note">subshell</a></td>
+<td>(ls; ls) | wc</td>
+<td>fish -c 'ls; ls' | wc</td>
+<td>oh -c 'ls; ls' | wc</td>
+<td>(ls; ls) | wc</td>
+<td>(ls; ls) | wc</td>
+</tr></tbody></table>
+<p><a name="quoting" id="quoting"></a></p>
+<h1 id="toc10"><span><a href="#top">Quoting and Escaping</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="literal-quotes" id="literal-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#literal-quotes-note">literal quotes</a></td>
+<td>'foo'</td>
+<td>'foo'</td>
+<td>'foo'</td>
+<td>'foo'</td>
+<td>'foo'</td>
+</tr><tr><td><a name="interpolating-quotes" id="interpolating-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-note">interpolating quotes</a></td>
+<td>foo=7<br>
+echo "foo is $foo"</td>
+<td>set foo 7<br>
+echo "foo is $foo"</td>
+<td>define foo = 7<br>
+echo "foo is $foo"</td>
+<td>setenv foo 7<br>
+echo "foo is $foo"</td>
+<td>foo=7<br>
+echo "foo is $foo"</td>
+</tr><tr><td><a name="interpolating-quotes-esc" id="interpolating-quotes-esc"></a><a href="http://hyperpolyglot.org/unix-shells#interpolating-quotes-esc-note">interpolating quotes escape sequences</a></td>
+<td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
+<td>\" \$ \\</td>
+<td>$$ \\ <span style="white-space: pre-wrap;">\"</span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \"</td>
+</tr><tr><td><a name="c-esc-quotes" id="c-esc-quotes"></a><a href="http://hyperpolyglot.org/unix-shells#c-esc-quotes-note">quotes with backslash escapes</a></td>
+<td>$'foo\n'</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>"foo\n"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$'foo'</td>
+</tr><tr><td><a name="c-esc" id="c-esc"></a><a href="http://hyperpolyglot.org/unix-shells#c-esc-note">quoted backslash escapes</a></td>
+<td>\a \b \e \E \f \n \r \t \v<br>
+\\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>\a \b \f \n \r \t \v<br>
+\\ \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \u<span style="color: gray"><em>hhhh</em></span> \U<span style="color: gray"><em>hhhhhhhh</em></span>
+</span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>\a \b \e \E \f \n \r \t \v<br>
+\\ \' \" \<span style="color: gray"><em>ooo</em></span> \x<span style="color: gray"><em>hh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
+</tr><tr><td><a name="bare-c-esc" id="bare-c-esc"></a><a href="http://hyperpolyglot.org/unix-shells#bare-c-esc-note">unquoted backslash escapes</a></td>
+<td>\<span style="color: gray"><em>space</em></span></td>
+<td>\a \b \e \f \n \r \t \v \<span style="color: gray"><em>space</em></span><br>
+\$ \\ \* \? \~ \% \# \( \) \{<br>
+\} \[ \] \&lt; \&gt; \^ \&amp; \; \" \'<br>
+\x<span style="color: gray"><em>hh</em></span> \X<span style="color: gray"><em>hh</em></span> \<span style="color: gray"><em>ooo</em></span> \u<span style="color: gray"><em>hhhh</em></span> \U<span style="color: gray"><em>hhhhhhhh</em></span> \c<span style="color: gray"><em>ctrl</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>\<span style="color: gray"><em>space</em></span></td>
+<td>\<span style="color: gray"><em>space</em></span></td>
+</tr><tr><td><a name="cmd-subst" id="cmd-subst"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-subst-note">command substitution</a></td>
+<td>$(ls)<br>
+`ls`</td>
+<td>(ls)</td>
+<td>`(ls)</td>
+<td>`ls`</td>
+<td>$(ls)<br>
+`ls`</td>
+</tr><tr><td><a name="backtick-esc" id="backtick-esc"></a><a href="http://hyperpolyglot.org/unix-shells#backtick-esc-note">backtick escape sequences</a></td>
+<td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>\$ \\ \<span style="color: gray"><em>newline</em></span></td>
+<td>\$ \\ <span style="white-space: pre-wrap;">\`</span> \<span style="color: gray"><em>newline</em></span></td>
+</tr></tbody></table>
+<p><a name="char" id="char"></a></p>
+<h1 id="toc19"><span><a href="#top">Characters</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="word-separating-char" id="word-separating-char"></a><a href="http://hyperpolyglot.org/unix-shells#word-separating-char-note">word separating</a></td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF ! % : @</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
+<td>| &amp; ; ( ) &lt; &gt; SP HT LF</td>
+</tr><tr><td><a name="quoting-escaping-char" id="quoting-escaping-char"></a><a href="http://hyperpolyglot.org/unix-shells#quoting-escaping-char-note">quoting and escaping</a></td>
+<td>" ' <span style="white-space: pre-wrap;">\</span></td>
+<td>" ' <span style="white-space: pre-wrap;">\</span></td>
+<td>" '</td>
+<td>" ' <span style="white-space: pre-wrap;">\</span></td>
+<td>" ' <span style="white-space: pre-wrap;">\</span></td>
+</tr><tr><td><a name="shell-expansion-char" id="shell-expansion-char"></a><a href="http://hyperpolyglot.org/unix-shells#shell-expansion-char-note">shell expansion</a></td>
+<td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
+<td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">( )</span><br><span style="color: gray"><em>pathname:</em></span> * ?</td>
+<td><br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]</td>
+<td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
+<td><span style="color: gray"><em>variable:</em></span> $<br><span style="color: gray"><em>brace:</em></span> { }<br><span style="color: gray"><em>tilde:</em></span> ~<br><span style="color: gray"><em>command:</em></span> <span style="white-space: pre-wrap;">`</span><br><span style="color: gray"><em>pathname:</em></span> * ? [ ]<br><span style="color: gray"><em>history:</em></span> ! ^</td>
+</tr><tr><td><a name="other-special-char" id="other-special-char"></a><a href="http://hyperpolyglot.org/unix-shells#other-special-char-note">other special</a></td>
+<td># =</td>
+<td># [ ]</td>
+<td>#</td>
+<td>#</td>
+<td># =</td>
+</tr><tr><td><a name="bareword-char" id="bareword-char"></a><a href="http://hyperpolyglot.org/unix-shells#bareword-char-note">bareword</a></td>
+<td>A-Z a-z 0-9 _ - . , : + / @ %</td>
+<td>A-Z a-z 0-9 _ - . , : + / @ % ! ^ =</td>
+<td>A-Z a-z 0-9 _ - . , + / ^ = * ? [ ] { } ~</td>
+<td>A-Z a-z 0-9 _ - . , : + / @ % =</td>
+<td>A-Z a-z 0-9 _ - . , : + / @ %</td>
+</tr><tr><td><a name="var-char" id="var-char"></a><a href="http://hyperpolyglot.org/unix-shells#var-char-note">variable name</a></td>
+<td>A-Z a-z 0-9 _</td>
+<td>A-Z a-z 0-9 _</td>
+<td>A-Z a-z 0-9 _ - . , + / ^ = * ? [ ] { } ~</td>
+<td>A-Z a-z 0-9 _</td>
+<td>A-Z a-z 0-9 _</td>
+</tr></tbody></table>
+<p><a name="variables" id="variables"></a></p>
+<h1 id="toc26"><span><a href="#top">Variables</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+<th>external</th>
+</tr><tr><td><a name="global-var" id="global-var"></a><a href="http://hyperpolyglot.org/unix-shells#global-var-note">global variables</a><br><br><span style="color: gray"><em>set, get, list, unset, edit</em></span></td>
+<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
+set<br>
+unset -v <span style="color: gray"><em>var</em></span><br><span style="color: gray"><em>none</em></span><br></td>
+<td>set -g <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
+set -g<br>
+set -e <span style="color: gray"><em>var</em></span><br>
+vared <span style="color: gray"><em>var</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
+<br>
+<br>
+<span style="color: gray"><em>(Variables not global by default).</span><br>
+</td>
+<td>set <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
+set<br>
+unset <span style="color: gray"><em>var</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+$<span style="color: gray"><em>var</em></span><br>
+set<br>
+unset -v <span style="color: gray"><em>var</em></span><br>
+vared <span style="color: gray"><em>var</em></span><br></td>
+<td></td>
+</tr><tr><td><a name="read-only-var" id="read-only-var"></a><a href="http://hyperpolyglot.org/unix-shells#read-only-var-note">read-only variables</a><br><br><span style="color: gray"><em>mark readonly, set and mark readonly, list readonly</em></span></td>
+<td>readonly <span style="color: gray"><em>var</em></span><br>
+readonly <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+readonly -p</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>readonly <span style="color: gray"><em>var</em></span><br>
+readonly <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+readonly -p</td>
+<td></td>
+</tr><tr><td><a name="exported-var" id="exported-var"></a><a href="http://hyperpolyglot.org/unix-shells#exported-var-note">exported variables</a><br><br><span style="color: gray"><em>export, set and export, list exported, undo export</em></span></td>
+<td>export <span style="color: gray"><em>var</em></span><br>
+export <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+export -p<br>
+export -n <span style="color: gray"><em>var</em></span></td>
+<td>set -gx <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span><br>
+set -gx <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
+set -x<br>
+set -gu <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br>
+export <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span>
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span></td>
+<td>setenv <span style="color: gray"><em>var</em></span> $<span style="color: gray"><em>var</em></span><br>
+setenv <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span><br>
+printenv<br><span style="color: gray"><em>none</em></span></td>
+<td>export <span style="color: gray"><em>var</em></span><br>
+export <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span><br>
+export -p<br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br>
+printenv<br><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td><a name="option-var" id="option-var"></a><a href="http://hyperpolyglot.org/unix-shells#option-var-note">options</a><br><br><span style="color: gray"><em>set, list, unset</em></span></td>
+<td>set -o <span style="color: gray"><em>opt</em></span><br>
+set -o<br>
+set +o <span style="color: gray"><em>opt</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>set -o <span style="color: gray"><em>opt</em></span><br>
+set -o<br>
+set +o <span style="color: gray"><em>opt</em></span></td>
+<td></td>
+</tr><tr><td>other variable built-ins</td>
+<td>declare</td>
+<td></td>
+<td></td>
+<td>@</td>
+<td>declare<br>
+functions<br>
+setopt<br>
+float<br>
+integer<br>
+unsetopt</td>
+<td></td>
+</tr></tbody></table>
+<p><a name="var-expansion" id="var-expansion"></a></p>
+<h1 id="toc31"><span><a href="#top">Variable Expansion</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+<th>external</th>
+</tr><tr><td>set variable value</td>
+<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span></td>
+<td>set -g <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
+<td>set <span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>val</em></span></td>
+<td>setenv <span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
+<td><span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span></td>
+<td></td>
+</tr><tr><td>get variable value</td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td></td>
+</tr><tr><td>concatenate variable and value</td>
+<td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td>{$<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td>${<span style="color: gray"><em>var</em></span>}<span style="color: gray"><em>val</em></span></td>
+<td></td>
+</tr><tr><td>coalesce</td>
+<td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
+<td></td>
+<td>coalesce $<span style="color: gray"><em>var</em></span> <span style="color: gray"><em>val</em></span></td>
+<td></td>
+<td>${<span style="color: gray"><em>var</em></span>:-<span style="color: gray"><em>val</em></span>}</td>
+<td></td>
+</tr><tr><td>coalesce and assign if null</td>
+<td>${<span style="color: gray"><em>var</em></span>:=<span style="color: gray"><em>val</em></span>}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>${<span style="color: gray"><em>var</em></span>:=<span style="color: gray"><em>val</em></span>}</td>
+<td></td>
+</tr><tr><td>message to stderr and exit if null</td>
+<td>${<span style="color: gray"><em>var</em></span>:?<span style="color: gray"><em>msg</em></span>}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>${<span style="color: gray"><em>var</em></span>:?<span style="color: gray"><em>msg</em></span>}</td>
+<td></td>
+</tr><tr><td>substring</td>
+<td><span style="color: gray"><em>offset is zero based:</em></span><br>
+${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
+${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>:<span style="color: gray"><em>len</em></span>}</td>
+<td></td>
+<td>$<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span><br>
+$<span style="color: gray"><em>var</em></span>::slice <span style="color: gray"><em>start</em></span> <span style="color: gray"><em>stop</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>offset is zero based:</em></span><br>
+${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>}<br>
+${<span style="color: gray"><em>var</em></span>:<span style="color: gray"><em>offset</em></span>:<span style="color: gray"><em>len</em></span>}</td>
+<td><span style="color: gray"><em>offset is one based;<br>
+when input lacks newlines:</em></span><br>
+awk '{print substr($0, <span style="color: gray"><em>offset</em></span>, <span style="color: gray"><em>len</em></span>)}'</td>
+</tr><tr><td>length</td>
+<td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
+<td></td>
+<td>$<span style="color: gray"><em>var</em></span>::length</td>
+<td>${%<span style="color: gray"><em>var</em></span>}</td>
+<td>${<span style="white-space: pre-wrap;">#</span><span style="color: gray"><em>var</em></span>}</td>
+<td>wc -m</td>
+</tr><tr><td>remove prefix greedily</td>
+<td>foo=do.re.mi<br>
+${foo##*.}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=do.re.mi<br>
+${foo##*.}</td>
+<td>sed 's/^.*\.<em>'</em></td>
+</tr><tr><td>remove prefix reluctantly</td>
+<td>foo=do.re.mi<br>
+${foo#*.}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=do.re.mi<br>
+${foo#*.}</td>
+<td>sed 's/^[^\.]*\.'</td>
+</tr><tr><td>remove suffix greedily</td>
+<td>foo=do.re.mi<br>
+${foo%%.*}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=do.re.mi<br>
+${foo%%.*}</td>
+<td>sed 's/\..*$<em>'</em></td>
+</tr><tr><td>remove suffix reluctantly</td>
+<td>foo=do.re.mi<br>
+${foo%.*}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=do.re.mi<br>
+${foo%.*}</td>
+<td>sed 's/\.[^\.]*$'</td>
+</tr><tr><td>single substitution</td>
+<td>foo='do re mi mi'<br>
+${foo/mi/ma}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo='do re mi mi'<br>
+${foo/mi/ma}</td>
+<td>sed 's/mi/ma/'</td>
+</tr><tr><td>global substitution</td>
+<td>foo='do re mi mi'<br>
+${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo='do re mi mi'<br>
+${foo<span style="white-space: pre-wrap;">//</span>mi/ma}</td>
+<td>sed 's/mi/ma/g'</td>
+</tr><tr><td>prefix substitution</td>
+<td>foo=txt.txt<br>
+${foo/#txt/text}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=txt.txt<br>
+${foo/#txt/text}</td>
+<td>sed 's/^txt/text/'</td>
+</tr><tr><td>suffix substitution</td>
+<td>foo=txt.txt<br>
+${foo/%txt/html}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=txt.txt<br>
+${foo/%txt/html}</td>
+<td>sed 's/txt$/html/'</td>
+</tr><tr><td>upper case</td>
+<td>foo=lorem<br>
+${foo^^}</td>
+<td></td>
+<td>$<span style="color: gray"><em>var</em></span>::upper</td>
+<td></td>
+<td>foo=lorem<br>
+${foo:u}</td>
+<td>tr '[:lower:]' '[:upper:]'</td>
+</tr><tr><td>upper case first letter</td>
+<td>foo=lorem<br>
+${foo^}</td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+</tr><tr><td>lower case</td>
+<td>foo=LOREM<br>
+${foo,,}</td>
+<td></td>
+<td>$<span style="color: gray"><em>var</em></span>::lower</td>
+<td></td>
+<td>foo=LOREM<br>
+${foo:l}</td>
+<td>tr '[:upper:]' '[:lower:]'</td>
+</tr><tr><td>lower case first letter</td>
+<td>foo=LOREM<br>
+${foo,}</td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+</tr><tr><td>absolute path</td>
+<td></td>
+<td></td>
+<td>define foo = ~<br>
+readlink -f $foo</td>
+<td></td>
+<td>foo=~<br>
+${foo:a}</td>
+<td></td>
+</tr><tr><td>dirname</td>
+<td></td>
+<td></td>
+<td>define foo = /etc/hosts<br>
+dirname $foo</td>
+<td></td>
+<td>foo=/etc/hosts<br>
+${foo:h}</td>
+<td>foo=/etc/hosts<br>
+dirname $foo</td>
+</tr><tr><td>basename</td>
+<td></td>
+<td></td>
+<td>define foo = /etc/hosts<br>
+basename $foo</td>
+<td></td>
+<td>foo=/etc/hosts<br>
+${foo:t}</td>
+<td>foo=/etc/hosts<br>
+basename $foo</td>
+</tr><tr><td>extension</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=index.html<br>
+${foo:e}</td>
+<td></td>
+</tr><tr><td>root</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>foo=index.html<br>
+${foo:r}</td>
+<td></td>
+</tr></tbody></table><p><a name="brace-tilde-cmd-pathname-expansion" id="brace-tilde-cmd-pathname-expansion"></a></p>
+<h1 id="toc32"><span><a href="#top">Brace, Tilde, Command, and Pathname Expansion</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>brace expansion: list</td>
+<td>echo {foo,bar}</td>
+<td>echo {foo,bar}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo {foo,bar}</td>
+<td>echo {foo,bar}</td>
+</tr><tr><td>brace expansion: sequence</td>
+<td>echo {1..10}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo {1..10}</td>
+</tr><tr><td>brace expansion: character sequence</td>
+<td>echo {a..z}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td>tilde expansion</td>
+<td>echo ~/bin</td>
+<td>echo ~/bin</td>
+<td>echo ~/bin</td>
+<td>echo ~/bin</td>
+<td>echo ~/bin</td>
+</tr><tr><td>command expansion: dollar parens</td>
+<td>echo $(ls)</td>
+<td>echo (ls)</td>
+<td>echo @`(ls)</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo $(ls)</td>
+</tr><tr><td>command expansion: backticks</td>
+<td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
+<td>echo <span style="white-space: pre-wrap;">`ls`</span></td>
+</tr><tr><td>process substitution</td>
+<td>wc &lt;(ls)</td>
+<td>wc (ls | psub)</td>
+<td>wc &lt;(ls)</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>wc &lt;(ls)</td>
+</tr><tr><td>path expansion: string</td>
+<td>echo /bin/c*</td>
+<td>echo /bin/c*</td>
+<td>echo /bin/c*</td>
+<td>echo /bin/c*</td>
+<td>echo /bin/c*</td>
+</tr><tr><td>path expansion: character</td>
+<td>echo /bin/c??</td>
+<td>echo /bin/c??</td>
+<td>echo /bin/c??</td>
+<td>echo /bin/c??</td>
+<td>echo /bin/c??</td>
+</tr><tr><td>path expansion: character set</td>
+<td>echo /bin/[cde]*</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo /bin/[cde]*</td>
+<td>echo /bin/[cde]*</td>
+<td>echo /bin/[cde]*</td>
+</tr><tr><td>path expansion: negated character set</td>
+<td>echo /bin/[^cde]*</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo /bin/[^cde]*</td>
+<td>echo /bin/[^cde]*</td>
+<td>echo /bin/[^cde]*</td>
+</tr><tr><td>path expansion: sequence of characters</td>
+<td>echo /bin/[a-f]*</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>echo /bin/[a-f]*</td>
+<td>echo /bin/[a-f]*</td>
+<td>echo /bin/[a-f]*</td>
+</tr></tbody></table><p><a name="special-var" id="special-var"></a></p>
+<h1 id="toc33"><span><a href="#top">Special Variables</a></span></h1>
+<p><em>in zsh terminology, special means read-only variables that cannot have their type changed</em></p>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">non-alphabetical variables</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>name of shell or shell script</td>
+<td>$0</td>
+<td>(status -f)</td>
+<td>$0</td>
+<td>$0</td>
+<td>$0</td>
+</tr><tr><td>command line arguments</td>
+<td>$1, $2, …</td>
+<td>$argv[1], $argv[2], …</td>
+<td>$1, $2, …</td>
+<td>$1, $2, …</td>
+<td>$1, $2, …<br>
+$argv[1], $argv[2], …</td>
+</tr><tr><td>number of command line args</td>
+<td>$#</td>
+<td>(count $argv)</td>
+<td>(@ length)</td>
+<td>$#</td>
+<td>$#<br>
+$#argv</td>
+</tr><tr><td>arguments $1, $2, …</td>
+<td>$*<br>
+$@</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$@</td>
+<td>$*</td>
+<td>$*<br>
+$@</td>
+</tr><tr><td>"$1" "$2" "$3" …</td>
+<td>"$@"</td>
+<td>$argv</td>
+<td>(splice $@)</td>
+<td></td>
+<td>"$@"</td>
+</tr><tr><td>"$1<span style="color: gray"><em>c</em></span>$2<span style="color: gray"><em>c</em></span>$3 …" where <span style="color: gray"><em>c</em></span> is first character of $IFS</td>
+<td>"$*"</td>
+<td>"$argv"</td>
+<td>(mend "<span style="color: gray"><em>c</em></span>" (splice $@))</td>
+<td></td>
+<td>"$*"</td>
+</tr><tr><td>process id</td>
+<td>$$</td>
+<td>%self</td>
+<td>$$</td>
+<td>$$</td>
+<td>$$</td>
+</tr><tr><td>process id of last asynchronous command</td>
+<td>$!</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$!</td>
+<td>$!</td>
+</tr><tr><td>exit status of last non-asynchronous command</td>
+<td>$?</td>
+<td>$status</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$?</td>
+<td>$?</td>
+</tr><tr><td>previous command executed</td>
+<td>$_</td>
+<td><span style="color: gray"><em>current command executing:</em></span><br>
+$_</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$_</td>
+<td>$_</td>
+</tr><tr><td>command line options</td>
+<td>$-</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$-</td>
+</tr><tr><td>read input</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$&lt;</td>
+<td><span style="color: gray"><em>none</em></span></td>
+</tr></tbody></table>
+<p><br>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">set by shell</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>shell version</td>
+<td>BASH_VERSION</td>
+<td></td>
+<td></td>
+<td>tcsh</td>
+<td>ZSH_VERSION</td>
+</tr><tr><td>return value of last syscall</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>ERRNO</td>
+</tr><tr><td>history</td>
+<td></td>
+<td>history</td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>current line number of script</td>
+<td>LINENO</td>
+<td></td>
+<td></td>
+<td></td>
+<td>LINENO</td>
+</tr><tr><td>set by getopts</td>
+<td>OPTARG<br>
+OPTIND</td>
+<td></td>
+<td></td>
+<td></td>
+<td>OPTARG<br>
+OPTIND</td>
+</tr><tr><td>operating system and machine type</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>OSTYPE<br>
+MACHTYPE</td>
+</tr><tr><td>shell parent pid</td>
+<td>PPID</td>
+<td></td>
+<td></td>
+<td></td>
+<td>PPID</td>
+</tr><tr><td>working directory and previous working directory</td>
+<td>PWD<br>
+OLDPWD</td>
+<td>PWD<br><span style="color: gray"><em>none</em></span></td>
+<td>PWD<br>
+OLDPWD</td>
+<td></td>
+<td>PWD<br>
+OLDPWD</td>
+</tr><tr><td>random integer</td>
+<td>RANDOM</td>
+<td><span style="color: gray"><em>built-in function:</em></span><br>
+random</td>
+<td><span style="color: gray"><em>built-in function:</em></span><br>
+random</td>
+<td></td>
+<td>RANDOM</td>
+</tr><tr><td>return value</td>
+<td>REPLY</td>
+<td></td>
+<td></td>
+<td></td>
+<td>REPLY</td>
+</tr><tr><td>seconds since shell was invoked</td>
+<td>SECONDS</td>
+<td></td>
+<td></td>
+<td></td>
+<td>SECONDS</td>
+</tr><tr><td>incremented each time a subshell is called</td>
+<td>SHLVL</td>
+<td></td>
+<td></td>
+<td></td>
+<td>SHLVL</td>
+</tr></tbody></table>
+<p><br>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">read by shell</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>browser</td>
+<td></td>
+<td>BROWSER</td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>cd search path</td>
+<td>CDPATH</td>
+<td>CDPATH</td>
+<td></td>
+<td>cdpath</td>
+<td>CDPATH<br>
+cdpath</td>
+</tr><tr><td>terminal width and height</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>COLUMNS<br>
+LINES</td>
+</tr><tr><td>command history editor</td>
+<td>FCEDIT<br>
+EDITOR</td>
+<td></td>
+<td></td>
+<td></td>
+<td>FCEDIT<br>
+EDITOR</td>
+</tr><tr><td>shell startup file</td>
+<td>ENV</td>
+<td></td>
+<td></td>
+<td></td>
+<td>ENV</td>
+</tr><tr><td>function definition search path</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>fpath<br>
+FPATH</td>
+</tr><tr><td>history file path</td>
+<td>HISTFILE</td>
+<td></td>
+<td></td>
+<td></td>
+<td>HISTFILE</td>
+</tr><tr><td>size of history</td>
+<td>HISTSIZE</td>
+<td></td>
+<td></td>
+<td></td>
+<td>HISTSIZE</td>
+</tr><tr><td>home directory</td>
+<td>HOME</td>
+<td>HOME</td>
+<td>HOME</td>
+<td></td>
+<td>HOME</td>
+</tr><tr><td>input field separators</td>
+<td>IFS</td>
+<td></td>
+<td></td>
+<td></td>
+<td>IFS</td>
+</tr><tr><td>locale</td>
+<td>LANG</td>
+<td>LANG</td>
+<td></td>
+<td></td>
+<td>LANG</td>
+</tr><tr><td>null redirect command</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>NULLCMD<br>
+READNULLCMD</td>
+</tr><tr><td>command search path</td>
+<td>PATH</td>
+<td>PATH</td>
+<td>PATH</td>
+<td></td>
+<td>PATH</td>
+</tr><tr><td>prompt customization<br><span style="color: gray"><em>main, secondary, select, trace</em></span></td>
+<td>PS1 PS2 PS4</td>
+<td></td>
+<td></td>
+<td></td>
+<td>PS1 PS2 PS3 PS4</td>
+</tr><tr><td>right prompt customization</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>RPS1 RPS2</td>
+</tr><tr><td>terminal type</td>
+<td>TERM</td>
+<td></td>
+<td></td>
+<td></td>
+<td>TERM</td>
+</tr><tr><td>timeout</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>TMOUT</td>
+</tr><tr><td>system tmp directory</td>
+<td></td>
+<td></td>
+<td>TMPDIR</td>
+<td></td>
+<td></td>
+</tr><tr><td>user</td>
+<td></td>
+<td>USER</td>
+<td></td>
+<td></td>
+<td></td>
+</tr></tbody></table><p><a name="arith-conditional-expr" id="arith-conditional-expr"></a></p>
+<h1 id="toc35"><span><a href="#top">Arithmetic and Conditional Expressions</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="test-cmd" id="test-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#test-cmd-note">test command</a></td>
+<td>[ -e /etc ]<br>
+test -e /etc</td>
+<td>[ -e /etc ]<br>
+test -e /etc</td>
+<td>[ -e /etc ]<br>
+test -e /etc</td>
+<td></td>
+<td>[ -e /etc ]<br>
+test -e /etc</td>
+</tr><tr><td><a name="true-cmd" id="true-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#true-cmd-note">true command</a></td>
+<td>true</td>
+<td>true</td>
+<td>true</td>
+<td></td>
+<td>true</td>
+</tr><tr><td><a name="false-cmd" id="false-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#false-cmd-note">false command</a></td>
+<td>false</td>
+<td>false</td>
+<td>false</td>
+<td></td>
+<td>false</td>
+</tr><tr><td><a name="conditional-cmd" id="conditional-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#conditional-cmd-note">conditional command</a></td>
+<td>[[ ]]</td>
+<td></td>
+<td></td>
+<td></td>
+<td>[[ ]]</td>
+</tr><tr><td><a name="conditional-expr" id="conditional-expr"></a><a href="http://hyperpolyglot.org/unix-shells#conditional-expr-note">conditional expression</a></td>
+<td></td>
+<td></td>
+<td></td>
+<td>( )</td>
+<td></td>
+</tr><tr><td><a name="arith-expansion" id="arith-expansion"></a><a href="http://hyperpolyglot.org/unix-shells#arith-expansion-note">arithmetic expansion</a></td>
+<td>$(( 1 + 1 ))</td>
+<td>math '1 + 1'</td>
+<td>math '1 + 1'</td>
+<td></td>
+<td>$(( 1 + 1 ))</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#arith-expansion">floating point expansion</a></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>math '1.1 + 1.1'</td>
+<td>math '1.1 + 1.1'</td>
+<td></td>
+<td>$(( 1.1 + 1.1 ))</td>
+</tr><tr><td><a name="let-expr" id="let-expr"></a><a href="http://hyperpolyglot.org/unix-shells#let-expr-note">let expression</a></td>
+<td>let "<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>expr</em></span>"</td>
+<td></td>
+<td></td>
+<td></td>
+<td>let "<span style="color: gray"><em>var</em></span> = <span style="color: gray"><em>expr</em></span>"</td>
+</tr><tr><td><a name="external-expr" id="external-expr"></a><a href="http://hyperpolyglot.org/unix-shells#external-expr-note">external expression</a></td>
+<td>expr 1 + 1<br>
+expr 0 '&lt;' 1</td>
+<td>expr 1 + 1<br>
+expr 0 '&lt;' 1</td>
+<td>expr 1 + 1<br>
+expr 0 '&lt;' 1</td>
+<td>expr 1 + 1<br>
+expr 0 '&lt;' 1</td>
+<td>expr 1 + 1<br>
+expr 0 '&lt;' 1</td>
+</tr><tr><td><a name="arith-cmd" id="arith-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#arith-cmd-note">arithmetic command</a></td>
+<td>(( ))</td>
+<td></td>
+<td></td>
+<td></td>
+<td>(( ))</td>
+</tr><tr><td><a name="eval" id="eval"></a><a href="http://hyperpolyglot.org/unix-shells#eval-note">eval</a></td>
+<td>while true; do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read -p '$ ' cmd<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
+done</td>
+<td>while true<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
+end</td>
+<td>while (define cmd: read) {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
+}</td>
+<td>while (1)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo -n '% '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $&lt;<br>
+end</td>
+<td>while true; do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>read cmd\?'$ '<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>eval $cmd<br>
+done</td>
+</tr></tbody></table>
+<p><a name="arrays" id="arrays"></a></p>
+<h1 id="toc47"><span><a href="#top">Arrays</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>declare</td>
+<td>typeset -a <span style="color: gray"><em>var</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: list</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>typeset -a <span style="color: gray"><em>var</em></span></td>
+</tr><tr><td>list all arrays</td>
+<td>typeset -a</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>typeset -a</td>
+</tr><tr><td>literal</td>
+<td>a=(do re mi)</td>
+<td>set a do re mi</td>
+<td>define a: list do re mi</td>
+<td>set a = (do re mi)</td>
+<td>a=(do re mi)</td>
+</tr><tr><td>lookup</td>
+<td>${a[0]}</td>
+<td>$a[1]</td>
+<td>a get 0</td>
+<td>${a[1]}</td>
+<td>${a[1]}<br>
+$a[1]</td>
+</tr><tr><td>negative index lookup</td>
+<td><span style="color: gray"><em>returns last element:</em></span><br>
+${a[-1]}</td>
+<td><span style="color: gray"><em>returns last element:</em></span><br>
+$a[-1]</td>
+<td><span style="color: gray"><em>returns last element:</em></span><br>
+a get -1</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>returns last element:</em></span><br>
+${a[-1]}</td>
+</tr><tr><td>slice</td>
+<td>${a[@]:2:3}<br>
+${a[*]:2:3}</td>
+<td>$a[(seq 2&nbsp;3)]</td>
+<td>a slice 1 2</td>
+<td>${a[2-3]}</td>
+<td>$a[2,3]</td>
+</tr><tr><td>update</td>
+<td>a[0]=do<br>
+a[1]=re<br>
+a[2]=mi</td>
+<td>set a[1] do<br>
+set a[2] re<br>
+set a[3] mi</td>
+<td>a set 0 do<br>
+a set 1 re<br>
+a set 2 mi</td>
+<td>set a[1] = do<br>
+set a[2] = re<br>
+set a[3] = mi</td>
+<td>a[1]=do<br>
+a[2]=re<br>
+a[3]=mi</td>
+</tr><tr><td>out-of-bounds behavior</td>
+<td><span style="color: gray"><em>lookup returns empty string</em></span><br><br><span style="color: gray"><em>update expands array; array can have gaps</em></span></td>
+<td><span style="color: gray"><em>error message and nonzero exit status</em></span><br><br><span style="color: gray"><em>update expands array; in-between<br>
+slots get empty strings</em></span></td>
+<td><span style="color: gray"><em>lookup and update both<br>
+cause an exception</em></span></td>
+<td><span style="color: gray"><em>lookup and update both produce<br>
+error message and nonzero exit status</em></span></td>
+<td><span style="color: gray"><em>lookup returns empty string</em></span><br><br><span style="color: gray"><em>update expands array; in-between<br>
+slots get empty strings</em></span></td>
+</tr><tr><td>size</td>
+<td><span style="color: gray"><em>highest index:</em></span><br>
+${#a[@]}<br>
+${#a[*]}</td>
+<td>count $a</td>
+<td>a length</td>
+<td>${#a}</td>
+<td>${#a}<br>
+${#a[@]}<br>
+${#a[*]}</td>
+</tr><tr><td>list indices</td>
+<td><span style="color: gray"><em>can contain gaps:</em></span><br>
+${!a[@]}<br>
+${!a[*]}</td>
+<td>(seq (count $a))</td>
+<td>a keys</td>
+<td><span style="white-space: pre-wrap;">`seq ${#a}`</span></td>
+<td>$(seq ${#a})</td>
+</tr><tr><td>regular reference</td>
+<td><span style="color: gray"><em>return first element</em></span></td>
+<td><span style="color: gray"><em>return all elements joined by space</em></span></td>
+<td><span style="color: gray"><em>return list</em></span></td>
+<td><span style="color: gray"><em>return all elements joined by space</em></span></td>
+<td><span style="color: gray"><em>return all elements joined by space</em></span></td>
+</tr><tr><td>regular assignment</td>
+<td><span style="color: gray"><em>assigns to 0-indexed slot</em></span></td>
+<td><span style="color: gray"><em>convert array to regular variable</em></span></td>
+<td><span style="color: gray"><em>variable references new value</em></span></td>
+<td><span style="color: gray"><em>convert array to regular variable</em></span></td>
+<td><span style="color: gray"><em>convert array to regular variable</em></span></td>
+</tr><tr><td>delete element</td>
+<td>unset a[0]</td>
+<td>set -e a[1]<br><span style="color: gray"><em>re is now at index 1</em></span></td>
+<td></td>
+<td></td>
+<td>a[0]=()</td>
+</tr><tr><td>delete array</td>
+<td>unset a[@]<br>
+unset a[*]</td>
+<td>set -e a</td>
+<td></td>
+<td></td>
+<td>unset -v a</td>
+</tr><tr><td>pass each element as argument</td>
+<td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
+<td><span style="color: gray"><em>cmd</em></span> $a</td>
+<td><span style="color: gray"><em>cmd</em></span> (splice $a)</td>
+<td></td>
+<td><span style="color: gray"><em>cmd</em></span> "${a[@]}"</td>
+</tr><tr><td>pass as single argument</td>
+<td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
+<td><span style="color: gray"><em>cmd</em></span> "$a"</td>
+<td><span style="color: gray"><em>cmd</em></span> (mend ' ' (splice $@))</td>
+<td></td>
+<td><span style="color: gray"><em>cmd</em></span> "${a[*]}"</td>
+</tr></tbody></table>
+<p><a name="associative-arrays" id="associative-arrays"></a></p>
+<h1 id="toc60"><span><a href="#top">Associative Arrays</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>declare</td>
+<td>typeset -A <span style="color: gray"><em>var</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: map</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>typeset -A <span style="color: gray"><em>var</em></span></td>
+</tr><tr><td>list all associative arrays</td>
+<td>typeset -A</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>typeset -A</td>
+</tr><tr><td>assign value</td>
+<td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span> set "bar" baz</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span>[bar]=baz</td>
+</tr><tr><td>lookup</td>
+<td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span> get "bar"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>${<span style="color: gray"><em>var</em></span>[bar]}</td>
+</tr><tr><td>list indices</td>
+<td>${!<span style="color: gray"><em>var</em></span>[@]}<br>
+${!<span style="color: gray"><em>var</em></span>[*]}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span> keys</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td>delete value</td>
+<td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>var</em></span> del "bar"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>unset "<span style="color: gray"><em>var</em></span>[bar]"</td>
+</tr><tr><td>delete array</td>
+<td>unset "<span style="color: gray"><em>var</em></span>[@]"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>unset -v <span style="color: gray"><em>var</em></span></td>
+</tr></tbody></table>
+<p><a name="functions" id="functions"></a></p>
+<h1 id="toc61"><span><a href="#top">Functions</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="func-def" id="func-def"></a><a href="http://hyperpolyglot.org/unix-shells#func-def-note">define with parens</a></td>
+<td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}</td>
+</tr><tr><td><a name="func-def-keyword" id="func-def-keyword"></a><a href="http://hyperpolyglot.org/unix-shells#func-def-keyword-note">define with keyword</a></td>
+<td>function foo {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}</td>
+<td>function foo<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+end</td>
+<td>
+define foo: method () {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}
+</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>function foo {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+}</td>
+</tr><tr><td><a name="func-def-doc" id="func-def-doc"></a><a href="http://hyperpolyglot.org/unix-shells#func-def-doc-note">define with doc string</a></td>
+<td></td>
+<td>function foo -d 'echo foo'<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo foo<br>
+end</td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td><a name="func-def-edit" id="func-def-edit"></a><a href="http://hyperpolyglot.org/unix-shells#func-def-edit-note">edit function definition</a></td>
+<td></td>
+<td>funced foo</td>
+<td></td>
+<td></td>
+<td><span style="color: gray"><em>in .zshrc:</em></span><br>
+autoload -U zed<br><br><span style="color: gray"><em>^J when done:</em></span><br>
+zed -f foo</td>
+</tr><tr><td><a name="func-param" id="func-param"></a><a href="http://hyperpolyglot.org/unix-shells#func-param-note">parameters</a></td>
+<td>$1, $2, <span style="color: gray"><em>…</em></span></td>
+<td>$argv[1], $argv[2], <span style="color: gray"><em>…</em></span></td>
+<td><span style="color: gray"><em>Given:</em></span><br>
+define foo: method ((argv)) {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span># ...<br>
+}<br><br>
+argv get 0, argv get 1, <span style="color: gray"><em>…</em></span>
+</td>
+</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$1, $2, <span style="color: gray"><em>…</em></span></td>
+</tr><tr><td><a name="num-func-param" id="num-func-param"></a><a href="http://hyperpolyglot.org/unix-shells#num-func-param-note">number of parameters</a></td>
+<td>$#</td>
+<td>(count $argv)</td>
+<td>(argv length)</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>$#</td>
+</tr><tr><td><a name="func-return" id="func-return"></a><a href="http://hyperpolyglot.org/unix-shells#func-return-note">return</a></td>
+<td>false() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
+}</td>
+<td>function false<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
+end</td>
+<td>define false: method () {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return ()<br>
+}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>false() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return 1<br>
+}</td>
+</tr><tr><td><a name="func-retval" id="func-retval"></a><a href="http://hyperpolyglot.org/unix-shells#func-retval-note">return values</a></td>
+<td>{0, <span style="color: gray"><em>…</em></span>, 255}</td>
+<td>{0, <span style="color: gray"><em>…</em></span>, 2<span style="white-space: pre-wrap;">**</span>31 - 1}<br><br><span style="color: gray"><em>negative values result in return value of "-"</em></span><br><br><span style="color: gray"><em>values above 2**31 - 1 cause error</em></span></td>
+<td><span style="color: gray"><em>The complete set of oh data types.</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>{-2<span style="white-space: pre-wrap;">**</span>31, <span style="color: gray"><em>…</em></span>, 2<span style="white-space: pre-wrap;">**</span>31 - 1}<br><br><span style="color: gray"><em>other integers converted to one of the above values by modular arithmetic</em></span></td>
+</tr><tr><td><a name="local-var" id="local-var"></a><a href="http://hyperpolyglot.org/unix-shells#local-var-note">local variables</a></td>
+<td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>local bar=7<br>
+}<br><br><span style="color: gray"><em>variables set without the local keyword are global</em></span></td>
+<td>function foo<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>set -l bar 7<br>
+end<br><br><span style="color: gray"><em>without the -l flag, the the variable will<br>
+be global if already defined, otherwise local</em></span></td>
+<td>define foo: method () {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>define bar 7<br>
+}</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>foo() {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>local bar=7<br>
+}<br><br><span style="color: gray"><em>variables set without the local keyword are global</em></span></td>
+</tr><tr><td><a name="list-func" id="list-func"></a><a href="http://hyperpolyglot.org/unix-shells#list-func-note">list functions</a></td>
+<td>typeset -f | grep '()'</td>
+<td>functions</td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>typeset -f | grep '()'</td>
+</tr><tr><td><a name="show-func" id="show-func"></a><a href="http://hyperpolyglot.org/unix-shells#show-func-note">show function</a></td>
+<td>typeset -f <span style="color: gray"><em>func</em></span></td>
+<td>functions <span style="color: gray"><em>func</em></span></td>
+<td></td>
+<td></td>
+<td>typeset -f <span style="color: gray"><em>func</em></span></td>
+</tr><tr><td><a name="del-func" id="del-func"></a><a href="http://hyperpolyglot.org/unix-shells#del-func-note">delete function</a></td>
+<td>unset -f <span style="color: gray"><em>func</em></span></td>
+<td>functions -e <span style="color: gray"><em>func</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>unset -f <span style="color: gray"><em>func</em></span><br>
+unfunction <span style="color: gray"><em>foo</em></span></td>
+</tr></tbody></table>
+<p><a name="cmd-resolution" id="cmd-resolution"></a></p>
+<h1 id="toc74"><span><a href="#top">Command Resolution</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="alias" id="alias"></a><a href="http://hyperpolyglot.org/unix-shells#alias-note">alias:</a><br><br><span style="color: gray"><em>define, list, remove, define suffix alias</em></span></td>
+<td>alias ll='ls -l'<br>
+alias<br>
+unalias ll<br><span style="color: gray"><em>none</em></span></td>
+<td>alias ltr 'ls -ltr'<br>
+functions<br>
+functions -e ltr<br><span style="color: gray"><em>none</em></span></td>
+<td>define ll: method () {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>ls -l (splice $args)<br>
+}</td>
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span>
+<br><span style="color: gray"><em>none</em></span>
+</td>
+<td>alias ll ls -l<br>
+alias<br>
+unalias ll<br><span style="color: gray"><em>none</em></span></td>
+<td>alias ll='ls -l'<br>
+alias -L<br>
+unalias ll<br>
+alias -s txt=cat</td>
+</tr><tr><td><a name="builtin" id="builtin"></a><a href="http://hyperpolyglot.org/unix-shells#builtin-note">built-ins:</a><br><br><span style="color: gray"><em>run, list, help, enable, disable</em></span></td>
+<td>builtin <span style="color: gray"><em>cmd</em></span><br>
+enable -a<br>
+help <span style="color: gray"><em>cmd</em></span><br>
+enable <span style="color: gray"><em>cmd</em></span><br>
+enable -n <span style="color: gray"><em>cmd</em></span></td>
+<td>builtin <span style="color: gray"><em>cmd</em></span><br>
+builltin -n<br><span style="color: gray"><em>cmd</em></span> <span style="white-space: pre-wrap;">--</span>help<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br>
+builtins<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td>builtin <span style="color: gray"><em>cmd</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>type command name; then M-h</em></span><br>
+enable <span style="color: gray"><em>cmd</em></span><br>
+disable <span style="color: gray"><em>cmd</em></span></td>
+</tr><tr><td><a name="cmd" id="cmd"></a><a href="http://hyperpolyglot.org/unix-shells#command-note">run external command</a></td>
+<td>command <span style="color: gray"><em>cmd</em></span></td>
+<td>command <span style="color: gray"><em>cmd</em></span></td>
+<td>command <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
+<td>command <span style="color: gray"><em>cmd</em></span></td>
+</tr><tr><td><a name="env" id="env"></a><a href="http://hyperpolyglot.org/unix-shells#env-note">run with explicit environment</a></td>
+<td colspan="5" style="text-align: center;">env -i <span style="color: gray"><em>var</em></span>=<span style="color: gray"><em>val</em></span> … <span style="color: gray"><em>cmd</em></span> <span style="color: gray"><em>args</em></span> …</td>
+</tr><tr><td><a name="hash-cmd" id="hash-cmd"></a><a href="http://hyperpolyglot.org/unix-shells#hash-cmd-note">external command hashes:</a><br><br><span style="color: gray"><em>list, set, delete from, clear, rebuild</em></span></td>
+<td>hash<br><span style="color: gray"><em>none</em></span><br>
+hash -d <span style="color: gray"><em>cmd</em></span><br>
+hash -r<br><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>does not cache command paths</em></span></td>
+<td><span style="color: gray"><em>does not cache command paths</em></span></td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span><br>
+rehash<br><span style="color: gray"><em>none</em></span></td>
+<td>hash<br>
+hash <span style="color: gray"><em>cmd</em></span>=<span style="color: gray"><em>path</em></span><br>
+unhash<br>
+hash -r<br>
+hash -f</td>
+</tr><tr><td><a name="type" id="type"></a><a href="http://hyperpolyglot.org/unix-shells#type-note">command type</a></td>
+<td>type <span style="color: gray"><em>cmd</em></span></td>
+<td>type <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
+<td></td>
+<td>type <span style="color: gray"><em>cmd</em></span></td>
+</tr><tr><td><a name="cmd-path" id="cmd-path"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-path-note">command path</a></td>
+<td>command -v <span style="color: gray"><em>cmd</em></span></td>
+<td>whence <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
+<td></td>
+<td>command -v <span style="color: gray"><em>cmd</em></span><br>
+which <span style="color: gray"><em>cmd</em></span><br>
+whence <span style="color: gray"><em>cmd</em></span></td>
+</tr><tr><td><a name="cmd-path-all" id="cmd-path-all"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-path-all-note">command paths</a></td>
+<td></td>
+<td></td>
+<td></td>
+<td>where <span style="color: gray"><em>cmd</em></span></td>
+<td>where <span style="color: gray"><em>cmd</em></span><br>
+which -a <span style="color: gray"><em>cmd</em></span></td>
+</tr></tbody></table>
+<p><a name="arg-options" id="arg-options"></a></p>
+<h1 id="toc83"><span><a href="#top">Arguments and Options</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="exec-exit" id="exec-exit"></a><a href="http://hyperpolyglot.org/unix-shells#exec-exit-note">execute command and exit</a></td>
+<td>$ bash -c 'echo foo'</td>
+<td>$ fish -c 'echo foo'</td>
+<td>$ oh -c 'echo foo'</td>
+<td>$ tcsh -c 'echo foo'</td>
+<td>$ zsh -c 'echo foo'</td>
+</tr><tr><td><a name="usage" id="usage"></a><a href="http://hyperpolyglot.org/unix-shells#usage-note">usage</a></td>
+<td>$ bash <span style="white-space: pre-wrap;">--</span>help</td>
+<td>$ fish <span style="white-space: pre-wrap;">--</span>help</td>
+<td></td>
+<td>$ tcsh <span style="white-space: pre-wrap;">--</span>help</td>
+<td>$ zsh <span style="white-space: pre-wrap;">--</span>help</td>
+</tr><tr><td><a name="interactive-shell" id="interactive-shell"></a><a href="http://hyperpolyglot.org/unix-shells#interactive-shell-note">interactive shell</a></td>
+<td>$ bash -i</td>
+<td>$ fish -i</td>
+<td></td>
+<td>$ tcsh -i</td>
+<td>$ zsh -i</td>
+</tr><tr><td><a name="login-shell" id="login-shell"></a><a href="http://hyperpolyglot.org/unix-shells#login-shell-note">login shell</a></td>
+<td>$ bash -l<br>
+$ bash <span style="white-space: pre-wrap;">--</span>login</td>
+<td>$ fish -l<br>
+$ fish <span style="white-space: pre-wrap;">--</span>login</td>
+<td></td>
+<td>$ tcsh -l</td>
+<td>$ zsh -l<br>
+$ zsh <span style="white-space: pre-wrap;">--</span>login</td>
+</tr><tr><td><a name="posix-compliant" id="posix-compliant"></a><a href="http://hyperpolyglot.org/unix-shells#posix-compliant-note">make posix compliant</a></td>
+<td>$ bash <span style="white-space: pre-wrap;">--</span>posix</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td><a name="restricted" id="restricted"></a><a href="http://hyperpolyglot.org/unix-shells#restricted-note">restricted mode</a></td>
+<td>$ bash -r<br>
+$ bash <span style="white-space: pre-wrap;">--</span>restricted</td>
+<td></td>
+<td></td>
+<td></td>
+<td>$ zsh -r<br>
+$ zsh <span style="white-space: pre-wrap;">--</span>restricted</td>
+</tr><tr><td><a name="version-opt" id="version-opt"></a><a href="http://hyperpolyglot.org/unix-shells#version-opt-note">show version</a></td>
+<td>$ bash <span style="white-space: pre-wrap;">--</span>version</td>
+<td>$ fish <span style="white-space: pre-wrap;">--</span>version</td>
+<td></td>
+<td>$ tcsh <span style="white-space: pre-wrap;">--</span>version</td>
+<td>$ zsh <span style="white-space: pre-wrap;">--</span>version</td>
+</tr><tr><td><a name="shift" id="shift"></a><a href="http://hyperpolyglot.org/unix-shells#shift-note">shift positional parameters:</a><br><br><span style="color: gray"><em>by one, by n</em></span></td>
+<td>shift<br>
+shift <span style="color: gray"><em>n</em></span></td>
+<td></td>
+<td>set @ (@ tail)<br>
+<span style="color: gray"><em>none</em></span></td>
+<td>shift<br><span style="color: gray"><em>none</em></span></td>
+<td>shift<br>
+shift <span style="color: gray"><em>n</em></span></td>
+</tr><tr><td><a name="set-param" id="set-param"></a><a href="http://hyperpolyglot.org/unix-shells#set-param-note">set positional parameters</a></td>
+<td>set <span style="white-space: pre-wrap;">--</span> <span style="color: gray"><em>arg …</em></span></td>
+<td></td>
+<td>set @ = <span style="color: gray"><em>…</em></span></td>
+<td></td>
+<td>set <span style="white-space: pre-wrap;">--</span> <span style="color: gray"><em>arg …</em></span></td>
+</tr><tr><td><a name="getopts" id="getopts"></a><a href="http://hyperpolyglot.org/unix-shells#getopts-note">getopts</a></td>
+<td>getopts <span style="color: gray"><em>opts</em></span> <span style="color: gray"><em>var</em></span></td>
+<td></td>
+<td></td>
+<td></td>
+<td>getopts <span style="color: gray"><em>opts</em></span> <span style="color: gray"><em>var</em></span></td>
+</tr></tbody></table>
+<p><a name="execution-control" id="execution-control"></a></p>
+<h1 id="toc94"><span><a href="#top">Execution Control</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="negate-status" id="negate-status"></a><a href="http://hyperpolyglot.org/unix-shells#negate-status-note">negate exit status</a></td>
+<td>! <span style="color: gray"><em>cmd</em></span></td>
+<td>not <span style="color: gray"><em>cmd</em></span></td>
+<td>not: <span style="color: gray"><em>cmd</em></span></td>
+<td></td>
+<td>! <span style="color: gray"><em>cmd</em></span></td>
+</tr><tr><td><a name="noop" id="noop"></a><a href="http://hyperpolyglot.org/unix-shells#noop-note">no-op command</a></td>
+<td>:</td>
+<td></td>
+<td></td>
+<td>:</td>
+<td>:</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#break">break</a></td>
+<td>break</td>
+<td>break</td>
+<td></td>
+<td>break</td>
+<td>break</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#case">case</a></td>
+<td>case <span style="color: gray"><em>arg</em></span> in<br><span style="color: gray"><em>pattern</em></span>) <span style="color: gray"><em>cmd</em></span>;;<br><span style="color: gray"><em>…</em></span><br>
+*) <span style="color: gray"><em>cmd</em></span>;;<br>
+esac</td>
+<td>switch <span style="color: gray"><em>arg</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>case <span style="color: gray"><em>pattern …</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>case '*'<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td></td>
+<td>switch (<span style="color: gray"><em>arg</em></span>)<br>
+case <span style="color: gray"><em>pattern</em></span>:<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>breaksw<br><span style="color: gray"><em>…</em></span><br>
+default:<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>breaksw<br>
+endsw</td>
+<td>case <span style="color: gray"><em>arg</em></span> in<br><span style="color: gray"><em>pattern</em></span>) <span style="color: gray"><em>cmd</em></span>;;<br><span style="color: gray"><em>…</em></span><br>
+*) <span style="color: gray"><em>cmd</em></span>;;<br>
+esac</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#continue">continue</a></td>
+<td>continue</td>
+<td>continue</td>
+<td></td>
+<td>continue</td>
+<td>continue</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#for">for</a></td>
+<td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+<td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td>for <span style="color: gray"><em>list</em></span> (method (<span style="color: gray"><em>var</em></span>) {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+})</td>
+<td>foreach <span style="color: gray"><em>var</em></span> (<span style="color: gray"><em>arg …</em></span>)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td>for <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#goto">goto</a></td>
+<td></td>
+<td></td>
+<td></td>
+<td>goto <span style="color: gray"><em>label</em></span></td>
+<td></td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#if">if</a></td>
+<td>if <span style="color: gray"><em>test</em></span><br>
+then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+elif <span style="color: gray"><em>test</em></span><br>
+then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+fi</td>
+<td>if <span style="color: gray"><em>test</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else if <span style="color: gray"><em>test</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td>if <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+} else if <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+} else {<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+}</td>
+<td>if (<span style="color: gray"><em>expr</em></span>) then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else if (<span style="color: gray"><em>expr</em></span>) then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+endif</td>
+<td>if <span style="color: gray"><em>test</em></span><br>
+then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+elif <span style="color: gray"><em>test</em></span><br>
+then<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+else<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+fi</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#repeat">repeat</a></td>
+<td></td>
+<td></td>
+<td></td>
+<td>repeat <span style="color: gray"><em>count</em></span> <span style="color: gray"><em>cmd</em></span></td>
+<td>repeat <span style="color: gray"><em>count</em></span> do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#select">select</a></td>
+<td>select <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+<td></td>
+<td></td>
+<td></td>
+<td>select <span style="color: gray"><em>var</em></span> in <span style="color: gray"><em>arg …</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#until">until</a></td>
+<td>until <span style="color: gray"><em>test</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+<td></td>
+<td></td>
+<td></td>
+<td>until <span style="color: gray"><em>test</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+</tr><tr><td><a href="http://hyperpolyglot.org/unix-shells#while">while</a></td>
+<td>while <span style="color: gray"><em>test</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+<td>while <span style="color: gray"><em>test</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td>while <span style="color: gray"><em>test</em></span> {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+}</td>
+<td>while (<span style="color: gray"><em>expr</em></span>)<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+end</td>
+<td>while <span style="color: gray"><em>test</em></span><br>
+do<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>cmd</em></span><br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span><span style="color: gray"><em>…</em></span><br>
+done</td>
+</tr></tbody></table>
+<p><a name="redirection" id="redirection"></a></p>
+<h1 id="toc107"><span><a href="#top">Redirection</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>stdin from file</td>
+<td>tr a-z A-Z &lt; <span style="color: gray"><em>file</em></span></td>
+<td>tr a-z A-Z &lt; <span style="color: gray"><em>file</em></span></td>
+<td>tr a-z A-Z &lt; <span style="color: gray"><em>file</em></span></td>
+<td>tr a-z A-Z &lt; <span style="color: gray"><em>file</em></span></td>
+<td>tr a-z A-Z &lt; <span style="color: gray"><em>file</em></span></td>
+</tr><tr><td>stdout to file</td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span></td>
+</tr><tr><td>stderr to file</td>
+<td>ls /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
+<td>s /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>ls /not_a_file 2&gt; <span style="color: gray"><em>file</em></span></td>
+</tr><tr><td>stdout and stderr to file</td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
+<td>ls &gt;&amp; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt;&amp; <span style="color: gray"><em>file</em></span></td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span> 2&gt;&amp;1</td>
+</tr><tr><td>append stdout to file</td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+</tr><tr><td>append stderr to file</td>
+<td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls !<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>ls 2<span style="white-space: pre-wrap;">&gt;&gt;</span> <span style="color: gray"><em>file</em></span></td>
+</tr><tr><td>append stdout and stderr to file</td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/bash.out 2&gt;&amp;1</td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;&amp;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;&amp;</span> <span style="color: gray"><em>file</em></span></td>
+<td>ls <span style="white-space: pre-wrap;">&gt;&gt;</span> /tmp/zsh.out 2&gt;&amp;1</td>
+</tr><tr><td>stdout to pipe</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+<td>ls | wc</td>
+</tr><tr><td>stderr to pipe</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td>sdout and stderr to pipe</td>
+<td>ls 2&gt;&amp;1 | wc</td>
+<td>ls 2&gt;&amp;1 | wc</td>
+<td>ls |&amp; wc</td>
+<td>ls |&amp; wc</td>
+<td>ls 2&gt;&amp;1 | wc</td>
+</tr><tr><td>stdin from here-document</td>
+<td>wc <span style="white-space: pre-wrap;">&lt;&lt;</span> EOF<br>
+do<br>
+re<br>
+mi<br>
+EOF</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>wc <span style="white-space: pre-wrap;">&lt;&lt;</span> EOF<br>
+do<br>
+re<br>
+mi<br>
+EOF</td>
+<td>wc <span style="white-space: pre-wrap;">&lt;&lt;</span> EOF<br>
+do<br>
+re<br>
+mi<br>
+EOF</td>
+</tr><tr><td>stdin from here-string</td>
+<td>wc <span style="white-space: pre-wrap;">&lt;&lt;&lt;</span> "do re mi"</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>wc <span style="white-space: pre-wrap;">&lt;&lt;&lt;</span> "do re mi"</td>
+</tr><tr><td>tee stdout</td>
+<td colspan="4" style="text-align: center;">ls | tee <span style="color: gray"><em>file</em></span> | wc</td>
+<td>ls &gt; <span style="color: gray"><em>file</em></span> | wc</td>
+</tr><tr><td>stdout to two files</td>
+<td colspan="4" style="text-align: center;">ls | tee <span style="color: gray"><em>file1</em></span> | tee <span style="color: gray"><em>file2</em></span> &gt; /dev/null</td>
+<td>ls &gt; <span style="color: gray"><em>file1</em></span> &gt; <span style="color: gray"><em>file2</em></span></td>
+</tr><tr><td>turn on noclobber</td>
+<td>set -o noclobber</td>
+<td></td>
+<td><span style="color: gray"><em>noclobber is the default</em></span></td>
+<td>set noclobber</td>
+<td>set -o noclobber</td>
+</tr><tr><td>clobber file anyways</td>
+<td>ls &gt;! /tmp/exists.txt</td>
+<td></td>
+<td>ls &gt;| /tmp/exists.txt</td>
+<td>ls &gt;! /tmp/exists.txt</td>
+<td>ls &gt;! /tmp/exists.txt</td>
+</tr><tr><td>turn off noclobber</td>
+<td>set +o noclobber</td>
+<td></td>
+<td></td>
+<td>unset noclobber</td>
+<td>set +o noclobber</td>
+</tr></tbody></table>
+<p><a name="echo-read" id="echo-read"></a></p>
+<h1 id="toc108"><span><a href="#top">Echo and Read</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="echo" id="echo"></a><a href="http://hyperpolyglot.org/unix-shells#echo-note">echo</a><br><span style="color: gray"><em>with newline, without newline</em></span></td>
+<td>echo <span style="color: gray"><em>arg …</em></span><br>
+echo -n <span style="color: gray"><em>arg …</em></span></td>
+<td>echo <span style="color: gray"><em>arg …</em></span><br>
+echo -n <span style="color: gray"><em>arg …</em></span></td>
+<td>echo <span style="color: gray"><em>arg …</em></span><br>
+/bin/echo -n <span style="color: gray"><em>arg …</em></span></td>
+<td>echo <span style="color: gray"><em>arg …</em></span><br>
+echo -n <span style="color: gray"><em>arg …</em></span></td>
+<td>echo <span style="color: gray"><em>arg …</em></span><br>
+echo -n <span style="color: gray"><em>arg …</em></span></td>
+</tr><tr><td><a name="printf" id="printf"></a><a href="http://hyperpolyglot.org/unix-shells#printf-note">printf</a></td>
+<td>printf <span style="color: gray"><em>fmt arg …</em></span></td>
+<td>printf <span style="color: gray"><em>fmt arg …</em></span></td>
+<td>printf <span style="color: gray"><em>fmt arg …</em></span></td>
+<td>printf <span style="color: gray"><em>fmt arg …</em></span></td>
+<td>printf <span style="color: gray"><em>fmt arg …</em></span></td>
+</tr><tr><td><a name="read" id="read"></a><a href="http://hyperpolyglot.org/unix-shells#read-note">read</a><br><br><span style="color: gray"><em>read values separated by</em> IFS<em>; with prompt; without backslash escape</em></span></td>
+<td>read <span style="color: gray"><em>var …</em></span><br>
+read -p <span style="color: gray"><em>str</em></span> <span style="color: gray"><em>var</em></span><br>
+read -r <span style="color: gray"><em>var …</em></span></td>
+<td>read <span style="color: gray"><em>var …</em></span><br>
+read -p 'echo <span style="color: gray"><em>str</em></span>' <span style="color: gray"><em>var</em></span></td>
+<td>define <span style="color: gray"><em>var</em></span>: read<br><br></td>
+<td>echo -n <span style="color: gray"><em>str</em></span><br>
+set <span style="color: gray"><em>var</em></span>=$&lt;</td>
+<td>read <span style="color: gray"><em>var …</em></span><br>
+read <span style="color: gray"><em>var</em></span>\?<span style="color: gray"><em>str</em></span><br>
+read -r <span style="color: gray"><em>var …</em></span></td>
+</tr></tbody></table>
+<p><a name="file-dir" id="file-dir"></a></p>
+<h1 id="toc112"><span><a href="#top">Files and Directories</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="cd" id="cd"></a><a href="http://hyperpolyglot.org/unix-shells#cd-note">change current directory</a><br><br><span style="color: gray"><em>change dir, to home dir, to previous dir, show physical dir, no symlink dir</em></span></td>
+<td>cd <span style="color: gray"><em>dir</em></span><br>
+cd<br>
+cd -<br>
+cd -P <span style="color: gray"><em>dir</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td>cd <span style="color: gray"><em>dir</em></span><br>
+cd<br>
+cd -<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td>cd <span style="color: gray"><em>dir</em></span><br>
+cd<br>
+cd -<br>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span></td>
+<td>cd <span style="color: gray"><em>dir</em></span><br>
+cd<br>
+cd -<br><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td>cd <span style="color: gray"><em>dir</em></span><br>
+cd<br>
+cd -<br>
+cd -P <span style="color: gray"><em>dir</em></span><br>
+cd -s <span style="color: gray"><em>dir</em></span></td>
+</tr><tr><td><a name="dir-stack" id="dir-stack"></a><a href="http://hyperpolyglot.org/unix-shells#dir-stack-note">directory stack:</a><br><br><span style="color: gray"><em>push, pop, list</em></span></td>
+<td>pushd <span style="color: gray"><em>dir</em></span><br>
+popd<br>
+dirs</td>
+<td>pushd <span style="color: gray"><em>dir</em></span><br>
+popd<br>
+dirs</td>
+<td></td>
+<td>pushd <span style="color: gray"><em>dir</em></span><br>
+popd<br>
+dirs</td>
+<td>pushd <span style="color: gray"><em>dir</em></span><br>
+popd<br>
+dirs</td>
+</tr><tr><td><a name="pwd" id="pwd"></a><a href="http://hyperpolyglot.org/unix-shells#pwd-note">print current directory</a></td>
+<td>pwd</td>
+<td>pwd</td>
+<td>pwd</td>
+<td>pwd</td>
+<td>pwd</td>
+</tr><tr><td><a name="source" id="source"></a><a href="http://hyperpolyglot.org/unix-shells#source-note">source</a></td>
+<td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span><br>
+. <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
+<td>source <span style="color: gray"><em>file</em></span><br>
+. <span style="color: gray"><em>file</em></span></td>
+<td>source <span style="color: gray"><em>file</em></span><br></td>
+<td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
+<td>source <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span><br>
+. <span style="color: gray"><em>file</em></span> <span style="color: gray"><em>arg …</em></span></td>
+</tr><tr><td><a name="umask" id="umask"></a><a href="http://hyperpolyglot.org/unix-shells#umask-note">umask</a><br><br><span style="color: gray"><em>set umask in octal, in symbolic chmod format; show umask in octal, in symbolic chmod format</em></span></td>
+<td>umask 022<br>
+umask g-w,o-w<br>
+umask<br>
+umask -S</td>
+<td>umask 022<br>
+umask g-w,o-w<br>
+umask<br>
+umask -S</td>
+<td>umask 022<br><span style="color: gray"><em>none</em></span><br>
+umask<br><span style="color: gray"><em>none</em></span></td>
+<td>umask 022<br><span style="color: gray"><em>none</em></span><br>
+umask<br><span style="color: gray"><em>none</em></span></td>
+<td>umask 022<br>
+umask g-w,o-w<br>
+umask<br>
+umask -S</td>
+</tr></tbody></table>
+<p><a name="process-job-control" id="process-job-control"></a></p>
+<h1 id="toc118"><span><a href="#top">Process and Job Control</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="bg" id="bg"></a><a href="http://hyperpolyglot.org/unix-shells#bg-note">run job in background</a></td>
+<td>bg</td>
+<td>bg</td>
+<td>bg</td>
+<td>bg</td>
+<td>bg</td>
+</tr><tr><td><a name="disown" id="disown"></a><a href="http://hyperpolyglot.org/unix-shells#disown-note">protect job from hangup signal</a></td>
+<td>disown</td>
+<td><span style="color: gray"><em>does not SIGHUP background jobs on exit</em></span></td>
+<td><span style="color: gray"><em>does not SIGHUP background jobs on exit</em></span></td>
+<td></td>
+<td>disown</td>
+</tr><tr><td><a name="exec" id="exec"></a><a href="http://hyperpolyglot.org/unix-shells#exec-note">execute file</a></td>
+<td>exec [-c]</td>
+<td>exec</td>
+<td></td>
+<td>exec</td>
+<td>exec</td>
+</tr><tr><td>exit</td>
+<td>exit [n]</td>
+<td>exit</td>
+<td>exit [n]</td>
+<td>exit</td>
+<td>exit<br>
+bye</td>
+</tr><tr><td>run job in foreground</td>
+<td>fg</td>
+<td>fg</td>
+<td>fg</td>
+<td>fg</td>
+<td>fg</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>hup</td>
+<td></td>
+</tr><tr><td>list jobs</td>
+<td>jobs [-lnprs]</td>
+<td>jobs</td>
+<td>jobs</td>
+<td>jobs</td>
+<td>jobs</td>
+</tr><tr><td>send signal</td>
+<td>kill</td>
+<td><span style="color: gray"><em>external, but …</em></span><br>
+kill</td>
+<td><span style="color: gray"><em>external, but …</em></span><br>
+kill</td>
+<td>kill</td>
+<td>kill</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>limit</td>
+<td>limit</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>login</td>
+<td></td>
+</tr><tr><td></td>
+<td>logout</td>
+<td></td>
+<td></td>
+<td>logout</td>
+<td>logout</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>nice</td>
+<td></td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>nohup</td>
+<td></td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>onintr</td>
+<td></td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>sched</td>
+<td>sched</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>stop</td>
+<td></td>
+</tr><tr><td></td>
+<td>suspend</td>
+<td></td>
+<td></td>
+<td>suspend</td>
+<td>suspend</td>
+</tr><tr><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>time</td>
+<td>time</td>
+</tr><tr><td></td>
+<td>times</td>
+<td></td>
+<td></td>
+<td></td>
+<td>times</td>
+</tr><tr><td></td>
+<td>trap</td>
+<td>trap</td>
+<td><span style="color: gray"><em>(Not yet implemented)</em></span><br>
+trap</td>
+<td></td>
+<td>trap</td>
+</tr><tr><td></td>
+<td>ulimit</td>
+<td></td>
+<td></td>
+<td></td>
+<td>ulimit</td>
+</tr><tr><td></td>
+<td></td>
+<td>ulimit</td>
+<td></td>
+<td>unlimit</td>
+<td>unlimit</td>
+</tr><tr><td></td>
+<td>wait</td>
+<td></td>
+<td>wait</td>
+<td>wait</td>
+<td>wait</td>
+</tr></tbody></table>
+<p><a name="history-cmd-expansion" id="history-cmd-expansion"></a></p>
+<h1 id="toc122"><span><a href="#top">History</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">history commands</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td><a name="list-cmd-history" id="list-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#list-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>list recent, list all, list with time, unnumbered list</em></span></td>
+<td>fc -l<br>
+history<br><span style="color: gray"><em>set</em> HISTTIMEFORMAT</span><br>
+fc -ln</td>
+<td>history | nl | head<br>
+history | nl<br>
+cat ~/.config/fish/fish_history<br>
+history</td>
+<td><span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+<span style="color: gray"><em>none</em></span><br>
+cat ~/.oh_history
+<td>history 15<br>
+history<br>
+history -T<br><span style="color: gray"><em>none</em></span></td>
+<td>history<br>
+history 1<br>
+history -f<br>
+history -n</td>
+</tr><tr><td><a name="run-cmd-history" id="run-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#run-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>run, find and run</em></span></td>
+<td>!<span style="color: gray"><em>num</em></span><br>
+fc -s <span style="color: gray"><em>str</em></span></td>
+<td></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+<td>!<span style="color: gray"><em>num</em></span><br><span style="color: gray"><em>??</em></span></td>
+</tr><tr><td><a name="del-cmd-history" id="del-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#del-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>delete from history, clear history</em></span></td>
+<td>history -d <span style="color: gray"><em>num</em></span><br>
+history -c</td>
+<td></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span><br>
+history -c</td>
+<td><span style="color: gray"><em>none</em></span><br><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td><a name="fix-cmd-history" id="fix-cmd-history"></a><a href="http://hyperpolyglot.org/unix-shells#fix-cmd-history-note">command history:</a><br><br><span style="color: gray"><em>fix, find and substitute</em></span></td>
+<td>fc <span style="color: gray"><em>num</em></span><br>
+fc -s <span style="color: gray"><em>old</em></span>=<span style="color: gray"><em>new</em></span> <span style="color: gray"><em>str</em></span></td>
+<td></td>
+<td></td>
+<td></td>
+<td>fc <span style="color: gray"><em>num</em></span><br><span style="color: gray"><em>none</em></span></td>
+</tr><tr><td><a name="cmd-history-file" id="cmd-history-file"></a><a href="http://hyperpolyglot.org/unix-shells#cmd-history-file-note">command history:</a><br><br><span style="color: gray"><em>write to file, append to file, read from file</em></span></td>
+<td>history -w <span style="color: gray"><em>path</em></span><br>
+history -a <span style="color: gray"><em>path</em></span><br>
+history -r <span style="color: gray"><em>path</em></span></td>
+<td></td>
+<td></td>
+<td></td>
+<td>fc -W <span style="color: gray"><em>path</em></span><br>
+fc -A <span style="color: gray"><em>path</em></span><br>
+fc -R <span style="color: gray"><em>path</em></span></td>
+</tr></tbody></table><p><a name="list-cmd-history-note" id="list-cmd-history-note"></a></p>
+<p><a name="cmd-history-file-note" id="cmd-history-file-note"></a></p>
+<h2 id="toc127"><span><a href="http://hyperpolyglot.org/unix-shells#cmd-history-file">command history file</a></span></h2>
+<table class="wiki-content-table"><tbody><tr><th colspan="6">history expansion</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>most recent command</td>
+<td>!!</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>!!</td>
+<td>!!</td>
+</tr><tr><td>n-th command</td>
+<td>!<span style="color: gray"><em>n</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>!<span style="color: gray"><em>n</em></span></td>
+<td>!<span style="color: gray"><em>n</em></span></td>
+</tr><tr><td>most recent command starting with str</td>
+<td>!<span style="color: gray"><em>str</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>!<span style="color: gray"><em>str</em></span></td>
+<td>!<span style="color: gray"><em>str</em></span></td>
+</tr><tr><td>most recent command with substitution</td>
+<td>^<span style="color: gray"><em>pattern</em></span>^<span style="color: gray"><em>replacement</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>^<span style="color: gray"><em>pattern</em></span>^<span style="color: gray"><em>replacement</em></span></td>
+<td>^<span style="color: gray"><em>pattern</em></span>^<span style="color: gray"><em>replacement</em></span></td>
+</tr><tr><td>nth command with substitution</td>
+<td>!<span style="color: gray"><em>n</em></span>:s/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>!<span style="color: gray"><em>n</em></span>:s/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+<td>!<span style="color: gray"><em>n</em></span>:s/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+</tr><tr><td>n-th command with global substitution</td>
+<td>!<span style="color: gray"><em>n</em></span>:gs/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>!<span style="color: gray"><em>n</em></span>:gs/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+<td>!<span style="color: gray"><em>n</em></span>:gs/<span style="color: gray"><em>pattern</em></span>/<span style="color: gray"><em>replacement</em></span>/</td>
+</tr><tr><td>most recent arguments</td>
+<td>!*</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!*</td>
+</tr><tr><td>first of most recent arguments</td>
+<td>!:1</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!:1</td>
+</tr><tr><td>range of most recent arguments</td>
+<td>!:<span style="color: gray"><em>n</em></span>-<span style="color: gray"><em>m</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!:<span style="color: gray"><em>n</em></span>-<span style="color: gray"><em>m</em></span></td>
+</tr><tr><td>last of most recent arguments</td>
+<td>!$</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!$</td>
+</tr><tr><td>most recent command without arguments</td>
+<td>!:0</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!:0</td>
+</tr><tr><td>m-th argument of n-th command</td>
+<td>!<span style="color: gray"><em>n</em></span>:<span style="color: gray"><em>m</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td>!<span style="color: gray"><em>n</em></span>:<span style="color: gray"><em>m</em></span></td>
+</tr></tbody></table><table class="wiki-content-table"><tbody><tr><th colspan="6">history file</th>
+</tr><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>location</td>
+<td>HISTFILE=~/.bash_history</td>
+<td>~/.config/fish/fish_history</td>
+<td>~/.oh_history</td>
+<td>set histfile ~/.tcsh_history</td>
+<td>HISTFILE=~/.zsh_history</td>
+</tr><tr><td>memory size</td>
+<td>HISTSIZE=2000</td>
+<td></td>
+<td>1000</td>
+<td></td>
+<td>HISTSIZE=2000</td>
+</tr><tr><td>file size</td>
+<td>HISTFILESIZE=2000</td>
+<td></td>
+<td></td>
+<td>set savehist=2000</td>
+<td>SAVEHIST=2000</td>
+</tr><tr><td>format</td>
+<td><span style="color: gray"><em>lines of input</em></span></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>timestamps</td>
+<td>HISTTIMEFORMAT=%s</td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>update time</td>
+<td><span style="color: gray"><em>on exit</em></span></td>
+<td></td>
+<td></td>
+<td></td>
+<td><span style="color: gray"><em>on exit</em></span></td>
+</tr><tr><td>update method</td>
+<td><span style="color: gray"><em>appends to file;<br>
+to only keep most recent dupe:</em></span><br>
+HISTCONTROL=erasedups</td>
+<td></td>
+<td></td>
+<td><span style="color: gray"><em>appends to file;<br>
+to sort in memory file and most recent by timestamp and only keep the most recent, use:</em></span><br>
+set savehist=2000 merge</td>
+<td></td>
+</tr><tr><td>ignore</td>
+<td>HISTIGNORE=history:whoami</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr></tbody></table><p><a name="key-bindings" id="key-bindings"></a></p>
+<h1 id="toc128"><span><a href="#top">Key Bindings</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>list keybindings</td>
+<td>bind -P</td>
+<td>bind</td>
+<td></td>
+<td>bindkey</td>
+<td>bindkey</td>
+</tr><tr><td>list keymaps</td>
+<td>help bind</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>bindkey -l</td>
+</tr><tr><td>current keymap name</td>
+<td>bind -V | grep keymap</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+</tr><tr><td>change keymap</td>
+<td>bind 'set keymap emacs'</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>bindkey -A emacs main</td>
+</tr><tr><td>list bindable functions</td>
+<td>bind -l</td>
+<td>bind -f</td>
+<td></td>
+<td>bindkey -l</td>
+<td></td>
+</tr><tr><td>bind key to function</td>
+<td>bind C-a:beginning-of-line</td>
+<td>bind \ca beginning-of-line</td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>restore default binding for key</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr></tbody></table>
+<p><a name="startup-file" id="startup-file"></a></p>
+<h1 id="toc129"><span><a href="#top">Startup Files</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>non-interactive shell startup files</td>
+<td>$BASH_ENV</td>
+<td>~/.config/fish/config.fish</td>
+<td>~/.ohrc</td>
+<td>/etc/csh.cshrc<br>
+~/.tcshrc<br>
+~/.cshrc</td>
+<td>/etc/zshenv<br>
+$ZDOTDIR/.zshenv</td>
+</tr><tr><td>login shell startup files</td>
+<td>/etc/profile<br>
+~/.bash_profile<br>
+~/.bash_login<br>
+~/.profile</td>
+<td>~/.config/fish/config.fish</td>
+<td>~/.ohrc</td>
+<td>/etc/csh.login<br>
+~/.login</td>
+<td><span style="color: gray"><em>non-interactive startup files</em></span><br>
+/etc/zprofile<br>
+$ZDOTDIR/.zprofile<br>
+/etc/zshrc<br>
+$ZDOTDIR/.zshrc<br>
+/etc/zlogin<br>
+$ZDOTDIR/.zlogin</td>
+</tr><tr><td>other interactive shell startup files</td>
+<td>~/.bashrc</td>
+<td>~/.config/fish/config.fish</td>
+<td>~/.ohrc</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>non-interactive startup files</em></span><br>
+/etc/zshrc<br>
+$ZDOTDIR/.zshrc</td>
+</tr><tr><td>login shell logout files</td>
+<td>~/.bash_logout</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>/etc/csh.logout<br>
+~/.logout</td>
+<td>$ZDOTDIR/.zlogout<br>
+/etc/zlogout</td>
+</tr></tbody></table>
+<p><a name="prompt-customization" id="prompt-customization"></a></p>
+<h1 id="toc130"><span><a href="#top">Prompt Customization</a></span></h1>
+<table class="wiki-content-table"><tbody><tr><th></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#bash">bash</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#fish">fish</a></th>
+<th><a href="https://github.com/michaelmacinnis/oh">oh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#tcsh">tcsh</a></th>
+<th><a href="http://hyperpolyglot.org/unix-shells#zsh">zsh</a></th>
+</tr><tr><td>set primary prompt</td>
+<td>PS1='$ '</td>
+<td>function fish_prompt<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>echo -n '$ '<br>
+end</td>
+<td>replace-make-prompt (method (suffix) {<br>
+<span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>return "$ "<br>
+})</td>
+<td>set prompt='$ '</td>
+<td>PS1='$ '</td>
+</tr><tr><td>set continued line prompt</td>
+<td>PS2='&gt; '</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>set prompt2='&gt; '</td>
+<td>PS2='&gt; '</td>
+</tr><tr><td>set select prompt</td>
+<td>PS3='? '</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>PS3='? '</td>
+</tr><tr><td>set right prompt</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>function fish_right_prompt<br><span style="white-space: pre-wrap;">&nbsp;&nbsp;</span>date<br>
+end</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>set rprompt='%Y-%W-%D %p'</td>
+<td>RPS1='%D{%F %T}'</td>
+</tr><tr><td>set right continued line prompt</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>RSP2='<span style="white-space: pre-wrap;">...</span>'</td>
+</tr><tr><th colspan="6"><a href="http://hyperpolyglot.org/unix-shells#dynamic-prompt-info">dynamic information</a></th>
+</tr><tr><td>working directory</td>
+<td><span style="color: gray"><em>none</em></span></td>
+<td>pwd</td>
+<td></td>
+<td>%/</td>
+<td>%d<br>
+%/</td>
+</tr><tr><td>working directory with tilde abbrev</td>
+<td>\w</td>
+<td><span style="color: gray"><em>abbreviate path components other<br>
+than basename with single letter:</em></span><br>
+prompt_pwd</td>
+<td></td>
+<td>%~</td>
+<td>%~</td>
+</tr><tr><td>trailing components of working directory</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%3C</td>
+<td>%3d</td>
+</tr><tr><td>command number in history</td>
+<td>\!</td>
+<td></td>
+<td></td>
+<td>!<br>
+%!<br>
+%h</td>
+<td>%!<br>
+%h</td>
+</tr><tr><td>command number in session</td>
+<td>\#</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>shell version</td>
+<td>\v</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>shell level</td>
+<td>$SHLVL</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>environment variable</td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+<td>echo -n $<span style="color: gray"><em>var</em></span></td>
+<td></td>
+<td>%$<span style="color: gray"><em>var</em></span></td>
+<td>$<span style="color: gray"><em>var</em></span></td>
+</tr><tr><td>command substitution</td>
+<td>$(<span style="color: gray"><em>cmd</em></span>)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>$(<span style="color: gray"><em>cmd</em></span>)</td>
+</tr><tr><td>host name</td>
+<td>\h<br>
+\H</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%m<br>
+%M</td>
+</tr><tr><td>user</td>
+<td>\u</td>
+<td></td>
+<td></td>
+<td>%n</td>
+<td>%n</td>
+</tr><tr><td>number of jobs</td>
+<td>\j</td>
+<td></td>
+<td></td>
+<td>%j</td>
+<td>%j</td>
+</tr><tr><td>tty</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>%y</td>
+</tr><tr><td>last command exit status</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%?</td>
+<td>%?</td>
+</tr><tr><td>conditional expression</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>shell privilege indicator</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>%#</td>
+</tr><tr><td>continued line info</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr><tr><td>date and time</td>
+<td>\D{<span style="color: gray"><em>strftime_format</em></span>}</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%D{<span style="color: gray"><em>strftime_format</em></span>}</td>
+</tr><tr><th colspan="6"><a href="http://hyperpolyglot.org/unix-shells#prompt-text-effect">text effects and escapes</a></th>
+</tr><tr><td>escapes</td>
+<td>\\ \[ \]</td>
+<td></td>
+<td></td>
+<td>%% %{ %}</td>
+<td>%% %{ %}</td>
+</tr><tr><td>bold</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%B %b</td>
+<td>%B %b</td>
+</tr><tr><td>underline</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%U %u</td>
+<td>%U %u</td>
+</tr><tr><td>standout</td>
+<td></td>
+<td></td>
+<td></td>
+<td>%S %s</td>
+<td>%S %s</td>
+</tr><tr><td>foreground color</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>%F{red} %f</td>
+</tr><tr><td>background color</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>%K{green} %k</td>
+</tr></tbody></table>
+<p>
+        </div>
+      </div>
+      <div id="license-area" class="license-area">
+        <a href="https://github.com/clarkgrubb/hyperpolyglot/issues">issue tracker</a> |
+        content of this page licensed under
+        <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">
+        creative commons attribution-sharealike 3.0</a>
+        <br>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" async="" src="./Unix Shells_ Bash, Fish, Ksh, Tcsh, Zsh - Hyperpolyglot_files/ga.js"></script><script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17129977-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+
+
+</body></html>

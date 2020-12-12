@@ -15,10 +15,9 @@ func Builtins() map[string]func(cell.I) cell.I {
 func Functions() map[string]func(cell.I) cell.I {
 	return map[string]func(cell.I) cell.I{
 		"add":                add,
-		"boolean":            makeBoolean,
-		"boolean?":           isBoolean,
-		"channel":            makeChannel,
-		"channel?":           isChannel,
+		"bool":               makeBool,
+		"chan":               makeChan,
+		"chan?":              isChan,
 		"cons":               cons,
 		"cons?":              isCons,
 		"debug":              debug,
@@ -42,6 +41,7 @@ func Functions() map[string]func(cell.I) cell.I {
 		"pipe?":              isPipe,
 		"rend":               rend,
 		"sprintf":            sprintf,
+		"status":             makeStatus,
 		"string":             makeString,
 		"string?":            isString,
 		"string-replace":     sreplace,
