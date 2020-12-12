@@ -64,15 +64,16 @@ immediately after the redirection operator. For example,
 
 ### Command substitution
 
-Many Unix shells allow the historical backtick form,
+Many Unix shells support command substitution using the historical
+backtick syntax,
 
     `command`
 
-and the POSIX form,
+or the POSIX syntax,
 
     $(command)
 
-of command substitution. Oh has one syntax for command substitution,
+Oh has one syntax for command substitution,
 
     `(command)
 
