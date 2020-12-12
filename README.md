@@ -66,15 +66,15 @@ immediately after the redirection operator. For example,
 
 Many Unix shells allow the historical backtick form,
 
-    ``command``
+    `command`
 
 and the POSIX form,
 
-    `$(command)`
+    $(command)
 
 of command substitution. Oh has one syntax for command substitution,
 
-    ``(command)`
+    `(command)
 
 This syntax is both nestable and unambiguous.
 
