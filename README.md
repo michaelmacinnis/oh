@@ -75,19 +75,19 @@ immediately after the redirection operator. For example,
 
 Oh's pipe and redirection syntax is as follows.
 
-| Syntax   | Redirection                        |
-|---------:|:----------------------------------:|
-|    `<`   | input-from                         |
-|    `>`   | output-to                          |
-|    `>&`  | output-errors-to                   |
-|    `>&|` | output-errors-clobbers             |
-|    `>>`  | append-output-to                   |
-|    `>>&` | append-output-errors-to            |
-|    `>|`  | output-clobbers                    |
-|    `|`   | pipe-output-to                     |
-|    `|&`  | pipe-output-errors-to              |
-|    `|<`  | -named-pipe-input-from<sup>*</sup> |
-|    `|>`  | -named-pipe-output-to<sup>*</sup>  |
+| Syntax    | Redirection                        |
+|----------:|:----------------------------------:|
+|    `<`    | input-from                         |
+|    `>`    | output-to                          |
+|    `>&`   | output-errors-to                   |
+|    `>&\|` | output-errors-clobbers             |
+|    `>>`   | append-output-to                   |
+|    `>>&`  | append-output-errors-to            |
+|    `>\|`  | output-clobbers                    |
+|    `\|`   | pipe-output-to                     |
+|    `\|&`  | pipe-output-errors-to              |
+|    `\|<`  | -named-pipe-input-from<sup>*</sup> |
+|    `\|>`  | -named-pipe-output-to<sup>*</sup>  |
 
 \* - Used in process substitution.
 
