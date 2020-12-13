@@ -7,6 +7,8 @@ github.com/mattn/go-runewidth v0.0.9 h1:Lm995f3rfxdpd6TSmuVCHVb/QhupuXlYr8sCI/Qd
 github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
 github.com/michaelmacinnis/adapted v0.0.0-20171216080906-993520cda764 h1:zEbtl/wkaESHSaxgFI7AAH58DrHjIUd98HPo6gQKscA=
 github.com/michaelmacinnis/adapted v0.0.0-20171216080906-993520cda764/go.mod h1:DyGdN9LLJBpSMUZ+n1UH5g+oRaHKZEDnxffH4ZA84yQ=
+github.com/michaelmacinnis/adapted v0.7.0 h1:/qo20+Njv3uGMfJq43JfMqwr5ITS5sa5e5B2thAyozw=
+github.com/michaelmacinnis/adapted v0.7.0/go.mod h1:+hKlWl2+k05cwgi4M+Qk1QIOeR616MaXPtX4L6CokSs=
 github.com/peterh/liner v1.2.1 h1:O4BlKaq/LWu6VRWmol4ByWfzx6MfXc5Op5HETyIy5yg=
 github.com/peterh/liner v1.2.1/go.mod h1:CRroGNssyjTd/qIG2FyxByd2S8JEAZXBl4qUrZf8GS0=
 golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
