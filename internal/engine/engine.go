@@ -159,6 +159,17 @@ func bg(t *task.T) task.Op {
 	return t.Return(bt)
 }
 
+func exitcode(c cell.I) (code int, ok bool) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			ok = false
+		}
+	}()
+
+	return int(integer.Value(c)), true
+}
+
 func fg(t *task.T) task.Op {
 	v := validate.Fixed(t.Code(), 0, 1)
 
@@ -196,6 +207,7 @@ func init() { //nolint:gochecknoinits
 
 	scope0.Export("export", ee)
 
+	scope0.Define("str", task.StringScope())
 	scope0.Define("sys", obj.New(env0))
 
 	// Methods.
@@ -213,17 +225,6 @@ func jobs(t *task.T) task.Op {
 	job.Jobs(pipe.W(t.CellValue("stdout")))
 
 	return t.Return(status.Int(0))
-}
-
-func exitcode(c cell.I) (code int, ok bool) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			ok = false
-		}
-	}()
-
-	return int(integer.Value(c)), true
 }
 
 func success(c cell.I) (exitcode int) {

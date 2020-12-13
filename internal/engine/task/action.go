@@ -127,6 +127,16 @@ func EvalExport(t *T) Op {
 	return t.PushOp(Action(evalArg))
 }
 
+func StringScope() scope.I {
+        s := env.New(nil)
+
+        for k, v := range commands.StringFunctions() {
+                s.Export(k, f(v))
+        }
+
+        return obj.New(s)
+}
+
 // All commands are bound to the scope in which they were found.
 type binding struct {
 	command

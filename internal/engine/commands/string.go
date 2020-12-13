@@ -15,6 +15,12 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
+func StringFunctions() map[string]func(cell.I) cell.I {
+        return map[string]func(cell.I) cell.I{
+                "replace":      sreplace,
+        }
+}
+
 func isString(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
