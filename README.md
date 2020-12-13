@@ -18,8 +18,7 @@ Oh provides:
 
 Oh's goal is a language that is not only more powerful and more regular
 but one that works with and within the interactive constraints and
-conventions established by the Unix shell over the last half-century
-while remaining as comfortable to use interactively as existing Unix shells.
+conventions established by the Unix shell over the last half-century.
 
 ## Getting started
 
