@@ -483,7 +483,7 @@ func scanSymbol(l *T) action {
 	// Characters that can be in a symbol:
 	// '!', '%', '*', '+', '-',
 	// '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-	// '?', '@',
+	// '?', 
 	// 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 	// 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	// '[', ']', '^', '_',
@@ -493,9 +493,9 @@ func scanSymbol(l *T) action {
 	// And a trailing '$'.
 	// (A trailing '$' should not be used in a variable name).
 	//
-	// The characters ',', '.', '/', ':', '=', and '~' result in a symbol
-	// of on character. (These characters should not be used in variable
-	// names).
+	// The characters ',', '.', '/', ':', '=', '@', and '~' result in a
+	// symbol of one character. (These characters should not be used in
+	// variable names).
 	for {
 		r, w := l.peek()
 
@@ -509,7 +509,7 @@ func scanSymbol(l *T) action {
 
 			return collectHorizontalSpace
 
-		case ',', '.', '/', ':', '=', '~':
+		case ',', '.', '/', ':', '=', '@', '~':
 			s := l.Text()
 			if len(s) > 0 {
 				l.emit(token.Symbol, s)
@@ -621,7 +621,7 @@ func startState(l *T, state action, ignore string) action {
 		case '|':
 			return afterPipe
 
-		case ',', '.', '/', ':', '=', '~':
+		case ',', '.', '/', ':', '=', '@', '~':
 			l.emit(token.Symbol, l.Text())
 
 			return collectHorizontalSpace
