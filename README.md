@@ -154,7 +154,7 @@ like,
     cd $PWD/$dir
 
 work as expected. When using implicit concatentation, unexpected behavior
-can be avoided by enclosing variable names in braces. 
+can be avoided by enclosing variable names in braces.
 
 ### More detailed comparison
 
