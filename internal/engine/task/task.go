@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/michaelmacinnis/oh/internal/adapted"
+	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
