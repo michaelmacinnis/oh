@@ -153,10 +153,10 @@ like,
 
     cd $PWD/$dir
 
-work as expected. Still, it's safer to enclose variable names in braces
-to avoid unexpected behaviour when implicit concatenation is being used.
+work as expected. When using implicit concatentation, unexpected behavior
+can be avoided by enclosing variable names in braces. 
 
-### More information
+### More detailed comparison
 
 For a detailed comparison to other Unix shells see: [Comparing oh to other Unix Shells](https://htmlpreview.github.io/?https://raw.githubusercontent.com/michaelmacinnis/oh/master/doc/comparison.html)
 
