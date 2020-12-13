@@ -402,7 +402,7 @@ below (adapted from "Newsqueak: A Language for Communicating with Mice").
     while $count {
         define p: prime-numbers read
     
-        set line: mend '' $line (sprintf "%7.7s" $p)
+        set line: mend '' $line (str format "%7.7s" $p)
     
         set count: sub $count 1
         mod $count 10 || block {

@@ -17,6 +17,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
+	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
 	"github.com/michaelmacinnis/oh/internal/common/type/status"
@@ -27,6 +28,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/engine/task"
 	"github.com/michaelmacinnis/oh/internal/reader"
 	"github.com/michaelmacinnis/oh/internal/system/job"
+	"github.com/michaelmacinnis/oh/internal/system/process"
 )
 
 func Boot(path string, arguments []string) {
@@ -206,6 +208,8 @@ func init() { //nolint:gochecknoinits
 	scope0 = env.New(nil)
 
 	scope0.Export("export", ee)
+
+	scope0.Define("$", num.Int(process.ID()))
 
 	scope0.Define("str", task.StringScope())
 	scope0.Define("sys", obj.New(env0))

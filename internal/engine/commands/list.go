@@ -89,16 +89,13 @@ func setTail(s cell.I, args cell.I) cell.I {
 }
 
 func slice(s cell.I, args cell.I) cell.I {
-	c := s
+	v := validate.Fixed(args, 1, 2)
 
-	start := int64(0)
-	if a := pair.Car(args); a != pair.Null {
-		start = integer.Value(a)
-	}
+	start := integer.Value(v[0])
+	end := int64(0)
 
-	end := list.Length(c)
-	if a := pair.Cadr(args); a != pair.Null {
-		end = integer.Value(a)
+	if len(v) == 2 {
+		end = integer.Value(v[1])
 	}
 
 	return list.Slice(s, start, end)

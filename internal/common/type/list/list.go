@@ -170,7 +170,7 @@ func Slice(list cell.I, start, end int64) cell.I {
 
 	if end < 0 {
 		panic("end of slice before start")
-	} else if end == start {
+	} else if end == 0 {
 		return pair.Null
 	}
 

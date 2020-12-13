@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/rational"
 	"github.com/michaelmacinnis/oh/internal/common/type/create"
@@ -19,5 +20,9 @@ func isNumber(args cell.I) cell.I {
 func number(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
-	return num.Rat(rational.Number(v[0]))
+	if r, ok := v[0].(rational.I); ok {
+		return num.Rat(r.Rat())
+	}
+
+	return num.New(common.String(v[0]))
 }

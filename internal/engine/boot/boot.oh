@@ -281,7 +281,7 @@ block {
     set append-output-to: make-redirect true writer-close a $override-stdout
     set append-output-errors-to: make-redirect true writer-close a $override-stdout-stderr
 
-    set capture: syntax ((cmd)) e {
+    set capture: syntax (cmd) e {
         define c: chan 1
         define p: pipe
 
@@ -484,8 +484,8 @@ block {
     }
 
     define make-prompt: method (suffix) {
-        define d: string-replace $PWD $HOME ~
-        mend '' $USER @ (splice (capture hostname)) : $d $suffix
+        define d: str replace $PWD $HOME ~
+        mend '' $USER @ (splice (capture (hostname))) : $d $suffix
     }
 
     set prompt: method (suffix) {
@@ -608,19 +608,31 @@ define glob: builtin ((args)) {
 }
 
 define here: method (s) {
-    write-line (string-trim-prefix (string-trim-suffix $s $'\n') $'\n')
+    write-line (str trim-prefix (str trim-suffix $s $'\n') $'\n')
 }
 
 define ls: method ((args)) {
     command ls --color=auto (splice $args)
 }
 
-define mill: syntax ((defn)) e {
-        define miller: e eval (cons method $defn)
+# TODO: Replace with builtin rather than invoking bc.
+define math: method (s) {
+    catch ex {
+        throw "malformed expression: '${s}'"
+    }
 
-        while (define l: read-list) {
-                miller (splice $l)
-        }
+    number (splice (capture (block {
+        echo 'scale=6'
+        write-line $s
+    } | bc)))
+}
+
+define mill: syntax ((defn)) e {
+    define miller: e eval (cons method $defn)
+
+    while (define l: read-list) {
+        miller (splice $l)
+    }
 }
 
 define read: method () {
@@ -633,6 +645,17 @@ define read-line: method () {
 
 define read-list: method () {
     stdin read-list
+}
+
+define seq: method (n) {
+    define l ()
+
+    while (gt? $n 0) {
+        set n: sub $n 1
+        set l: cons $n $l
+    }
+
+    return $l
 }
 
 define write: method ((args)) e {

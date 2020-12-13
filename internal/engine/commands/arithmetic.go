@@ -27,7 +27,8 @@ func add(args cell.I) cell.I {
 func div(args cell.I) cell.I {
 	v, args := validate.Variadic(args, 1, 1)
 
-	quotient := rational.Number(v[0])
+	quotient := &big.Rat{}
+	quotient.Set(rational.Number(v[0]))
 
 	for args != pair.Null {
 		quotient.Quo(quotient, rational.Number(pair.Car(args)))
@@ -66,7 +67,8 @@ func mod(args cell.I) cell.I {
 func mul(args cell.I) cell.I {
 	v, args := validate.Variadic(args, 1, 1)
 
-	product := rational.Number(v[0])
+	product := &big.Rat{}
+	product.Set(rational.Number(v[0]))
 
 	for args != pair.Null {
 		product.Mul(product, rational.Number(pair.Car(args)))
@@ -80,7 +82,8 @@ func mul(args cell.I) cell.I {
 func sub(args cell.I) cell.I {
 	v, args := validate.Variadic(args, 1, 1)
 
-	difference := rational.Number(v[0])
+	difference := &big.Rat{}
+	difference.Set(rational.Number(v[0]))
 
 	for args != pair.Null {
 		difference.Sub(difference, rational.Number(pair.Car(args)))

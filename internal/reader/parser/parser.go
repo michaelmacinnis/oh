@@ -447,7 +447,7 @@ func (p *T) element() cell.I {
 
 		c := p.check(p.value())
 
-		c = pair.Cons(sym.New("capture"), c)
+		c = pair.Cons(sym.New("capture"), list.New(c))
 		c = list.New(sym.New("splice"), c)
 
 		return c

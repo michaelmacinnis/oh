@@ -10,15 +10,23 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
 	"github.com/michaelmacinnis/oh/internal/common/type/create"
+	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
 func StringFunctions() map[string]func(cell.I) cell.I {
-        return map[string]func(cell.I) cell.I{
-                "replace":      sreplace,
-        }
+	return map[string]func(cell.I) cell.I{
+		"format":      sprintf,
+		"length":      slength,
+		"lower":       lower,
+		"replace":     sreplace,
+		"slice":       sslice,
+		"trim-prefix": trimPrefix,
+		"trim-suffix": trimSuffix,
+		"upper":       upper,
+	}
 }
 
 func isString(args cell.I) cell.I {
@@ -27,10 +35,53 @@ func isString(args cell.I) cell.I {
 	return create.Bool(str.Is(v[0]))
 }
 
+func lower(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return str.New(strings.ToLower(common.String(v[0])))
+}
+
 func makeString(args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
 	return str.New(common.String(v[0]))
+}
+
+func slength(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return num.Int(len(common.String(v[0])))
+}
+
+func sslice(args cell.I) cell.I {
+	v := validate.Fixed(args, 2, 3)
+
+	s := common.String(v[0])
+
+	length := int64(len(s))
+
+	start := integer.Value(v[1])
+	if start < 0 {
+		panic("slice starts before first element")
+	} else if start > length {
+		start = length
+	}
+
+	end := length
+	if len(v) == 3 { //nolint:gomnd
+		end = integer.Value(v[2])
+		if end > length {
+			end = length
+		} else if end < 0 {
+			end = length + end
+		}
+	}
+
+	if end < start {
+		panic("end of slice before start")
+	}
+
+	return str.New(s[start:end])
 }
 
 func sreplace(args cell.I) cell.I {
@@ -73,4 +124,10 @@ func trimSuffix(args cell.I) cell.I {
 	v := validate.Fixed(args, 2, 2)
 
 	return str.New(strings.TrimSuffix(common.String(v[0]), common.String(v[1])))
+}
+
+func upper(args cell.I) cell.I {
+	v := validate.Fixed(args, 1, 1)
+
+	return str.New(strings.ToUpper(common.String(v[0])))
 }
