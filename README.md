@@ -23,7 +23,7 @@ while remaining as comfortable to use interactively as existing Unix shells.
 
 ## Getting started
 
-### Installing oh
+### Installing
 
 The easiest way to try oh is to download a precompiled binary. There
 are oh binaries for Linux, macOS, DragonFlyBSD, FreeBSD, OpenBSD and
@@ -38,7 +38,7 @@ Go installed, type,
 
 to install oh.
 
-### Configuring oh
+### Configuring
 
 When oh starts it attempts to read a file called `.oh-rc` in the home
 directory of the current user. You can override this path by setting
