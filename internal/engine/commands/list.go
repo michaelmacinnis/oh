@@ -94,7 +94,7 @@ func slice(s cell.I, args cell.I) cell.I {
 	start := integer.Value(v[0])
 	end := int64(0)
 
-	if len(v) == 2 {
+	if len(v) == 2 { //nolint:gomnd
 		end = integer.Value(v[1])
 	}
 

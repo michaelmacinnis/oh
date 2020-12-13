@@ -39,6 +39,7 @@ func Functions() map[string]func(cell.I) cell.I {
 		"open":      open,
 		"pipe":      makePipe,
 		"pipe?":     isPipe,
+		"random":    random,
 		"rend":      rend,
 		"sprintf":   sprintf,
 		"status":    makeStatus,
