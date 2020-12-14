@@ -179,29 +179,6 @@ produce the output,
     9
 
 
-#### Context
-
-In oh, environments are first-class values with public and private halves.
-For a variable to be public it must be created with the `export` command
-instead of the `define` command.
-
-The commands,
-
-    define o: block {
-        export get $resolve
-        export x 1
-        define y 2
-        (method self () = (return $self))
-    }
-    
-    echo "public variable" (o get x)
-    echo "private variable" (o get y)
-
-produce the output,
-
-    public variable 1
-    error: 'y' not defined
-
 #### Object
 
 In oh, environments are first-class values with public and private halves.

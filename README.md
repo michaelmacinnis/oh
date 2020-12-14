@@ -26,6 +26,7 @@ conventions established by the Unix shell over the last half-century.
 
 The easiest way to try oh is to download a precompiled binary.
 
+
 #### DragonFly BSD
 
 - [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_dragonfly_amd64)
@@ -206,7 +207,8 @@ For more information on using oh, see: [Using oh](doc/manual.md)
 
 ## Contributing to oh
 
-Oh is an ongoing experiment and it needs your help. Try oh. Let me know what works for you and what doesn't.
+Oh is an ongoing experiment and it needs your help. Try oh. Let me know
+what works for you and what doesn't.
 
 Pull requests are welcome. For information on contributing, see: [CONTRIBUTING](CONTRIBUTING.md)
 
