@@ -206,13 +206,11 @@ For more information on using oh, see: [Using oh](doc/manual.md)
 
 ## Contributing to oh
 
-Oh is an ongoing experiment and it needs your help.
-
-Try oh. Let me know what works for you and what doesn't.
+Oh is an ongoing experiment and it needs your help. Try oh. Let me know what works for you and what doesn't.
 
 Pull requests are welcome. For information on contributing, see: [CONTRIBUTING](CONTRIBUTING.md)
 
-Sponsor me through GitHub Sponsors or Patreon.
+You can also sponsor me through GitHub Sponsors or Patreon.
 
 ## License
 
