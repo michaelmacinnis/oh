@@ -24,11 +24,52 @@ conventions established by the Unix shell over the last half-century.
 
 ### Installing
 
-The easiest way to try oh is to download a precompiled binary. There
-are oh binaries for Linux, macOS, DragonFlyBSD, FreeBSD, OpenBSD and
-Solaris/Illumos.
+The easiest way to try oh is to download a precompiled binary.
 
-[TODO: Add link to binaries for current release]
+#### DragonFly BSD
+
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_dragonfly_amd64)
+
+#### FreeBSD
+
+- [386](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_freebsd_386)
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_freebsd_amd64)
+- [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_freebsd_arm)
+- [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_freebsd_arm64)
+
+#### illumos
+
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_illumos_amd64)
+
+#### Linux
+
+- [386](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_386)
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_amd64)
+- [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_arm)
+- [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_arm64)
+- [mips](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_mips)
+- [mips64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_mips64)
+- [mips64le](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_mips64le)
+- [mipsle](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_mipsle)
+- [ppc64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_ppc64)
+- [ppc64le](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_ppc64le)
+- [riscv64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_riscv64)
+- [s390x](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_linux_s390x)
+
+#### macOS
+
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_darwin_amd64)
+
+#### OpenBSD
+
+- [386](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_openbsd_386)
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_openbsd_amd64)
+- [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_openbsd_arm)
+- [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_openbsd_arm64)
+
+#### Solaris
+
+- [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.7.0/oh_solaris_amd64)
 
 Alternatively, you can build oh from source. With a recent version of
 Go installed, type,
