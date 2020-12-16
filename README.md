@@ -182,7 +182,7 @@ use the `export` command,
 
     export GOROOT /usr/local/go
 
-To set the value of an existing variable use the `set` command,
+To set the value of an existing variable, use the `set` command,
 
     set x 4
 
