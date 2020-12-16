@@ -171,6 +171,21 @@ be used to the same effect. For example,
         GOOS=${o} GOARCH=${a} go build -o oh_${o}_${a}
     }
 
+### Variables
+
+To introduce a new variable, use the `define` command,
+
+    define x 3
+
+To introduce a variable that will be visible to external processes,
+use the `export` command,
+
+    export GOROOT /usr/local/go
+
+To set the value of an existing variable use the `set` command,
+
+    set x 4
+
 ### Variables and implicit concatenation
 
 Like other shells, oh implicitly concatenates adjacent string/symbol
