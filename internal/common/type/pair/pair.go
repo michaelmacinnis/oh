@@ -4,6 +4,8 @@
 package pair
 
 import (
+	"fmt"
+
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -168,7 +170,7 @@ func implements() { //nolint:deadcode,unused
 	_ = literal.I(&t)
 
 	// The pair type is a stringer.
-	_ = common.Stringer(&t)
+	_ = fmt.Stringer(&t)
 }
 
 func init() { //nolint:gochecknoinits

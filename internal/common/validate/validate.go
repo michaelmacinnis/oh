@@ -10,6 +10,8 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 )
 
+// Variadic checks that there are at least min to max arguments and returns
+// these as an array. Any remaining arguments are returned as a list.
 func Variadic(actual cell.I, min, max int) ([]cell.I, cell.I) {
 	expected := make([]cell.I, 0, max)
 
@@ -31,6 +33,7 @@ func Variadic(actual cell.I, min, max int) ([]cell.I, cell.I) {
 	return expected, actual
 }
 
+// Fixed returns min to max arguments as an array.
 func Fixed(actual cell.I, min, max int) []cell.I {
 	expected, rest := Variadic(actual, min, max)
 	if rest != pair.Null {
@@ -43,6 +46,7 @@ func Fixed(actual cell.I, min, max int) []cell.I {
 	return expected
 }
 
+// Count returns a human-readable count.
 func Count(n int, label string, p string) string {
 	if n == 1 {
 		p = ""

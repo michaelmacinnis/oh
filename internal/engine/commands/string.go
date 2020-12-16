@@ -16,6 +16,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
+// StringFunctions returns a mapping of names to string methods.
 func StringFunctions() map[string]func(cell.I) cell.I {
 	return map[string]func(cell.I) cell.I{
 		"format":      sprintf,

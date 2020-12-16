@@ -9,6 +9,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
 
+// ListMethods returns a mapping of names to list methods.
 func ListMethods() map[string]func(cell.I, cell.I) cell.I {
 	return map[string]func(cell.I, cell.I) cell.I{
 		"append":   appendMethod,

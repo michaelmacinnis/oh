@@ -8,11 +8,13 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/struct/token"
 )
 
+// Plus is a symbol plus its lexical location.
 type Plus struct {
 	*sym
 	source *loc.T
 }
 
+// Token creates a Plus from a token.T.
 func Token(t *token.T) cell.I {
 	p := symnew(t.Value())
 

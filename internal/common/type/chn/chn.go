@@ -4,8 +4,9 @@
 package chn
 
 import (
+	"fmt"
+
 	"github.com/michaelmacinnis/adapted"
-	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/conduit"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -59,7 +60,7 @@ func (c *chn) ReadLine() cell.I {
 		return pair.Null
 	}
 
-	i, ok := v.(common.Stringer)
+	i, ok := v.(fmt.Stringer)
 	if ok {
 		s, err := adapted.ActualBytes(i.String())
 		if err == nil {

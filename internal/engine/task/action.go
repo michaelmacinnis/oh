@@ -116,6 +116,7 @@ func EvalCommand(t *T) Op {
 	return t.PushOp(Action(evalElement))
 }
 
+// EvalExport is th entry-point for the export command.
 func EvalExport(t *T) Op {
 	t.ReplaceOp(Action(execExport))
 	t.PushOp(Action(evalArg))
@@ -127,6 +128,7 @@ func EvalExport(t *T) Op {
 	return t.PushOp(Action(evalArg))
 }
 
+// StringScope returns the 'str' object/module containing all string methods.
 func StringScope() scope.I {
 	s := env.New(nil)
 

@@ -502,7 +502,7 @@ func (p *T) meta(c cell.I) cell.I {
 
 	t = pair.Cadr(c)
 
-	arg, ok := t.(common.Stringer)
+	arg, ok := t.(fmt.Stringer)
 	if ok {
 		return create(arg.String())
 	}

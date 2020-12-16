@@ -54,6 +54,7 @@ func New(m monitor, c cell.I, f *frame.T) *T {
 	return t
 }
 
+// CellValue resolves the name k and returns its value as a cell.I.
 func (t *T) CellValue(k string) cell.I {
 	v := t.value(nil, k)
 	if v == nil {
@@ -63,6 +64,7 @@ func (t *T) CellValue(k string) cell.I {
 	return v
 }
 
+// Chdir changes the working directory by modifying PWD and OLDPWD in the current scope.
 func (t *T) Chdir(s string) cell.I {
 	rv := sym.True
 
@@ -143,12 +145,14 @@ func (t *T) Environ() []string {
 	return environ
 }
 
+// Interrupt stops the task.
 func (t *T) Interrupt() {
 	t.state.Stop(func() {
 		t.stack = done
 	})
 }
 
+// Return is a helper used by actions to return a value.
 func (t *T) Return(c cell.I) Op {
 	t.ReplaceResult(c)
 
@@ -214,6 +218,7 @@ func (t *T) Step(s Op) (op Op) {
 	return op
 }
 
+// Stop stops a task but allows for it to be restarted.
 func (t *T) Stop() {
 	t.state.Stop(nil)
 }

@@ -4,11 +4,11 @@
 package sym
 
 import (
+	"fmt"
 	"math/big"
 	"sync"
 
 	"github.com/michaelmacinnis/adapted"
-	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
 	"github.com/michaelmacinnis/oh/internal/common/interface/rational"
@@ -25,6 +25,7 @@ type T string
 
 type sym = T
 
+// True is a reference to the symbol for 'true' - the canonical oh value for true.
 var True cell.I //nolint:gochecknoglobals
 
 // New creates a sym cell.
@@ -149,5 +150,5 @@ func implements() { //nolint:deadcode,unused
 	_ = literal.I(&t)
 
 	// The sym type is a stringer.
-	_ = common.Stringer(&t)
+	_ = fmt.Stringer(&t)
 }

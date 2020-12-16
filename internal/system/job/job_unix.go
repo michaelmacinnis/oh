@@ -20,6 +20,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// T (job) corresponds to a command entered by the user.
 type T struct {
 	group   int
 	initial int
@@ -30,13 +31,16 @@ type T struct {
 	stopped map[int]*task.T
 }
 
+type job = T
+
 type wg struct {
 	fn func()
 	on map[*task.T]struct{}
 }
 
+// Job create a new (non-foreground) job.
 func Job(group int) *T {
-	r := make(chan *T)
+	r := make(chan *job)
 
 	requestq <- func() {
 		r <- &T{
@@ -50,11 +54,12 @@ func Job(group int) *T {
 	return <-r
 }
 
+// New creates a new foreground job.
 func New(group int) *T {
-	r := make(chan *T)
+	r := make(chan *job)
 
 	requestq <- func() {
-		foreground = &T{
+		foreground = &job{
 			group:   group,
 			initial: group,
 			running: map[int]*task.T{},
@@ -67,11 +72,11 @@ func New(group int) *T {
 	return <-r
 }
 
-func (j *T) Append(line string) {
+func (j *job) Append(line string) {
 	j.lines = append(j.lines, line)
 }
 
-func (j *T) Await(fn func(), p *task.T, ts ...*task.T) {
+func (j *job) Await(fn func(), p *task.T, ts ...*task.T) {
 	requestq <- func() {
 		w := &wg{
 			fn: fn,
@@ -106,7 +111,7 @@ func (j *T) Await(fn func(), p *task.T, ts ...*task.T) {
 	}
 }
 
-func (j *T) Execute(t *task.T, path string, argv []string, attr *os.ProcAttr) error {
+func (j *job) Execute(t *task.T, path string, argv []string, attr *os.ProcAttr) error {
 	errq := make(chan error)
 
 	requestq <- func() {
@@ -138,7 +143,7 @@ func (j *T) Execute(t *task.T, path string, argv []string, attr *os.ProcAttr) er
 	return <-errq
 }
 
-func (j *T) Spawn(p, c *task.T, fn func()) {
+func (j *job) Spawn(p, c *task.T, fn func()) {
 	done := make(chan struct{})
 
 	requestq <- func() {
@@ -176,7 +181,7 @@ func (j *T) Spawn(p, c *task.T, fn func()) {
 	<-done
 }
 
-func (j *T) Stopped(t *task.T) {
+func (j *job) Stopped(t *task.T) {
 	requestq <- func() {
 		t.Stopped()
 
@@ -209,6 +214,7 @@ func (j *T) Stopped(t *task.T) {
 	}
 }
 
+// Bg allows the paused job to continue and returns a reference to its main task.T.
 func Bg(w io.Writer, n int) *task.T {
 	r := make(chan *task.T)
 
@@ -252,6 +258,7 @@ func Bg(w io.Writer, n int) *task.T {
 	return <-r
 }
 
+// Fg replaces the current foreground job with the selected job.
 func Fg(w io.Writer, n int) bool {
 	r := make(chan bool)
 
@@ -311,6 +318,7 @@ func Fg(w io.Writer, n int) bool {
 	return <-r
 }
 
+// Jobs prints a list of stopped jobs.
 func Jobs(w io.Writer) {
 	r := make(chan struct{})
 
@@ -323,6 +331,7 @@ func Jobs(w io.Writer) {
 	<-r
 }
 
+// Monitor launches the goroutine responsible for monitoring jobs/tasks.
 func Monitor() {
 	signals := []os.Signal{unix.SIGCHLD}
 
@@ -342,15 +351,15 @@ func Monitor() {
 
 //nolint:gochecknoglobals
 var (
-	foreground *T
+	foreground *job
 
 	requestq chan func()
 	signalq  chan os.Signal
 
-	active     = map[int]*T{}
+	active     = map[int]*job{}
 	background = []*task.T{}
 	children   = map[*task.T][]*task.T{}
-	jobs       = map[int]*T{}
+	jobs       = map[int]*job{}
 	parent     = map[*task.T]*task.T{}
 
 	// Waiting is a map from a task to a set of "wait groups".
@@ -363,7 +372,7 @@ var (
 	waiting = map[*task.T]map[*wg]struct{}{}
 )
 
-func (j *T) interrupt() {
+func (j *job) interrupt() {
 	interrupt(j.main)
 
 	for pid := range j.running {
@@ -371,7 +380,7 @@ func (j *T) interrupt() {
 	}
 }
 
-func (j *T) notify(pid int, ws unix.WaitStatus) {
+func (j *job) notify(pid int, ws unix.WaitStatus) {
 	if ws.Continued() {
 		t, found := j.stopped[pid]
 		if !found {
@@ -433,7 +442,7 @@ func (j *T) notify(pid int, ws unix.WaitStatus) {
 	t.Notify(status.Int(code))
 }
 
-func (j *T) resume() {
+func (j *job) resume() {
 	resume(j.main)
 
 	for pid := range j.running {
@@ -441,7 +450,7 @@ func (j *T) resume() {
 	}
 }
 
-func (j *T) stop() {
+func (j *job) stop() {
 	stop(j.main)
 
 	for pid := range j.running {

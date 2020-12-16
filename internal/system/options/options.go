@@ -43,18 +43,22 @@ job control features are enabled. Otherwise, these features are disabled.
 `
 )
 
+// Args returns positional parameters (if any).
 func Args() []string {
 	return args
 }
 
+// Command returns the command specified (if any).
 func Command() string {
 	return command
 }
 
+// Interactive returns true if oh should run in interactive mode.
 func Interactive() bool {
 	return interactive
 }
 
+// Parse parses the command line options for this invocation of oh.
 func Parse() {
 	opts, err := docopt.ParseDoc(usage)
 	if err != nil {
@@ -92,14 +96,17 @@ func Parse() {
 	monitor = monitor != invertMonitor
 }
 
+// Script returns the script name (if any).
 func Script() string {
 	return script
 }
 
+// Monitor returns true if job control features should be enabled.
 func Monitor() bool {
 	return monitor
 }
 
+// Terminal returns the terminal's integer file descriptor.
 func Terminal() int {
 	return terminal
 }

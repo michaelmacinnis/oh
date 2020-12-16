@@ -4,9 +4,9 @@
 package status
 
 import (
+	"fmt"
 	"math/big"
 
-	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
@@ -88,5 +88,5 @@ func implements() { //nolint:deadcode,unused
 	_ = rational.I(&t)
 
 	// The status type is a stringer.
-	_ = common.Stringer(&t)
+	_ = fmt.Stringer(&t)
 }

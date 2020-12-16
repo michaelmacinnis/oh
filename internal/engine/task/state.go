@@ -90,7 +90,7 @@ func (s *state) Notify(r cell.I) {
 // 1 0 1    0 1 1 blocks until stopped, ...
 // 1 0 1    1 0 0 ...or resumed
 // 1 1 0    0 1 0 returns false
-// 1 1 1    0 1 1
+// 1 1 1    0 1 1 .
 //
 func (s *state) Runnable() bool {
 	s.Lock()
@@ -115,7 +115,7 @@ func (s *state) Runnable() bool {
 // R S W -> R S W
 // 0 0 X -> 1 0 X
 // 0 1 X -> 0 0 X
-// 1 X X    1 X X panic
+// 1 X X    1 X X panic.
 //
 func (s *state) Started() {
 	s.Lock()
@@ -137,7 +137,7 @@ func (s *state) Started() {
 // X 1 X -> X 1 X
 // 0 X X -> 0 X X
 // 1 0 0 -> 0 0 0 waits for stopped signal
-// 1 0 1 -> 0 0 1 resumes tasks, waits for stopped signal
+// 1 0 1 -> 0 0 1 resumes tasks, waits for stopped signal.
 //
 func (s *state) Stop(f func()) {
 	s.Lock()
@@ -172,7 +172,7 @@ func (s *state) Stop(f func()) {
 //
 // R S W -> R S W
 // X 0 X -> 0 0 X
-// 0 1 X -> 0 0 X signals task has stopped
+// 0 1 X -> 0 0 X signals task has stopped.
 //
 func (s *state) Stopped() {
 	s.Lock()
@@ -203,7 +203,7 @@ func (s *state) Value() cell.I {
 //
 // R S W -> R S W
 // X X 0 -> X X 1
-// X X 1 -> X X 1 panic
+// X X 1 -> X X 1 panic.
 //
 func (s *state) Wait() {
 	s.Lock()

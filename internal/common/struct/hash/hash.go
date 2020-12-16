@@ -4,9 +4,9 @@
 package hash
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/reference"
 	"github.com/michaelmacinnis/oh/internal/common/struct/slot"
@@ -69,7 +69,7 @@ func (h *hash) Exported() map[string]string {
 	exported := map[string]string{}
 
 	for k, v := range h.m {
-		if s, ok := v.Get().(common.Stringer); ok {
+		if s, ok := v.Get().(fmt.Stringer); ok {
 			exported[k] = s.String()
 		}
 	}

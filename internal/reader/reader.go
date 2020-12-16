@@ -7,6 +7,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/reader/parser"
 )
 
+// T (reader) encapsulates the oh lexer and parser.
 type T struct {
 	e chan error
 	i chan string
@@ -15,6 +16,9 @@ type T struct {
 	s *lexer.T
 }
 
+type reader = T
+
+// New creates a new reader for name.
 func New(name string) *T {
 	r := &T{
 		e: make(chan error),
@@ -50,19 +54,24 @@ func New(name string) *T {
 	return r
 }
 
-func (r *T) Close() {
+// Close terminates the reader.
+func (r *reader) Close() {
 	close(r.i)
 }
 
-func (r *T) Lexer() *lexer.T {
+// Lexer returns the reader's internal lexer.T.
+func (r *reader) Lexer() *lexer.T {
 	return r.s
 }
 
-func (r *T) Parser() *parser.T {
+// Parser returns the readers's internal parser.T.
+func (r *reader) Parser() *parser.T {
 	return r.p
 }
 
-func (r *T) Scan(line string) (c cell.I, err error) {
+// Scan reads the line and returns a cell.I on a complete parse or nil otherwise.
+// If scan encounters any error it returns the error.
+func (r *reader) Scan(line string) (c cell.I, err error) {
 	r.i <- line
 
 	select {
@@ -73,7 +82,7 @@ func (r *T) Scan(line string) (c cell.I, err error) {
 	return c, err
 }
 
-func (r *T) next() bool {
+func (r *reader) next() bool {
 	line, ok := <-r.i
 	if ok {
 		r.s.Scan(line)
@@ -82,7 +91,7 @@ func (r *T) next() bool {
 	return ok
 }
 
-func (r *T) start() {
+func (r *reader) start() {
 	r.next()
 
 	r.e <- r.p.Parse()

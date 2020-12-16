@@ -108,8 +108,9 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 				return
 			}
 
-			cs = files(cwd, home, engine.Resolve("PATH"), completing)
-		} else {
+			// TODO: Re-enable when this doesn't cause oh to hang.
+			// cs = files(cwd, home, engine.Resolve("PATH"), completing)
+		} else { //nolint:wsl
 			cs = files(cwd, home, engine.Resolve("PWD"), completing)
 		}
 

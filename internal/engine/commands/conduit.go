@@ -6,6 +6,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 )
 
+// ConduitMethods returns a mapping of names to methods shared by channels and pipes.
 func ConduitMethods() map[string]func(cell.I, cell.I) cell.I {
 	return map[string]func(cell.I, cell.I) cell.I{
 		"close":        close,

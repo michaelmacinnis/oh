@@ -31,6 +31,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/system/process"
 )
 
+// Boot gets things ready for Evaluate and System calls.
 func Boot(path string, arguments []string) {
 	sym.Cache(true)
 
@@ -102,6 +103,7 @@ func Evaluate(j *job.T, c cell.I) cell.I {
 	return r
 }
 
+// Resolve returns the string value for a variable.
 func Resolve(k string) (v string) {
 	defer func() {
 		r := recover()
