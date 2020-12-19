@@ -83,7 +83,7 @@
 ##
 ## ### Configuring
 ##
-## When oh starts it attempts to read a file called `.oh-rc` in the home
+## When oh starts, it attempts to read a file called `.oh-rc` in the home
 ## directory of the current user. You can override this path by setting
 ## the OH_RC environment variable to the full path of an alternative file
 ## before invoking oh.
