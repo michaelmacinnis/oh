@@ -293,6 +293,11 @@ func matches(candidates []string, word string) []string {
 			if candidate != pathSeparator && len(basename) == 0 {
 				if p == dirname {
 					return nil
+				} else {
+					suffix := strings.TrimPrefix(p, dirname)
+					if strings.HasPrefix(suffix, ".") {
+						return nil
+					}
 				}
 			} else if !strings.HasPrefix(p, candidate) {
 				return nil
