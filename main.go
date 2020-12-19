@@ -101,16 +101,16 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		cwd := engine.Resolve("PWD")
 		home := engine.Resolve("HOME")
 
-		if lp.Current() == pair.Null {
+		cmd := lp.Current()
+		if cmd == pair.Null {
 			if completing == "" {
 				cs = []string{"    "}
 
 				return
 			}
 
-			// TODO: Re-enable when this doesn't cause oh to hang.
-			// cs = files(cwd, home, engine.Resolve("PATH"), completing)
-		} else { //nolint:wsl
+			cs = files(cwd, home, engine.Resolve("PATH"), completing)
+		} else {
 			cs = files(cwd, home, engine.Resolve("PWD"), completing)
 		}
 
@@ -129,6 +129,10 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		}
 
 		sort.Strings(cs)
+
+		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") {
+			cs[0] = cs[0] + " "
+		}
 
 		return prefix, cs, t
 	}
@@ -160,6 +164,9 @@ func expand(cwd, home, candidate string) (string, bool) {
 	prefix := candidate + "   "
 
 	switch {
+	case candidate == "":
+		// Leave it as is.
+
 	case prefix[0:2] == "./" || prefix[0:3] == "../":
 		candidate = join(cwd, candidate)
 		dotdir = true
