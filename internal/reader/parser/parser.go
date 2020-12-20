@@ -49,7 +49,7 @@ func (p *T) Copy(emit func(cell.I), item func() *token.T) *T {
 
 // Current returns the command currently being parsed.
 func (p *T) Current() cell.I {
-	return pair.Car(p.part)
+	return p.part
 }
 
 // Parse consumes tokens and emits cells until there are no more tokens.
@@ -339,12 +339,8 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 }
 
 func (p *T) statement() (c cell.I) {
-	// Push new part onto current stack.
+	// Reset part.
 	p.part = pair.Null
-
-	defer func() {
-		p.part = c
-	}()
 
 	c, l := p.assignments()
 	if l != pair.Null {
@@ -363,9 +359,13 @@ func (p *T) statement() (c cell.I) {
 		return
 	}
 
+	head := c
+
 	c = pair.Cons(c, pair.Null)
 
 	for {
+		p.part = head
+
 		if p.peek().Is(token.Space) {
 			p.consume()
 

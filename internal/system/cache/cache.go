@@ -6,37 +6,21 @@ import (
 	"strings"
 )
 
-var (
-	executables       = map[string][]string{}
-	pathListSeparator = string(os.PathListSeparator)
-	pathSeparator     = string(os.PathSeparator)
-	requestq          chan func()
-)
+func Check(path string) {
+	resultq := make(chan bool)
 
-func init() {
-	requestq = make(chan func())
-	go service()
-}
-
-func service() {
-	for {
-		(<-requestq)()
+	dirname, basename := filepath.Split(path)
+	requestq <- func() {
+		for _, p := range executables[dirname] {
+			if p == basename {
+				resultq <- true
+				break
+			}
+		}
+		close(resultq)
 	}
-}
 
-func Rehash(dirnames string) {
-	for _, dirname := range strings.Split(dirnames, pathListSeparator) {
-		if dirname == "" {
-			dirname = "."
-		} else {
-			dirname = filepath.Clean(dirname)
-		}
-
-		stat, err := os.Stat(dirname)
-		if err != nil || !stat.IsDir() {
-			continue
-		}
-
+	if <-resultq {
 		Files(dirname)
 	}
 }
@@ -100,4 +84,40 @@ func Files(dirname string) []string {
 	}
 
 	return <-resultq
+}
+
+func Rehash(dirnames string) {
+	for _, dirname := range strings.Split(dirnames, pathListSeparator) {
+		if dirname == "" {
+			dirname = "."
+		} else {
+			dirname = filepath.Clean(dirname)
+		}
+
+		stat, err := os.Stat(dirname)
+		if err != nil || !stat.IsDir() {
+			continue
+		}
+
+		Files(dirname)
+	}
+}
+
+var (
+	executables       = map[string][]string{}
+	pathListSeparator = string(os.PathListSeparator)
+	pathSeparator     = string(os.PathSeparator)
+	requestq          chan func()
+)
+
+func init() {
+	requestq = make(chan func(), 1)
+
+	go service()
+}
+
+func service() {
+	for {
+		(<-requestq)()
+	}
 }

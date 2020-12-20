@@ -28,6 +28,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 	"github.com/michaelmacinnis/oh/internal/engine/commands"
+	"github.com/michaelmacinnis/oh/internal/system/cache"
 )
 
 // Action performs a single step of the machine and returns the next operation.
@@ -828,6 +829,8 @@ func external(t *T) Op {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	cache.Check(arg0)
 
 	if !executable {
 		return t.Return(t.Chdir(name))

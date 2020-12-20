@@ -72,7 +72,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		h = s[:n]
 		t = s[n:]
 
-		completing := h[strings.LastIndex(h, " ")+1:]
+		completing := h[strings.LastIndexAny(h, " ()")+1:]
 
 		defer func() {
 			r := recover()
@@ -378,8 +378,9 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 			println(err.Error())
 
 			r.Close()
-			r = reader.New(name)
+
 			suffix = initial
+			r = reader.New(name)
 
 			continue
 		}
@@ -387,11 +388,14 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 		if c != nil {
 			engine.Evaluate(j, c)
 
-			j = job.New(0)
-
 			process.RestoreForegroundGroup()
 
+			r.Close()
+
 			suffix = initial
+			r = reader.New(name)
+
+			j = job.New(0)
 		}
 	}
 }
