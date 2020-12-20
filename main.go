@@ -17,6 +17,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/engine"
 	"github.com/michaelmacinnis/oh/internal/reader"
+	"github.com/michaelmacinnis/oh/internal/system/cache"
 	"github.com/michaelmacinnis/oh/internal/system/history"
 	"github.com/michaelmacinnis/oh/internal/system/job"
 	"github.com/michaelmacinnis/oh/internal/system/options"
@@ -109,9 +110,9 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 				return
 			}
 
-			cs = files(cwd, home, engine.Resolve("PATH"), completing)
+			cs = files(cache.Executables, cwd, home, engine.Resolve("PATH"), completing)
 		} else {
-			cs = files(cwd, home, engine.Resolve("PWD"), completing)
+			cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
 		}
 
 		if len(cs) == 0 {
@@ -181,7 +182,7 @@ func expand(cwd, home, candidate string) (string, bool) {
 	return candidate, dotdir
 }
 
-func files(cwd, home, paths, word string) []string {
+func files(cached func(string) []string, cwd, home, paths, word string) []string {
 	candidate, dotdir := expand(cwd, home, word)
 
 	candidates := []string{candidate}
@@ -192,7 +193,7 @@ func files(cwd, home, paths, word string) []string {
 		}
 	}
 
-	return matches(candidates, word)
+	return matches(cached, candidates, word)
 }
 
 func interactive() bool {
@@ -266,7 +267,7 @@ func join(s ...string) string {
 	return filepath.Join(s...) + tail
 }
 
-func matches(candidates []string, word string) []string {
+func matches(cached func(string) []string, candidates []string, word string) []string {
 	completions := []string{}
 
 	for _, candidate := range candidates {
@@ -276,35 +277,14 @@ func matches(candidates []string, word string) []string {
 			continue
 		}
 
-		max := strings.Count(dirname, pathSeparator)
-
-		_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
-			depth := strings.Count(p, pathSeparator)
-			if depth > max {
-				if i.IsDir() {
-					return filepath.SkipDir
-				}
-
-				return nil
-			} else if depth < max {
-				return nil
-			}
-
+		for _, p := range cached(dirname) {
 			if candidate != pathSeparator && len(basename) == 0 {
-				if p == dirname {
-					return nil
-				} else {
-					suffix := strings.TrimPrefix(p, dirname)
-					if strings.HasPrefix(suffix, ".") {
-						return nil
-					}
+				suffix := strings.TrimPrefix(p, dirname)
+				if strings.HasPrefix(suffix, ".") {
+					continue
 				}
 			} else if !strings.HasPrefix(p, candidate) {
-				return nil
-			}
-
-			if p != pathSeparator && i.IsDir() {
-				p += pathSeparator
+				continue
 			}
 
 			if len(candidate) > len(p) {
@@ -314,9 +294,7 @@ func matches(candidates []string, word string) []string {
 			s := strings.Index(p, candidate) + len(candidate)
 			completion := word + p[s:]
 			completions = append(completions, completion)
-
-			return nil
-		})
+		}
 	}
 
 	return completions
