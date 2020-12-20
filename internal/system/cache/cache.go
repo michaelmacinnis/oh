@@ -86,7 +86,7 @@ func Files(dirname string) []string {
 	return <-resultq
 }
 
-func Rehash(dirnames string) {
+func Populate(dirnames string) {
 	for _, dirname := range strings.Split(dirnames, pathListSeparator) {
 		if dirname == "" {
 			dirname = "."

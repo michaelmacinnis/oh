@@ -202,7 +202,7 @@ func interactive() bool {
 		return false
 	}
 
-	go cache.Rehash(engine.Resolve("PATH"))
+	go cache.Populate(engine.Resolve("PATH"))
 
 	name := options.Args()[0]
 
