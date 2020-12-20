@@ -28,13 +28,13 @@ type T struct {
 	token *token.T        // Token lookahead.
 
 	// Completion state.
-	part cell.I // The command being parsed, so far.
+	current cell.I // The command being parsed, so far.
 }
 
 // New creates a new parser.
 // It connects a producer of tokens with a consumer of cells.
 func New(emit func(cell.I), item func() *token.T) *T {
-	return &T{emit: emit, item: item, part: pair.Null}
+	return &T{emit: emit, item: item, current: pair.Null}
 }
 
 // Copy copies the current parser but replaces its emit and item functions.
@@ -49,7 +49,7 @@ func (p *T) Copy(emit func(cell.I), item func() *token.T) *T {
 
 // Current returns the command currently being parsed.
 func (p *T) Current() cell.I {
-	return p.part
+	return p.current
 }
 
 // Parse consumes tokens and emits cells until there are no more tokens.
@@ -339,8 +339,8 @@ func (p *T) assignments() (c cell.I, l cell.I) {
 }
 
 func (p *T) statement() (c cell.I) {
-	// Reset part.
-	p.part = pair.Null
+	// Reset current command.
+	p.current = pair.Null
 
 	c, l := p.assignments()
 	if l != pair.Null {
@@ -359,12 +359,10 @@ func (p *T) statement() (c cell.I) {
 		return
 	}
 
-	head := c
-
 	c = pair.Cons(c, pair.Null)
 
 	for {
-		p.part = head
+		p.current = c
 
 		if p.peek().Is(token.Space) {
 			p.consume()

@@ -72,7 +72,8 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		h = s[:n]
 		t = s[n:]
 
-		completing := h[strings.LastIndexAny(h, " ()")+1:]
+		last := strings.LastIndexAny(h, " ()")
+		completing := h[last+1:]
 
 		defer func() {
 			r := recover()
@@ -103,7 +104,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		home := engine.Resolve("HOME")
 
 		cmd := lp.Current()
-		if cmd == pair.Null {
+		if cmd == pair.Null || last < 0 || h[last:last+1] == "(" {
 			if completing == "" {
 				cs = []string{"    "}
 
