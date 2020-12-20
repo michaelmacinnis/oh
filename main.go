@@ -201,6 +201,8 @@ func interactive() bool {
 		return false
 	}
 
+	go cache.Rehash(engine.Resolve("PATH"))
+
 	name := options.Args()[0]
 
 	err := process.BecomeForegroundGroup()
