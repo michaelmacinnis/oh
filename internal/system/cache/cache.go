@@ -28,62 +28,58 @@ func Check(path string) {
 func Executables(dirname string) []string {
 	resultq := make(chan []string)
 
+	dirname = filepath.Clean(dirname)
 	requestq <- func() {
 		resultq <- executables[dirname]
 		close(resultq)
 	}
 
-	go Files(dirname)
-
 	return <-resultq
 }
 
 func Files(dirname string) []string {
-	max := strings.Count(dirname, pathSeparator)
+	dirname = filepath.Clean(dirname)
 
-	resultq := make(chan []string)
+	max := strings.Count(dirname, pathSeparator) + 1
 
-	requestq <- func() {
-		e := []string{}
-		f := []string{}
+	e := []string{}
+	f := []string{}
 
-		_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
-			if p == dirname {
-				return nil
-			}
+	_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
+		if p == dirname {
+			return nil
+		}
 
-			depth := strings.Count(p, pathSeparator)
-			if depth > max {
-				if i.IsDir() {
-					return filepath.SkipDir
-				}
-
-				return nil
-			} else if depth < max {
-				return nil
-			}
-
-			if p != pathSeparator && i.IsDir() {
-				p += pathSeparator
-
-				e = append(e, p)
-				f = append(f, p)
-			} else if i.Mode()&0111 != 0 {
-				e = append(e, p)
-			} else {
-				f = append(f, p)
+		depth := strings.Count(p, pathSeparator)
+		if depth > max {
+			if i.IsDir() {
+				return filepath.SkipDir
 			}
 
 			return nil
-		})
+		} else if depth < max {
+			return nil
+		}
 
+		if p != pathSeparator && i.IsDir() {
+			p += pathSeparator
+
+			e = append(e, p)
+			f = append(f, p)
+		} else if i.Mode()&0111 != 0 {
+			e = append(e, p)
+		} else {
+			f = append(f, p)
+		}
+
+		return nil
+	})
+
+	requestq <- func() {
 		executables[dirname] = e
-
-		resultq <- f
-		close(resultq)
 	}
 
-	return <-resultq
+	return f
 }
 
 func Populate(dirnames string) {
