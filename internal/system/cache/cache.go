@@ -34,7 +34,12 @@ func Executables(dirname string) []string {
 		close(resultq)
 	}
 
-	return <-resultq
+	res := <-resultq
+	if res == nil {
+		go Files(dirname)
+	}
+
+	return res
 }
 
 func Files(dirname string) []string {
@@ -44,6 +49,17 @@ func Files(dirname string) []string {
 
 	e := []string{}
 	f := []string{}
+
+	done := make(chan struct{})
+
+	requestq <- func() {
+		if _, ok := executables[dirname]; !ok {
+			executables[dirname] = []string{}
+		}
+		close(done)
+	}
+
+	<-done
 
 	_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 		if p == dirname {
