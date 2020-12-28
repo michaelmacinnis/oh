@@ -133,7 +133,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 		sort.Strings(cs)
 
 		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") {
-			cs[0] = cs[0] + " "
+			cs[0] += " "
 		}
 
 		return prefix, cs, t

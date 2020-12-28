@@ -14,6 +14,7 @@ func Check(path string) {
 		for _, p := range executables[dirname] {
 			if p == basename {
 				resultq <- true
+
 				break
 			}
 		}
@@ -77,14 +78,17 @@ func Files(dirname string) []string {
 			return nil
 		}
 
-		if p != pathSeparator && i.IsDir() {
+		switch {
+		case p != pathSeparator && i.IsDir():
 			p += pathSeparator
 
 			e = append(e, p)
 			f = append(f, p)
-		} else if i.Mode()&0111 != 0 {
+
+		case i.Mode()&0111 != 0:
 			e = append(e, p)
-		} else {
+
+		default:
 			f = append(f, p)
 		}
 
@@ -115,6 +119,7 @@ func Populate(dirnames string) {
 	}
 }
 
+//nolint:gochecknoglobals
 var (
 	executables       = map[string][]string{}
 	pathListSeparator = string(os.PathListSeparator)
@@ -122,7 +127,7 @@ var (
 	requestq          chan func()
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	requestq = make(chan func(), 1)
 
 	go service()

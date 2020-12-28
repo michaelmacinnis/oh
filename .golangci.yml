@@ -11,6 +11,7 @@ linters-settings:
     default-signifies-exhaustive: true
   funlen:
     lines: 96
+    statements: 64
 
 issues:
   exclude-rules:

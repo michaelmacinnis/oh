@@ -582,44 +582,19 @@ func startState(l *T, state action, ignore string) action {
 		switch r {
 		case eof:
 			return nil
-			// { <-- For the unmatched brace below.
 
 		case '\n', ')', ';', '`', '{', '}':
 			l.emit(r, l.Text())
 
 			return collectHorizontalSpace
 
-		case '"':
-			return scanDoubleQuoted
-
-		case '#':
-			return skipComment
-
-		case '$':
-			return afterDollar
-
-		case '&':
-			return afterAmpersand
-
-		case '\'':
-			return scanSingleQuoted
-
-		case '(':
-			return afterOpenParen
-
 		case '<':
 			l.emit(token.Redirect, operator(l.Text()))
 
 			return skipHorizontalSpace
 
-		case '>':
-			return afterGreaterThan
-
 		case '\\':
 			return l.escape(state, escapeNewline)
-
-		case '|':
-			return afterPipe
 
 		case ',', '.', '/', ':', '=', '@', '~':
 			l.emit(token.Symbol, l.Text())
@@ -627,12 +602,31 @@ func startState(l *T, state action, ignore string) action {
 			return collectHorizontalSpace
 
 		default:
-			return scanSymbol
+			return initial(r)
 		}
 	}
 }
 
-// Helper functions (well, function).
+// Helper functions.
+
+func initial(r token.Class) action {
+	a, ok := map[token.Class]action{
+		'"':  scanDoubleQuoted,
+		'#':  skipComment,
+		'$':  afterDollar,
+		'&':  afterAmpersand,
+		'\'': scanSingleQuoted,
+		'(':  afterOpenParen,
+		'>':  afterGreaterThan,
+		'|':  afterPipe,
+	}[r]
+
+	if ok {
+		return a
+	}
+
+	return scanSymbol
+}
 
 func operator(s string) string {
 	return map[string]string{
