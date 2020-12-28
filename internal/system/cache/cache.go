@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Check ensures that all executables in path's directory are cached.
 func Check(path string) {
 	resultq := make(chan bool)
 
@@ -26,6 +27,7 @@ func Check(path string) {
 	}
 }
 
+// Executables returns executables (and directories) in dirname and schedules a rescan or dirname.
 func Executables(dirname string) []string {
 	resultq := make(chan []string)
 
@@ -43,6 +45,7 @@ func Executables(dirname string) []string {
 	return res
 }
 
+// Files caches executables (and directories) and returns files (and directories) found in dirname.
 func Files(dirname string) []string {
 	dirname = filepath.Clean(dirname)
 
@@ -55,7 +58,7 @@ func Files(dirname string) []string {
 
 	requestq <- func() {
 		if _, ok := executables[dirname]; !ok {
-			executables[dirname] = []string{}
+			delete(executables, dirname)
 		}
 		close(done)
 	}
@@ -96,12 +99,15 @@ func Files(dirname string) []string {
 	})
 
 	requestq <- func() {
-		executables[dirname] = e
+		if len(e) > 0 {
+			executables[dirname] = e
+		}
 	}
 
 	return f
 }
 
+// Populate scans each directory in the colon-separated list of dirnames.
 func Populate(dirnames string) {
 	for _, dirname := range strings.Split(dirnames, pathListSeparator) {
 		if dirname == "" {
