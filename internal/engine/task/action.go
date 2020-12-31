@@ -602,7 +602,7 @@ func execBuiltin(t *T) Op {
 // If the head of the command is a symbol or string, produces.
 //  code:  Arg_0 ... Arg_N
 //  dump:  EvaluatedHead nil EvaluatedHead (this will be replaced) ...
-//  stack: evalArgs execBuiltin external resume Previous ...
+//  stack: evalArgs execMethod external resume Previous ...
 //
 // Otherwise the Execute method of the closure sets up operations. For
 // Builtins and Methods the operations look similar: evalArgs, execBuiltin
@@ -629,7 +629,7 @@ func execCommand(t *T) Op {
 	case *str.T, *sym.Plus, *sym.T:
 		t.ReplaceOp(Action(resume))
 		t.PushOp(Action(external))
-		t.PushOp(Action(execBuiltin))
+		t.PushOp(Action(execMethod))
 		t.PushResult(nil)
 		t.PushResult(v) // First arg is command name.
 
@@ -823,7 +823,9 @@ func execWhileTest(t *T) Op {
 // TODO: Change this so that it sets up everything and then triggers another
 // operation that can be restarted if necessary.
 func external(t *T) Op {
-	name := t.tildeExpand(common.String(pair.Car(t.code)))
+	args := t.expand(t.code)
+
+	name := common.String(pair.Car(args))
 
 	arg0, executable, err := adapted.LookPath(name, t.stringValue("PATH"))
 	if err != nil {
@@ -837,7 +839,7 @@ func external(t *T) Op {
 	}
 
 	argv := []string{name}
-	for args := pair.Cdr(t.code); args != pair.Null; args = pair.Cdr(args) {
+	for args = pair.Cdr(args); args != pair.Null; args = pair.Cdr(args) {
 		argv = append(argv, common.String(pair.Car(args)))
 	}
 
