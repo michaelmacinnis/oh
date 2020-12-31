@@ -619,6 +619,27 @@ define error: method ((args)) {
     stderr write-line (splice $args)
 }
 
+define fn: syntax (name (body)) e {
+    define body (list quote $body)
+
+    e eval (quasiquote (define (unquote $name) (syntax ((@)) {
+        define args: (unquote $e) eval (list glob (splice $@))
+        define body: cons (list define @ (list list (splice $args))) (unquote $body)
+        define count: number 1
+
+        while $args {
+            set body: cons (list define (symbol $count) (args head)) $body
+
+            set args: args tail
+            set count: add $count 1
+        }
+
+        set body: cons block $body
+
+        eval $body
+    })))
+}
+
 define here: method (s) {
     write-line (str trim-prefix (str trim-suffix $s $'\n') $'\n')
 }
