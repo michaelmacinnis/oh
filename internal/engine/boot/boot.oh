@@ -60,7 +60,16 @@ define or: syntax ((lst)) e {
     return $r
 }
 
-define source: builtin (basename) e {
+define source: method (basename) e {
+    block {
+        define args: glob $basename
+
+        define len: args length
+        eq? 1 $len || throw "expected 1 argument, passed $len"
+
+        set basename: args head
+    }
+
     define name $basename
     define paths ()
 
@@ -603,10 +612,6 @@ define error: method ((args)) {
     stderr write-line (splice $args)
 }
 
-define glob: builtin ((args)) {
-    return $args
-}
-
 define here: method (s) {
     write-line (str trim-prefix (str trim-suffix $s $'\n') $'\n')
 }
@@ -615,7 +620,7 @@ define ls: method ((args)) {
     command ls --color=auto (splice $args)
 }
 
-# TODO: Replace with builtin rather than invoking bc.
+# TODO: Replace with internal function rather than invoking bc.
 define math: method (s) {
     catch ex {
         throw "malformed expression: '${s}'"

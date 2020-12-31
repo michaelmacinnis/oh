@@ -7,7 +7,7 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 )
 
-// Closure underlies the builtin, method, and syntax types.
+// Closure underlies the method, and syntax types.
 type Closure struct {
 	Body cell.I // Body of the routine.
 	Labels

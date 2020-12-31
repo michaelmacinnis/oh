@@ -6,13 +6,6 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 )
 
-// Builtins returns a mapping of names to 'builtin' commands.
-func Builtins() map[string]func(cell.I) cell.I {
-	return map[string]func(cell.I) cell.I{
-		"exists": exists,
-	}
-}
-
 // Functions returns a mapping of names to 'methods' that do not reference self.
 func Functions() map[string]func(cell.I) cell.I {
 	return map[string]func(cell.I) cell.I{

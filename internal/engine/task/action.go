@@ -55,15 +55,17 @@ func Actions(s scope.I) {
 	s.Define("unset", &Method{Op: Action(unset)})
 
 	// Builtins.
-	s.Define("cd", &Builtin{Op: Action(cd)})
-	s.Define("command", &Builtin{Op: Action(cmd)})
+	s.Define("cd", &Method{Op: Action(cd)})
+	s.Define("command", &Method{Op: Action(cmd)})
+	s.Define("exists", &Method{Op: Action(exists)})
+	s.Define("glob", &Method{Op: Action(glob)})
 
-	for k, v := range commands.Builtins() {
-		s.Define(k, b(v))
+	// Functions.
+	for k, v := range commands.Functions() {
+		s.Define(k, f(v))
 	}
 
 	// Methods.
-	s.Define("builtin?", &Method{Op: Action(isBuiltin)})
 	s.Define("continuation?", &Method{Op: Action(isContinuation)})
 	s.Define("exit", &Method{Op: Action(exit)})
 	s.Define("fatal", &Method{Op: Action(fatal)})
@@ -77,14 +79,8 @@ func Actions(s scope.I) {
 	s.Define("wait", &Method{Op: Action(wait)})
 
 	// Syntax.
-	s.Define("builtin", &Syntax{Op: Action(builtin)})
 	s.Define("method", &Syntax{Op: Action(method)})
 	s.Define("syntax", &Syntax{Op: Action(syntax)})
-
-	// Functions.
-	for k, v := range commands.Functions() {
-		s.Define(k, f(v))
-	}
 }
 
 // Actions.
@@ -146,7 +142,7 @@ type binding struct {
 	self cell.I
 }
 
-// Builtin, method, and syntax types all conform to the command interface.
+// Method, and syntax types all conform to the command interface.
 type command interface {
 	cell.I
 
@@ -212,7 +208,7 @@ func accessMember(t *T) Op {
 	return t.PreviousOp()
 }
 
-// apply is the action for any user-defined builtin, method, or syntax.
+// apply is the action for any user-defined method, or syntax.
 //
 // Result:
 //  code:  Body
@@ -228,7 +224,7 @@ func accessMember(t *T) Op {
 //  stack: apply Previous ...
 //
 // If the action is syntax the arguments are unevaluated. Method, the
-// arguments have been evaluated. Builtin, evaluated and expanded.
+// arguments have been evaluated.
 //
 func apply(t *T) Op {
 	s := t.frame.Scope()
@@ -578,24 +574,6 @@ func evalWhile(t *T) Op {
 	return t.PushOp(Action(execWhileTest))
 }
 
-// execBuiltin expands the evaluated arguments and then executes the builtin.
-//
-// Result:
-//  code:  ExpandedEvaluatedArg_1 ... ExpandedEvaluatedArg_N
-//  dump:  Binding ...
-//  stack: Builtin ...
-//
-// Requires:
-//  code:  <undefined>
-//  dump:  EvaluatedArg_N ... EvaluatedArg_0 nil Binding ...
-//  stack: execBuiltin Builtin ...
-//
-func execBuiltin(t *T) Op {
-	t.code = t.expand(t.arguments())
-
-	return t.PreviousOp()
-}
-
 // execCommand uses the value from evaluating the head of the command to
 // determine how to execute the command.
 //
@@ -605,10 +583,9 @@ func execBuiltin(t *T) Op {
 //  stack: evalArgs execMethod external resume Previous ...
 //
 // Otherwise the Execute method of the closure sets up operations. For
-// Builtins and Methods the operations look similar: evalArgs, execBuiltin
-// or execMethod, followed by the action for the closure and then the
-// previous operation. For Syntax the only operation before Previous is
-// the action for the closure.
+// Methods the operations look similar: evalArgs, execMethod, followed by
+// the action for the closure and then the previous operation. For Syntax
+// the only operation before Previous is the action for the closure.
 //
 // Requires:
 //  code:  Arg_0 ... Arg_N
@@ -957,12 +934,6 @@ func sublistKey(t *T) Op {
 
 // Adapters.
 
-func b(do func(args cell.I) cell.I) *Builtin {
-	return &Builtin{Op: Action(func(t *T) Op {
-		return t.Return(do(t.code))
-	})}
-}
-
 func f(do func(args cell.I) cell.I) *Method {
 	return &Method{Op: Action(func(t *T) Op {
 		return t.Return(do(t.code))
@@ -991,6 +962,10 @@ func bound(a cell.I) *binding {
 	panic(a.Name() + " is not a command")
 }
 
+func device(m os.FileMode) bool {
+        return m&(os.ModeDevice|os.ModeCharDevice) > 0
+}
+
 func makeConduitScope() scope.I {
 	s := env.New(nil)
 
@@ -1014,13 +989,15 @@ func makeListScope() scope.I {
 // Builtins.
 
 func cd(t *T) Op {
+	args := t.expand(t.code)
+
 	dir := ""
 
-	if t.code == pair.Null {
+	if args == pair.Null {
 		_, r := t.frame.Resolve("HOME")
 		dir = common.String(r.Get())
 	} else {
-		dir = t.tildeExpand(common.String(pair.Car(t.code)))
+		dir = common.String(pair.Car(args))
 	}
 
 	if dir == "-" {
@@ -1037,6 +1014,41 @@ func cmd(t *T) Op {
 	t.ReplaceOp(Action(resume))
 
 	return t.PushOp(Action(external))
+}
+
+func exists(t *T) Op {
+	args := t.expand(t.code)
+
+        count := 0
+        ignore := false
+
+        for ; args != pair.Null; args = pair.Cdr(args) {
+                path := literal.String(pair.Car(args))
+                if path == "-i" {
+                        ignore = true
+
+                        continue
+                }
+
+                count++
+
+                s, err := os.Stat(path)
+                if err != nil {
+                        return t.Return(pair.Null)
+                }
+
+                if ignore && device(s.Mode()) {
+                        // Report device files as not existing.
+                        // So that redirections to /dev/null etc. work.
+                        return t.Return(pair.Null)
+                }
+        }
+
+        return t.Return(create.Bool(count > 0))
+}
+
+func glob(t *T) Op {
+	return t.Return(t.expand(t.code))
 }
 
 // Methods.
@@ -1113,17 +1125,6 @@ func interpolate(t *T) Op {
 	r := regexp.MustCompile(`(?:\$\$)|(?:\${.+?})|(?:\$[!%*+\-0-9?@A-Z\[\]^_a-z]+)`)
 
 	return t.Return(str.New(r.ReplaceAllStringFunc(common.String(v[0]), cb)))
-}
-
-func isBuiltin(t *T) Op {
-	v := validate.Fixed(t.code, 1, 1)
-
-	b, ok := v[0].(*binding)
-	if ok {
-		_, ok = b.command.(*Builtin)
-	}
-
-	return t.Return(create.Bool(ok))
 }
 
 func isContinuation(t *T) Op {
@@ -1262,10 +1263,6 @@ func wait(t *T) Op {
 }
 
 // Syntax.
-
-func builtin(t *T) Op {
-	return t.Return(bind((*Builtin)(t.Closure()), obj.New(t.frame.Scope())))
-}
 
 func method(t *T) Op {
 	return t.Return(bind((*Method)(t.Closure()), obj.New(t.frame.Scope())))

@@ -9,46 +9,11 @@ import (
 	"github.com/michaelmacinnis/adapted"
 	"github.com/michaelmacinnis/oh/internal/common"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
-	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
-	"github.com/michaelmacinnis/oh/internal/common/type/create"
 	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
 	"github.com/michaelmacinnis/oh/internal/common/type/sym"
 	"github.com/michaelmacinnis/oh/internal/common/validate"
 )
-
-func device(m os.FileMode) bool {
-	return m&(os.ModeDevice|os.ModeCharDevice) > 0
-}
-
-func exists(args cell.I) cell.I {
-	count := 0
-	ignore := false
-
-	for ; args != pair.Null; args = pair.Cdr(args) {
-		path := literal.String(pair.Car(args))
-		if path == "-i" {
-			ignore = true
-
-			continue
-		}
-
-		count++
-
-		s, err := os.Stat(path)
-		if err != nil {
-			return pair.Null
-		}
-
-		if ignore && device(s.Mode()) {
-			// Report device files as not existing.
-			// So that redirections to /dev/null etc. work.
-			return pair.Null
-		}
-	}
-
-	return create.Bool(count > 0)
-}
 
 func open(args cell.I) cell.I {
 	mode := common.String(pair.Car(args))
