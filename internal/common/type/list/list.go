@@ -41,6 +41,19 @@ func Append(start cell.I, elements ...cell.I) cell.I {
 	return start
 }
 
+// Array returns an array with the elements in list.
+// A non-pair value where a pair is expected will cause a panic.
+// The list must be non-circular.
+func Array(list cell.I) []cell.I {
+	a := []cell.I{}
+
+	for c := list; c != pair.Null; c = pair.Cdr(c) {
+		a = append(a, pair.Car(c))
+	}
+
+	return a
+}
+
 // Join extends the first non-nil, non-NULL list in list
 // with every element from every list remaining in lists.
 // A non-pair where a pair is expected will cause a panic.

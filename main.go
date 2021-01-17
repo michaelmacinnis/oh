@@ -110,10 +110,16 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 
 				return
 			}
-
 			cs = files(cache.Executables, cwd, home, engine.Resolve("PATH"), completing)
 		} else {
-			cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
+			cmd := list.Append(list.New(list.Array(cmd)...), sym.New(completing))
+			cmd = pair.Cons(sym.New("complete"), cmd)
+
+			v, _ := engine.System(job.New(process.Group()), cmd)
+
+			for c := v; c != pair.Null; c = pair.Cdr(c) {
+				cs = append(cs, common.String(pair.Car(c)))
+			}
 		}
 
 		if len(cs) == 0 {
@@ -132,7 +138,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 
 		sort.Strings(cs)
 
-		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") {
+		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " "){
 			cs[0] += " "
 		}
 

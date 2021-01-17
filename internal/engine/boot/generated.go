@@ -699,6 +699,28 @@ define write-line: method ((args)) {
     stdout write-line (splice $args)
 }
 
+# Completion stuff.
+
+define complete: method ((args)) {
+    # For now we cheat and use bash to supply completions.
+
+    capture (echo '#!/bin/bash
+
+    . /usr/share/bash-completion/bash_completion
+
+    export COMP_LINE="$*"
+    export COMP_POINT=${#COMP_LINE}
+    export COMP_WORDS=("$@")
+    export COMP_CWORD=$((${#COMP_WORDS[@]}-1))
+
+    _completion_loader "$1"
+
+    $(complete -p "$1" | sed -r "s/.* (\w+) \w+/\1/")
+
+    [ "${#COMPREPLY[@]}" -eq 0 ] || printf "%s\n" "${COMPREPLY[@]}"
+    ' | bash /dev/stdin (splice $args))
+}
+
 export OH_RC: coalesce OH_RC ~/.oh-rc
 exists $OH_RC && source $OH_RC
 `
