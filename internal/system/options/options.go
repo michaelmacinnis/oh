@@ -60,6 +60,8 @@ func Interactive() bool {
 
 // Parse parses the command line options for this invocation of oh.
 func Parse() {
+	docopt.DefaultParser.OptionsFirst = true
+
 	opts, err := docopt.ParseDoc(usage)
 	if err != nil {
 		// Error in the usage doc. This should never happen.

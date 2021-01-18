@@ -110,6 +110,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 
 				return
 			}
+
 			cs = files(cache.Executables, cwd, home, engine.Resolve("PATH"), completing)
 		} else {
 			cmd := list.Append(list.New(list.Array(cmd)...), sym.New(completing))
@@ -138,7 +139,7 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 
 		sort.Strings(cs)
 
-		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " "){
+		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " ") {
 			cs[0] += " "
 		}
 

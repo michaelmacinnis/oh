@@ -963,7 +963,7 @@ func bound(a cell.I) *binding {
 }
 
 func device(m os.FileMode) bool {
-        return m&(os.ModeDevice|os.ModeCharDevice) > 0
+	return m&(os.ModeDevice|os.ModeCharDevice) > 0
 }
 
 func makeConduitScope() scope.I {
@@ -1019,32 +1019,32 @@ func cmd(t *T) Op {
 func exists(t *T) Op {
 	args := t.expand(t.code)
 
-        count := 0
-        ignore := false
+	count := 0
+	ignore := false
 
-        for ; args != pair.Null; args = pair.Cdr(args) {
-                path := literal.String(pair.Car(args))
-                if path == "-i" {
-                        ignore = true
+	for ; args != pair.Null; args = pair.Cdr(args) {
+		path := literal.String(pair.Car(args))
+		if path == "-i" {
+			ignore = true
 
-                        continue
-                }
+			continue
+		}
 
-                count++
+		count++
 
-                s, err := os.Stat(path)
-                if err != nil {
-                        return t.Return(pair.Null)
-                }
+		s, err := os.Stat(path)
+		if err != nil {
+			return t.Return(pair.Null)
+		}
 
-                if ignore && device(s.Mode()) {
-                        // Report device files as not existing.
-                        // So that redirections to /dev/null etc. work.
-                        return t.Return(pair.Null)
-                }
-        }
+		if ignore && device(s.Mode()) {
+			// Report device files as not existing.
+			// So that redirections to /dev/null etc. work.
+			return t.Return(pair.Null)
+		}
+	}
 
-        return t.Return(create.Bool(count > 0))
+	return t.Return(create.Bool(count > 0))
 }
 
 func glob(t *T) Op {
