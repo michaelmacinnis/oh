@@ -703,22 +703,28 @@ define write-line: method ((args)) {
 
 define complete: method ((args)) {
     # For now we cheat and use bash to supply completions.
+    capture (bash -c '
+. /usr/share/bash-completion/bash_completion
 
-    capture (echo '#!/bin/bash
+export COMP_LINE="$*"
+export COMP_POINT=${#COMP_LINE}
+export COMP_WORDS=("$@")
+export COMP_CWORD=$((${#COMP_WORDS[@]}-1))
 
-    . /usr/share/bash-completion/bash_completion
+completer=_command
+if [ ${COMP_CWORD} -eq 0 ]; then
+        export COMP_CWORD=1
+        export COMP_WORDS=("" "${COMP_WORDS[@]}")
+else
+        _completion_loader "$1"
+        completer=$(complete -p "$1" | sed -r "s/.* (\w+) \w+/\1/")
+fi
 
-    export COMP_LINE="$*"
-    export COMP_POINT=${#COMP_LINE}
-    export COMP_WORDS=("$@")
-    export COMP_CWORD=$((${#COMP_WORDS[@]}-1))
+echo ${completer}
+${completer}
 
-    _completion_loader "$1"
-
-    $(complete -p "$1" | sed -r "s/.* (\w+) \w+/\1/")
-
-    [ "${#COMPREPLY[@]}" -eq 0 ] || printf "%s\n" "${COMPREPLY[@]}"
-    ' | bash /dev/stdin (splice $args))
+[ "${#COMPREPLY[@]}" -eq 0 ] || printf "%s\n" "${COMPREPLY[@]}"
+' complete (splice $args)) >& /dev/null
 }
 
 export OH_RC: coalesce OH_RC ~/.oh-rc

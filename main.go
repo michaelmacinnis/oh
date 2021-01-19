@@ -67,7 +67,7 @@ func command() bool {
 	return true
 }
 
-func completer(r **reader.T) func(s string, n int) (h string, cs []string, t string) {
+func completer(j **job.T, r **reader.T) func(s string, n int) (h string, cs []string, t string) {
 	return func(s string, n int) (h string, cs []string, t string) {
 		h = s[:n]
 		t = s[n:]
@@ -111,15 +111,27 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 				return
 			}
 
-			cs = files(cache.Executables, cwd, home, engine.Resolve("PATH"), completing)
+			cmd := list.New(sym.New("complete"), sym.New(completing))
+			v, _ := engine.System(*j, cmd)
+
+			process.RestoreForegroundGroup()
+
+			for c := pair.Cdr(v); c != pair.Null; c = pair.Cdr(c) {
+				cs = append(cs, common.String(pair.Car(c)))
+			}
 		} else {
 			cmd := list.Append(list.New(list.Array(cmd)...), sym.New(completing))
-			cmd = pair.Cons(sym.New("complete"), cmd)
+			v, _ := engine.System(*j, pair.Cons(sym.New("complete"), cmd))
 
-			v, _ := engine.System(job.New(process.Group()), cmd)
+			process.RestoreForegroundGroup()
 
-			for c := v; c != pair.Null; c = pair.Cdr(c) {
-				cs = append(cs, common.String(pair.Car(c)))
+			cfname := common.String(pair.Car(v))
+			if cfname == "_minimal" {
+				cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
+			} else {
+				for c := pair.Cdr(v); c != pair.Null; c = pair.Cdr(c) {
+					cs = append(cs, common.String(pair.Car(c)))
+				}
 			}
 		}
 
@@ -139,9 +151,11 @@ func completer(r **reader.T) func(s string, n int) (h string, cs []string, t str
 
 		sort.Strings(cs)
 
-		if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " ") {
-			cs[0] += " "
-		}
+		/*
+			if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " ") {
+				cs[0] += " "
+			}
+		*/
 
 		return prefix, cs, t
 	}
@@ -338,7 +352,7 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 	j := job.New(0)
 	r := reader.New(name)
 
-	cli.SetWordCompleter(completer(&r))
+	cli.SetWordCompleter(completer(&j, &r))
 	cli.SetTabCompletionStyle(liner.TabPrints)
 
 	continued := str.New("  ")
