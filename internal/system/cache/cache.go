@@ -84,16 +84,13 @@ func Files(dirname string) []string {
 		switch {
 		case p != pathSeparator && i.IsDir():
 			p += pathSeparator
-
 			e = append(e, p)
-			f = append(f, p)
 
 		case i.Mode()&0111 != 0:
 			e = append(e, p)
-
-		default:
-			f = append(f, p)
 		}
+
+		f = append(f, p)
 
 		return nil
 	})
