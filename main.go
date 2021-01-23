@@ -125,10 +125,10 @@ func completer(j **job.T, r **reader.T) func(s string, n int) (h string, cs []st
 
 			process.RestoreForegroundGroup()
 
+			cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
+
 			cfname := common.String(pair.Car(v))
-			if cfname == "_minimal" {
-				cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
-			} else {
+			if cfname != "_minimal" {
 				for c := pair.Cdr(v); c != pair.Null; c = pair.Cdr(c) {
 					cs = append(cs, common.String(pair.Car(c)))
 				}
