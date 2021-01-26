@@ -128,7 +128,7 @@ func completer(j **job.T, r **reader.T) func(s string, n int) (h string, cs []st
 			cs = files(cache.Files, cwd, home, engine.Resolve("PWD"), completing)
 
 			cfname := common.String(pair.Car(v))
-			if cfname != "_minimal" {
+			if cfname != "_minimal" && cfname != "_filedir_xspec" {
 				for c := pair.Cdr(v); c != pair.Null; c = pair.Cdr(c) {
 					cs = append(cs, common.String(pair.Car(c)))
 				}

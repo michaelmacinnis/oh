@@ -65,6 +65,12 @@ func Files(dirname string) []string {
 
 	<-done
 
+	original := dirname
+	dirname, err := filepath.EvalSymlinks(dirname)
+	if err != nil {
+		dirname = original
+	}
+
 	_ = filepath.Walk(dirname, func(p string, i os.FileInfo, err error) error {
 		if p == dirname {
 			return nil
@@ -79,6 +85,10 @@ func Files(dirname string) []string {
 			return nil
 		} else if depth < max {
 			return nil
+		}
+
+		if original != dirname {
+			p = strings.Replace(p, dirname, original, 1)
 		}
 
 		switch {
