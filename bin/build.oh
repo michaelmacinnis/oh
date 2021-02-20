@@ -2,6 +2,8 @@
 
 # To see missing GOOS/GOARCH pairs compare with: go tool dist list
 
+define t `(git describe --abbrev=0 --tags)
+
 here "
 # aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
 darwin amd64
@@ -36,5 +38,5 @@ openbsd mips64
 solaris amd64
 " | mill (o a) {
     echo ${o}/${a}
-    GOOS=${o} GOARCH=${a} go build -ldflags='-s -w' -o oh_${o}_${a} -trimpath
+    GOOS=${o} GOARCH=${a} go build -ldflags='-s -w' -o oh-${t}-${o}-${a} -trimpath
 }
