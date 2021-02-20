@@ -695,6 +695,10 @@ define write-line: method ((args)) {
 # Completion stuff.
 
 define complete: method ((args)) {
+    catch ignored {
+        return
+    }
+
     # For now we cheat and use bash to supply completions.
     capture (bash -c '
 . /usr/share/bash-completion/bash_completion

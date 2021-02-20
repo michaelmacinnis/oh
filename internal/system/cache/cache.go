@@ -66,6 +66,7 @@ func Files(dirname string) []string {
 	<-done
 
 	original := dirname
+
 	dirname, err := filepath.EvalSymlinks(dirname)
 	if err != nil {
 		dirname = original
@@ -96,7 +97,7 @@ func Files(dirname string) []string {
 			p += pathSeparator
 			e = append(e, p)
 
-		case i.Mode()&0111 != 0:
+		case i.Mode()&0o111 != 0:
 			e = append(e, p)
 		}
 
