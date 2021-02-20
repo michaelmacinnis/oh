@@ -434,7 +434,6 @@ func main() {
 
 //go:generate ./oh bin/test.oh
 //go:generate ./oh bin/doc.oh manual ../doc/manual.md
-//go:generate ./oh bin/doc.oh readme ../README.md
 //go:generate ./oh bin/type-common.oh internal/common/type/chn
 //go:generate ./oh bin/type-common.oh internal/common/type/env
 //go:generate ./oh bin/type-common.oh internal/common/type/num

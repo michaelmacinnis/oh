@@ -32,6 +32,7 @@ openbsd 386
 openbsd amd64
 openbsd arm
 openbsd arm64
+openbsd mips64
 solaris amd64
 " | mill (o a) {
     echo ${o}/${a}
