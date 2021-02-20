@@ -637,7 +637,7 @@ define here: method (s) {
     write-line (str trim-prefix (str trim-suffix $s $'\n') $'\n')
 }
 
-define ls: method ((args)) {
+ls --color=auto / >& /dev/null && define ls: method ((args)) {
     command ls --color=auto (splice $args)
 }
 
