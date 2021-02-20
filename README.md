@@ -16,9 +16,9 @@ Oh provides:
 - A simplified set of evaluation and quoting rules; and
 - A syntax that deviates as little as possible from established conventions;
 
-Oh's goal is a language that is not only more powerful and more regular
-but one that works with and within the interactive constraints and
-conventions established by the Unix shell over the last half-century.
+Oh's goal is a language that is not only more powerful and more regular but
+one that respects the conventions established by the Unix shell over the last
+half-century.
 
 ## Getting started
 
@@ -55,8 +55,7 @@ The easiest way to try oh is to download a precompiled binary.
 
 [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.0/oh_solaris_amd64)
 
-Alternatively, you can build oh from source. With a recent version of
-Go installed, type,
+You can build oh from source. With Go 1.16 or later installed, type,
 
     go get github.com/michaelmacinnis/oh
 
@@ -149,6 +148,7 @@ be used to the same effect. For example,
     openbsd amd64
     openbsd arm
     openbsd arm64
+    openbsd mips64
     " | mill (o a) {
         echo ${o}/${a}
         GOOS=${o} GOARCH=${a} go build -o oh_${o}_${a}
