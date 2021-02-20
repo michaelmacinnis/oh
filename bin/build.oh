@@ -5,6 +5,7 @@
 here "
 # aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
 darwin amd64
+darwin arm64
 dragonfly amd64
 freebsd 386
 freebsd amd64
