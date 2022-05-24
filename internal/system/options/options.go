@@ -15,6 +15,8 @@ var (
 	monitor     bool
 	script      string
 	terminal    int
+	version     bool
+
 	usage       = `oh
 
 Usage:
@@ -96,6 +98,8 @@ func Parse() {
 
 	invertMonitor, _ := opts.Bool("--monitor")
 	monitor = monitor != invertMonitor
+
+	version, _ = opts.Bool("--version")
 }
 
 // Script returns the script name (if any).
@@ -111,4 +115,9 @@ func Monitor() bool {
 // Terminal returns the terminal's integer file descriptor.
 func Terminal() int {
 	return terminal
+}
+
+// Version returns true if oh's version was request.
+func Version() bool {
+	return version
 }

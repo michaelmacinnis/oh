@@ -151,12 +151,6 @@ func completer(j **job.T, r **reader.T) func(s string, n int) (h string, cs []st
 
 		sort.Strings(cs)
 
-		/*
-			if len(cs) == 1 && !strings.HasSuffix(cs[0], "/") && !strings.HasSuffix(cs[0], " ") {
-				cs[0] += " "
-			}
-		*/
-
 		return prefix, cs, t
 	}
 }
@@ -424,6 +418,12 @@ func repl(cli *liner.State, cooked, uncooked liner.ModeApplier, name string) err
 
 func main() {
 	options.Parse()
+
+	if options.Version() {
+		// TODO: Get fancier later with where the version is defined.
+		println("oh v0.8.1")
+		return
+	}
 
 	engine.Boot(options.Script(), options.Args())
 
