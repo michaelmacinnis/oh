@@ -128,7 +128,7 @@ func symnew(v string) *sym {
 	return p
 }
 
-func symtry(v string) (p *sym, ok bool, cacheable bool) {
+func symtry(v string) (p *sym, ok, cacheable bool) {
 	cachel.RLock()
 	defer cachel.RUnlock()
 

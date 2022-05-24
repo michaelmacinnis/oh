@@ -1,5 +1,6 @@
 // Released under an MIT license. See LICENSE.
 
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package history

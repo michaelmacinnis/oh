@@ -17,7 +17,7 @@ var (
 	terminal    int
 	version     bool
 
-	usage       = `oh
+	usage = `oh
 
 Usage:
   oh [-m] SCRIPT [ARGUMENTS...]

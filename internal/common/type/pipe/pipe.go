@@ -35,7 +35,7 @@ type T struct {
 type pipe = T
 
 // New creates a new pipe cell.
-func New(r *os.File, w *os.File) cell.I {
+func New(r, w *os.File) cell.I {
 	if r == nil && w == nil {
 		var err error
 

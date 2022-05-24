@@ -20,43 +20,43 @@ func ConduitMethods() map[string]func(cell.I, cell.I) cell.I {
 	}
 }
 
-func close(s cell.I, _ cell.I) cell.I {
+func close(s, _ cell.I) cell.I {
 	conduit.To(s).Close()
 
 	return pair.Null
 }
 
-func read(s cell.I, _ cell.I) cell.I {
+func read(s, _ cell.I) cell.I {
 	return pair.Car(conduit.To(s).Read())
 }
 
-func readerClose(s cell.I, _ cell.I) cell.I {
+func readerClose(s, _ cell.I) cell.I {
 	conduit.To(s).ReaderClose()
 
 	return pair.Null
 }
 
-func readLine(s cell.I, _ cell.I) cell.I {
+func readLine(s, _ cell.I) cell.I {
 	return conduit.To(s).ReadLine()
 }
 
-func readList(s cell.I, _ cell.I) cell.I {
+func readList(s, _ cell.I) cell.I {
 	return conduit.To(s).Read()
 }
 
-func write(s cell.I, args cell.I) cell.I {
+func write(s, args cell.I) cell.I {
 	conduit.To(s).Write(args)
 
 	return args
 }
 
-func writeLine(s cell.I, args cell.I) cell.I {
+func writeLine(s, args cell.I) cell.I {
 	conduit.To(s).WriteLine(args)
 
 	return args
 }
 
-func writerClose(s cell.I, _ cell.I) cell.I {
+func writerClose(s, _ cell.I) cell.I {
 	conduit.To(s).WriterClose()
 
 	return pair.Null

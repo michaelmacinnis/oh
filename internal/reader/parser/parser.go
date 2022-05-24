@@ -301,7 +301,7 @@ func (p *T) braces() (c cell.I) {
 	return
 }
 
-func (p *T) assignments() (c cell.I, l cell.I) {
+func (p *T) assignments() (c, l cell.I) {
 	l = pair.Null
 
 	for {

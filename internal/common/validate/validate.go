@@ -47,7 +47,7 @@ func Fixed(actual cell.I, min, max int) []cell.I {
 }
 
 // Count returns a human-readable count.
-func Count(n int, label string, p string) string {
+func Count(n int, label, p string) string {
 	if n == 1 {
 		p = ""
 	}

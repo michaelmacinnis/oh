@@ -25,7 +25,7 @@ func ListMethods() map[string]func(cell.I, cell.I) cell.I {
 	}
 }
 
-func appendMethod(s cell.I, args cell.I) cell.I {
+func appendMethod(s, args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
 	self := pair.To(s)
@@ -33,7 +33,7 @@ func appendMethod(s cell.I, args cell.I) cell.I {
 	return list.Append(self, v...)
 }
 
-func extend(s cell.I, args cell.I) cell.I {
+func extend(s, args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 1)
 
 	self := pair.To(s)
@@ -41,7 +41,7 @@ func extend(s cell.I, args cell.I) cell.I {
 	return list.Join(self, v[0])
 }
 
-func get(s cell.I, args cell.I) cell.I {
+func get(s, args cell.I) cell.I {
 	v, args := validate.Variadic(args, 0, 1)
 
 	self := pair.To(s)
@@ -59,37 +59,37 @@ func get(s cell.I, args cell.I) cell.I {
 	return pair.Car(list.Tail(self, i, dflt))
 }
 
-func head(s cell.I, _ cell.I) cell.I {
+func head(s, _ cell.I) cell.I {
 	return pair.Car(pair.To(s))
 }
 
-func length(s cell.I, args cell.I) cell.I {
+func length(s, args cell.I) cell.I {
 	validate.Fixed(args, 0, 0)
 
 	return num.Int(int(list.Length(pair.To(s))))
 }
 
-func reverse(s cell.I, args cell.I) cell.I {
+func reverse(s, args cell.I) cell.I {
 	validate.Fixed(args, 0, 0)
 
 	return list.Reverse(pair.To(s))
 }
 
-func setHead(s cell.I, args cell.I) cell.I {
+func setHead(s, args cell.I) cell.I {
 	v := pair.Car(args)
 	pair.SetCar(s, v)
 
 	return v
 }
 
-func setTail(s cell.I, args cell.I) cell.I {
+func setTail(s, args cell.I) cell.I {
 	v := pair.Car(args)
 	pair.SetCdr(s, v)
 
 	return v
 }
 
-func slice(s cell.I, args cell.I) cell.I {
+func slice(s, args cell.I) cell.I {
 	v := validate.Fixed(args, 1, 2)
 
 	start := integer.Value(v[0])
@@ -102,6 +102,6 @@ func slice(s cell.I, args cell.I) cell.I {
 	return list.Slice(s, start, end)
 }
 
-func tail(s cell.I, _ cell.I) cell.I {
+func tail(s, _ cell.I) cell.I {
 	return pair.Cdr(pair.To(s))
 }

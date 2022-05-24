@@ -940,7 +940,7 @@ func f(do func(args cell.I) cell.I) *Method {
 	})}
 }
 
-func m(do func(s cell.I, args cell.I) cell.I) *Method {
+func m(do func(s, args cell.I) cell.I) *Method {
 	return &Method{Op: Action(func(t *T) Op {
 		return t.Return(do(bound(t.Result()).self, t.code))
 	})}
