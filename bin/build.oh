@@ -5,7 +5,7 @@
 define t `(git describe --abbrev=0 --tags)
 
 here "
-# aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
+aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
 darwin amd64
 darwin arm64
 dragonfly amd64
@@ -26,17 +26,17 @@ linux ppc64
 linux ppc64le
 linux riscv64
 linux s390x
-# netbsd 386 - missing unix.WCONTINUED
-# netbsd amd64 - missing unix.WCONTINUED
-# netbsd arm - missing unix.WCONTINUED
-# netbsd arm64 - missing unix.WCONTINUED
+netbsd 386 - missing unix.WCONTINUED
+netbsd amd64 - missing unix.WCONTINUED
+netbsd arm - missing unix.WCONTINUED
+netbsd arm64 - missing unix.WCONTINUED
 openbsd 386
 openbsd amd64
 openbsd arm
 openbsd arm64
 openbsd mips64
 solaris amd64
-" | mill (o a) {
+" | sed -re 's/ - .*$//g' | mill (o a) {
     echo ${o}/${a}
     GOOS=${o} GOARCH=${a} go build -ldflags='-s -w' -o oh-${t}-${o}-${a} -trimpath
 }
