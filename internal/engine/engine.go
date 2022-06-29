@@ -4,6 +4,7 @@
 package engine
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,12 +14,14 @@ import (
 	"github.com/michaelmacinnis/oh/internal/common/interface/boolean"
 	"github.com/michaelmacinnis/oh/internal/common/interface/cell"
 	"github.com/michaelmacinnis/oh/internal/common/interface/integer"
+	"github.com/michaelmacinnis/oh/internal/common/interface/literal"
 	"github.com/michaelmacinnis/oh/internal/common/interface/scope"
 	"github.com/michaelmacinnis/oh/internal/common/struct/frame"
 	"github.com/michaelmacinnis/oh/internal/common/type/env"
 	"github.com/michaelmacinnis/oh/internal/common/type/list"
 	"github.com/michaelmacinnis/oh/internal/common/type/num"
 	"github.com/michaelmacinnis/oh/internal/common/type/obj"
+	"github.com/michaelmacinnis/oh/internal/common/type/pair"
 	"github.com/michaelmacinnis/oh/internal/common/type/pipe"
 	"github.com/michaelmacinnis/oh/internal/common/type/status"
 	"github.com/michaelmacinnis/oh/internal/common/type/str"
@@ -220,6 +223,7 @@ func init() { //nolint:gochecknoinits
 	scope0.Define("bg", &task.Method{Op: task.Action(bg)})
 	scope0.Define("fg", &task.Method{Op: task.Action(fg)})
 	scope0.Define("jobs", &task.Method{Op: task.Action(jobs)})
+	scope0.Define("kill", &task.Method{Op: task.Action(kill)})
 
 	task.Actions(scope0)
 
@@ -229,6 +233,50 @@ func init() { //nolint:gochecknoinits
 func jobs(t *task.T) task.Op {
 	// TODO: Convert this to a function that returns what a wrapper needs.
 	job.Jobs(pipe.W(t.CellValue("stdout")))
+
+	return t.Return(status.Int(0))
+}
+
+func kill(t *task.T) task.Op {
+	jobId := false
+	signal := false
+	args := make([]cell.I, 0)
+
+	for a := t.Code(); a != pair.Null; a = pair.Cdr(a) {
+		v := literal.String(pair.Car(a))
+		if v[0:1] == "%" {
+			id, err := strconv.Atoi(v[1:])
+			if err != nil {
+				panic("job does not exist")
+			}
+
+			pgid := job.Getpgid(id)
+			if pgid == 0 {
+				panic("job does not exist")
+			}
+
+			args = append(args, str.New(fmt.Sprintf("-%d", pgid)))
+			jobId = true
+		} else {
+			if v[0:1] == "-" {
+				signal = true
+			}
+			args = append(args, pair.Car(a))
+		}
+	}
+
+	v := make([]cell.I, 0)
+	v = append(v, str.New("kill"))
+	if jobId && !signal {
+		v = append(v, str.New("--"))
+	}
+	v = append(v, args...)
+
+	c := list.New(v...)
+
+	j := job.New(0)
+	Evaluate(j, c)
+	process.RestoreForegroundGroup()
 
 	return t.Return(status.Int(0))
 }
