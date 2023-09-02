@@ -5,7 +5,7 @@
 define t `(git describe --abbrev=0 --tags)
 
 here "
-aix ppc64 - missing unix.WNOHANG, unix.WUNTRACED, unix.WCONTINUED
+aix ppc64 - cannot use unix.TIOCSPGRP (untyped int constant 18446744071562359926) as int value in argument to unix.IoctlSetPointerInt (overflows)
 darwin amd64
 darwin arm64
 dragonfly amd64
@@ -13,6 +13,7 @@ freebsd 386
 freebsd amd64
 freebsd arm
 freebsd arm64
+freebsd riscv64
 illumos amd64
 linux 386
 linux amd64
@@ -26,17 +27,16 @@ linux ppc64
 linux ppc64le
 linux riscv64
 linux s390x
-netbsd 386 - missing unix.WCONTINUED
-netbsd amd64 - missing unix.WCONTINUED
-netbsd arm - missing unix.WCONTINUED
-netbsd arm64 - missing unix.WCONTINUED
+netbsd 386 - undefined: unix.WCONTINUED
+netbsd amd64 - undefined: unix.WCONTINUED
+netbsd arm - undefined: unix.WCONTINUED
+netbsd arm64 - undefined: unix.WCONTINUED
 openbsd 386
 openbsd amd64
 openbsd arm
 openbsd arm64
-openbsd mips64
 solaris amd64
-" | sed -re 's/ - .*$//g' | mill (o a) {
+" | grep -v ' - ' | sed -re 's/ - .*$//g' | mill (o a) {
     echo ${o}/${a}
     GOOS=${o} GOARCH=${a} go build -ldflags='-s -w' -o oh-${t}-${o}-${a} -trimpath
 }

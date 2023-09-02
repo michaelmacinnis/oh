@@ -6,13 +6,13 @@ Oh is a reimagining of the Unix shell.
 
 Oh provides:
 
+- A simplified set of evaluation and quoting rules;
+- Rich return values that work with standard shell constructs;
 - First-class channels, pipes, environments and functions;
 - A list type (no word splitting);
-- Rich return values that work with standard shell constructs;
 - Support for modularity;
 - Lexical scope;
 - Exceptions;
-- A simplified set of evaluation and quoting rules;
 - Kernel-style fexprs (allowing the definition of new language constructs); and
 - A syntax that deviates as little as possible from established conventions;
 
@@ -34,35 +34,35 @@ The easiest way to try oh is to download a precompiled binary.
 
 #### DragonFly BSD
 
-[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-dragonfly-amd64)
+[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-dragonfly-amd64)
 
 #### FreeBSD
 
-[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-freebsd-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-freebsd-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-freebsd-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-freebsd-arm64)
+[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-freebsd-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-freebsd-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-freebsd-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-freebsd-arm64), [riscv64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-freebsd-riscv64)
 
 #### illumos
 
-[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-illumos-amd64)
+[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-illumos-amd64)
 
 #### Linux
 
-[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-arm64), [mips](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-mips), [mips64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-mips64), [mips64le](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-mips64le), [mipsle](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-mipsle), [ppc64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-ppc64), [ppc64le](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-ppc64le), [riscv64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-riscv64), [s390x](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-linux-s390x)
+[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-arm64), [mips](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-mips), [mips64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-mips64), [mips64le](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-mips64le), [mipsle](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-mipsle), [ppc64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-ppc64), [ppc64le](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-ppc64le), [riscv64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-riscv64), [s390x](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-linux-s390x)
 
 #### macOS
 
-[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-darwin-amd64), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-darwin-arm64)
+[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-darwin-amd64), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-darwin-arm64)
 
 #### OpenBSD
 
-[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-openbsd-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-openbsd-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-openbsd-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-openbsd-arm64), [mips64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-openbsd-mips64)
+[386](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-openbsd-386), [amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-openbsd-amd64), [arm](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-openbsd-arm), [arm64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-openbsd-arm64)
 
 #### Solaris
 
-[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.1/oh-v0.8.1-solaris-amd64)
+[amd64](https://github.com/michaelmacinnis/oh/releases/download/v0.8.2/oh-v0.8.2-solaris-amd64)
 
-You can also build oh from source. With Go 1.16 or later installed, type,
+You can also build oh from source. With Go 1.21 or later installed, type,
 
-    go install github.com/michaelmacinnis/oh@v0.8.1
+    go install github.com/michaelmacinnis/oh@v0.8.2
 
 ### Configuring
 

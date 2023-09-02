@@ -2,7 +2,7 @@
 
 echo "Hello, World!"
 cal 01 2030 | sed -re 's/[ ]+$//g' # Strip trailing spaces.
-date >greeting
+cal 01 2030 | sed -re 's/[ ]+$//g' >greeting
 echo "Hello, World!" >>greeting
 wc <greeting | tr -s ' ' # Replace multiple spaces with a single space.
 # Useless use of cat.
@@ -23,8 +23,8 @@ rm -r greeting junk || echo "rm failed!"
 #-     20 21 22 23 24 25 26
 #-     27 28 29 30 31
 #-     
-#-      2 9 46
-#-      2 9 46
+#-      9 42 152
+#-      9 42 152
 #-     Hello, World!
 #-         January 2030
 #-     Su Mo Tu We Th Fr Sa
