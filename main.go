@@ -421,7 +421,7 @@ func main() {
 
 	if options.Version() {
 		// TODO: Get fancier later with where the version is defined.
-		println("oh v0.8.2")
+		println("oh v0.8.3")
 		return
 	}
 
