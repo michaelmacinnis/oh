@@ -332,6 +332,22 @@ func Jobs(w io.Writer) {
 	<-r
 }
 
+func Getpgid(n int) int {
+	r := make(chan int)
+
+	requestq <- func() {
+		job, ok := jobs[n]
+		if ok {
+			r <- job.group
+		} else {
+			r <- 0
+		}
+		close(r)
+	}
+
+	return <-r
+}
+
 // Monitor launches the goroutine responsible for monitoring jobs/tasks.
 func Monitor() {
 	signals := []os.Signal{unix.SIGCHLD}
